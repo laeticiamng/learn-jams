@@ -115,7 +115,7 @@
     "analyzing": "Analyzing notes...", "creating_lyrics": "Creating lyrics...", "generating_music": "Generating music...",
     "success": "Song is being generated! 🎵", "error_generic": "Error during generation", "back": "Back", "next": "Next",
     "tab_text": "Text", "tab_pdf": "PDF", "tab_image": "Image / Photo",
-    "file_too_large": "File too large (max 20 MB)",
+    "file_too_large": "File too large (max 200 MB)",
     "extracted_from": "Text extracted from <strong>{{file}}</strong> — you can edit it below",
     "no_text_extracted": "No text extracted",
     "extract_success": "Text extracted from \"{{file}}\" successfully! 🎉",
