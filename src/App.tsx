@@ -13,6 +13,7 @@ import ResetPassword from "./pages/ResetPassword";
 import Create from "./pages/Create";
 import Library from "./pages/Library";
 import Player from "./pages/Player";
+import Quiz from "./pages/Quiz";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
