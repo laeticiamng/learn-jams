@@ -2,7 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Music, Library, User, LogOut, Plus } from "lucide-react";
+import { Music, Library, User, LogOut, Plus, CreditCard } from "lucide-react";
 import LanguageSelector from "@/components/LanguageSelector";
 
 export default function Navbar() {
