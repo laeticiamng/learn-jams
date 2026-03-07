@@ -147,5 +147,6 @@
   },
   "common": { "back": "Zurück", "loading": "Wird geladen...", "error": "Fehler", "return": "Zur Startseite" },
   "notfound": { "title": "Seite nicht gefunden", "text": "Diese Seite existiert nicht oder wurde verschoben." },
-  "styles": { "rap": "Rap", "lofi": "Lo-Fi", "pop": "Pop", "jazz": "Jazz", "rock": "Rock", "spoken-word": "Spoken Word", "reggaeton": "Reggaeton", "classique": "Klassik" }
+  "styles": { "pop": "Pop", "rap": "Rap", "rnb": "R&B", "rock": "Rock", "indie": "Indie", "country": "Country", "lofi": "Lo-Fi", "edm": "EDM", "house": "House", "techno": "Techno", "synthwave": "Synthwave", "drum-and-bass": "Drum & Bass", "reggaeton": "Reggaeton", "afrobeat": "Afrobeat", "reggae": "Reggae", "latin": "Latin", "kpop": "K-Pop", "bossa-nova": "Bossa Nova", "jazz": "Jazz", "blues": "Blues", "soul": "Soul", "funk": "Funk", "classical": "Klassik", "gospel": "Gospel", "metal": "Metal", "punk": "Punk", "acoustic": "Akustik", "folk": "Folk", "ambient": "Ambient", "spoken-word": "Spoken Word" },
+  "style_categories": { "popular": "Beliebt", "electronic": "Elektronisch", "world": "Welt", "classic": "Klassik & Soul", "alternative": "Alternativ" }
 }

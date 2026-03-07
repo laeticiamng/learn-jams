@@ -55,14 +55,36 @@ CONTRAINTE TECHNIQUE SUR LES ASSONANCES :
 
 ADAPTATION AU STYLE MUSICAL :
 Le style musical demandé influence le rythme et le flow mais PAS la rigueur pédagogique.
-- rap : flow dense, punchlines mnémoniques
-- lofi : ton posé, méditatif, répétitions douces
 - pop : refrain très accrocheur, structure claire
-- jazz : phrasé fluide, mélodique
+- rap : flow dense, punchlines mnémoniques
+- rnb / r&b : mélodique, émotionnel, harmonies vocales
 - rock : énergie, scansion forte
-- spoken-word : poésie parlée, rythme libre
+- indie : atmosphérique, introspectif
+- country : storytelling narratif, structure couplet-refrain
+- lofi : ton posé, méditatif, répétitions douces
+- edm : énergie montante, drops percutants, synthés
+- house : groove dansant, répétitif, hypnotique
+- techno : minimaliste, mécanique, percussif
+- synthwave : rétro 80s, nappes synthétiques
+- drum-and-bass : rapide, nerveux, basse profonde
 - reggaeton : rythme dansant, syllabes percussives
-- classique : ton solennel, vocabulaire soutenu
+- afrobeat : polyrythmique, festif, groove africain
+- reggae : offbeat, décontracté, message positif
+- latin : rythmes latins, salsa/cumbia, festif
+- kpop : accrocheur, dynamique, hooks mémorables
+- bossa-nova : doux, brésilien, mélodique et fluide
+- jazz : phrasé fluide, mélodique, harmonies riches
+- blues : émotionnel, expressif, 12 mesures
+- soul : profond, vocal, émotionnel
+- funk : groovy, rythmique, basse funky
+- classical : ton solennel, vocabulaire soutenu, orchestral
+- gospel : puissant, choral, inspirant
+- metal : agressif, puissant, technique
+- punk : rapide, brut, direct
+- acoustic : intimiste, guitare acoustique
+- folk : traditionnel, narratif, organique
+- ambient : atmosphérique, planant, textural
+- spoken-word : poésie parlée, rythme libre
 
 Si le cours est trop long, découpe intelligemment en plusieurs morceaux complémentaires.
 

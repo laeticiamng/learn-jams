@@ -279,13 +279,42 @@
     "text": "Cette page n'existe pas ou a été déplacée."
   },
   "styles": {
-    "rap": "Rap",
-    "lofi": "Lo-Fi",
     "pop": "Pop",
-    "jazz": "Jazz",
+    "rap": "Rap",
+    "rnb": "R&B",
     "rock": "Rock",
-    "spoken-word": "Spoken Word",
+    "indie": "Indie",
+    "country": "Country",
+    "lofi": "Lo-Fi",
+    "edm": "EDM",
+    "house": "House",
+    "techno": "Techno",
+    "synthwave": "Synthwave",
+    "drum-and-bass": "Drum & Bass",
     "reggaeton": "Reggaeton",
-    "classique": "Classique"
+    "afrobeat": "Afrobeat",
+    "reggae": "Reggae",
+    "latin": "Latin",
+    "kpop": "K-Pop",
+    "bossa-nova": "Bossa Nova",
+    "jazz": "Jazz",
+    "blues": "Blues",
+    "soul": "Soul",
+    "funk": "Funk",
+    "classical": "Classique",
+    "gospel": "Gospel",
+    "metal": "Metal",
+    "punk": "Punk",
+    "acoustic": "Acoustique",
+    "folk": "Folk",
+    "ambient": "Ambient",
+    "spoken-word": "Spoken Word"
+  },
+  "style_categories": {
+    "popular": "Populaire",
+    "electronic": "Électronique",
+    "world": "Monde",
+    "classic": "Classique & Soul",
+    "alternative": "Alternatif"
   }
 }

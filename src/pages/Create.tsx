@@ -52,7 +52,7 @@ export default function Create() {
         title: generatedTitle,
         original_text: courseText,
         generated_lyrics: generatedLyrics,
-        style: style as any,
+        style,
         subject: subject || null,
         status: "generating",
       }).select().single();
