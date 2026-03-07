@@ -325,5 +325,27 @@
     "world": "Monde",
     "classic": "Classique & Soul",
     "alternative": "Alternatif"
+  },
+  "pricing": {
+    "title": "Tarif",
+    "subtitle": "Un seul plan, tout inclus. Transforme tes cours en chansons pédagogiques.",
+    "plan_name": "StudyBeats Pro",
+    "month": "mois",
+    "cancel_anytime": "Sans engagement — annule quand tu veux",
+    "feature_unlimited_songs": "Chansons pédagogiques illimitées",
+    "feature_unlimited_songs_desc": "Génère autant de chansons que tu veux à partir de tes cours.",
+    "feature_all_styles": "30 styles musicaux",
+    "feature_all_styles_desc": "Rap, Lo-Fi, Pop, Jazz, Rock, EDM, Afrobeat, K-Pop et plus encore.",
+    "feature_quiz": "Quiz interactif",
+    "feature_quiz_desc": "QCM générés automatiquement avec explications pédagogiques.",
+    "feature_secure": "Données sécurisées",
+    "feature_secure_desc": "Chiffrement des données, conforme RGPD. Tes cours restent privés.",
+    "subscribe": "S'abonner",
+    "signup_first": "Créer un compte pour s'abonner",
+    "redirecting": "Redirection...",
+    "active": "Tu es abonné ✅",
+    "already_subscribed": "Tu es déjà abonné !",
+    "error": "Erreur lors de la redirection vers le paiement",
+    "guarantee": "Paiement sécurisé via Stripe. Annulation en un clic."
   }
 }
