@@ -55,7 +55,7 @@ serve(async (req) => {
     // Fetch the song and verify ownership
     const { data: song, error: songError } = await supabase
       .from("songs")
-      .select("id, suno_task_id, status, user_id")
+      .select("id, suno_task_id, status, user_id, created_at")
       .eq("id", songId)
       .single();
 
