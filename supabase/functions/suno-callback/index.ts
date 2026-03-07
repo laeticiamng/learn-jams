@@ -48,17 +48,17 @@ serve(async (req) => {
     // Handle "first" or "complete" — at least one track is ready
     if ((callbackType === "first" || callbackType === "complete") && Array.isArray(tracks) && tracks.length > 0) {
       const track = tracks[0];
+      const audioUrl = track.audio_url || track.audioUrl || null;
       const updateData: Record<string, unknown> = {
-        audio_url: track.audio_url || track.audioUrl || null,
+        audio_url: audioUrl,
         duration: track.duration ? Math.round(track.duration) : null,
         cover_image_url: track.image_url || track.imageUrl || null,
-        status: callbackType === "complete" ? "ready" : "generating",
+        // "first" with audio → ready immediately (streaming ~20s), "complete" → ready with final quality
+        status: audioUrl ? "ready" : (callbackType === "complete" ? "error" : "generating"),
       };
 
-      // Only mark ready if we actually have an audio URL
-      if (!updateData.audio_url && callbackType === "complete") {
+      if (!audioUrl && callbackType === "complete") {
         console.error(`[suno-callback] Complete but no audio_url, marking error`);
-        updateData.status = "error";
       }
 
       await supabase.from("songs").update(updateData).eq("id", songId);

@@ -89,6 +89,18 @@ serve(async (req) => {
       classique: "classical orchestral",
     };
 
+    const langMap: Record<string, string> = {
+      fr: "sung in French, French pronunciation",
+      en: "sung in English, English pronunciation",
+      de: "sung in German, German pronunciation",
+      es: "sung in Spanish, Spanish pronunciation",
+      ar: "sung in Arabic, Arabic pronunciation",
+      zh: "sung in Mandarin Chinese, Chinese pronunciation",
+      hi: "sung in Hindi, Hindi pronunciation",
+    };
+    const langTag = langMap[language] || langMap["en"];
+    const sunoStyle = `${styleMap[style] || "pop"}, ${langTag}`;
+
     const response = await fetch("https://api.sunoapi.org/api/v1/generate", {
       method: "POST",
       headers: {
@@ -97,7 +109,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         prompt: lyrics.slice(0, 5000),
-        style: styleMap[style] || "pop",
+        style: sunoStyle,
         title: (title || "StudyBeats").slice(0, 80),
         customMode: true,
         instrumental: false,
