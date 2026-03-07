@@ -47,6 +47,9 @@ export default function Library() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // Realtime subscription with fallback polling
+  const [realtimeConnected, setRealtimeConnected] = useState(true);
+
   useEffect(() => {
     if (!user) return;
     const channel = supabase
@@ -60,9 +63,19 @@ export default function Library() {
           setSongs(prev => prev.filter(s => s.id !== (payload.old as { id: string }).id));
         }
       })
-      .subscribe();
+      .subscribe((status) => {
+        setRealtimeConnected(status === 'SUBSCRIBED');
+      });
     return () => { supabase.removeChannel(channel); };
   }, [user]);
+
+  // Fallback polling when realtime is disconnected
+  useEffect(() => {
+    if (realtimeConnected || !user) return;
+    const poll = () => fetchData();
+    const interval = setInterval(poll, 15000);
+    return () => clearInterval(interval);
+  }, [realtimeConnected, user, fetchData]);
 
   useEffect(() => {
     const generatingSongs = songs.filter(s => s.status === "generating");
