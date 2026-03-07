@@ -43,7 +43,7 @@ export default function Create() {
       setProgress(50);
 
       const generatedLyrics = lyricsData?.lyrics || courseText.slice(0, 500);
-      const generatedTitle = lyricsData?.title || title || "Ma chanson StudyBeats";
+      const generatedTitle = lyricsData?.title || title || t("create.default_title");
 
       const { data: song, error: insertError } = await supabase.from("songs").insert({
         user_id: user.id, title: generatedTitle, original_text: courseText,

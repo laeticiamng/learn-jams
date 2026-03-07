@@ -90,7 +90,8 @@
     "upload_pdf_label": "ارفع PDF الدروس", "upload_image_label": "ارفع صورة للدروس",
     "upload_pdf_hint": "اسحب PDF هنا أو انقر للاختيار (الحد الأقصى 20 ميجابايت)",
     "upload_image_hint": "صورة ملاحظات، شرائح، سبورة... (الحد الأقصى 20 ميجابايت)",
-    "char_count": "{{chars}} حرف · ~{{minutes}} دقيقة قراءة"
+    "char_count": "{{chars}} حرف · ~{{minutes}} دقيقة قراءة",
+    "default_title": "أغنيتي من StudyBeats"
   },
   "library": {
     "title": "مكتبتي 🎵", "songs_count": "{{count}} أغنية", "songs_count_plural": "{{count}} أغاني",

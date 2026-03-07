@@ -90,7 +90,8 @@
     "upload_pdf_label": "Sube tu PDF de apuntes", "upload_image_label": "Sube una foto de tus apuntes",
     "upload_pdf_hint": "Arrastra tu PDF aquí o haz clic para seleccionar (máx. 20 MB)",
     "upload_image_hint": "Foto de apuntes, diapositivas, pizarra... (máx. 20 MB)",
-    "char_count": "{{chars}} caracteres · ~{{minutes}} min de lectura"
+    "char_count": "{{chars}} caracteres · ~{{minutes}} min de lectura",
+    "default_title": "Mi canción StudyBeats"
   },
   "library": {
     "title": "Mi biblioteca 🎵", "songs_count": "{{count}} canción", "songs_count_plural": "{{count}} canciones",
