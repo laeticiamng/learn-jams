@@ -163,5 +163,27 @@
   "common": { "back": "Zurück", "loading": "Wird geladen...", "error": "Fehler", "return": "Zur Startseite" },
   "notfound": { "title": "Seite nicht gefunden", "text": "Diese Seite existiert nicht oder wurde verschoben." },
   "styles": { "pop": "Pop", "rap": "Rap", "rnb": "R&B", "rock": "Rock", "indie": "Indie", "country": "Country", "lofi": "Lo-Fi", "edm": "EDM", "house": "House", "techno": "Techno", "synthwave": "Synthwave", "drum-and-bass": "Drum & Bass", "reggaeton": "Reggaeton", "afrobeat": "Afrobeat", "reggae": "Reggae", "latin": "Latin", "kpop": "K-Pop", "bossa-nova": "Bossa Nova", "jazz": "Jazz", "blues": "Blues", "soul": "Soul", "funk": "Funk", "classical": "Klassik", "gospel": "Gospel", "metal": "Metal", "punk": "Punk", "acoustic": "Akustik", "folk": "Folk", "ambient": "Ambient", "spoken-word": "Spoken Word" },
-  "style_categories": { "popular": "Beliebt", "electronic": "Elektronisch", "world": "Welt", "classic": "Klassik & Soul", "alternative": "Alternativ" }
+  "style_categories": { "popular": "Beliebt", "electronic": "Elektronisch", "world": "Welt", "classic": "Klassik & Soul", "alternative": "Alternativ" },
+  "pricing": {
+    "title": "Preise",
+    "subtitle": "Ein Plan, alles inklusive. Verwandle deine Unterlagen in pädagogische Songs.",
+    "plan_name": "StudyBeats Pro",
+    "month": "Monat",
+    "cancel_anytime": "Keine Bindung — jederzeit kündbar",
+    "feature_unlimited_songs": "Unbegrenzte pädagogische Songs",
+    "feature_unlimited_songs_desc": "Erstelle so viele Songs wie du willst aus deinen Unterlagen.",
+    "feature_all_styles": "30 Musikstile",
+    "feature_all_styles_desc": "Rap, Lo-Fi, Pop, Jazz, Rock, EDM, Afrobeat, K-Pop und mehr.",
+    "feature_quiz": "Interaktives Quiz",
+    "feature_quiz_desc": "Automatisch generierte Multiple-Choice-Fragen mit Erklärungen.",
+    "feature_secure": "Sichere Daten",
+    "feature_secure_desc": "Verschlüsselte Daten, DSGVO-konform. Deine Unterlagen bleiben privat.",
+    "subscribe": "Abonnieren",
+    "signup_first": "Konto erstellen zum Abonnieren",
+    "redirecting": "Weiterleitung...",
+    "active": "Du bist abonniert ✅",
+    "already_subscribed": "Du bist bereits abonniert!",
+    "error": "Fehler bei der Weiterleitung zur Zahlung",
+    "guarantee": "Sichere Zahlung über Stripe. Kündigung mit einem Klick."
+  }
 }
