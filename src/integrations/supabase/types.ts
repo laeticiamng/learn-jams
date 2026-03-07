@@ -82,6 +82,7 @@ export type Database = {
           generated_lyrics: string | null
           id: string
           is_final_quality: boolean
+          lyrics_metadata: string | null
           original_text: string
           status: string
           style: string
@@ -99,6 +100,7 @@ export type Database = {
           generated_lyrics?: string | null
           id?: string
           is_final_quality?: boolean
+          lyrics_metadata?: string | null
           original_text: string
           status?: string
           style?: string
@@ -116,6 +118,7 @@ export type Database = {
           generated_lyrics?: string | null
           id?: string
           is_final_quality?: boolean
+          lyrics_metadata?: string | null
           original_text?: string
           status?: string
           style?: string
