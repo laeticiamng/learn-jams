@@ -55,7 +55,7 @@ serve(async (req) => {
     // Fetch the song and verify ownership
     const { data: song, error: songError } = await supabase
       .from("songs")
-      .select("id, suno_task_id, status, user_id")
+      .select("id, suno_task_id, status, user_id, created_at")
       .eq("id", songId)
       .single();
 
@@ -73,6 +73,17 @@ serve(async (req) => {
 
     if (song.status !== "generating" || !song.suno_task_id) {
       return new Response(JSON.stringify({ status: song.status, message: "No polling needed" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Timeout: if generating for more than 10 minutes, mark as error
+    const createdAt = new Date(song.created_at || Date.now()).getTime();
+    const TEN_MINUTES = 10 * 60 * 1000;
+    if (Date.now() - createdAt > TEN_MINUTES) {
+      await supabase.from("songs").update({ status: "error" }).eq("id", songId);
+      console.log(`[poll-suno] Song ${songId} timed out after 10 minutes`);
+      return new Response(JSON.stringify({ status: "error", reason: "timeout" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
