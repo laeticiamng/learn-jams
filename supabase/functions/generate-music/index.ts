@@ -45,7 +45,7 @@ serve(async (req) => {
       classique: "classical orchestral",
     };
 
-    const response = await fetch("https://apibox.erweima.ai/api/v1/generate", {
+    const response = await fetch("https://api.sunoapi.org/api/v1/generate", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
