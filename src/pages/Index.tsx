@@ -91,7 +91,19 @@ const DemoPlayer = ({ listenLabel, titleLabel }: { listenLabel: string; titleLab
         <div className="flex-1 text-left min-w-0">
           <p className="text-xs text-muted-foreground">{listenLabel}</p>
           <p className="text-sm font-medium truncate">{titleLabel}</p>
-          <div className="mt-1.5 h-1 rounded-full bg-muted overflow-hidden">
+          <div
+            className="mt-1.5 h-1 rounded-full bg-muted overflow-hidden cursor-pointer"
+            onClick={(e) => {
+              e.stopPropagation();
+              const audio = audioRef.current;
+              if (!audio || !audio.duration) return;
+              const rect = e.currentTarget.getBoundingClientRect();
+              const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+              audio.currentTime = ratio * audio.duration;
+              setProgress(ratio * 100);
+              if (!playing) { audio.play().catch(() => {}); setPlaying(true); }
+            }}
+          >
             <div className="h-full gradient-bg rounded-full transition-all duration-300" style={{ width: `${progress}%` }} />
           </div>
         </div>
