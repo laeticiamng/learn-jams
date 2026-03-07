@@ -14,7 +14,116 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      favorites: {
+        Row: {
+          created_at: string
+          id: string
+          song_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          song_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          song_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favorites_song_id_fkey"
+            columns: ["song_id"]
+            isOneToOne: false
+            referencedRelation: "songs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          field_of_study: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          field_of_study?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          field_of_study?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      songs: {
+        Row: {
+          audio_url: string | null
+          cover_image_url: string | null
+          created_at: string
+          duration: number | null
+          generated_lyrics: string | null
+          id: string
+          original_text: string
+          status: string
+          style: Database["public"]["Enums"]["music_style"]
+          subject: string | null
+          suno_task_id: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          audio_url?: string | null
+          cover_image_url?: string | null
+          created_at?: string
+          duration?: number | null
+          generated_lyrics?: string | null
+          id?: string
+          original_text: string
+          status?: string
+          style?: Database["public"]["Enums"]["music_style"]
+          subject?: string | null
+          suno_task_id?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          audio_url?: string | null
+          cover_image_url?: string | null
+          created_at?: string
+          duration?: number | null
+          generated_lyrics?: string | null
+          id?: string
+          original_text?: string
+          status?: string
+          style?: Database["public"]["Enums"]["music_style"]
+          subject?: string | null
+          suno_task_id?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +132,15 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      music_style:
+        | "rap"
+        | "lofi"
+        | "pop"
+        | "jazz"
+        | "rock"
+        | "spoken-word"
+        | "reggaeton"
+        | "classique"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +267,17 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      music_style: [
+        "rap",
+        "lofi",
+        "pop",
+        "jazz",
+        "rock",
+        "spoken-word",
+        "reggaeton",
+        "classique",
+      ],
+    },
   },
 } as const
