@@ -85,7 +85,22 @@
     "generate_title": "Bereit zur Generierung? 🚀", "text_label": "Text", "chars": "Zeichen", "style_label": "Stil",
     "generate_button": "Meinen Song generieren", "generating": "Generierung läuft...",
     "analyzing": "Kurs wird analysiert...", "creating_lyrics": "Liedtexte werden erstellt...", "generating_music": "Musik wird generiert...",
-    "success": "Song wird generiert! 🎵", "error_generic": "Fehler bei der Generierung", "back": "Zurück", "next": "Weiter"
+    "success": "Song wird generiert! 🎵", "error_generic": "Fehler bei der Generierung", "back": "Zurück", "next": "Weiter",
+    "tab_text": "Text", "tab_pdf": "PDF", "tab_image": "Bild / Foto",
+    "file_too_large": "Datei zu groß (max. 20 MB)",
+    "extracted_from": "Text aus <strong>{{file}}</strong> extrahiert — du kannst ihn unten bearbeiten",
+    "no_text_extracted": "Kein Text extrahiert",
+    "extract_success": "Text aus \"{{file}}\" erfolgreich extrahiert! 🎉",
+    "extract_error": "Fehler bei der Textextraktion",
+    "textarea_placeholder": "Füge deinen Kurs hier ein... (Anatomie, Recht, Geschichte, Physik, Informatik...)",
+    "extracting": "Text wird extrahiert...",
+    "pdf_analyzing": "PDF wird mit KI analysiert...", "image_analyzing": "OCR des Bildes mit KI...",
+    "extract_done": "Text erfolgreich extrahiert!",
+    "view_text": "Text anzeigen", "restart": "Neu starten", "delete_file": "Entfernen",
+    "upload_pdf_label": "Lade dein Kurs-PDF hoch", "upload_image_label": "Lade ein Foto deiner Notizen hoch",
+    "upload_pdf_hint": "Ziehe dein PDF hierher oder klicke zum Auswählen (max. 20 MB)",
+    "upload_image_hint": "Foto von Notizen, Folien, Tafel... (max. 20 MB)",
+    "char_count": "{{chars}} Zeichen · ~{{minutes}} Min. Lesezeit"
   },
   "library": {
     "title": "Meine Bibliothek 🎵", "songs_count": "{{count}} Song", "songs_count_plural": "{{count}} Songs",

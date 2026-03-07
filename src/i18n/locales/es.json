@@ -77,7 +77,22 @@
     "generate_title": "¿Listo para generar? 🚀", "text_label": "Texto", "chars": "caracteres", "style_label": "Estilo",
     "generate_button": "Generar mi canción", "generating": "Generando...",
     "analyzing": "Analizando apuntes...", "creating_lyrics": "Creando letras...", "generating_music": "Generando música...",
-    "success": "¡Canción en generación! 🎵", "error_generic": "Error en la generación", "back": "Atrás", "next": "Siguiente"
+    "success": "¡Canción en generación! 🎵", "error_generic": "Error en la generación", "back": "Atrás", "next": "Siguiente",
+    "tab_text": "Texto", "tab_pdf": "PDF", "tab_image": "Imagen / Foto",
+    "file_too_large": "Archivo demasiado grande (máx. 20 MB)",
+    "extracted_from": "Texto extraído de <strong>{{file}}</strong> — puedes editarlo abajo",
+    "no_text_extracted": "No se extrajo texto",
+    "extract_success": "¡Texto extraído de \"{{file}}\" con éxito! 🎉",
+    "extract_error": "Error al extraer el texto",
+    "textarea_placeholder": "Pega tus apuntes aquí... (anatomía, derecho, historia, física, informática...)",
+    "extracting": "Extrayendo texto...",
+    "pdf_analyzing": "Analizando PDF con IA...", "image_analyzing": "OCR de imagen con IA...",
+    "extract_done": "¡Texto extraído con éxito!",
+    "view_text": "Ver texto", "restart": "Reiniciar", "delete_file": "Eliminar",
+    "upload_pdf_label": "Sube tu PDF de apuntes", "upload_image_label": "Sube una foto de tus apuntes",
+    "upload_pdf_hint": "Arrastra tu PDF aquí o haz clic para seleccionar (máx. 20 MB)",
+    "upload_image_hint": "Foto de apuntes, diapositivas, pizarra... (máx. 20 MB)",
+    "char_count": "{{chars}} caracteres · ~{{minutes}} min de lectura"
   },
   "library": {
     "title": "Mi biblioteca 🎵", "songs_count": "{{count}} canción", "songs_count_plural": "{{count}} canciones",

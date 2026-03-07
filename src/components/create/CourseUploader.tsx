@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Upload, FileText, Image, X, Loader2, CheckCircle } from "lucide-react";
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export default function CourseUploader({ text, onTextChange }: Props) {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<"text" | "pdf" | "image">("text");
   const [fileName, setFileName] = useState<string | null>(null);
   const [extracting, setExtracting] = useState(false);
@@ -18,7 +20,7 @@ export default function CourseUploader({ text, onTextChange }: Props) {
 
   const handleFile = useCallback(async (file: File) => {
     if (file.size > 20 * 1024 * 1024) {
-      toast.error("Fichier trop volumineux (max 20 Mo)");
+      toast.error(t("create.file_too_large"));
       return;
     }
 
@@ -45,7 +47,7 @@ export default function CourseUploader({ text, onTextChange }: Props) {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Erreur ${response.status}`);
+        throw new Error(errorData.error || `Error ${response.status}`);
       }
 
       const data = await response.json();
@@ -53,20 +55,19 @@ export default function CourseUploader({ text, onTextChange }: Props) {
       if (data.text) {
         onTextChange(data.text);
         setExtracted(true);
-        toast.success(`Texte extrait de "${file.name}" avec succès ! 🎉`);
-        // Switch to text tab so user can see/edit the extracted text
+        toast.success(t("create.extract_success", { file: file.name }));
         setActiveTab("text");
       } else {
-        throw new Error("Aucun texte extrait");
+        throw new Error(t("create.no_text_extracted"));
       }
     } catch (error: any) {
       console.error("Extraction error:", error);
-      toast.error(error.message || "Erreur lors de l'extraction du texte");
+      toast.error(error.message || t("create.extract_error"));
       setFileName(null);
     } finally {
       setExtracting(false);
     }
-  }, [onTextChange]);
+  }, [onTextChange, t]);
 
   const clearFile = () => {
     setFileName(null);
@@ -75,9 +76,9 @@ export default function CourseUploader({ text, onTextChange }: Props) {
   };
 
   const tabs = [
-    { id: "text" as const, label: "Texte", icon: FileText },
-    { id: "pdf" as const, label: "PDF", icon: Upload },
-    { id: "image" as const, label: "Image / Photo", icon: Image },
+    { id: "text" as const, label: t("create.tab_text"), icon: FileText },
+    { id: "pdf" as const, label: t("create.tab_pdf"), icon: Upload },
+    { id: "image" as const, label: t("create.tab_image"), icon: Image },
   ];
 
   return (
@@ -101,11 +102,11 @@ export default function CourseUploader({ text, onTextChange }: Props) {
           {extracted && fileName && (
             <div className="flex items-center gap-2 text-sm text-primary">
               <CheckCircle className="w-4 h-4" />
-              <span>Texte extrait de <strong>{fileName}</strong> — tu peux l'éditer ci-dessous</span>
+              <span dangerouslySetInnerHTML={{ __html: t("create.extracted_from", { file: fileName }) }} />
             </div>
           )}
           <Textarea
-            placeholder="Colle ton cours ici... (anatomie, droit, histoire, physique, informatique...)"
+            placeholder={t("create.textarea_placeholder")}
             value={text}
             onChange={(e) => onTextChange(e.target.value)}
             className="min-h-[200px] bg-muted/50 border-border/50 resize-none"
@@ -116,22 +117,22 @@ export default function CourseUploader({ text, onTextChange }: Props) {
           {extracting ? (
             <div className="space-y-4">
               <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto" />
-              <p className="font-medium">Extraction du texte en cours...</p>
+              <p className="font-medium">{t("create.extracting")}</p>
               <p className="text-sm text-muted-foreground">
-                {activeTab === "pdf" ? "Analyse du PDF avec l'IA..." : "OCR de l'image avec l'IA..."}
+                {activeTab === "pdf" ? t("create.pdf_analyzing") : t("create.image_analyzing")}
               </p>
             </div>
           ) : fileName && extracted ? (
             <div className="space-y-3">
               <CheckCircle className="w-12 h-12 text-primary mx-auto" />
-              <p className="font-medium text-primary">Texte extrait avec succès !</p>
+              <p className="font-medium text-primary">{t("create.extract_done")}</p>
               <p className="text-sm text-muted-foreground">{fileName}</p>
               <div className="flex gap-2 justify-center">
                 <Button variant="outline" size="sm" onClick={() => setActiveTab("text")} className="gap-1">
-                  <FileText className="w-4 h-4" /> Voir le texte
+                  <FileText className="w-4 h-4" /> {t("create.view_text")}
                 </Button>
                 <Button variant="ghost" size="sm" onClick={clearFile} className="gap-1">
-                  <X className="w-4 h-4" /> Recommencer
+                  <X className="w-4 h-4" /> {t("create.restart")}
                 </Button>
               </div>
             </div>
@@ -142,7 +143,7 @@ export default function CourseUploader({ text, onTextChange }: Props) {
               </div>
               <p className="font-medium">{fileName}</p>
               <Button variant="ghost" size="sm" onClick={clearFile} className="gap-1">
-                <X className="w-4 h-4" /> Supprimer
+                <X className="w-4 h-4" /> {t("create.delete_file")}
               </Button>
             </div>
           ) : (
@@ -151,12 +152,10 @@ export default function CourseUploader({ text, onTextChange }: Props) {
                 <Upload className="w-8 h-8 text-muted-foreground" />
               </div>
               <p className="font-medium">
-                {activeTab === "pdf" ? "Upload ton PDF de cours" : "Upload une photo de cours"}
+                {activeTab === "pdf" ? t("create.upload_pdf_label") : t("create.upload_image_label")}
               </p>
               <p className="text-sm text-muted-foreground">
-                {activeTab === "pdf"
-                  ? "Glisse ton PDF ici ou clique pour sélectionner (max 20 Mo)"
-                  : "Photo de notes, diapos, tableau... (max 20 Mo)"}
+                {activeTab === "pdf" ? t("create.upload_pdf_hint") : t("create.upload_image_hint")}
               </p>
               <input
                 type="file"
@@ -174,7 +173,10 @@ export default function CourseUploader({ text, onTextChange }: Props) {
 
       {text && (
         <div className="text-sm text-muted-foreground">
-          {text.length} caractères · ~{Math.ceil(text.split(/\s+/).length / 250)} min de lecture
+          {t("create.char_count", {
+            chars: text.length,
+            minutes: Math.ceil(text.split(/\s+/).length / 250),
+          })}
         </div>
       )}
     </div>
