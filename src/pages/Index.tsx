@@ -75,7 +75,7 @@ export default function Index() {
             </p>
             <h1 className="font-display text-5xl md:text-7xl font-bold mb-6 leading-tight">
               {t("home.title1")}<br />
-              <span className="gradient-text">{t("home.title2")}</span> 🎧
+              <span className="gradient-text">{t("home.title2")}</span>
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10">
               {t("home.subtitle")}
