@@ -53,7 +53,7 @@ export default function Create() {
       setProgress(70);
 
       const { error: musicError } = await supabase.functions.invoke("generate-music", {
-        body: { songId: song.id, lyrics: generatedLyrics, style, title: generatedTitle },
+        body: { songId: song.id, lyrics: generatedLyrics, style, title: generatedTitle, language: i18n.language },
       });
       if (musicError) throw musicError;
       setProgress(100);
