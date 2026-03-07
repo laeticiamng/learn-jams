@@ -33,10 +33,24 @@ export default function Library() {
   }, [user]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  // Poll Suno API as fallback for songs stuck in "generating"
   useEffect(() => {
-    const hasGenerating = songs.some(s => s.status === "generating");
-    if (!hasGenerating) return;
-    const interval = setInterval(fetchData, 5000);
+    const generatingSongs = songs.filter(s => s.status === "generating");
+    if (generatingSongs.length === 0) return;
+
+    const pollAndRefresh = async () => {
+      // Poll each generating song via the edge function
+      await Promise.allSettled(
+        generatingSongs.map(song =>
+          supabase.functions.invoke("poll-suno-status", { body: { songId: song.id } })
+        )
+      );
+      // Refresh the song list from DB
+      fetchData();
+    };
+
+    const interval = setInterval(pollAndRefresh, 10000); // every 10s
     return () => clearInterval(interval);
   }, [songs, fetchData]);
 
