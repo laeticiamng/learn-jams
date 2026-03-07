@@ -25,6 +25,82 @@ const AudioWave = () => {
   );
 };
 
+// Animated counter component
+const CountUp = ({ target, suffix = "", duration = 2000 }: { target: number; suffix?: string; duration?: number }) => {
+  const [count, setCount] = useState(0);
+  const [hasAnimated, setHasAnimated] = useState(false);
+  const ref = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !hasAnimated) {
+          setHasAnimated(true);
+          const startTime = performance.now();
+          const animate = (now: number) => {
+            const elapsed = now - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            setCount(Math.round(eased * target));
+            if (progress < 1) requestAnimationFrame(animate);
+          };
+          requestAnimationFrame(animate);
+        }
+      },
+      { threshold: 0.5 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [target, duration, hasAnimated]);
+
+  return <span ref={ref}>{count.toLocaleString()}{suffix}</span>;
+};
+
+// Mini demo player
+const DemoPlayer = ({ listenLabel, titleLabel }: { listenLabel: string; titleLabel: string }) => {
+  const [playing, setPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  const togglePlay = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (playing) { audio.pause(); } else { audio.play().catch(() => {}); }
+    setPlaying(!playing);
+  }, [playing]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const update = () => { if (audio.duration) setProgress((audio.currentTime / audio.duration) * 100); };
+    const onEnd = () => { setPlaying(false); setProgress(0); };
+    audio.addEventListener("timeupdate", update);
+    audio.addEventListener("ended", onEnd);
+    return () => { audio.removeEventListener("timeupdate", update); audio.removeEventListener("ended", onEnd); };
+  }, []);
+
+  return (
+    <div className="mt-6 max-w-sm mx-auto">
+      <audio ref={audioRef} src="/demo.mp3" preload="none" />
+      <button onClick={togglePlay} className="w-full glass-card p-3 flex items-center gap-3 hover:border-primary/30 transition-all group">
+        <div className="w-10 h-10 rounded-lg gradient-bg flex items-center justify-center shrink-0">
+          {playing ? <Pause className="w-4 h-4 text-primary-foreground" /> : <Play className="w-4 h-4 text-primary-foreground ml-0.5" />}
+        </div>
+        <div className="flex-1 text-left min-w-0">
+          <p className="text-xs text-muted-foreground">{listenLabel}</p>
+          <p className="text-sm font-medium truncate">{titleLabel}</p>
+          <div className="mt-1.5 h-1 rounded-full bg-muted overflow-hidden">
+            <div className="h-full gradient-bg rounded-full transition-all duration-300" style={{ width: `${progress}%` }} />
+          </div>
+        </div>
+        <Volume2 className="w-4 h-4 text-muted-foreground shrink-0 group-hover:text-primary transition-colors" />
+      </button>
+    </div>
+  );
+};
+
 const stepIcons = [Upload, Music, Headphones];
 const stepColors = ["from-primary to-secondary", "from-secondary to-primary", "from-primary to-secondary"];
 const scienceIcons = [Brain, Repeat, Timer, Dumbbell];
