@@ -204,6 +204,11 @@
   "pricing": {
     "title": "价格",
     "subtitle": "一个计划，全部包含。将你的笔记变成教学歌曲。",
+    "free_plan": "体验版",
+    "free_price": "免费",
+    "free_feature1": "1首歌曲",
+    "free_feature2": "仅文字导入",
+    "free_feature3": "无测验",
     "plan_name": "StudyBeats Pro",
     "month": "月",
     "cancel_anytime": "无绑定 — 随时取消",

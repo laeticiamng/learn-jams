@@ -82,7 +82,7 @@ export default function Pricing() {
     <div className="min-h-screen bg-background">
       <Navbar />
       <main className="pt-24 pb-16">
-        <div className="container mx-auto px-4 max-w-4xl">
+        <div className="container mx-auto px-4 max-w-5xl">
           {/* Header */}
           <div className="text-center mb-12">
             <h1 className="text-4xl md:text-5xl font-display font-bold mb-4">
@@ -93,19 +93,48 @@ export default function Pricing() {
             </p>
           </div>
 
-          {/* Pricing Card */}
-          <div className="max-w-md mx-auto">
-            <div className="glass-card p-8 relative overflow-hidden">
+          {/* Pricing Cards */}
+          <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+            {/* Free Plan */}
+            <div className="glass-card p-8 relative">
+              <div className="text-center mb-6">
+                <span className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-muted text-muted-foreground mb-4">
+                  {t("pricing.free_plan")}
+                </span>
+                <div className="flex items-baseline justify-center gap-1">
+                  <span className="text-4xl font-display font-bold">{t("pricing.free_price")}</span>
+                </div>
+              </div>
+              <ul className="space-y-3 mb-8">
+                {["free_feature1", "free_feature2", "free_feature3"].map((key) => (
+                  <li key={key} className="flex items-center gap-3 text-muted-foreground">
+                    <Check className="w-4 h-4 text-muted-foreground/60 flex-shrink-0" />
+                    <span>{t(`pricing.${key}`)}</span>
+                  </li>
+                ))}
+              </ul>
+              <Button
+                variant="outline"
+                className="w-full py-6 text-lg"
+                size="lg"
+                onClick={() => navigate(user ? "/create" : "/signup")}
+              >
+                {user ? t("home.cta_signup").replace("now", "").trim() || t("nav.create") : t("nav.signup")}
+              </Button>
+            </div>
+
+            {/* Pro Plan */}
+            <div className="glass-card p-8 relative overflow-hidden ring-2 ring-primary/30">
               {/* Glow effect */}
               <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-secondary/10 pointer-events-none" />
 
               <div className="relative z-10">
-                <div className="text-center mb-8">
+                <div className="text-center mb-6">
                   <span className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-primary/20 text-primary mb-4">
                     {t("pricing.plan_name")}
                   </span>
                   <div className="flex items-baseline justify-center gap-1">
-                    <span className="text-5xl font-display font-bold">{formatPrice(lang)}</span>
+                    <span className="text-4xl font-display font-bold">{formatPrice(lang)}</span>
                     <span className="text-2xl font-display font-bold">€</span>
                     <span className="text-muted-foreground ml-1">/ {t("pricing.month")}</span>
                   </div>
@@ -115,7 +144,7 @@ export default function Pricing() {
                 </div>
 
                 {/* Features */}
-                <ul className="space-y-4 mb-8">
+                <ul className="space-y-3 mb-8">
                   {features.map(({ key, icon: Icon }) => (
                     <li key={key} className="flex items-start gap-3">
                       <div className="mt-0.5 w-5 h-5 rounded-full gradient-bg flex items-center justify-center flex-shrink-0">

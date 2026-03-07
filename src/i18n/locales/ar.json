@@ -204,6 +204,11 @@
   "pricing": {
     "title": "الأسعار",
     "subtitle": "خطة واحدة، كل شيء مضمّن. حوّل ملاحظاتك إلى أغانٍ تعليمية.",
+    "free_plan": "اكتشاف",
+    "free_price": "مجاني",
+    "free_feature1": "أغنية واحدة",
+    "free_feature2": "استيراد نص فقط",
+    "free_feature3": "بدون مسابقة",
     "plan_name": "StudyBeats Pro",
     "month": "شهر",
     "cancel_anytime": "بدون التزام — ألغِ في أي وقت",

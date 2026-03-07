@@ -204,6 +204,11 @@
   "pricing": {
     "title": "मूल्य",
     "subtitle": "एक प्लान, सब कुछ शामिल। नोट्स को शैक्षिक गानों में बदलें।",
+    "free_plan": "खोज",
+    "free_price": "मुफ्त",
+    "free_feature1": "1 गाना",
+    "free_feature2": "केवल टेक्स्ट इम्पोर्ट",
+    "free_feature3": "क्विज़ नहीं",
     "plan_name": "StudyBeats Pro",
     "month": "महीना",
     "cancel_anytime": "बिना बाध्यता — कभी भी रद्द करें",
