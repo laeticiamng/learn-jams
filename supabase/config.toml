@@ -1,1 +1,10 @@
 project_id = "pywdwanqlynoatyesegb"
+
+[functions.generate-lyrics]
+verify_jwt = false
+
+[functions.generate-music]
+verify_jwt = false
+
+[functions.suno-callback]
+verify_jwt = false
