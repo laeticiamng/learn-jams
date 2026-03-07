@@ -32,7 +32,7 @@ serve(async (req) => {
       });
     }
 
-    const { songId, lyrics, style, title } = await req.json();
+    const { songId, lyrics, style, title, language } = await req.json();
     const SUNO_API_KEY = Deno.env.get("SUNO_API_KEY");
     
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
