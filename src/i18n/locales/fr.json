@@ -4,7 +4,8 @@
     "library": "Bibliothèque",
     "login": "Connexion",
     "signup": "S'inscrire",
-    "pricing": "Tarifs"
+    "pricing": "Tarifs",
+    "logout": "Déconnexion"
   },
   "home": {
     "badge": "Mémorisation musicale fondée sur les neurosciences",
