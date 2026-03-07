@@ -75,7 +75,7 @@ export default function Navbar() {
                       <User className="w-4 h-4" /> {t("profile.title")}
                     </Button>
                     <Button variant="ghost" className="justify-start gap-3 text-destructive" onClick={() => { signOut(); go("/"); }}>
-                      <LogOut className="w-4 h-4" /> {t("nav.login")}
+                      <LogOut className="w-4 h-4" /> {t("nav.logout")}
                     </Button>
                   </>
                 ) : (

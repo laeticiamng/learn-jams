@@ -341,6 +341,11 @@
   "pricing": {
     "title": "Tarifs",
     "subtitle": "Un seul plan, tout inclus. Transforme tes notes en chansons pédagogiques.",
+    "free_plan": "Découverte",
+    "free_price": "Gratuit",
+    "free_feature1": "1 chanson",
+    "free_feature2": "Import texte uniquement",
+    "free_feature3": "Pas de quiz",
     "plan_name": "StudyBeats Pro",
     "month": "mois",
     "cancel_anytime": "Sans engagement — annule quand tu veux",

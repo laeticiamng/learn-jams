@@ -163,7 +163,7 @@ export default function Index() {
             className="font-display text-3xl md:text-4xl font-bold text-center mb-4">
             {t("home.science_title")}
           </motion.h2>
-          <p className="text-center text-muted-foreground mb-16 max-w-xl mx-auto">{t("home.science_subtitle")}</p>
+          <p className="text-center text-muted-foreground mb-10 max-w-xl mx-auto">{t("home.science_subtitle")}</p>
           <div className="grid md:grid-cols-2 gap-6">
             {[1, 2, 3, 4].map((n, i) => {
               const Icon = scienceIcons[i];

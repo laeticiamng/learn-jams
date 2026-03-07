@@ -250,6 +250,11 @@
   "pricing": {
     "title": "Pricing",
     "subtitle": "One plan, everything included. Turn your notes into educational songs.",
+    "free_plan": "Free",
+    "free_price": "Free",
+    "free_feature1": "1 song",
+    "free_feature2": "Text import only",
+    "free_feature3": "No quiz",
     "plan_name": "StudyBeats Pro",
     "month": "month",
     "cancel_anytime": "No commitment — cancel anytime",
