@@ -1,5 +1,5 @@
 {
-  "nav": { "create": "Erstellen", "library": "Bibliothek", "login": "Anmelden", "signup": "Registrieren", "pricing": "Preise" },
+  "nav": { "create": "Erstellen", "library": "Bibliothek", "login": "Anmelden", "signup": "Registrieren", "pricing": "Preise", "logout": "Abmelden" },
   "home": {
     "badge": "Musikalisches Lernen auf neurowissenschaftlicher Basis",
     "title1": "Verwandle deine Kurse",
