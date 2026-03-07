@@ -8,7 +8,7 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Check, Zap, Shield, Music, Brain } from "lucide-react";
 import { toast } from "sonner";
-import usePageSEO from "@/hooks/usePageSEO";
+import { usePageSEO } from "@/hooks/usePageSEO";
 
 export default function Pricing() {
   const { t } = useTranslation();
