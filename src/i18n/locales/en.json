@@ -1,5 +1,5 @@
 {
-  "nav": { "create": "Create", "library": "Library", "login": "Sign in", "signup": "Sign up" },
+  "nav": { "create": "Create", "library": "Library", "login": "Sign in", "signup": "Sign up", "pricing": "Pricing" },
   "home": {
     "badge": "Music-based memorization backed by neuroscience — free",
     "title1": "Turn your notes",

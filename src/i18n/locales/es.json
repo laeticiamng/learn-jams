@@ -1,5 +1,5 @@
 {
-  "nav": { "create": "Crear", "library": "Biblioteca", "login": "Iniciar sesión", "signup": "Registrarse" },
+  "nav": { "create": "Crear", "library": "Biblioteca", "login": "Iniciar sesión", "signup": "Registrarse", "pricing": "Precio" },
   "home": {
     "badge": "Memorización musical basada en neurociencia — gratis",
     "title1": "Transforma tus apuntes",

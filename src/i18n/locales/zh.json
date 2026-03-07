@@ -1,5 +1,5 @@
 {
-  "nav": { "create": "创建", "library": "音乐库", "login": "登录", "signup": "注册" },
+  "nav": { "create": "创建", "library": "音乐库", "login": "登录", "signup": "注册", "pricing": "价格" },
   "home": {
     "badge": "基于神经科学的音乐记忆法 — 免费",
     "title1": "把你的课程",
