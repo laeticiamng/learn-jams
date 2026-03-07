@@ -23,6 +23,7 @@ export default function Footer() {
           <nav aria-label="Produit">
             <h3 className="font-display font-semibold text-sm mb-3 text-foreground">Produit</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
+              <li><Link to="/about" className="hover:text-foreground transition-colors">À propos</Link></li>
               <li><Link to="/signup" className="hover:text-foreground transition-colors">Créer un compte</Link></li>
               <li><Link to="/login" className="hover:text-foreground transition-colors">Se connecter</Link></li>
               <li><Link to="/contact" className="hover:text-foreground transition-colors">Contact & Support</Link></li>
