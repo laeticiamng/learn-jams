@@ -97,7 +97,7 @@
     "title": "मेरी लाइब्रेरी 🎵", "songs_count": "{{count}} गाना", "songs_count_plural": "{{count}} गाने",
     "new_song": "नया गाना", "search": "खोजें...", "no_songs_title": "कोई गाना नहीं",
     "no_songs_text": "पहला गाना बनाएं!", "create_song": "गाना बनाएं",
-    "generating_status": "बन रहा है...", "error_status": "त्रुटि", "pending_status": "प्रतीक्षा में", "quiz_tooltip": "रिवीजन क्विज़"
+    "generating_status": "बन रहा है...", "error_status": "त्रुटि", "pending_status": "प्रतीक्षा में", "streaming_status": "स्ट्रीमिंग", "final_status": "HD", "quiz_tooltip": "रिवीजन क्विज़"
   },
   "player": {
     "back": "लाइब्रेरी", "lyrics": "गीत",

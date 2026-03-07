@@ -105,7 +105,7 @@
     "title": "Meine Bibliothek 🎵", "songs_count": "{{count}} Song", "songs_count_plural": "{{count}} Songs",
     "new_song": "Neuer Song", "search": "Suchen...", "no_songs_title": "Keine Songs",
     "no_songs_text": "Erstelle deinen ersten Song!", "create_song": "Song erstellen",
-    "generating_status": "Wird generiert...", "error_status": "Fehler", "pending_status": "Wartend", "quiz_tooltip": "Lern-Quiz"
+    "generating_status": "Wird generiert...", "error_status": "Fehler", "pending_status": "Wartend", "streaming_status": "Streaming", "final_status": "HD", "quiz_tooltip": "Lern-Quiz"
   },
   "player": {
     "back": "Bibliothek", "lyrics": "Liedtexte",
