@@ -12,9 +12,18 @@ import { usePageSEO } from "@/hooks/usePageSEO";
 import i18next from "i18next";
 
 function formatPrice(lang: string) {
-  // Use dot for EN/ZH/HI, comma for FR/DE/ES/AR
-  const dotLocales = ["en", "zh", "hi"];
-  return dotLocales.includes(lang) ? "14.90" : "14,90";
+  try {
+    const localeMap: Record<string, string> = {
+      fr: "fr-FR", en: "en-US", de: "de-DE", es: "es-ES",
+      ar: "ar-SA", zh: "zh-CN", hi: "hi-IN",
+    };
+    return new Intl.NumberFormat(localeMap[lang] || "en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(14.90);
+  } catch {
+    return "14.90";
+  }
 }
 
 export default function Pricing() {
