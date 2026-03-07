@@ -189,8 +189,13 @@ export default function Create() {
                 initial={{ opacity: 0, scale: 0.96 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.15, duration: 0.5 }}
-                className="glass-card p-8 space-y-4 text-left max-w-lg mx-auto"
+                className="glass-card p-8 space-y-4 text-left max-w-lg mx-auto relative overflow-hidden"
               >
+                {/* Pro quality badge */}
+                <div className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20">
+                  <Sparkles className="w-3 h-3 text-primary" />
+                  <span className="text-[11px] font-semibold text-primary tracking-wide uppercase">Pro Quality</span>
+                </div>
                 {[
                   { label: t("create.text_label"), value: `${courseText.length} ${t("create.chars")}` },
                   { label: t("create.style_label"), value: style },
