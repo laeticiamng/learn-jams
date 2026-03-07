@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,12 +10,8 @@ import { toast } from "sonner";
 import { usePageSEO } from "@/hooks/usePageSEO";
 
 export default function ForgotPassword() {
-  usePageSEO({
-    title: "Mot de passe oublié",
-    description: "Réinitialise ton mot de passe StudyBeats. Un lien de récupération sera envoyé à ton email.",
-    canonical: "/forgot-password",
-    noindex: true,
-  });
+  const { t } = useTranslation();
+  usePageSEO({ title: t("auth.forgot_title"), canonical: "/forgot-password", noindex: true });
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
@@ -36,24 +33,23 @@ export default function ForgotPassword() {
           <div className="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center mx-auto mb-4">
             <Music className="w-6 h-6 text-primary-foreground" />
           </div>
-          <h1 className="font-display text-2xl font-bold">Mot de passe oublié</h1>
+          <h1 className="font-display text-2xl font-bold">{t("auth.forgot_title")}</h1>
         </div>
-
         {sent ? (
           <div className="text-center space-y-4">
-            <p className="text-muted-foreground">Un email de réinitialisation a été envoyé à <strong className="text-foreground">{email}</strong></p>
-            <Link to="/login"><Button variant="outline" className="gap-2"><ArrowLeft className="w-4 h-4" /> Retour</Button></Link>
+            <p className="text-muted-foreground">{t("auth.forgot_sent")} <strong className="text-foreground">{email}</strong></p>
+            <Link to="/login"><Button variant="outline" className="gap-2"><ArrowLeft className="w-4 h-4" /> {t("auth.back_to_login")}</Button></Link>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="ton@email.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+              <Label htmlFor="email">{t("auth.email")}</Label>
+              <Input id="email" type="email" placeholder={t("auth.email_placeholder")} value={email} onChange={(e) => setEmail(e.target.value)} required />
             </div>
             <Button type="submit" className="w-full gradient-bg h-11" disabled={loading}>
-              {loading ? "Envoi..." : "Envoyer le lien"}
+              {loading ? t("auth.forgot_loading") : t("auth.forgot_button")}
             </Button>
-            <Link to="/login" className="block text-center text-sm text-primary hover:underline">Retour à la connexion</Link>
+            <Link to="/login" className="block text-center text-sm text-primary hover:underline">{t("auth.back_to_login")}</Link>
           </form>
         )}
       </div>
