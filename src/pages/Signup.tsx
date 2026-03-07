@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Music } from "lucide-react";
 import { toast } from "sonner";
 
@@ -11,12 +12,14 @@ export default function Signup() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const { signUp } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!acceptedTerms) { toast.error("Tu dois accepter les CGU pour continuer"); return; }
     if (password.length < 6) { toast.error("Le mot de passe doit faire au moins 6 caractères"); return; }
     setLoading(true);
     const { error } = await signUp(email, password, displayName);
@@ -55,7 +58,20 @@ export default function Signup() {
             <Label htmlFor="password">Mot de passe</Label>
             <Input id="password" type="password" placeholder="Min. 6 caractères" value={password} onChange={(e) => setPassword(e.target.value)} required />
           </div>
-          <Button type="submit" className="w-full gradient-bg h-11" disabled={loading}>
+
+          <div className="flex items-start gap-2">
+            <Checkbox
+              id="terms"
+              checked={acceptedTerms}
+              onCheckedChange={(checked) => setAcceptedTerms(checked === true)}
+              className="mt-1"
+            />
+            <label htmlFor="terms" className="text-sm text-muted-foreground leading-snug cursor-pointer">
+              J'accepte les <Link to="/terms" className="text-primary hover:underline" target="_blank">CGU</Link> et la <Link to="/privacy" className="text-primary hover:underline" target="_blank">politique de confidentialité</Link>
+            </label>
+          </div>
+
+          <Button type="submit" className="w-full gradient-bg h-11" disabled={loading || !acceptedTerms}>
             {loading ? "Création..." : "Créer mon compte"}
           </Button>
         </form>

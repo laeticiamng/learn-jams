@@ -1,7 +1,7 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Upload, Music, Headphones, Zap, BookOpen, Star } from "lucide-react";
+import { Upload, Music, Headphones, Zap, BookOpen, Brain, Shield } from "lucide-react";
 import Navbar from "@/components/Navbar";
 
 const AudioWave = () => (
@@ -18,15 +18,15 @@ const AudioWave = () => (
 );
 
 const steps = [
-  { icon: Upload, title: "Upload ton cours", desc: "Texte, PDF ou photo — on gère tout", color: "from-primary to-secondary" },
-  { icon: Music, title: "Choisis ton style", desc: "Rap, Lo-Fi, Pop, Jazz et plus encore", color: "from-secondary to-primary" },
-  { icon: Headphones, title: "Écoute & mémorise", desc: "Ton cours transformé en hit musical", color: "from-primary to-secondary" },
+  { icon: Upload, title: "Upload ton cours", desc: "Colle ton texte ou importe un PDF / une photo de tes notes", color: "from-primary to-secondary" },
+  { icon: Music, title: "Choisis ton style", desc: "Rap, Lo-Fi, Pop, Jazz, Rock et 3 autres styles disponibles", color: "from-secondary to-primary" },
+  { icon: Headphones, title: "Écoute & mémorise", desc: "L'IA transforme ton cours en chanson avec des paroles pédagogiques", color: "from-primary to-secondary" },
 ];
 
-const stats = [
-  { value: "10K+", label: "Étudiants actifs" },
-  { value: "50K+", label: "Chansons créées" },
-  { value: "94%", label: "Taux de mémorisation" },
+const features = [
+  { icon: Brain, title: "Quiz interactif", desc: "Teste tes connaissances avec des QCM générés automatiquement à partir de ton cours et des paroles" },
+  { icon: BookOpen, title: "Extraction intelligente", desc: "Importe un PDF ou une photo — l'IA extrait le texte automatiquement" },
+  { icon: Shield, title: "Données sécurisées", desc: "Tes cours restent privés. Rien n'est partagé ni vendu." },
 ];
 
 export default function Index() {
@@ -43,18 +43,18 @@ export default function Index() {
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/30 bg-primary/10 mb-8">
               <Zap className="w-4 h-4 text-primary" />
-              <span className="text-sm text-primary">Powered by AI + Suno</span>
+              <span className="text-sm text-primary">Nouveau — Génération par IA</span>
             </div>
             <h1 className="font-display text-5xl md:text-7xl font-bold mb-6 leading-tight">
               Transforme tes cours<br />
-              <span className="gradient-text">en hits musicaux</span> 🎧
+              <span className="gradient-text">en chansons</span> 🎧
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10">
-              Upload ton cours, choisis un style, et laisse l'IA créer une chanson que tu n'oublieras jamais. La révision n'a jamais été aussi fun.
+              Upload ton cours, choisis un style musical, et l'IA crée des paroles pédagogiques conçues pour la mémorisation. Teste-toi ensuite avec un quiz automatique.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
               <Button size="lg" className="gradient-bg text-lg px-8 h-14 glow" onClick={() => navigate("/signup")}>
-                Commencer gratuitement
+                Essayer gratuitement
               </Button>
               <Button size="lg" variant="outline" className="text-lg px-8 h-14 border-border/50" onClick={() => navigate("/login")}>
                 J'ai déjà un compte
@@ -69,9 +69,12 @@ export default function Index() {
       <section className="py-24 px-4">
         <div className="container mx-auto">
           <motion.h2 initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
-            className="font-display text-3xl md:text-4xl font-bold text-center mb-16">
+            className="font-display text-3xl md:text-4xl font-bold text-center mb-4">
             Comment ça marche ?
           </motion.h2>
+          <p className="text-center text-muted-foreground mb-16 max-w-xl mx-auto">
+            3 étapes simples pour transformer n'importe quel cours en chanson mémorisable
+          </p>
           <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
             {steps.map((step, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
@@ -89,59 +92,52 @@ export default function Index() {
         </div>
       </section>
 
-      {/* Stats */}
-      <section className="py-20 px-4">
-        <div className="container mx-auto">
-          <div className="glass-card p-12 glow">
-            <div className="grid md:grid-cols-3 gap-8 text-center">
-              {stats.map((stat, i) => (
-                <motion.div key={i} initial={{ opacity: 0, scale: 0.9 }} whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }} transition={{ delay: i * 0.1 }}>
-                  <div className="font-display text-4xl md:text-5xl font-bold gradient-text mb-2">{stat.value}</div>
-                  <div className="text-muted-foreground">{stat.label}</div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials */}
+      {/* Features */}
       <section className="py-20 px-4">
         <div className="container mx-auto max-w-4xl">
-          <h2 className="font-display text-3xl font-bold text-center mb-12">Ce qu'en disent les étudiants</h2>
-          <div className="grid md:grid-cols-2 gap-6">
-            {[
-              { name: "Sarah M.", field: "Médecine", quote: "J'ai retenu 3 chapitres d'anatomie en une semaine grâce à StudyBeats. Les chansons Lo-Fi sont parfaites !" },
-              { name: "Thomas K.", field: "Droit", quote: "Le rap juridique, c'est le futur. Mes potes sont jaloux de ma méthode de révision." },
-            ].map((t, i) => (
+          <h2 className="font-display text-3xl font-bold text-center mb-12">Ce que tu obtiens</h2>
+          <div className="grid md:grid-cols-3 gap-6">
+            {features.map((feat, i) => (
               <motion.div key={i} initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
-                className="glass-card p-6">
-                <div className="flex gap-1 mb-4">{Array(5).fill(0).map((_, j) => <Star key={j} className="w-4 h-4 fill-primary text-primary" />)}</div>
-                <p className="text-foreground/90 mb-4">"{t.quote}"</p>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full gradient-bg flex items-center justify-center text-sm font-bold text-primary-foreground">
-                    {t.name[0]}
-                  </div>
-                  <div>
-                    <div className="font-medium">{t.name}</div>
-                    <div className="text-sm text-muted-foreground flex items-center gap-1"><BookOpen className="w-3 h-3" /> {t.field}</div>
-                  </div>
-                </div>
+                transition={{ delay: i * 0.1 }}
+                className="glass-card p-6 text-center">
+                <feat.icon className="w-8 h-8 text-primary mx-auto mb-4" />
+                <h3 className="font-display font-semibold mb-2">{feat.title}</h3>
+                <p className="text-sm text-muted-foreground">{feat.desc}</p>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
+      {/* CTA */}
+      <section className="py-20 px-4">
+        <div className="container mx-auto max-w-2xl">
+          <div className="glass-card p-12 text-center glow">
+            <h2 className="font-display text-3xl font-bold mb-4">Prêt à réviser autrement ?</h2>
+            <p className="text-muted-foreground mb-8">Crée ton premier cours en chanson en moins de 2 minutes. C'est gratuit.</p>
+            <Button size="lg" className="gradient-bg text-lg px-8 h-14" onClick={() => navigate("/signup")}>
+              Créer mon compte gratuitement
+            </Button>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="border-t border-border/30 py-8 px-4">
-        <div className="container mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <Music className="w-5 h-5 text-primary" />
-            <span className="font-display font-bold gradient-text">StudyBeats</span>
+        <div className="container mx-auto">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-2">
+              <Music className="w-5 h-5 text-primary" />
+              <span className="font-display font-bold gradient-text">StudyBeats</span>
+            </div>
+            <div className="flex flex-wrap items-center gap-6 text-sm text-muted-foreground">
+              <Link to="/terms" className="hover:text-foreground transition-colors">CGU</Link>
+              <Link to="/privacy" className="hover:text-foreground transition-colors">Confidentialité</Link>
+              <Link to="/contact" className="hover:text-foreground transition-colors">Contact</Link>
+            </div>
+            <p className="text-sm text-muted-foreground">© 2026 StudyBeats</p>
           </div>
-          <p className="text-sm text-muted-foreground">© 2026 StudyBeats. Apprends en musique.</p>
         </div>
       </footer>
     </div>

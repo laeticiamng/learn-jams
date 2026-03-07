@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Play, Heart, Search, Plus, Music, Clock, Loader2, Brain } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { useAuth } from "@/hooks/useAuth";
@@ -27,19 +28,28 @@ export default function Library() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  useEffect(() => {
+  const fetchData = useCallback(async () => {
     if (!user) return;
-    const fetchData = async () => {
-      const [songsRes, favsRes] = await Promise.all([
-        supabase.from("songs").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
-        supabase.from("favorites").select("song_id").eq("user_id", user.id),
-      ]);
-      if (songsRes.data) setSongs(songsRes.data as Song[]);
-      if (favsRes.data) setFavorites(new Set(favsRes.data.map(f => f.song_id)));
-      setLoading(false);
-    };
-    fetchData();
+    const [songsRes, favsRes] = await Promise.all([
+      supabase.from("songs").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
+      supabase.from("favorites").select("song_id").eq("user_id", user.id),
+    ]);
+    if (songsRes.data) setSongs(songsRes.data as Song[]);
+    if (favsRes.data) setFavorites(new Set(favsRes.data.map(f => f.song_id)));
+    setLoading(false);
   }, [user]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // Poll for generating songs
+  useEffect(() => {
+    const hasGenerating = songs.some(s => s.status === "generating");
+    if (!hasGenerating) return;
+    const interval = setInterval(fetchData, 5000);
+    return () => clearInterval(interval);
+  }, [songs, fetchData]);
 
   const toggleFavorite = async (songId: string) => {
     if (!user) return;
@@ -66,6 +76,13 @@ export default function Library() {
     "spoken-word": "bg-teal-500/20 text-teal-400",
     reggaeton: "bg-green-500/20 text-green-400",
     classique: "bg-violet-500/20 text-violet-400",
+  };
+
+  const statusLabel = (status: string) => {
+    if (status === "generating") return "En cours de génération...";
+    if (status === "error") return "Erreur";
+    if (status === "pending") return "En attente";
+    return null;
   };
 
   return (
@@ -102,56 +119,67 @@ export default function Library() {
           </div>
         ) : (
           <div className="space-y-3">
-            {filtered.map((song, i) => (
-              <motion.div
-                key={song.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
-                className="glass-card p-4 flex items-center gap-4 hover:border-primary/30 transition-all cursor-pointer group"
-                onClick={() => song.status === "ready" && navigate(`/player/${song.id}`)}
-              >
-                <div className="w-12 h-12 rounded-lg gradient-bg flex items-center justify-center shrink-0">
-                  {song.status === "generating" ? (
-                    <Loader2 className="w-5 h-5 text-primary-foreground animate-spin" />
-                  ) : (
-                    <Play className="w-5 h-5 text-primary-foreground group-hover:scale-110 transition-transform" />
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-medium truncate">{song.title}</h3>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${styleColors[song.style] || "bg-muted text-muted-foreground"}`}>
-                      {song.style}
-                    </span>
-                    {song.subject && <span className="text-xs text-muted-foreground">{song.subject}</span>}
+            {filtered.map((song, i) => {
+              const status = statusLabel(song.status);
+              const isClickable = song.status === "ready";
+              return (
+                <motion.div
+                  key={song.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                  className={`glass-card p-4 flex items-center gap-4 transition-all ${isClickable ? "hover:border-primary/30 cursor-pointer" : "opacity-80"} group`}
+                  onClick={() => isClickable && navigate(`/player/${song.id}`)}
+                >
+                  <div className="w-12 h-12 rounded-lg gradient-bg flex items-center justify-center shrink-0">
+                    {song.status === "generating" ? (
+                      <Loader2 className="w-5 h-5 text-primary-foreground animate-spin" />
+                    ) : (
+                      <Play className="w-5 h-5 text-primary-foreground group-hover:scale-110 transition-transform" />
+                    )}
                   </div>
-                </div>
-                <div className="flex items-center gap-3 text-muted-foreground">
-                  {song.duration && (
-                    <span className="text-sm flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {Math.floor(song.duration / 60)}:{(song.duration % 60).toString().padStart(2, "0")}
-                    </span>
-                  )}
-                  {song.status === "ready" && (
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-medium truncate">{song.title}</h3>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${styleColors[song.style] || "bg-muted text-muted-foreground"}`}>
+                        {song.style}
+                      </span>
+                      {song.subject && <span className="text-xs text-muted-foreground">{song.subject}</span>}
+                      {status && (
+                        <span className="text-xs text-muted-foreground italic">{status}</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 text-muted-foreground">
+                    {song.duration && (
+                      <span className="text-sm flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {Math.floor(song.duration / 60)}:{(song.duration % 60).toString().padStart(2, "0")}
+                      </span>
+                    )}
+                    {song.status === "ready" && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); navigate(`/quiz/${song.id}`); }}
+                            className="hover:text-primary transition-colors"
+                          >
+                            <Brain className="w-5 h-5" />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent>Quiz de révision</TooltipContent>
+                      </Tooltip>
+                    )}
                     <button
-                      onClick={(e) => { e.stopPropagation(); navigate(`/quiz/${song.id}`); }}
+                      onClick={(e) => { e.stopPropagation(); toggleFavorite(song.id); }}
                       className="hover:text-primary transition-colors"
-                      title="Quiz"
                     >
-                      <Brain className="w-5 h-5" />
+                      <Heart className={`w-5 h-5 ${favorites.has(song.id) ? "fill-primary text-primary" : ""}`} />
                     </button>
-                  )}
-                  <button
-                    onClick={(e) => { e.stopPropagation(); toggleFavorite(song.id); }}
-                    className="hover:text-primary transition-colors"
-                  >
-                    <Heart className={`w-5 h-5 ${favorites.has(song.id) ? "fill-primary text-primary" : ""}`} />
-                  </button>
-                </div>
-              </motion.div>
-            ))}
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
         )}
       </div>

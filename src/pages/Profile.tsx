@@ -3,36 +3,50 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Music, Save, Loader2 } from "lucide-react";
+import { Music, Save, Loader2, Trash2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function Profile() {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [displayName, setDisplayName] = useState("");
   const [fieldOfStudy, setFieldOfStudy] = useState("");
   const [songCount, setSongCount] = useState(0);
+  const [favCount, setFavCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!user) return;
-    const fetch = async () => {
-      const [profileRes, songsRes] = await Promise.all([
+    const fetchData = async () => {
+      const [profileRes, songsRes, favsRes] = await Promise.all([
         supabase.from("profiles").select("*").eq("user_id", user.id).single(),
         supabase.from("songs").select("id", { count: "exact" }).eq("user_id", user.id),
+        supabase.from("favorites").select("id", { count: "exact" }).eq("user_id", user.id),
       ]);
       if (profileRes.data) {
         setDisplayName(profileRes.data.display_name || "");
         setFieldOfStudy(profileRes.data.field_of_study || "");
       }
       setSongCount(songsRes.count || 0);
+      setFavCount(favsRes.count || 0);
       setLoading(false);
     };
-    fetch();
+    fetchData();
   }, [user]);
 
   const handleSave = async () => {
@@ -45,6 +59,17 @@ export default function Profile() {
     setSaving(false);
     if (error) toast.error(error.message);
     else toast.success("Profil mis à jour !");
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!user) return;
+    // Delete user data then sign out
+    await supabase.from("favorites").delete().eq("user_id", user.id);
+    await supabase.from("songs").delete().eq("user_id", user.id);
+    await supabase.from("profiles").delete().eq("user_id", user.id);
+    await signOut();
+    toast.success("Compte supprimé. Au revoir !");
+    navigate("/");
   };
 
   if (loading) {
@@ -75,8 +100,8 @@ export default function Profile() {
               <div className="text-sm text-muted-foreground">Chansons</div>
             </div>
             <div>
-              <div className="font-display text-2xl font-bold gradient-text">0h</div>
-              <div className="text-sm text-muted-foreground">Écoute</div>
+              <div className="font-display text-2xl font-bold gradient-text">{favCount}</div>
+              <div className="text-sm text-muted-foreground">Favoris</div>
             </div>
           </div>
         </div>
@@ -94,6 +119,33 @@ export default function Profile() {
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             Sauvegarder
           </Button>
+        </div>
+
+        {/* Delete account */}
+        <div className="glass-card p-6 mt-6 border-destructive/30">
+          <h3 className="font-display font-semibold text-destructive mb-2">Zone dangereuse</h3>
+          <p className="text-sm text-muted-foreground mb-4">La suppression de ton compte est définitive. Toutes tes chansons et données seront effacées.</p>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" className="w-full gap-2">
+                <Trash2 className="w-4 h-4" /> Supprimer mon compte
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Supprimer ton compte ?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Cette action est irréversible. Toutes tes chansons, favoris et données seront définitivement supprimés.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDeleteAccount} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                  Supprimer définitivement
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
     </div>
