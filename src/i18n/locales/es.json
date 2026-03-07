@@ -1,5 +1,5 @@
 {
-  "nav": { "create": "Crear", "library": "Biblioteca", "login": "Iniciar sesión", "signup": "Registrarse", "pricing": "Precio" },
+  "nav": { "create": "Crear", "library": "Biblioteca", "login": "Iniciar sesión", "signup": "Registrarse", "pricing": "Precio", "logout": "Cerrar sesión" },
   "home": {
     "badge": "Memorización musical basada en neurociencia",
     "title1": "Transforma tus apuntes",
@@ -9,8 +9,6 @@
     "social_songs": "1.200+ canciones generadas",
     "social_students": "500+ estudiantes",
     "social_styles": "30 estilos musicales",
-    "summary_title": "En resumen",
-    "summary_text": "<strong>StudyBeats</strong> aprovecha un principio probado por la neurociencia: la música activa zonas del cerebro vinculadas a la memoria a largo plazo. Al transformar tus apuntes en canciones, te beneficias de la memorización pasiva por repetición. No es un sustituto de tus repasos, es un <strong>acelerador</strong>.",
     "how_title": "¿Cómo funciona?", "how_subtitle": "3 pasos para transformar cualquier curso en una canción memorable",
     "step1_title": "Sube tus apuntes", "step1_desc": "Pega texto, importa un PDF o toma una foto de tus notas manuscritas. La IA extrae el contenido automáticamente.",
     "step2_title": "Elige tu estilo", "step2_desc": "30 estilos musicales disponibles: Rap, Lo-Fi, Pop, Jazz, Rock, EDM, Afrobeat, K-Pop y muchos más.",
@@ -206,6 +204,11 @@
   "pricing": {
     "title": "Precio",
     "subtitle": "Un plan, todo incluido. Transforma tus apuntes en canciones pedagógicas.",
+    "free_plan": "Descubrimiento",
+    "free_price": "Gratis",
+    "free_feature1": "1 canción",
+    "free_feature2": "Solo importación de texto",
+    "free_feature3": "Sin quiz",
     "plan_name": "StudyBeats Pro",
     "month": "mes",
     "cancel_anytime": "Sin compromiso — cancela cuando quieras",

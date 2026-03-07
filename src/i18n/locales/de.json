@@ -1,5 +1,5 @@
 {
-  "nav": { "create": "Erstellen", "library": "Bibliothek", "login": "Anmelden", "signup": "Registrieren", "pricing": "Preise" },
+  "nav": { "create": "Erstellen", "library": "Bibliothek", "login": "Anmelden", "signup": "Registrieren", "pricing": "Preise", "logout": "Abmelden" },
   "home": {
     "badge": "Musikalisches Lernen auf neurowissenschaftlicher Basis",
     "title1": "Verwandle deine Kurse",
@@ -10,8 +10,6 @@
     "social_songs": "1.200+ Songs generiert",
     "social_students": "500+ Studierende",
     "social_styles": "30 Musikstile",
-    "summary_title": "Kurz gesagt",
-    "summary_text": "<strong>StudyBeats</strong> nutzt ein neurowissenschaftlich bewiesenes Prinzip: Musik aktiviert Hirnregionen, die mit dem Langzeitgedächtnis verbunden sind. Indem du deine Kurse in Songs verwandelst, profitierst du von passivem Auswendiglernen durch Wiederholung — wie wenn du einen Refrain behältst, ohne es zu wollen. Es ersetzt nicht dein Lernen, es ist ein <strong>Beschleuniger</strong>, der jeden freien Moment in Lernzeit verwandelt.",
     "how_title": "Wie funktioniert es?",
     "how_subtitle": "3 Schritte, um jeden Kurs in einen einprägsamen Song zu verwandeln",
     "step1_title": "Lade deine Unterlagen hoch", "step1_desc": "Füge Text ein, importiere ein PDF oder fotografiere deine handschriftlichen Notizen. Die KI extrahiert den Inhalt automatisch.",
@@ -214,6 +212,11 @@
   "pricing": {
     "title": "Preise",
     "subtitle": "Ein Plan, alles inklusive. Verwandle deine Notizen in pädagogische Songs.",
+    "free_plan": "Entdecken",
+    "free_price": "Kostenlos",
+    "free_feature1": "1 Song",
+    "free_feature2": "Nur Textimport",
+    "free_feature3": "Kein Quiz",
     "plan_name": "StudyBeats Pro",
     "month": "Monat",
     "cancel_anytime": "Ohne Bindung — jederzeit kündbar",

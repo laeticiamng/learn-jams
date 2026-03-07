@@ -75,7 +75,7 @@ export default function Index() {
             </p>
             <h1 className="font-display text-5xl md:text-7xl font-bold mb-6 leading-tight">
               {t("home.title1")}<br />
-              <span className="gradient-text">{t("home.title2")}</span> 🎧
+              <span className="gradient-text">{t("home.title2")}</span>
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10">
               {t("home.subtitle")}
@@ -163,7 +163,7 @@ export default function Index() {
             className="font-display text-3xl md:text-4xl font-bold text-center mb-4">
             {t("home.science_title")}
           </motion.h2>
-          <p className="text-center text-muted-foreground mb-16 max-w-xl mx-auto">{t("home.science_subtitle")}</p>
+          <p className="text-center text-muted-foreground mb-10 max-w-xl mx-auto">{t("home.science_subtitle")}</p>
           <div className="grid md:grid-cols-2 gap-6">
             {[1, 2, 3, 4].map((n, i) => {
               const Icon = scienceIcons[i];

@@ -1,5 +1,5 @@
 {
-  "nav": { "create": "创建", "library": "音乐库", "login": "登录", "signup": "注册", "pricing": "价格" },
+  "nav": { "create": "创建", "library": "音乐库", "login": "登录", "signup": "注册", "pricing": "价格", "logout": "退出" },
   "home": {
     "badge": "基于神经科学的音乐记忆法",
     "title1": "把你的课程",
@@ -9,8 +9,6 @@
     "social_songs": "1,200+首歌曲已生成",
     "social_students": "500+学生",
     "social_styles": "30种音乐风格",
-    "summary_title": "简介",
-    "summary_text": "<strong>StudyBeats</strong>利用神经科学证实的原理：音乐激活与长期记忆相关的大脑区域。将课程变成歌曲，通过重复实现被动记忆。不是替代复习，而是<strong>加速器</strong>。",
     "how_title": "如何使用？", "how_subtitle": "3步将任何课程变成易记的歌曲",
     "step1_title": "上传课程", "step1_desc": "粘贴文字、导入PDF或拍摄手写笔记。AI自动提取内容。",
     "step2_title": "选择风格", "step2_desc": "30种音乐风格：说唱、Lo-Fi、流行、爵士、摇滚、EDM、非洲节拍、K-Pop等。",
@@ -206,6 +204,11 @@
   "pricing": {
     "title": "价格",
     "subtitle": "一个计划，全部包含。将你的笔记变成教学歌曲。",
+    "free_plan": "体验版",
+    "free_price": "免费",
+    "free_feature1": "1首歌曲",
+    "free_feature2": "仅文字导入",
+    "free_feature3": "无测验",
     "plan_name": "StudyBeats Pro",
     "month": "月",
     "cancel_anytime": "无绑定 — 随时取消",
