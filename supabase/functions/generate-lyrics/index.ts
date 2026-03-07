@@ -314,7 +314,17 @@ D) COVERAGE CHECK-LIST:
       throw new Error("Empty response from AI");
     }
 
-    const lines = content.split("\n").filter((l: string) => l.trim());
+    // Split lyrics from metadata
+    let lyrics = content;
+    let lyricsMetadata: string | null = null;
+    const metadataSeparator = "---METADATA---";
+    const sepIndex = content.indexOf(metadataSeparator);
+    if (sepIndex !== -1) {
+      lyrics = content.slice(0, sepIndex).trim();
+      lyricsMetadata = content.slice(sepIndex + metadataSeparator.length).trim();
+    }
+
+    const lines = lyrics.split("\n").filter((l: string) => l.trim());
     let generatedTitle = title || "StudyBeats Song";
     
     const firstLine = lines[0] || "";
@@ -328,7 +338,8 @@ D) COVERAGE CHECK-LIST:
 
     return new Response(JSON.stringify({ 
       title: generatedTitle || title || "StudyBeats Song",
-      lyrics: content 
+      lyrics,
+      lyricsMetadata,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
