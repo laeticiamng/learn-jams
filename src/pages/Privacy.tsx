@@ -1,8 +1,15 @@
 import { Link } from "react-router-dom";
 import { ArrowLeft, Music } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { usePageSEO } from "@/hooks/usePageSEO";
 
 export default function Privacy() {
+  usePageSEO({
+    title: "Politique de Confidentialité",
+    description: "Politique de confidentialité de StudyBeats. Découvre comment tes données sont collectées, utilisées et protégées. Conforme RGPD.",
+    canonical: "/privacy",
+  });
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-12 max-w-3xl">

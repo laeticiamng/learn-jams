@@ -2,9 +2,16 @@ import { Link, useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import { Music, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { usePageSEO } from "@/hooks/usePageSEO";
 
 const NotFound = () => {
   const location = useLocation();
+
+  usePageSEO({
+    title: "Page introuvable",
+    description: "Cette page n'existe pas sur StudyBeats.",
+    noindex: true,
+  });
 
   useEffect(() => {
     console.error("404 Error: User attempted to access non-existent route:", location.pathname);

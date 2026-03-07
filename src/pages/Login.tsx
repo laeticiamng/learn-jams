@@ -6,8 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Music } from "lucide-react";
 import { toast } from "sonner";
+import { usePageSEO } from "@/hooks/usePageSEO";
 
 export default function Login() {
+  usePageSEO({
+    title: "Connexion",
+    description: "Connecte-toi à StudyBeats pour retrouver tes chansons pédagogiques et tes quiz.",
+    canonical: "/login",
+  });
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);

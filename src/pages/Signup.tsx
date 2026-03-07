@@ -7,8 +7,14 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Music } from "lucide-react";
 import { toast } from "sonner";
+import { usePageSEO } from "@/hooks/usePageSEO";
 
 export default function Signup() {
+  usePageSEO({
+    title: "Créer un compte",
+    description: "Inscris-toi gratuitement sur StudyBeats pour transformer tes cours en chansons pédagogiques et réviser en musique.",
+    canonical: "/signup",
+  });
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
