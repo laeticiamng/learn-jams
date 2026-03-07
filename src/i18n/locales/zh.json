@@ -118,7 +118,8 @@
     "back": "音乐库", "lyrics": "歌词",
     "no_audio_title": "音频不可用",
     "no_audio_text": "歌词已成功生成。音频正在部署中——你可以先阅读歌词并用测验检测知识。",
-    "quiz_button": "测验模式 🧠", "not_found": "歌曲未找到"
+    "quiz_button": "测验模式 🧠", "not_found": "歌曲未找到",
+    "study_notes": "学习笔记与考试要点"
   },
   "quiz": {
     "generating": "正在生成测验...", "generating_sub": "AI正在分析你的课程和歌词",

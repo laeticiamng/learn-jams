@@ -118,7 +118,8 @@
     "back": "Biblioteca", "lyrics": "Letras",
     "no_audio_title": "Audio no disponible",
     "no_audio_text": "Las letras se generaron con éxito. La generación de audio está en despliegue — puedes leer las letras y probar tus conocimientos con el quiz.",
-    "quiz_button": "Modo Quiz 🧠", "not_found": "Canción no encontrada"
+    "quiz_button": "Modo Quiz 🧠", "not_found": "Canción no encontrada",
+    "study_notes": "Notas de estudio & Anclajes de examen"
   },
   "quiz": {
     "generating": "Generando quiz...", "generating_sub": "La IA analiza tus apuntes y las letras",
