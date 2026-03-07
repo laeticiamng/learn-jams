@@ -1,8 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 const SYSTEM_PROMPT = `Tu es un expert en pédagogie, mémorisation musicale et écriture rap française.
@@ -78,12 +79,41 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    // JWT Authentication
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Non autorisé" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const supabaseAuth = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: "Non autorisé" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const { text, style, title } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
     if (!text || text.trim().length < 10) {
       return new Response(JSON.stringify({ error: "Texte du cours trop court" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Server-side text size validation (max 50,000 chars)
+    if (text.length > 50000) {
+      return new Response(JSON.stringify({ error: "Texte trop long (max 50 000 caractères)" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -143,11 +173,9 @@ Réponds UNIQUEMENT avec les paroles finales de la chanson, prêtes à être cha
       throw new Error("Empty response from AI");
     }
 
-    // Extract title from the generated content (first non-empty line or use provided title)
     const lines = content.split("\n").filter((l: string) => l.trim());
     let generatedTitle = title || "Ma chanson StudyBeats";
     
-    // Try to find a title line (often the first line, possibly prefixed with # or "Titre :")
     const firstLine = lines[0] || "";
     if (firstLine.startsWith("#")) {
       generatedTitle = firstLine.replace(/^#+\s*/, "").trim();

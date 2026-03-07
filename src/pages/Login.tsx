@@ -14,13 +14,20 @@ export default function Login() {
   const { signIn } = useAuth();
   const navigate = useNavigate();
 
+  const humanizeError = (message: string): string => {
+    if (message.includes("Email not confirmed")) return "Ton email n'est pas encore confirmé. Vérifie ta boîte de réception.";
+    if (message.includes("Invalid login credentials")) return "Email ou mot de passe incorrect.";
+    if (message.includes("Too many requests")) return "Trop de tentatives. Réessaie dans quelques minutes.";
+    return message;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     const { error } = await signIn(email, password);
     setLoading(false);
     if (error) {
-      toast.error(error.message);
+      toast.error(humanizeError(error.message));
     } else {
       navigate("/create");
     }

@@ -9,6 +9,7 @@ import { toast } from "sonner";
 
 export default function ResetPassword() {
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const { updatePassword } = useAuth();
   const navigate = useNavigate();
@@ -23,6 +24,7 @@ export default function ResetPassword() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password.length < 6) { toast.error("Min. 6 caractères"); return; }
+    if (password !== confirmPassword) { toast.error("Les mots de passe ne correspondent pas"); return; }
     setLoading(true);
     const { error } = await updatePassword(password);
     setLoading(false);
@@ -43,6 +45,10 @@ export default function ResetPassword() {
           <div className="space-y-2">
             <Label htmlFor="password">Nouveau mot de passe</Label>
             <Input id="password" type="password" placeholder="Min. 6 caractères" value={password} onChange={(e) => setPassword(e.target.value)} required />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="confirmPassword">Confirmer le mot de passe</Label>
+            <Input id="confirmPassword" type="password" placeholder="Confirme ton mot de passe" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
           </div>
           <Button type="submit" className="w-full gradient-bg h-11" disabled={loading}>
             {loading ? "Mise à jour..." : "Mettre à jour"}

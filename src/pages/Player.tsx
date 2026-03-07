@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { Play, Pause, SkipBack, SkipForward, Heart, ArrowLeft, Volume2, Repeat, Share2, Loader2, Brain } from "lucide-react";
+import { Play, Pause, Heart, ArrowLeft, Volume2, Loader2, Brain, Music } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -34,6 +34,8 @@ export default function Player() {
   const [isFav, setIsFav] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  const hasAudio = !!song?.audio_url;
+
   useEffect(() => {
     if (!id || !user) return;
     const fetchSong = async () => {
@@ -63,7 +65,7 @@ export default function Player() {
   }, [volume]);
 
   const togglePlay = () => {
-    if (!audioRef.current) return;
+    if (!audioRef.current || !hasAudio) return;
     if (playing) audioRef.current.pause();
     else audioRef.current.play();
     setPlaying(!playing);
@@ -108,7 +110,7 @@ export default function Player() {
 
   return (
     <div className="min-h-screen bg-background" style={{ background: "var(--gradient-glow)" }}>
-      {song.audio_url && <audio ref={audioRef} src={song.audio_url} preload="metadata" />}
+      {hasAudio && <audio ref={audioRef} src={song.audio_url!} preload="metadata" />}
 
       <div className="container mx-auto pt-8 pb-40 px-4 max-w-2xl">
         <Button variant="ghost" size="sm" onClick={() => navigate("/library")} className="gap-2 mb-8">
@@ -130,34 +132,52 @@ export default function Player() {
           {song.subject && <p className="text-muted-foreground mt-1">{song.subject}</p>}
         </div>
 
-        {/* Progress */}
-        <div className="space-y-2 mb-6">
-          <Slider value={[currentTime]} max={duration || 100} step={1} onValueChange={seek} />
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>{formatTime(currentTime)}</span>
-            <span>{formatTime(duration)}</span>
+        {/* Audio section */}
+        {hasAudio ? (
+          <>
+            {/* Progress */}
+            <div className="space-y-2 mb-6">
+              <Slider value={[currentTime]} max={duration || 100} step={1} onValueChange={seek} />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>{formatTime(currentTime)}</span>
+                <span>{formatTime(duration)}</span>
+              </div>
+            </div>
+
+            {/* Controls */}
+            <div className="flex items-center justify-center gap-6 mb-8">
+              <button onClick={toggleFav} className="text-muted-foreground hover:text-primary transition-colors">
+                <Heart className={`w-6 h-6 ${isFav ? "fill-primary text-primary" : ""}`} />
+              </button>
+              <button onClick={togglePlay}
+                className="w-16 h-16 rounded-full gradient-bg flex items-center justify-center glow hover:scale-105 transition-transform">
+                {playing ? <Pause className="w-7 h-7 text-primary-foreground" /> : <Play className="w-7 h-7 text-primary-foreground ml-1" />}
+              </button>
+              <button onClick={toggleFav} className="text-muted-foreground hover:text-primary transition-colors opacity-0 pointer-events-none">
+                <Heart className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Volume */}
+            <div className="flex items-center gap-3 max-w-xs mx-auto mb-12">
+              <Volume2 className="w-4 h-4 text-muted-foreground" />
+              <Slider value={[volume]} max={100} step={1} onValueChange={(v) => setVolume(v[0])} />
+            </div>
+          </>
+        ) : (
+          <div className="glass-card p-6 mb-8 text-center">
+            <Music className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
+            <p className="text-foreground font-medium mb-1">Audio non disponible</p>
+            <p className="text-sm text-muted-foreground">
+              Les paroles ont été générées avec succès. La génération audio musicale est en cours de déploiement — tu peux déjà lire les paroles ci-dessous et tester tes connaissances avec le quiz.
+            </p>
+            <div className="flex justify-center gap-3 mt-4">
+              <button onClick={toggleFav} className="text-muted-foreground hover:text-primary transition-colors">
+                <Heart className={`w-6 h-6 ${isFav ? "fill-primary text-primary" : ""}`} />
+              </button>
+            </div>
           </div>
-        </div>
-
-        {/* Controls */}
-        <div className="flex items-center justify-center gap-6 mb-12">
-          <button onClick={toggleFav} className="text-muted-foreground hover:text-primary transition-colors">
-            <Heart className={`w-6 h-6 ${isFav ? "fill-primary text-primary" : ""}`} />
-          </button>
-          <button className="text-muted-foreground hover:text-foreground"><SkipBack className="w-6 h-6" /></button>
-          <button onClick={togglePlay}
-            className="w-16 h-16 rounded-full gradient-bg flex items-center justify-center glow hover:scale-105 transition-transform">
-            {playing ? <Pause className="w-7 h-7 text-primary-foreground" /> : <Play className="w-7 h-7 text-primary-foreground ml-1" />}
-          </button>
-          <button className="text-muted-foreground hover:text-foreground"><SkipForward className="w-6 h-6" /></button>
-          <button className="text-muted-foreground hover:text-foreground"><Repeat className="w-6 h-6" /></button>
-        </div>
-
-        {/* Volume */}
-        <div className="flex items-center gap-3 max-w-xs mx-auto mb-12">
-          <Volume2 className="w-4 h-4 text-muted-foreground" />
-          <Slider value={[volume]} max={100} step={1} onValueChange={(v) => setVolume(v[0])} />
-        </div>
+        )}
 
         {/* Lyrics */}
         {lyricsLines.length > 0 && (
