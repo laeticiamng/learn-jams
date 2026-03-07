@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { Play, Pause, SkipBack, SkipForward, Heart, ArrowLeft, Volume2, Repeat, Share2, Loader2 } from "lucide-react";
+import { Play, Pause, SkipBack, SkipForward, Heart, ArrowLeft, Volume2, Repeat, Share2, Loader2, Brain } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
