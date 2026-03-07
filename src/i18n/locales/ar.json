@@ -77,7 +77,22 @@
     "generate_title": "مستعد للتوليد؟ 🚀", "text_label": "النص", "chars": "حرف", "style_label": "الأسلوب",
     "generate_button": "ولّد أغنيتي", "generating": "جارٍ التوليد...",
     "analyzing": "تحليل الدروس...", "creating_lyrics": "كتابة الكلمات...", "generating_music": "توليد الموسيقى...",
-    "success": "الأغنية قيد التوليد! 🎵", "error_generic": "خطأ أثناء التوليد", "back": "رجوع", "next": "التالي"
+    "success": "الأغنية قيد التوليد! 🎵", "error_generic": "خطأ أثناء التوليد", "back": "رجوع", "next": "التالي",
+    "tab_text": "نص", "tab_pdf": "PDF", "tab_image": "صورة / فوتو",
+    "file_too_large": "الملف كبير جداً (الحد الأقصى 20 ميجابايت)",
+    "extracted_from": "تم استخراج النص من <strong>{{file}}</strong> — يمكنك تعديله أدناه",
+    "no_text_extracted": "لم يتم استخراج أي نص",
+    "extract_success": "تم استخراج النص من \"{{file}}\" بنجاح! 🎉",
+    "extract_error": "خطأ في استخراج النص",
+    "textarea_placeholder": "الصق دروسك هنا... (تشريح، قانون، تاريخ، فيزياء، معلوماتية...)",
+    "extracting": "جارٍ استخراج النص...",
+    "pdf_analyzing": "تحليل PDF بالذكاء الاصطناعي...", "image_analyzing": "OCR للصورة بالذكاء الاصطناعي...",
+    "extract_done": "تم استخراج النص بنجاح!",
+    "view_text": "عرض النص", "restart": "إعادة", "delete_file": "حذف",
+    "upload_pdf_label": "ارفع PDF الدروس", "upload_image_label": "ارفع صورة للدروس",
+    "upload_pdf_hint": "اسحب PDF هنا أو انقر للاختيار (الحد الأقصى 20 ميجابايت)",
+    "upload_image_hint": "صورة ملاحظات، شرائح، سبورة... (الحد الأقصى 20 ميجابايت)",
+    "char_count": "{{chars}} حرف · ~{{minutes}} دقيقة قراءة"
   },
   "library": {
     "title": "مكتبتي 🎵", "songs_count": "{{count}} أغنية", "songs_count_plural": "{{count}} أغاني",
