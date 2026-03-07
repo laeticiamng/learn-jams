@@ -9,6 +9,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Music } from "lucide-react";
 import { toast } from "sonner";
 import { usePageSEO } from "@/hooks/usePageSEO";
+import { motion } from "framer-motion";
+
+const ease = [0.25, 0.46, 0.45, 0.94] as [number, number, number, number];
 
 export default function Signup() {
   const { t } = useTranslation();
@@ -33,44 +36,62 @@ export default function Signup() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4" style={{ background: "var(--gradient-glow)" }}>
-      <div className="glass-card p-8 w-full max-w-md glow">
-        <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center gap-2 mb-4">
-            <div className="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 relative overflow-hidden">
+      {/* Ambient */}
+      <div className="fixed inset-0 pointer-events-none" style={{ background: "var(--gradient-glow)" }} />
+      <div className="fixed inset-0 pointer-events-none" style={{ background: "var(--gradient-mesh)" }} />
+      <div className="fixed bottom-1/4 right-1/3 w-[400px] h-[400px] pointer-events-none ambient-orb" style={{ background: "hsl(300, 70%, 50%)", opacity: 0.06 }} />
+
+      <motion.div
+        initial={{ opacity: 0, y: 24, scale: 0.97, filter: "blur(10px)" }}
+        animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+        transition={{ duration: 0.7, ease }}
+        className="glass-card-elevated p-9 w-full max-w-md glow-intense relative z-10"
+      >
+        <div className="text-center mb-9">
+          <Link to="/" className="inline-block mb-5">
+            <motion.div
+              whileHover={{ scale: 1.05, rotate: -3 }}
+              className="w-12 h-12 rounded-xl gradient-bg-premium flex items-center justify-center mx-auto shadow-lg shadow-primary/25"
+            >
               <Music className="w-6 h-6 text-primary-foreground" />
-            </div>
+            </motion.div>
           </Link>
-          <h1 className="font-display text-2xl font-bold">{t("auth.signup_title")}</h1>
-          <p className="text-muted-foreground mt-1">{t("auth.signup_subtitle")}</p>
+          <h1 className="font-display text-2xl font-bold tracking-tight">{t("auth.signup_title")}</h1>
+          <p className="text-muted-foreground mt-2 text-sm">{t("auth.signup_subtitle")}</p>
         </div>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-2">
-            <Label htmlFor="name">{t("auth.name")}</Label>
-            <Input id="name" placeholder={t("auth.name_placeholder")} value={displayName} onChange={(e) => setDisplayName(e.target.value)} required />
+            <Label htmlFor="name" className="text-sm font-medium">{t("auth.name")}</Label>
+            <Input id="name" placeholder={t("auth.name_placeholder")} value={displayName} onChange={(e) => setDisplayName(e.target.value)} required
+              className="bg-muted/15 border-border/20 h-11 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all duration-300" />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email">{t("auth.email")}</Label>
-            <Input id="email" type="email" placeholder={t("auth.email_placeholder")} value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <Label htmlFor="email" className="text-sm font-medium">{t("auth.email")}</Label>
+            <Input id="email" type="email" placeholder={t("auth.email_placeholder")} value={email} onChange={(e) => setEmail(e.target.value)} required
+              className="bg-muted/15 border-border/20 h-11 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all duration-300" />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">{t("auth.password")}</Label>
-            <Input id="password" type="password" placeholder={t("auth.password_min")} value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <Label htmlFor="password" className="text-sm font-medium">{t("auth.password")}</Label>
+            <Input id="password" type="password" placeholder={t("auth.password_min")} value={password} onChange={(e) => setPassword(e.target.value)} required
+              className="bg-muted/15 border-border/20 h-11 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all duration-300" />
           </div>
-          <div className="flex items-start gap-2">
-            <Checkbox id="terms" checked={acceptedTerms} onCheckedChange={(checked) => setAcceptedTerms(checked === true)} className="mt-1" />
-            <label htmlFor="terms" className="text-sm text-muted-foreground leading-snug cursor-pointer">
+          <div className="flex items-start gap-3">
+            <Checkbox id="terms" checked={acceptedTerms} onCheckedChange={(checked) => setAcceptedTerms(checked === true)} className="mt-0.5" />
+            <label htmlFor="terms" className="text-xs text-muted-foreground leading-relaxed cursor-pointer">
               {t("auth.accept_terms")} <Link to="/terms" className="text-primary hover:underline" target="_blank">{t("auth.terms_link")}</Link> {t("auth.and")} <Link to="/privacy" className="text-primary hover:underline" target="_blank">{t("auth.privacy_link")}</Link>
             </label>
           </div>
-          <Button type="submit" className="w-full gradient-bg h-11" disabled={loading || !acceptedTerms}>
-            {loading ? t("auth.signup_loading") : t("auth.signup_button")}
-          </Button>
+          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+            <Button type="submit" className="w-full gradient-bg-premium h-12 rounded-xl shadow-lg shadow-primary/20 shimmer-btn" disabled={loading || !acceptedTerms}>
+              {loading ? t("auth.signup_loading") : t("auth.signup_button")}
+            </Button>
+          </motion.div>
         </form>
-        <p className="text-center text-sm text-muted-foreground mt-6">
-          {t("auth.has_account")} <Link to="/login" className="text-primary hover:underline">{t("auth.login_link")}</Link>
+        <p className="text-center text-sm text-muted-foreground mt-7">
+          {t("auth.has_account")} <Link to="/login" className="text-primary hover:underline font-medium transition-colors">{t("auth.login_link")}</Link>
         </p>
-      </div>
+      </motion.div>
     </div>
   );
 }
