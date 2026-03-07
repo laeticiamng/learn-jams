@@ -85,7 +85,7 @@
     "analyzing": "Kurs wird analysiert...", "creating_lyrics": "Liedtexte werden erstellt...", "generating_music": "Musik wird generiert...",
     "success": "Song wird generiert! 🎵", "error_generic": "Fehler bei der Generierung", "back": "Zurück", "next": "Weiter",
     "tab_text": "Text", "tab_pdf": "PDF", "tab_image": "Bild / Foto",
-    "file_too_large": "Datei zu groß (max. 20 MB)",
+    "file_too_large": "Datei zu groß (max. 200 MB)",
     "extracted_from": "Text aus <strong>{{file}}</strong> extrahiert — du kannst ihn unten bearbeiten",
     "no_text_extracted": "Kein Text extrahiert",
     "extract_success": "Text aus \"{{file}}\" erfolgreich extrahiert! 🎉",
