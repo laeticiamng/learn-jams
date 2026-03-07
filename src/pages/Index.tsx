@@ -113,14 +113,16 @@ export default function Index() {
               {t("home.cta_login")}
             </button>
 
-            {/* Social proof */}
-            <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 mb-8 text-xs sm:text-sm text-muted-foreground px-2">
-              <span>🎵 <strong className="text-foreground">{t("home.social_songs")}</strong></span>
-              <span>🎓 <strong className="text-foreground">{t("home.social_students")}</strong></span>
-              <span>🎶 <strong className="text-foreground">{t("home.social_styles")}</strong></span>
+            {/* Social proof — animated counters */}
+            <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8 mb-8 text-xs sm:text-sm text-muted-foreground px-2">
+              <span className="flex items-center gap-1.5">🎵 <strong className="text-foreground tabular-nums"><CountUp target={1200} suffix="+" /></strong> {t("home.social_songs_label")}</span>
+              <span className="flex items-center gap-1.5">🎓 <strong className="text-foreground tabular-nums"><CountUp target={500} suffix="+" /></strong> {t("home.social_students_label")}</span>
+              <span className="flex items-center gap-1.5">🎶 <strong className="text-foreground tabular-nums"><CountUp target={30} /></strong> {t("home.social_styles_label")}</span>
             </div>
 
             <AudioWave />
+
+            <DemoPlayer listenLabel={t("home.demo_listen")} titleLabel={t("home.demo_title")} />
           </motion.div>
         </div>
       </header>
