@@ -83,7 +83,7 @@ export type Database = {
           id: string
           original_text: string
           status: string
-          style: Database["public"]["Enums"]["music_style"]
+          style: string
           subject: string | null
           suno_task_id: string | null
           title: string
@@ -99,7 +99,7 @@ export type Database = {
           id?: string
           original_text: string
           status?: string
-          style?: Database["public"]["Enums"]["music_style"]
+          style?: string
           subject?: string | null
           suno_task_id?: string | null
           title: string
@@ -115,7 +115,7 @@ export type Database = {
           id?: string
           original_text?: string
           status?: string
-          style?: Database["public"]["Enums"]["music_style"]
+          style?: string
           subject?: string | null
           suno_task_id?: string | null
           title?: string
@@ -132,15 +132,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      music_style:
-        | "rap"
-        | "lofi"
-        | "pop"
-        | "jazz"
-        | "rock"
-        | "spoken-word"
-        | "reggaeton"
-        | "classique"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -267,17 +259,6 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {
-      music_style: [
-        "rap",
-        "lofi",
-        "pop",
-        "jazz",
-        "rock",
-        "spoken-word",
-        "reggaeton",
-        "classique",
-      ],
-    },
+    Enums: {},
   },
 } as const
