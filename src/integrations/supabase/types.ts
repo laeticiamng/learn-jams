@@ -81,6 +81,7 @@ export type Database = {
           duration: number | null
           generated_lyrics: string | null
           id: string
+          is_final_quality: boolean
           original_text: string
           status: string
           style: string
@@ -97,6 +98,7 @@ export type Database = {
           duration?: number | null
           generated_lyrics?: string | null
           id?: string
+          is_final_quality?: boolean
           original_text: string
           status?: string
           style?: string
@@ -113,6 +115,7 @@ export type Database = {
           duration?: number | null
           generated_lyrics?: string | null
           id?: string
+          is_final_quality?: boolean
           original_text?: string
           status?: string
           style?: string
