@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface Song { id: string; title: string; style: string; original_text: string; generated_lyrics: string | null; audio_url: string | null; duration: number | null; status: string; subject: string | null; }
 
-const ease = [0.25, 0.46, 0.45, 0.94] as const;
+const ease = [0.25, 0.46, 0.45, 0.94] as [number, number, number, number];
 
 export default function Player() {
   const { t } = useTranslation();
