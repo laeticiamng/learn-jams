@@ -39,6 +39,7 @@ export default function Navbar() {
             </>
           ) : (
             <>
+              <Button variant="ghost" size="sm" onClick={() => navigate("/pricing")}>{t("nav.pricing")}</Button>
               <Button variant="ghost" size="sm" onClick={() => navigate("/login")}>{t("nav.login")}</Button>
               <Button size="sm" className="gradient-bg" onClick={() => navigate("/signup")}>{t("nav.signup")}</Button>
             </>
