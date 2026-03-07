@@ -90,7 +90,8 @@
     "upload_pdf_label": "上传课程PDF", "upload_image_label": "上传课程照片",
     "upload_pdf_hint": "拖拽PDF到此处或点击选择（最大20 MB）",
     "upload_image_hint": "笔记、幻灯片、白板照片...（最大20 MB）",
-    "char_count": "{{chars}} 字符 · ~{{minutes}} 分钟阅读"
+    "char_count": "{{chars}} 字符 · ~{{minutes}} 分钟阅读",
+    "default_title": "我的StudyBeats歌曲"
   },
   "library": {
     "title": "我的音乐库 🎵", "songs_count": "{{count}}首歌曲", "songs_count_plural": "{{count}}首歌曲",

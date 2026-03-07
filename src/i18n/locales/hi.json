@@ -90,7 +90,8 @@
     "upload_pdf_label": "अपना कोर्स PDF अपलोड करें", "upload_image_label": "नोट्स की फोटो अपलोड करें",
     "upload_pdf_hint": "PDF यहाँ खींचें या चुनने के लिए क्लिक करें (अधिकतम 20 MB)",
     "upload_image_hint": "नोट्स, स्लाइड, व्हाइटबोर्ड की फोटो... (अधिकतम 20 MB)",
-    "char_count": "{{chars}} अक्षर · ~{{minutes}} मिनट पढ़ने का समय"
+    "char_count": "{{chars}} अक्षर · ~{{minutes}} मिनट पढ़ने का समय",
+    "default_title": "मेरा StudyBeats गाना"
   },
   "library": {
     "title": "मेरी लाइब्रेरी 🎵", "songs_count": "{{count}} गाना", "songs_count_plural": "{{count}} गाने",
