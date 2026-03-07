@@ -77,7 +77,7 @@
     "analyzing": "विश्लेषण हो रहा है...", "creating_lyrics": "गीत बन रहे हैं...", "generating_music": "संगीत बन रहा है...",
     "success": "गाना बन रहा है! 🎵", "error_generic": "जनरेशन में त्रुटि", "back": "वापस", "next": "अगला",
     "tab_text": "टेक्स्ट", "tab_pdf": "PDF", "tab_image": "इमेज / फोटो",
-    "file_too_large": "फ़ाइल बहुत बड़ी है (अधिकतम 20 MB)",
+    "file_too_large": "फ़ाइल बहुत बड़ी है (अधिकतम 200 MB)",
     "extracted_from": "<strong>{{file}}</strong> से टेक्स्ट निकाला गया — आप नीचे संपादित कर सकते हैं",
     "no_text_extracted": "कोई टेक्स्ट नहीं निकाला गया",
     "extract_success": "\"{{file}}\" से टेक्स्ट सफलतापूर्वक निकाला गया! 🎉",
