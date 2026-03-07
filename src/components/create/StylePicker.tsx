@@ -73,10 +73,10 @@ export default function StylePicker({ selected, onSelect }: Props) {
   const { t } = useTranslation();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {styleCategories.map((cat) => (
         <div key={cat.category}>
-          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+          <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-[0.15em] mb-3">
             {t(`style_categories.${cat.category}`)}
           </h3>
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
@@ -85,14 +85,18 @@ export default function StylePicker({ selected, onSelect }: Props) {
                 key={style.id}
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: i * 0.03 }}
+                transition={{ delay: i * 0.03, duration: 0.4 }}
+                whileHover={{ scale: 1.05, y: -2 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => onSelect(style.id)}
-                className={`glass-card p-3 text-center transition-all cursor-pointer group ${
-                  selected === style.id ? "border-primary glow" : "hover:border-primary/30"
+                className={`glass-card p-3.5 text-center transition-all duration-300 cursor-pointer ${
+                  selected === style.id
+                    ? "border-primary/40 glow-intense"
+                    : "hover:border-border/50 gradient-border"
                 }`}
               >
-                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${style.color} flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform`}>
-                  <style.icon className="w-5 h-5 text-primary-foreground" />
+                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${style.color} flex items-center justify-center mx-auto mb-2 shadow-lg`}>
+                  <style.icon className="w-5 h-5 text-primary-foreground drop-shadow" />
                 </div>
                 <div className="font-display text-xs font-semibold truncate">{t(`styles.${style.id}`)}</div>
               </motion.button>

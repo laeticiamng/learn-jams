@@ -9,23 +9,25 @@ import { usePageSEO } from "@/hooks/usePageSEO";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useMemo, useEffect, useState, useRef, useCallback } from "react";
 
+const ease = [0.25, 0.46, 0.45, 0.94] as [number, number, number, number];
+
 const AudioWave = () => {
-  const heights = useMemo(() => Array.from({ length: 20 }, () => 32 + Math.random() * 32), []);
+  const heights = useMemo(() => Array.from({ length: 24 }, () => 24 + Math.random() * 40), []);
   return (
-    <div className="flex items-end gap-1 h-16 justify-center" aria-hidden="true">
+    <div className="flex items-end gap-[3px] h-16 justify-center" aria-hidden="true">
       {heights.map((h, i) => (
         <motion.div
           key={i}
-          className="w-1.5 rounded-full gradient-bg"
-          animate={{ height: [8, h, 8] }}
-          transition={{ duration: 0.8 + (h - 32) / 32 * 0.8, repeat: Infinity, delay: i * 0.05 }}
+          className="w-1 rounded-full gradient-bg-premium"
+          animate={{ height: [6, h, 6] }}
+          transition={{ duration: 0.8 + (h - 24) / 40 * 0.8, repeat: Infinity, delay: i * 0.04 }}
+          style={{ opacity: 0.5 + (i / heights.length) * 0.5 }}
         />
       ))}
     </div>
   );
 };
 
-// Animated counter component – count up on scroll
 const CountUp = ({ target, suffix = "", duration = 2000 }: { target: number; suffix?: string; duration?: number }) => {
   const [count, setCount] = useState(0);
   const [hasAnimated, setHasAnimated] = useState(false);
@@ -58,7 +60,6 @@ const CountUp = ({ target, suffix = "", duration = 2000 }: { target: number; suf
   return <span ref={ref}>{count.toLocaleString()}{suffix}</span>;
 };
 
-// Mini demo player
 const DemoPlayer = ({ listenLabel, titleLabel }: { listenLabel: string; titleLabel: string }) => {
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -82,17 +83,22 @@ const DemoPlayer = ({ listenLabel, titleLabel }: { listenLabel: string; titleLab
   }, []);
 
   return (
-    <div className="mt-6 max-w-sm mx-auto">
+    <div className="mt-8 max-w-sm mx-auto">
       <audio ref={audioRef} src="/demo.mp3" preload="none" />
-      <button onClick={togglePlay} className="w-full glass-card p-3 flex items-center gap-3 hover:border-primary/30 transition-all group">
-        <div className="w-10 h-10 rounded-lg gradient-bg flex items-center justify-center shrink-0">
-          {playing ? <Pause className="w-4 h-4 text-primary-foreground" /> : <Play className="w-4 h-4 text-primary-foreground ml-0.5" />}
+      <motion.button
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+        onClick={togglePlay}
+        className="w-full glass-card-elevated p-4 flex items-center gap-4 group"
+      >
+        <div className="w-12 h-12 rounded-xl gradient-bg-premium flex items-center justify-center shrink-0 shadow-lg shadow-primary/20">
+          {playing ? <Pause className="w-5 h-5 text-primary-foreground" /> : <Play className="w-5 h-5 text-primary-foreground ml-0.5" />}
         </div>
         <div className="flex-1 text-left min-w-0">
-          <p className="text-xs text-muted-foreground">{listenLabel}</p>
-          <p className="text-sm font-medium truncate">{titleLabel}</p>
+          <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">{listenLabel}</p>
+          <p className="text-sm font-semibold truncate">{titleLabel}</p>
           <div
-            className="mt-1.5 h-1 rounded-full bg-muted overflow-hidden cursor-pointer"
+            className="mt-2 h-1 rounded-full bg-muted/30 overflow-hidden cursor-pointer"
             onClick={(e) => {
               e.stopPropagation();
               const audio = audioRef.current;
@@ -104,17 +110,16 @@ const DemoPlayer = ({ listenLabel, titleLabel }: { listenLabel: string; titleLab
               if (!playing) { audio.play().catch(() => {}); setPlaying(true); }
             }}
           >
-            <div className="h-full gradient-bg rounded-full transition-all duration-300" style={{ width: `${progress}%` }} />
+            <div className="h-full gradient-bg-premium rounded-full transition-all duration-300" style={{ width: `${progress}%` }} />
           </div>
         </div>
         <Volume2 className="w-4 h-4 text-muted-foreground shrink-0 group-hover:text-primary transition-colors" />
-      </button>
+      </motion.button>
     </div>
   );
 };
 
 const stepIcons = [Upload, Music, Headphones];
-const stepColors = ["from-primary to-secondary", "from-secondary to-primary", "from-primary to-secondary"];
 const scienceIcons = [Brain, Repeat, Timer, Dumbbell];
 const featureIcons = [Brain, BookOpen, Shield];
 
@@ -157,7 +162,6 @@ export default function Index() {
     return () => { document.head.removeChild(script); };
   }, [faqJsonLd]);
 
-  // Sticky CTA visibility logic
   const handleScroll = useCallback(() => {
     const heroBottom = heroRef.current?.getBoundingClientRect().bottom ?? 0;
     const ctaTop = ctaRef.current?.getBoundingClientRect().top ?? Infinity;
@@ -175,85 +179,106 @@ export default function Index() {
       <Navbar />
 
       {/* Hero */}
-      <header ref={heroRef} className="relative pt-32 pb-20 px-4">
-        <div className="absolute inset-0" style={{ background: "var(--gradient-glow)" }} />
+      <header ref={heroRef} className="relative pt-36 pb-24 px-4">
+        {/* Ambient orbs */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] pointer-events-none" style={{ background: "var(--gradient-glow)" }} />
+        <div className="absolute top-20 left-1/4 w-[400px] h-[400px] pointer-events-none ambient-orb" style={{ background: "hsl(265, 90%, 60%)" }} />
+        <div className="absolute top-40 right-1/4 w-[300px] h-[300px] pointer-events-none ambient-orb" style={{ background: "hsl(300, 70%, 50%)", animationDelay: "3s" }} />
+
         <div className="container mx-auto text-center relative z-10">
-          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
-            <p className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/30 bg-primary/10 mb-8 text-sm text-primary">
+          <motion.div initial={{ opacity: 0, y: 40, filter: "blur(12px)" }} animate={{ opacity: 1, y: 0, filter: "blur(0px)" }} transition={{ duration: 0.9, ease }}>
+            <motion.p
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.2, duration: 0.5 }}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/20 bg-primary/5 mb-10 text-sm text-primary font-medium"
+            >
               {t("home.badge")}
-            </p>
-            <h1 className="font-display text-4xl sm:text-5xl md:text-7xl font-bold mb-6 leading-tight px-2">
+            </motion.p>
+            <h1 className="font-display text-5xl sm:text-6xl md:text-8xl font-bold mb-8 leading-[1.05] px-2 tracking-tight">
               {t("home.title1")}<br />
-              <span className="gradient-text">{t("home.title2")}</span>
+              <span className="gradient-text glow-text">{t("home.title2")}</span>
             </h1>
-            <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 px-2">
+            <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-12 px-2 leading-relaxed">
               {t("home.subtitle")}
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-4 px-4">
-              <Button size="lg" className="gradient-bg text-base sm:text-lg px-6 sm:px-8 h-12 sm:h-14 glow w-full sm:w-auto shimmer-btn" onClick={() => navigate("/signup")}>
-                {t("home.cta_signup")}
-              </Button>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-5 px-4">
+              <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                <Button size="lg" className="gradient-bg-premium text-base sm:text-lg px-8 sm:px-10 h-13 sm:h-14 w-full sm:w-auto shimmer-btn rounded-2xl shadow-xl shadow-primary/25"
+                  onClick={() => navigate("/signup")}>
+                  {t("home.cta_signup")}
+                </Button>
+              </motion.div>
             </div>
             <button
               onClick={() => navigate("/login")}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors underline-offset-4 hover:underline mb-8 inline-block"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors underline-offset-4 hover:underline mb-10 inline-block"
             >
               {t("home.cta_login")}
             </button>
 
-            {/* Social proof — animated counters */}
-            <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8 mb-8 text-xs sm:text-sm text-muted-foreground px-2">
-              <span className="flex items-center gap-1.5">🎵 <strong className="text-foreground tabular-nums"><CountUp target={1200} suffix="+" /></strong> {t("home.social_songs_label")}</span>
-              <span className="flex items-center gap-1.5">🎓 <strong className="text-foreground tabular-nums"><CountUp target={500} suffix="+" /></strong> {t("home.social_students_label")}</span>
-              <span className="flex items-center gap-1.5">🎶 <strong className="text-foreground tabular-nums"><CountUp target={30} /></strong> {t("home.social_styles_label")}</span>
+            {/* Social proof */}
+            <div className="flex flex-wrap items-center justify-center gap-5 sm:gap-10 mb-10 text-xs sm:text-sm text-muted-foreground px-2">
+              <span className="flex items-center gap-1.5">🎵 <strong className="text-foreground tabular-nums font-mono"><CountUp target={1200} suffix="+" /></strong> {t("home.social_songs_label")}</span>
+              <span className="flex items-center gap-1.5">🎓 <strong className="text-foreground tabular-nums font-mono"><CountUp target={500} suffix="+" /></strong> {t("home.social_students_label")}</span>
+              <span className="flex items-center gap-1.5">🎶 <strong className="text-foreground tabular-nums font-mono"><CountUp target={30} /></strong> {t("home.social_styles_label")}</span>
             </div>
 
             <AudioWave />
-
             <DemoPlayer listenLabel={t("home.demo_listen")} titleLabel={t("home.demo_title")} />
           </motion.div>
         </div>
       </header>
 
       {/* Trust badges */}
-      <section className="py-6 px-4">
-        <div className="container mx-auto flex flex-wrap items-center justify-center gap-6 sm:gap-10">
+      <section className="py-8 px-4">
+        <div className="container mx-auto flex flex-wrap items-center justify-center gap-8 sm:gap-12">
           {[
             { icon: ShieldCheck, key: "trust_gdpr" },
             { icon: Lock, key: "trust_encrypted" },
             { icon: CreditCard, key: "trust_cancel" },
-          ].map(({ icon: Icon, key }) => (
-            <div key={key} className="flex items-center gap-2 text-muted-foreground text-sm">
-              <Icon className="w-4 h-4 text-primary/70" />
+          ].map(({ icon: Icon, key }, i) => (
+            <motion.div
+              key={key}
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.1 }}
+              className="flex items-center gap-2 text-muted-foreground text-sm"
+            >
+              <Icon className="w-4 h-4 text-primary/60" />
               <span>{t(`home.${key}`)}</span>
-            </div>
+            </motion.div>
           ))}
         </div>
       </section>
 
       {/* Steps */}
-      <section className="py-16 px-4">
+      <section className="py-20 px-4">
         <div className="container mx-auto">
-          <motion.h2 initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
-            className="font-display text-3xl md:text-4xl font-bold text-center mb-4">
+          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+            className="font-display text-3xl md:text-5xl font-bold text-center mb-4 tracking-tight">
             {t("home.how_title")}
           </motion.h2>
-          <p className="text-center text-muted-foreground mb-16 max-w-xl mx-auto">{t("home.how_subtitle")}</p>
-          <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto relative">
-            <div className="hidden md:block absolute top-20 left-[33%] w-[34%] h-0.5 bg-gradient-to-r from-primary/30 to-secondary/30" />
-            <div className="hidden md:block absolute top-20 left-[66%] w-[34%] h-0.5 bg-gradient-to-r from-secondary/30 to-primary/30" />
+          <p className="text-center text-muted-foreground mb-16 max-w-xl mx-auto text-lg">{t("home.how_subtitle")}</p>
+          <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto relative">
+            <div className="hidden md:block absolute top-24 left-[33%] w-[34%] h-px bg-gradient-to-r from-primary/20 to-secondary/20" />
+            <div className="hidden md:block absolute top-24 left-[66%] w-[34%] h-px bg-gradient-to-r from-secondary/20 to-primary/20" />
             {[1, 2, 3].map((n, i) => {
               const Icon = stepIcons[i];
               return (
-                <motion.article key={n} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }} transition={{ delay: i * 0.15 }}
-                  className="glass-card p-8 text-center group hover:border-primary/30 transition-all">
-                  <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${stepColors[i]} flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform`}>
+                <motion.article key={n} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }} transition={{ delay: i * 0.15, duration: 0.6, ease }}
+                  className="glass-card-elevated p-8 text-center group gradient-border">
+                  <motion.div
+                    whileHover={{ scale: 1.1, rotate: -3 }}
+                    className="w-16 h-16 rounded-2xl gradient-bg-premium flex items-center justify-center mx-auto mb-6 shadow-lg shadow-primary/20"
+                  >
                     <Icon className="w-8 h-8 text-primary-foreground" />
-                  </div>
-                  <div className="text-sm text-muted-foreground mb-2">{t("home.step_label", { n })}</div>
+                  </motion.div>
+                  <div className="text-xs text-muted-foreground mb-2 uppercase tracking-widest font-medium">{t("home.step_label", { n })}</div>
                   <h3 className="font-display text-xl font-semibold mb-3">{t(`home.step${n}_title`)}</h3>
-                  <p className="text-muted-foreground">{t(`home.step${n}_desc`)}</p>
+                  <p className="text-muted-foreground text-sm leading-relaxed">{t(`home.step${n}_desc`)}</p>
                 </motion.article>
               );
             })}
@@ -262,37 +287,37 @@ export default function Index() {
       </section>
 
       {/* Before → After */}
-      <section className="py-16 px-4">
+      <section className="py-20 px-4">
         <div className="container mx-auto max-w-4xl">
-          <motion.h2 initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
-            className="font-display text-3xl md:text-4xl font-bold text-center mb-4">
+          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+            className="font-display text-3xl md:text-5xl font-bold text-center mb-4 tracking-tight">
             {t("home.before_after_title")}
           </motion.h2>
-          <p className="text-center text-muted-foreground mb-12">{t("home.before_after_subtitle")}</p>
+          <p className="text-center text-muted-foreground mb-14 text-lg">{t("home.before_after_subtitle")}</p>
           <div className="grid md:grid-cols-2 gap-6 items-stretch">
-            <motion.div initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
-              className="glass-card p-6 sm:p-8 relative">
-              <div className="absolute top-4 left-4 sm:top-6 sm:left-6 text-xs font-medium uppercase tracking-wider text-muted-foreground bg-muted px-3 py-1 rounded-full">
+            <motion.div initial={{ opacity: 0, x: -24 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
+              transition={{ duration: 0.6, ease }}
+              className="glass-card p-7 sm:p-9 relative">
+              <div className="absolute top-5 left-5 sm:top-6 sm:left-6 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground bg-muted/60 px-3 py-1 rounded-full">
                 {t("home.before_label")}
               </div>
-              <div className="pt-8 text-sm sm:text-base text-muted-foreground leading-relaxed font-mono">
+              <div className="pt-10 text-sm sm:text-base text-muted-foreground leading-relaxed font-mono">
                 {t("home.before_text")}
               </div>
             </motion.div>
-            <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
-              transition={{ delay: 0.2 }}
-              className="glass-card p-6 sm:p-8 relative border-primary/30 glow">
-              <div className="absolute top-4 left-4 sm:top-6 sm:left-6 text-xs font-medium uppercase tracking-wider text-primary bg-primary/10 px-3 py-1 rounded-full">
+            <motion.div initial={{ opacity: 0, x: 24 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
+              transition={{ delay: 0.15, duration: 0.6, ease }}
+              className="glass-card-elevated p-7 sm:p-9 relative glow-intense">
+              <div className="absolute top-5 left-5 sm:top-6 sm:left-6 text-[11px] font-semibold uppercase tracking-widest text-primary bg-primary/10 px-3 py-1 rounded-full">
                 {t("home.after_label")}
               </div>
-              <div className="pt-8 text-sm sm:text-base text-foreground leading-relaxed whitespace-pre-line">
+              <div className="pt-10 text-sm sm:text-base text-foreground leading-relaxed whitespace-pre-line">
                 {t("home.after_text")}
               </div>
             </motion.div>
           </div>
-          {/* Arrow between cards on mobile */}
           <div className="flex justify-center md:hidden -my-3 relative z-10">
-            <div className="w-10 h-10 rounded-full gradient-bg flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full gradient-bg-premium flex items-center justify-center shadow-lg shadow-primary/20">
               <ArrowRight className="w-5 h-5 text-primary-foreground rotate-90" />
             </div>
           </div>
@@ -300,19 +325,21 @@ export default function Index() {
       </section>
 
       {/* Features */}
-      <section className="py-16 px-4">
+      <section className="py-20 px-4">
         <div className="container mx-auto max-w-4xl">
-          <h2 className="font-display text-3xl font-bold text-center mb-12">{t("home.features_title")}</h2>
+          <h2 className="font-display text-3xl md:text-4xl font-bold text-center mb-14 tracking-tight">{t("home.features_title")}</h2>
           <div className="grid md:grid-cols-3 gap-6">
             {[1, 2, 3].map((n, i) => {
               const Icon = featureIcons[i];
               return (
-                <motion.article key={n} initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-                  transition={{ delay: i * 0.1 }}
-                  className="glass-card p-6 text-center">
-                  <Icon className="w-8 h-8 text-primary mx-auto mb-4" />
-                  <h3 className="font-display font-semibold mb-2">{t(`home.feature${n}_title`)}</h3>
-                  <p className="text-sm text-muted-foreground">{t(`home.feature${n}_desc`)}</p>
+                <motion.article key={n} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+                  transition={{ delay: i * 0.1, duration: 0.6, ease }}
+                  className="glass-card-elevated p-7 text-center gradient-border">
+                  <div className="w-14 h-14 rounded-2xl gradient-bg-premium flex items-center justify-center mx-auto mb-5 shadow-lg shadow-primary/20">
+                    <Icon className="w-7 h-7 text-primary-foreground" />
+                  </div>
+                  <h3 className="font-display font-semibold mb-2 text-lg">{t(`home.feature${n}_title`)}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{t(`home.feature${n}_desc`)}</p>
                 </motion.article>
               );
             })}
@@ -321,23 +348,26 @@ export default function Index() {
       </section>
 
       {/* Science */}
-      <section className="py-16 px-4">
+      <section className="py-20 px-4">
         <div className="container mx-auto max-w-4xl">
-          <motion.h2 initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
-            className="font-display text-3xl md:text-4xl font-bold text-center mb-4">
+          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+            className="font-display text-3xl md:text-5xl font-bold text-center mb-4 tracking-tight">
             {t("home.science_title")}
           </motion.h2>
-          <p className="text-center text-muted-foreground mb-10 max-w-xl mx-auto">{t("home.science_subtitle")}</p>
+          <p className="text-center text-muted-foreground mb-14 max-w-xl mx-auto text-lg">{t("home.science_subtitle")}</p>
           <div className="grid md:grid-cols-2 gap-6">
             {[1, 2, 3, 4].map((n, i) => {
               const Icon = scienceIcons[i];
               return (
-                <motion.article key={n} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }} transition={{ delay: i * 0.1 }}
-                  className="glass-card p-8 group hover:border-primary/30 transition-all">
-                  <div className="w-12 h-12 rounded-xl gradient-bg flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+                <motion.article key={n} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.6, ease }}
+                  className="glass-card-elevated p-8 group gradient-border">
+                  <motion.div
+                    whileHover={{ scale: 1.1, rotate: -3 }}
+                    className="w-12 h-12 rounded-xl gradient-bg-premium flex items-center justify-center mb-5 shadow-lg shadow-primary/20"
+                  >
                     <Icon className="w-6 h-6 text-primary-foreground" />
-                  </div>
+                  </motion.div>
                   <h3 className="font-display text-lg font-semibold mb-3">{t(`home.science${n}_title`)}</h3>
                   <p className="text-muted-foreground leading-relaxed text-sm">{t(`home.science${n}_desc`)}</p>
                 </motion.article>
@@ -348,26 +378,26 @@ export default function Index() {
       </section>
 
       {/* Testimonials */}
-      <section className="py-16 px-4">
+      <section className="py-20 px-4">
         <div className="container mx-auto max-w-4xl">
-          <motion.h2 initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
-            className="font-display text-3xl md:text-4xl font-bold text-center mb-12">
+          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+            className="font-display text-3xl md:text-5xl font-bold text-center mb-14 tracking-tight">
             {t("home.testimonials_title")}
           </motion.h2>
           <div className="grid md:grid-cols-3 gap-6">
             {[1, 2, 3].map((n, i) => (
-              <motion.article key={n} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }} transition={{ delay: i * 0.15 }}
-                className="glass-card p-6 sm:p-8 flex flex-col">
-                <Quote className="w-8 h-8 text-primary/30 mb-4" />
-                <p className="text-sm text-foreground leading-relaxed flex-1 italic">
+              <motion.article key={n} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }} transition={{ delay: i * 0.15, duration: 0.6, ease }}
+                className="glass-card-elevated p-7 sm:p-8 flex flex-col gradient-border">
+                <Quote className="w-8 h-8 text-primary/20 mb-4" />
+                <p className="text-sm text-foreground/80 leading-relaxed flex-1 italic">
                   "{t(`home.testimonial${n}_quote`)}"
                 </p>
-                <div className="flex items-center gap-3 mt-6 pt-4 border-t border-border/30">
+                <div className="flex items-center gap-3 mt-6 pt-5 border-t border-border/20">
                   <img
                     src={testimonialAvatars[i]}
                     alt={t(`home.testimonial${n}_name`)}
-                    className="w-10 h-10 rounded-full bg-muted"
+                    className="w-10 h-10 rounded-full bg-muted ring-2 ring-border/20"
                     loading="lazy"
                   />
                   <div>
@@ -382,18 +412,18 @@ export default function Index() {
       </section>
 
       {/* Listen anywhere */}
-      <section className="py-16 px-4">
+      <section className="py-20 px-4">
         <div className="container mx-auto max-w-3xl">
-          <h2 className="font-display text-3xl font-bold text-center mb-4">{t("home.listen_title")}</h2>
-          <p className="text-center text-muted-foreground mb-10">{t("home.listen_subtitle")}</p>
-          <div className="grid sm:grid-cols-2 gap-4">
+          <h2 className="font-display text-3xl md:text-4xl font-bold text-center mb-4 tracking-tight">{t("home.listen_title")}</h2>
+          <p className="text-center text-muted-foreground mb-12 text-lg">{t("home.listen_subtitle")}</p>
+          <div className="grid sm:grid-cols-2 gap-5">
             {[1, 2, 3, 4].map((n, i) => (
-              <motion.div key={n} initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }} transition={{ delay: i * 0.1 }}
-                className="glass-card p-6">
-                <div className="text-2xl mb-2">{t(`home.listen${n}_emoji`)}</div>
+              <motion.div key={n} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.5, ease }}
+                className="glass-card-elevated p-7 gradient-border">
+                <div className="text-2xl mb-3">{t(`home.listen${n}_emoji`)}</div>
                 <h3 className="font-display font-semibold mb-1">{t(`home.listen${n}_label`)}</h3>
-                <p className="text-sm text-muted-foreground">{t(`home.listen${n}_desc`)}</p>
+                <p className="text-sm text-muted-foreground leading-relaxed">{t(`home.listen${n}_desc`)}</p>
               </motion.div>
             ))}
           </div>
@@ -401,17 +431,17 @@ export default function Index() {
       </section>
 
       {/* Target */}
-      <section className="py-16 px-4">
+      <section className="py-20 px-4">
         <div className="container mx-auto max-w-3xl">
-          <h2 className="font-display text-3xl font-bold text-center mb-8">{t("home.target_title")}</h2>
-          <div className="grid sm:grid-cols-2 gap-4">
+          <h2 className="font-display text-3xl md:text-4xl font-bold text-center mb-10 tracking-tight">{t("home.target_title")}</h2>
+          <div className="grid sm:grid-cols-2 gap-5">
             {[1, 2, 3, 4].map((n, i) => (
-              <motion.div key={n} initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }} transition={{ delay: i * 0.1 }}
-                className="glass-card p-6">
-                <div className="text-2xl mb-2">{t(`home.target${n}_emoji`)}</div>
+              <motion.div key={n} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.5, ease }}
+                className="glass-card-elevated p-7 gradient-border">
+                <div className="text-2xl mb-3">{t(`home.target${n}_emoji`)}</div>
                 <h3 className="font-display font-semibold mb-1">{t(`home.target${n}_label`)}</h3>
-                <p className="text-sm text-muted-foreground">{t(`home.target${n}_desc`)}</p>
+                <p className="text-sm text-muted-foreground leading-relaxed">{t(`home.target${n}_desc`)}</p>
               </motion.div>
             ))}
           </div>
@@ -419,17 +449,17 @@ export default function Index() {
       </section>
 
       {/* FAQ */}
-      <section className="py-16 px-4">
+      <section className="py-20 px-4">
         <div className="container mx-auto max-w-2xl">
-          <h2 className="font-display text-3xl font-bold text-center mb-4">{t("home.faq_title")}</h2>
-          <p className="text-center text-muted-foreground mb-10">{t("home.faq_subtitle")}</p>
+          <h2 className="font-display text-3xl md:text-4xl font-bold text-center mb-4 tracking-tight">{t("home.faq_title")}</h2>
+          <p className="text-center text-muted-foreground mb-12 text-lg">{t("home.faq_subtitle")}</p>
           <Accordion type="single" collapsible className="space-y-3">
             {faqKeys.map(n => (
-              <AccordionItem key={n} value={`faq-${n}`} className="glass-card px-6 border-none">
-                <AccordionTrigger className="text-left font-medium hover:no-underline py-5">
+              <AccordionItem key={n} value={`faq-${n}`} className="glass-card-elevated px-6 border-none">
+                <AccordionTrigger className="text-left font-medium hover:no-underline py-5 text-[15px]">
                   {t(`home.faq${n}_q`)}
                 </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground pb-5 leading-relaxed">
+                <AccordionContent className="text-muted-foreground pb-5 leading-relaxed text-sm">
                   {t(`home.faq${n}_a`)}
                 </AccordionContent>
               </AccordionItem>
@@ -439,15 +469,25 @@ export default function Index() {
       </section>
 
       {/* CTA */}
-      <section ref={ctaRef} className="py-16 px-4">
+      <section ref={ctaRef} className="py-20 px-4">
         <div className="container mx-auto max-w-2xl">
-          <div className="glass-card p-12 text-center glow">
-            <h2 className="font-display text-3xl font-bold mb-4">{t("home.cta_title")}</h2>
-            <p className="text-muted-foreground mb-8">{t("home.cta_text")}</p>
-            <Button size="lg" className="gradient-bg text-lg px-8 h-14 shimmer-btn" onClick={() => navigate("/signup")}>
-              {t("home.cta_button")}
-            </Button>
-          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7, ease }}
+            className="glass-card-elevated p-14 text-center glow-intense relative overflow-hidden"
+          >
+            {/* Decorative orb */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[200px] ambient-orb" style={{ background: "hsl(265, 90%, 60%)", opacity: 0.1 }} />
+            <h2 className="font-display text-3xl md:text-4xl font-bold mb-4 tracking-tight relative z-10">{t("home.cta_title")}</h2>
+            <p className="text-muted-foreground mb-10 text-lg relative z-10">{t("home.cta_text")}</p>
+            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="relative z-10">
+              <Button size="lg" className="gradient-bg-premium text-lg px-10 h-14 shimmer-btn rounded-2xl shadow-xl shadow-primary/25" onClick={() => navigate("/signup")}>
+                {t("home.cta_button")}
+              </Button>
+            </motion.div>
+          </motion.div>
         </div>
       </section>
 
@@ -459,9 +499,9 @@ export default function Index() {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="fixed bottom-0 left-0 right-0 z-40 md:hidden p-3 bg-background/80 backdrop-blur-xl border-t border-border/30"
+            className="fixed bottom-0 left-0 right-0 z-40 md:hidden p-3 bg-background/85 backdrop-blur-2xl border-t border-border/20"
           >
-            <Button className="w-full gradient-bg h-12 text-base font-semibold shimmer-btn" onClick={() => navigate("/signup")}>
+            <Button className="w-full gradient-bg-premium h-12 text-base font-semibold shimmer-btn rounded-xl shadow-lg shadow-primary/20" onClick={() => navigate("/signup")}>
               {t("home.sticky_cta")} <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </motion.div>
