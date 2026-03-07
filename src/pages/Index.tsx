@@ -73,15 +73,15 @@ export default function Index() {
             <p className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/30 bg-primary/10 mb-8 text-sm text-primary">
               {t("home.badge")}
             </p>
-            <h1 className="font-display text-5xl md:text-7xl font-bold mb-6 leading-tight">
+            <h1 className="font-display text-4xl sm:text-5xl md:text-7xl font-bold mb-6 leading-tight px-2">
               {t("home.title1")}<br />
               <span className="gradient-text">{t("home.title2")}</span>
             </h1>
-            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10">
+            <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 px-2">
               {t("home.subtitle")}
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-4">
-              <Button size="lg" className="gradient-bg text-lg px-8 h-14 glow" onClick={() => navigate("/signup")}>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-4 px-4">
+              <Button size="lg" className="gradient-bg text-base sm:text-lg px-6 sm:px-8 h-12 sm:h-14 glow w-full sm:w-auto" onClick={() => navigate("/signup")}>
                 {t("home.cta_signup")}
               </Button>
             </div>
@@ -93,7 +93,7 @@ export default function Index() {
             </button>
 
             {/* Social proof */}
-            <div className="flex items-center justify-center gap-6 mb-8 text-sm text-muted-foreground">
+            <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 mb-8 text-xs sm:text-sm text-muted-foreground px-2">
               <span>🎵 <strong className="text-foreground">{t("home.social_songs")}</strong></span>
               <span>🎓 <strong className="text-foreground">{t("home.social_students")}</strong></span>
               <span>🎶 <strong className="text-foreground">{t("home.social_styles")}</strong></span>
