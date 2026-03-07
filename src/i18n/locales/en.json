@@ -129,7 +129,8 @@
     "upload_pdf_hint": "Drag your PDF here or click to select (max 20 MB)",
     "upload_image_hint": "Photo of notes, slides, whiteboard... (max 20 MB)",
     "delete_file": "Remove",
-    "char_count": "{{chars}} characters · ~{{minutes}} min read"
+    "char_count": "{{chars}} characters · ~{{minutes}} min read",
+    "default_title": "My StudyBeats song"
   },
   "library": {
     "title": "My library 🎵", "songs_count": "{{count}} song", "songs_count_plural": "{{count}} songs",

@@ -176,7 +176,8 @@
     "upload_image_label": "Upload une photo de cours",
     "upload_pdf_hint": "Glisse ton PDF ici ou clique pour sélectionner (max 20 Mo)",
     "upload_image_hint": "Photo de notes, diapos, tableau... (max 20 Mo)",
-    "char_count": "{{chars}} caractères · ~{{minutes}} min de lecture"
+    "char_count": "{{chars}} caractères · ~{{minutes}} min de lecture",
+    "default_title": "Ma chanson StudyBeats"
   },
   "library": {
     "title": "Ma bibliothèque 🎵",
