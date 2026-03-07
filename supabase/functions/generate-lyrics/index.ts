@@ -123,7 +123,7 @@ serve(async (req) => {
       });
     }
 
-    const { text, style, title } = await req.json();
+    const { text, style, title, language } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
@@ -140,19 +140,25 @@ serve(async (req) => {
       });
     }
 
+    const langMap: Record<string, string> = {
+      fr: "français", en: "English", de: "Deutsch", es: "español", ar: "العربية", zh: "中文", hi: "हिन्दी",
+    };
+    const targetLang = langMap[language] || langMap["fr"];
+
     const userPrompt = `STYLE MUSICAL DEMANDÉ : "${style}"
 TITRE SUGGÉRÉ : "${title || 'À déterminer'}"
+LANGUE DES PAROLES : ${targetLang}
 
 COURS À TRANSFORMER EN CHANSON :
 ---
 ${text.slice(0, 6000)}
 ---
 
-Applique immédiatement le protocole complet.
+Applique immédiatement le protocole complet. Écris les paroles ENTIÈREMENT en ${targetLang}.
 
 IMPORTANT — FORMAT DE SORTIE :
 Réponds UNIQUEMENT avec les paroles finales de la chanson, prêtes à être chantées.
-- Commence par le titre
+- Commence par le titre (en ${targetLang})
 - Puis les paroles complètes avec [Couplet 1], [Refrain], [Couplet 2], etc.
 - À la fin, ajoute 5-10 punchlines "révision flash" ultra mémorisables résumant le cours
 - N'inclus PAS les étapes intermédiaires (extraction, plan, contrôle) dans la sortie — fais-les mentalement.`;

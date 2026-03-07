@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,11 +11,8 @@ import { toast } from "sonner";
 import { usePageSEO } from "@/hooks/usePageSEO";
 
 export default function Signup() {
-  usePageSEO({
-    title: "Créer un compte",
-    description: "Inscris-toi gratuitement sur StudyBeats pour transformer tes cours en chansons pédagogiques et réviser en musique.",
-    canonical: "/signup",
-  });
+  const { t } = useTranslation();
+  usePageSEO({ title: t("auth.signup_title"), description: t("auth.signup_subtitle"), canonical: "/signup" });
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -25,17 +23,13 @@ export default function Signup() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!acceptedTerms) { toast.error("Tu dois accepter les CGU pour continuer"); return; }
-    if (password.length < 6) { toast.error("Le mot de passe doit faire au moins 6 caractères"); return; }
+    if (!acceptedTerms) { toast.error(t("auth.error_accept_terms")); return; }
+    if (password.length < 6) { toast.error(t("auth.error_password_min")); return; }
     setLoading(true);
     const { error } = await signUp(email, password, displayName);
     setLoading(false);
-    if (error) {
-      toast.error(error.message);
-    } else {
-      toast.success("Compte créé ! Vérifie ton email pour confirmer ton inscription.");
-      navigate("/login");
-    }
+    if (error) toast.error(error.message);
+    else { toast.success(t("auth.success_signup")); navigate("/login"); }
   };
 
   return (
@@ -47,43 +41,34 @@ export default function Signup() {
               <Music className="w-6 h-6 text-primary-foreground" />
             </div>
           </Link>
-          <h1 className="font-display text-2xl font-bold">Crée ton compte 🎵</h1>
-          <p className="text-muted-foreground mt-1">Transforme tes cours en musique</p>
+          <h1 className="font-display text-2xl font-bold">{t("auth.signup_title")}</h1>
+          <p className="text-muted-foreground mt-1">{t("auth.signup_subtitle")}</p>
         </div>
-
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Prénom</Label>
-            <Input id="name" placeholder="Ton prénom" value={displayName} onChange={(e) => setDisplayName(e.target.value)} required />
+            <Label htmlFor="name">{t("auth.name")}</Label>
+            <Input id="name" placeholder={t("auth.name_placeholder")} value={displayName} onChange={(e) => setDisplayName(e.target.value)} required />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" placeholder="ton@email.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <Label htmlFor="email">{t("auth.email")}</Label>
+            <Input id="email" type="email" placeholder={t("auth.email_placeholder")} value={email} onChange={(e) => setEmail(e.target.value)} required />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Mot de passe</Label>
-            <Input id="password" type="password" placeholder="Min. 6 caractères" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <Label htmlFor="password">{t("auth.password")}</Label>
+            <Input id="password" type="password" placeholder={t("auth.password_min")} value={password} onChange={(e) => setPassword(e.target.value)} required />
           </div>
-
           <div className="flex items-start gap-2">
-            <Checkbox
-              id="terms"
-              checked={acceptedTerms}
-              onCheckedChange={(checked) => setAcceptedTerms(checked === true)}
-              className="mt-1"
-            />
+            <Checkbox id="terms" checked={acceptedTerms} onCheckedChange={(checked) => setAcceptedTerms(checked === true)} className="mt-1" />
             <label htmlFor="terms" className="text-sm text-muted-foreground leading-snug cursor-pointer">
-              J'accepte les <Link to="/terms" className="text-primary hover:underline" target="_blank">CGU</Link> et la <Link to="/privacy" className="text-primary hover:underline" target="_blank">politique de confidentialité</Link>
+              {t("auth.accept_terms")} <Link to="/terms" className="text-primary hover:underline" target="_blank">{t("auth.terms_link")}</Link> {t("auth.and")} <Link to="/privacy" className="text-primary hover:underline" target="_blank">{t("auth.privacy_link")}</Link>
             </label>
           </div>
-
           <Button type="submit" className="w-full gradient-bg h-11" disabled={loading || !acceptedTerms}>
-            {loading ? "Création..." : "Créer mon compte"}
+            {loading ? t("auth.signup_loading") : t("auth.signup_button")}
           </Button>
         </form>
-
         <p className="text-center text-sm text-muted-foreground mt-6">
-          Déjà inscrit ? <Link to="/login" className="text-primary hover:underline">Se connecter</Link>
+          {t("auth.has_account")} <Link to="/login" className="text-primary hover:underline">{t("auth.login_link")}</Link>
         </p>
       </div>
     </div>

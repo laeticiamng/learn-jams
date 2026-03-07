@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,11 +10,8 @@ import { toast } from "sonner";
 import { usePageSEO } from "@/hooks/usePageSEO";
 
 export default function Login() {
-  usePageSEO({
-    title: "Connexion",
-    description: "Connecte-toi à StudyBeats pour retrouver tes chansons pédagogiques et tes quiz.",
-    canonical: "/login",
-  });
+  const { t } = useTranslation();
+  usePageSEO({ title: t("auth.login_title"), description: t("auth.login_subtitle"), canonical: "/login" });
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -21,9 +19,9 @@ export default function Login() {
   const navigate = useNavigate();
 
   const humanizeError = (message: string): string => {
-    if (message.includes("Email not confirmed")) return "Ton email n'est pas encore confirmé. Vérifie ta boîte de réception.";
-    if (message.includes("Invalid login credentials")) return "Email ou mot de passe incorrect.";
-    if (message.includes("Too many requests")) return "Trop de tentatives. Réessaie dans quelques minutes.";
+    if (message.includes("Email not confirmed")) return t("auth.error_email_not_confirmed");
+    if (message.includes("Invalid login credentials")) return t("auth.error_invalid_credentials");
+    if (message.includes("Too many requests")) return t("auth.error_too_many_requests");
     return message;
   };
 
@@ -32,11 +30,8 @@ export default function Login() {
     setLoading(true);
     const { error } = await signIn(email, password);
     setLoading(false);
-    if (error) {
-      toast.error(humanizeError(error.message));
-    } else {
-      navigate("/create");
-    }
+    if (error) toast.error(humanizeError(error.message));
+    else navigate("/create");
   };
 
   return (
@@ -48,29 +43,27 @@ export default function Login() {
               <Music className="w-6 h-6 text-primary-foreground" />
             </div>
           </Link>
-          <h1 className="font-display text-2xl font-bold">Bon retour ! 👋</h1>
-          <p className="text-muted-foreground mt-1">Connecte-toi pour retrouver tes chansons</p>
+          <h1 className="font-display text-2xl font-bold">{t("auth.login_title")}</h1>
+          <p className="text-muted-foreground mt-1">{t("auth.login_subtitle")}</p>
         </div>
-
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" placeholder="ton@email.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <Label htmlFor="email">{t("auth.email")}</Label>
+            <Input id="email" type="email" placeholder={t("auth.email_placeholder")} value={email} onChange={(e) => setEmail(e.target.value)} required />
           </div>
           <div className="space-y-2">
             <div className="flex justify-between">
-              <Label htmlFor="password">Mot de passe</Label>
-              <Link to="/forgot-password" className="text-sm text-primary hover:underline">Oublié ?</Link>
+              <Label htmlFor="password">{t("auth.password")}</Label>
+              <Link to="/forgot-password" className="text-sm text-primary hover:underline">{t("auth.forgot")}</Link>
             </div>
-            <Input id="password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <Input id="password" type="password" placeholder={t("auth.password_placeholder")} value={password} onChange={(e) => setPassword(e.target.value)} required />
           </div>
           <Button type="submit" className="w-full gradient-bg h-11" disabled={loading}>
-            {loading ? "Connexion..." : "Se connecter"}
+            {loading ? t("auth.login_loading") : t("auth.login_button")}
           </Button>
         </form>
-
         <p className="text-center text-sm text-muted-foreground mt-6">
-          Pas encore de compte ? <Link to="/signup" className="text-primary hover:underline">S'inscrire</Link>
+          {t("auth.no_account")} <Link to="/signup" className="text-primary hover:underline">{t("auth.signup_link")}</Link>
         </p>
       </div>
     </div>
