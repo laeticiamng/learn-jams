@@ -8,6 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Music } from "lucide-react";
 import { toast } from "sonner";
 import { usePageSEO } from "@/hooks/usePageSEO";
+import { motion } from "framer-motion";
+
+const ease = [0.25, 0.46, 0.45, 0.94] as [number, number, number, number];
 
 export default function Login() {
   const { t } = useTranslation();
@@ -35,37 +38,54 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4" style={{ background: "var(--gradient-glow)" }}>
-      <div className="glass-card p-8 w-full max-w-md glow">
-        <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center gap-2 mb-4">
-            <div className="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 relative overflow-hidden">
+      {/* Ambient */}
+      <div className="fixed inset-0 pointer-events-none" style={{ background: "var(--gradient-glow)" }} />
+      <div className="fixed inset-0 pointer-events-none" style={{ background: "var(--gradient-mesh)" }} />
+      <div className="fixed top-1/4 left-1/3 w-[400px] h-[400px] pointer-events-none ambient-orb" style={{ background: "hsl(265, 90%, 60%)", opacity: 0.08 }} />
+
+      <motion.div
+        initial={{ opacity: 0, y: 24, scale: 0.97, filter: "blur(10px)" }}
+        animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+        transition={{ duration: 0.7, ease }}
+        className="glass-card-elevated p-9 w-full max-w-md glow-intense relative z-10"
+      >
+        <div className="text-center mb-9">
+          <Link to="/" className="inline-block mb-5">
+            <motion.div
+              whileHover={{ scale: 1.05, rotate: -3 }}
+              className="w-12 h-12 rounded-xl gradient-bg-premium flex items-center justify-center mx-auto shadow-lg shadow-primary/25"
+            >
               <Music className="w-6 h-6 text-primary-foreground" />
-            </div>
+            </motion.div>
           </Link>
-          <h1 className="font-display text-2xl font-bold">{t("auth.login_title")}</h1>
-          <p className="text-muted-foreground mt-1">{t("auth.login_subtitle")}</p>
+          <h1 className="font-display text-2xl font-bold tracking-tight">{t("auth.login_title")}</h1>
+          <p className="text-muted-foreground mt-2 text-sm">{t("auth.login_subtitle")}</p>
         </div>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-2">
-            <Label htmlFor="email">{t("auth.email")}</Label>
-            <Input id="email" type="email" placeholder={t("auth.email_placeholder")} value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <Label htmlFor="email" className="text-sm font-medium">{t("auth.email")}</Label>
+            <Input id="email" type="email" placeholder={t("auth.email_placeholder")} value={email} onChange={(e) => setEmail(e.target.value)} required
+              className="bg-muted/15 border-border/20 h-11 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all duration-300" />
           </div>
           <div className="space-y-2">
             <div className="flex justify-between">
-              <Label htmlFor="password">{t("auth.password")}</Label>
-              <Link to="/forgot-password" className="text-sm text-primary hover:underline">{t("auth.forgot")}</Link>
+              <Label htmlFor="password" className="text-sm font-medium">{t("auth.password")}</Label>
+              <Link to="/forgot-password" className="text-xs text-primary hover:underline transition-colors">{t("auth.forgot")}</Link>
             </div>
-            <Input id="password" type="password" placeholder={t("auth.password_placeholder")} value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <Input id="password" type="password" placeholder={t("auth.password_placeholder")} value={password} onChange={(e) => setPassword(e.target.value)} required
+              className="bg-muted/15 border-border/20 h-11 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all duration-300" />
           </div>
-          <Button type="submit" className="w-full gradient-bg h-11" disabled={loading}>
-            {loading ? t("auth.login_loading") : t("auth.login_button")}
-          </Button>
+          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+            <Button type="submit" className="w-full gradient-bg-premium h-12 rounded-xl shadow-lg shadow-primary/20 shimmer-btn" disabled={loading}>
+              {loading ? t("auth.login_loading") : t("auth.login_button")}
+            </Button>
+          </motion.div>
         </form>
-        <p className="text-center text-sm text-muted-foreground mt-6">
-          {t("auth.no_account")} <Link to="/signup" className="text-primary hover:underline">{t("auth.signup_link")}</Link>
+        <p className="text-center text-sm text-muted-foreground mt-7">
+          {t("auth.no_account")} <Link to="/signup" className="text-primary hover:underline font-medium transition-colors">{t("auth.signup_link")}</Link>
         </p>
-      </div>
+      </motion.div>
     </div>
   );
 }
