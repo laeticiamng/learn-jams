@@ -49,7 +49,17 @@
     "faq5_q": "Sind meine Daten geschützt?", "faq5_a": "Ja. Verschlüsselt und privat. DSGVO-konform.",
     "cta_title": "Bereit, anders zu lernen?",
     "cta_text": "Schließe dich über 500 Studierenden an. Erstelle deinen ersten Song in unter 2 Minuten.",
-    "cta_button": "Jetzt starten"
+    "cta_button": "Jetzt starten",
+    "testimonials_title": "Sie lernen mit StudyBeats",
+    "testimonial1_name": "Marie L.", "testimonial1_field": "Medizin — 3. Jahr", "testimonial1_quote": "Ich habe Anatomie beim U-Bahn-Fahren gelernt. Meine Noten stiegen um 3 Punkte.",
+    "testimonial2_name": "Karim B.", "testimonial2_field": "Jura — 2. Jahr", "testimonial2_quote": "Verfassungsrecht als Rap klingt verrückt, aber es funktioniert.",
+    "testimonial3_name": "Chloé D.", "testimonial3_field": "Wirtschafts-Vorbereitung", "testimonial3_quote": "StudyBeats hat meinen Arbeitsweg in Lerneinheiten verwandelt.",
+    "before_after_title": "Vom Kurs zum Song", "before_after_subtitle": "So verarbeitet die KI deine Inhalte",
+    "before_label": "Dein Kurs", "after_label": "Der generierte Song",
+    "before_text": "Das Herz ist ein Hohlmuskel mit 4 Kammern: 2 Vorhöfe und 2 Ventrikel. Das Blut fließt dank der Herzklappen in eine Richtung.",
+    "after_text": "🎵 Vier Kammern im Herz, das schlägt,\nZwei Vorhöfe oben, zwei Ventrikel bewegt,\nDie Klappen halten das Blut auf Kurs,\nEinbahnstraße, kein Retours... 🎵",
+    "trust_gdpr": "DSGVO-konform", "trust_encrypted": "Verschlüsselte Daten", "trust_cancel": "Jederzeit kündbar",
+    "sticky_cta": "Kostenlos starten"
   },
   "auth": {
     "login_title": "Willkommen zurück! 👋", "login_subtitle": "Melde dich an, um deine Songs zu finden",

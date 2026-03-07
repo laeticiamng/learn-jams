@@ -84,7 +84,18 @@
     "faq5_a": "Oui. Tes cours et tes données personnelles sont chiffrés et restent strictement privés. Rien n'est partagé ni vendu à des tiers. Conforme RGPD.",
     "cta_title": "Prêt à réviser autrement ?",
     "cta_text": "Rejoins plus de 500 étudiants qui utilisent déjà StudyBeats. Crée ta première chanson en moins de 2 minutes.",
-    "cta_button": "Commencer maintenant"
+    "cta_button": "Commencer maintenant",
+    "testimonials_title": "Ils révisent avec StudyBeats",
+    "testimonial1_name": "Marie L.", "testimonial1_field": "Médecine — 3e année", "testimonial1_quote": "J'ai retenu mes cours d'anatomie en écoutant mes chansons dans le métro. Mes résultats ont grimpé de 3 points.",
+    "testimonial2_name": "Karim B.", "testimonial2_field": "Droit — L2", "testimonial2_quote": "Le droit constitutionnel en rap, ça paraît fou, mais ça marche. Je me surprends à réciter les articles en marchant.",
+    "testimonial3_name": "Chloé D.", "testimonial3_field": "Prépa HEC", "testimonial3_quote": "StudyBeats a transformé mes trajets en sessions de révision. Je ne perds plus une minute.",
+    "before_after_title": "Du cours à la chanson",
+    "before_after_subtitle": "Voici ce que l'IA fait avec ton contenu",
+    "before_label": "Ton cours", "after_label": "La chanson générée",
+    "before_text": "Le cœur est un muscle creux composé de 4 cavités : 2 oreillettes et 2 ventricules. Le sang circule dans un sens unique grâce aux valves cardiaques.",
+    "after_text": "🎵 Quatre cavités dans le cœur qui bat,\nDeux oreillettes en haut, deux ventricules en bas,\nLes valves gardent le sang sur la bonne voie,\nUn sens unique, c'est la loi... 🎵",
+    "trust_gdpr": "Conforme RGPD", "trust_encrypted": "Données chiffrées", "trust_cancel": "Sans engagement",
+    "sticky_cta": "Commencer gratuitement"
   },
   "auth": {
     "login_title": "Bon retour ! 👋",

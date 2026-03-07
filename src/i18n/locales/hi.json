@@ -41,7 +41,17 @@
     "faq5_q": "डेटा सुरक्षित है?", "faq5_a": "हाँ। एन्क्रिप्टेड और निजी। GDPR अनुरूप।",
     "cta_title": "अलग तरीके से पढ़ने के लिए तैयार?",
     "cta_text": "500+ छात्रों से जुड़ें। 2 मिनट में पहला गाना बनाएं।",
-    "cta_button": "अभी शुरू करें"
+    "cta_button": "अभी शुरू करें",
+    "testimonials_title": "वे StudyBeats से पढ़ते हैं",
+    "testimonial1_name": "Marie L.", "testimonial1_field": "मेडिसिन — तीसरा साल", "testimonial1_quote": "मेट्रो में गाने सुनकर एनाटॉमी याद कर ली। अंक 3 बढ़े।",
+    "testimonial2_name": "Karim B.", "testimonial2_field": "कानून — दूसरा साल", "testimonial2_quote": "संविधान को रैप में सुनना पागलपन लगता है, लेकिन काम करता है।",
+    "testimonial3_name": "Chloé D.", "testimonial3_field": "बिज़नेस प्रेप", "testimonial3_quote": "StudyBeats ने मेरी यात्रा को पढ़ाई में बदल दिया।",
+    "before_after_title": "नोट्स से गाने तक", "before_after_subtitle": "AI आपकी सामग्री के साथ क्या करता है",
+    "before_label": "आपके नोट्स", "after_label": "बनाया गया गाना",
+    "before_text": "हृदय 4 कक्षों वाली एक खोखली मांसपेशी है: 2 अलिंद और 2 निलय। हृदय वाल्वों की बदौलत रक्त एक दिशा में बहता है।",
+    "after_text": "🎵 चार कक्ष धड़कते दिल में,\nदो अलिंद ऊपर, दो निलय नीचे मिलें,\nवाल्व रखें खून को राह पर,\nएक तरफ़ा सड़क, कोई मोड़ नहीं... 🎵",
+    "trust_gdpr": "GDPR अनुपालन", "trust_encrypted": "एन्क्रिप्टेड डेटा", "trust_cancel": "कभी भी रद्द करें",
+    "sticky_cta": "मुफ़्त में शुरू करें"
   },
   "auth": {
     "login_title": "वापस स्वागत है! 👋", "login_subtitle": "अपने गाने देखने के लिए लॉग इन करें",

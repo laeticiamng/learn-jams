@@ -41,7 +41,17 @@
     "faq5_q": "¿Están protegidos mis datos?", "faq5_a": "Sí. Cifrados y privados. Conforme al RGPD.",
     "cta_title": "¿Listo para estudiar de otra manera?",
     "cta_text": "Únete a más de 500 estudiantes. Crea tu primera canción en menos de 2 minutos.",
-    "cta_button": "Empezar ahora"
+    "cta_button": "Empezar ahora",
+    "testimonials_title": "Estudian con StudyBeats",
+    "testimonial1_name": "Marie L.", "testimonial1_field": "Medicina — 3er año", "testimonial1_quote": "Memoricé anatomía escuchando mis canciones en el metro. Mis notas subieron 3 puntos.",
+    "testimonial2_name": "Karim B.", "testimonial2_field": "Derecho — 2do año", "testimonial2_quote": "Derecho constitucional en rap suena loco, pero funciona.",
+    "testimonial3_name": "Chloé D.", "testimonial3_field": "Prepa de negocios", "testimonial3_quote": "StudyBeats convirtió mis trayectos en sesiones de estudio.",
+    "before_after_title": "De los apuntes a la canción", "before_after_subtitle": "Esto es lo que la IA hace con tu contenido",
+    "before_label": "Tus apuntes", "after_label": "La canción generada",
+    "before_text": "El corazón es un músculo hueco compuesto por 4 cavidades: 2 aurículas y 2 ventrículos. La sangre circula en un solo sentido gracias a las válvulas cardíacas.",
+    "after_text": "🎵 Cuatro cavidades en el corazón latiendo,\nDos aurículas arriba, dos ventrículos siguiendo,\nLas válvulas mantienen el flujo en dirección,\nUna sola vía, esa es la lección... 🎵",
+    "trust_gdpr": "Cumple RGPD", "trust_encrypted": "Datos cifrados", "trust_cancel": "Sin compromiso",
+    "sticky_cta": "Empezar gratis"
   },
   "auth": {
     "login_title": "¡Bienvenido de vuelta! 👋", "login_subtitle": "Inicia sesión para encontrar tus canciones",
