@@ -97,7 +97,7 @@
     "title": "مكتبتي 🎵", "songs_count": "{{count}} أغنية", "songs_count_plural": "{{count}} أغاني",
     "new_song": "أغنية جديدة", "search": "بحث...", "no_songs_title": "لا توجد أغاني",
     "no_songs_text": "أنشئ أول أغنية لك!", "create_song": "إنشاء أغنية",
-    "generating_status": "قيد التوليد...", "error_status": "خطأ", "pending_status": "قيد الانتظار", "quiz_tooltip": "مسابقة مراجعة"
+    "generating_status": "قيد التوليد...", "error_status": "خطأ", "pending_status": "قيد الانتظار", "streaming_status": "بث مباشر", "final_status": "HD", "quiz_tooltip": "مسابقة مراجعة"
   },
   "player": {
     "back": "المكتبة", "lyrics": "الكلمات",

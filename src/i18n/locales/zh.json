@@ -97,7 +97,7 @@
     "title": "我的音乐库 🎵", "songs_count": "{{count}}首歌曲", "songs_count_plural": "{{count}}首歌曲",
     "new_song": "新歌曲", "search": "搜索...", "no_songs_title": "暂无歌曲",
     "no_songs_text": "创建第一首歌曲开始吧！", "create_song": "创建歌曲",
-    "generating_status": "正在生成...", "error_status": "错误", "pending_status": "等待中", "quiz_tooltip": "复习测验"
+    "generating_status": "正在生成...", "error_status": "错误", "pending_status": "等待中", "streaming_status": "流媒体", "final_status": "高清", "quiz_tooltip": "复习测验"
   },
   "player": {
     "back": "音乐库", "lyrics": "歌词",

@@ -191,6 +191,8 @@
     "generating_status": "En cours de génération...",
     "error_status": "Erreur",
     "pending_status": "En attente",
+    "streaming_status": "Streaming",
+    "final_status": "HD",
     "quiz_tooltip": "Quiz de révision"
   },
   "player": {

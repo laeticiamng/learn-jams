@@ -136,7 +136,7 @@
     "title": "My library 🎵", "songs_count": "{{count}} song", "songs_count_plural": "{{count}} songs",
     "new_song": "New song", "search": "Search...", "no_songs_title": "No songs yet",
     "no_songs_text": "Create your first song to get started!", "create_song": "Create a song",
-    "generating_status": "Generating...", "error_status": "Error", "pending_status": "Pending", "quiz_tooltip": "Revision quiz"
+    "generating_status": "Generating...", "error_status": "Error", "pending_status": "Pending", "streaming_status": "Streaming", "final_status": "HD", "quiz_tooltip": "Revision quiz"
   },
   "player": {
     "back": "Library", "lyrics": "Lyrics",
