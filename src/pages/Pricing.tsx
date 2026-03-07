@@ -9,6 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Check, Zap, Shield, Music, Brain } from "lucide-react";
 import { toast } from "sonner";
 import { usePageSEO } from "@/hooks/usePageSEO";
+import i18next from "i18next";
+
+function formatPrice(lang: string) {
+  // Use dot for EN/ZH/HI, comma for FR/DE/ES/AR
+  const dotLocales = ["en", "zh", "hi"];
+  return dotLocales.includes(lang) ? "14.90" : "14,90";
+}
 
 export default function Pricing() {
   const { t } = useTranslation();
@@ -16,6 +23,7 @@ export default function Pricing() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [subscription, setSubscription] = useState<any>(null);
+  const lang = i18next.language?.substring(0, 2) || "fr";
 
   usePageSEO({
     title: "StudyBeats — " + t("pricing.title"),
@@ -97,7 +105,7 @@ export default function Pricing() {
                     {t("pricing.plan_name")}
                   </span>
                   <div className="flex items-baseline justify-center gap-1">
-                    <span className="text-5xl font-display font-bold">14,90</span>
+                    <span className="text-5xl font-display font-bold">{formatPrice(lang)}</span>
                     <span className="text-2xl font-display font-bold">€</span>
                     <span className="text-muted-foreground ml-1">/ {t("pricing.month")}</span>
                   </div>
