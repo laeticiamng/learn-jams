@@ -77,6 +77,17 @@ serve(async (req) => {
       });
     }
 
+    // Timeout: if generating for more than 10 minutes, mark as error
+    const createdAt = new Date(song.created_at || Date.now()).getTime();
+    const TEN_MINUTES = 10 * 60 * 1000;
+    if (Date.now() - createdAt > TEN_MINUTES) {
+      await supabase.from("songs").update({ status: "error" }).eq("id", songId);
+      console.log(`[poll-suno] Song ${songId} timed out after 10 minutes`);
+      return new Response(JSON.stringify({ status: "error", reason: "timeout" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Query Suno API for task status
     const sunoResponse = await fetch(
       `https://api.sunoapi.org/api/v1/generate/record-info?taskId=${song.suno_task_id}`,
