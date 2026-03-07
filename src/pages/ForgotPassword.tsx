@@ -6,8 +6,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Music, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
+import { usePageSEO } from "@/hooks/usePageSEO";
 
 export default function ForgotPassword() {
+  usePageSEO({
+    title: "Mot de passe oublié",
+    description: "Réinitialise ton mot de passe StudyBeats. Un lien de récupération sera envoyé à ton email.",
+    canonical: "/forgot-password",
+    noindex: true,
+  });
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);

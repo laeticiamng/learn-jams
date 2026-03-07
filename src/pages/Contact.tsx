@@ -6,8 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { usePageSEO } from "@/hooks/usePageSEO";
 
 export default function Contact() {
+  usePageSEO({
+    title: "Contact & Support",
+    description: "Contacte l'équipe StudyBeats pour toute question, problème technique ou demande. Réponse sous 24-48h.",
+    canonical: "/contact",
+  });
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
