@@ -77,7 +77,7 @@
     "analyzing": "Analizando apuntes...", "creating_lyrics": "Creando letras...", "generating_music": "Generando música...",
     "success": "¡Canción en generación! 🎵", "error_generic": "Error en la generación", "back": "Atrás", "next": "Siguiente",
     "tab_text": "Texto", "tab_pdf": "PDF", "tab_image": "Imagen / Foto",
-    "file_too_large": "Archivo demasiado grande (máx. 20 MB)",
+    "file_too_large": "Archivo demasiado grande (máx. 200 MB)",
     "extracted_from": "Texto extraído de <strong>{{file}}</strong> — puedes editarlo abajo",
     "no_text_extracted": "No se extrajo texto",
     "extract_success": "¡Texto extraído de \"{{file}}\" con éxito! 🎉",
