@@ -217,7 +217,8 @@
     "no_audio_title": "Audio non disponible",
     "no_audio_text": "Les paroles ont été générées avec succès. La génération audio musicale est en cours de déploiement — tu peux déjà lire les paroles ci-dessous et tester tes connaissances avec le quiz.",
     "quiz_button": "Mode Quiz 🧠",
-    "not_found": "Chanson introuvable"
+    "not_found": "Chanson introuvable",
+    "study_notes": "Notes de révision & Ancrages examen"
   },
   "quiz": {
     "generating": "Génération du quiz en cours...",

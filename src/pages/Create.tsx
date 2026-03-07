@@ -52,11 +52,12 @@ export default function Create() {
 
       const generatedLyrics = lyricsData?.lyrics || courseText.slice(0, 500);
       const generatedTitle = lyricsData?.title || title || t("create.default_title");
+      const lyricsMetadata = lyricsData?.lyricsMetadata || null;
 
       const { data: song, error: insertError } = await supabase.from("songs").insert({
         user_id: user.id, title: generatedTitle, original_text: courseText,
-        generated_lyrics: generatedLyrics, style, subject: subject || null, status: "generating",
-      }).select().single();
+        generated_lyrics: generatedLyrics, lyrics_metadata: lyricsMetadata, style, subject: subject || null, status: "generating",
+      } as any).select().single();
       if (insertError) throw insertError;
       setProgress(70);
 

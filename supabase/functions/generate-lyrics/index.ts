@@ -252,11 +252,29 @@ ${text.slice(0, 6000)}
 Apply the full protocol immediately. Write the lyrics ENTIRELY in ${targetLang}.
 
 IMPORTANT — OUTPUT FORMAT:
-Reply ONLY with the final song lyrics, ready to be sung.
+Your response must have TWO sections separated by the exact line: ---METADATA---
+
+SECTION 1 (LYRICS — before the separator):
 - Start with the title (in ${targetLang})
 - Then the complete lyrics with [Verse 1], [Chorus], [Verse 2], etc.
-- At the end, add 5-10 "flash revision" punchlines that are ultra-memorable summaries of the course
-- Do NOT include intermediate steps (extraction, plan, quality control) in the output — do them mentally.`;
+- Do NOT include intermediate steps (extraction, plan, quality control) here — do them mentally.
+- These lyrics will be sent to a music AI — they must be CLEAN, singable, with NO annotations.
+
+SECTION 2 (STUDY NOTES — after ---METADATA---):
+Provide the following in ${targetLang}:
+
+A) NOTIONS COVERED PER SECTION:
+For each verse/chorus, list:
+- [Section name]: key concepts covered, essential keywords, subtleties/traps
+
+B) FLASH REVISION (10-20 ultra-memorable punchlines summarizing the course)
+
+C) EXAM ANCHORS:
+- The exact or near-exact formulations a student must know to achieve 20/20
+- Critical distinctions, exceptions, and traps that are commonly tested
+
+D) COVERAGE CHECK-LIST:
+- List any concept from the original course that may be insufficiently covered or missing from the lyrics`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -296,7 +314,17 @@ Reply ONLY with the final song lyrics, ready to be sung.
       throw new Error("Empty response from AI");
     }
 
-    const lines = content.split("\n").filter((l: string) => l.trim());
+    // Split lyrics from metadata
+    let lyrics = content;
+    let lyricsMetadata: string | null = null;
+    const metadataSeparator = "---METADATA---";
+    const sepIndex = content.indexOf(metadataSeparator);
+    if (sepIndex !== -1) {
+      lyrics = content.slice(0, sepIndex).trim();
+      lyricsMetadata = content.slice(sepIndex + metadataSeparator.length).trim();
+    }
+
+    const lines = lyrics.split("\n").filter((l: string) => l.trim());
     let generatedTitle = title || "StudyBeats Song";
     
     const firstLine = lines[0] || "";
@@ -310,7 +338,8 @@ Reply ONLY with the final song lyrics, ready to be sung.
 
     return new Response(JSON.stringify({ 
       title: generatedTitle || title || "StudyBeats Song",
-      lyrics: content 
+      lyrics,
+      lyricsMetadata,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

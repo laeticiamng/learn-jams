@@ -126,7 +126,8 @@
     "back": "Bibliothek", "lyrics": "Liedtexte",
     "no_audio_title": "Audio nicht verfügbar",
     "no_audio_text": "Die Liedtexte wurden erfolgreich generiert. Die Audio-Musikgenerierung wird gerade bereitgestellt — du kannst die Texte bereits lesen und dein Wissen mit dem Quiz testen.",
-    "quiz_button": "Quiz-Modus 🧠", "not_found": "Song nicht gefunden"
+    "quiz_button": "Quiz-Modus 🧠", "not_found": "Song nicht gefunden",
+    "study_notes": "Lernnotizen & Prüfungsanker"
   },
   "quiz": {
     "generating": "Quiz wird generiert...", "generating_sub": "Die KI analysiert deinen Kurs und die Liedtexte",

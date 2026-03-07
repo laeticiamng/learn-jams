@@ -1,14 +1,15 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { Play, Pause, Heart, ArrowLeft, Volume2, Loader2, Brain, Music } from "lucide-react";
+import { Play, Pause, Heart, ArrowLeft, Volume2, Loader2, Brain, Music, BookOpen, ChevronDown } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { StudyNotes } from "@/components/player/StudyNotes";
 
-interface Song { id: string; title: string; style: string; original_text: string; generated_lyrics: string | null; audio_url: string | null; duration: number | null; status: string; subject: string | null; }
+interface Song { id: string; title: string; style: string; original_text: string; generated_lyrics: string | null; audio_url: string | null; duration: number | null; status: string; subject: string | null; lyrics_metadata: string | null; }
 
 const ease = [0.25, 0.46, 0.45, 0.94] as [number, number, number, number];
 
@@ -214,6 +215,9 @@ export default function Player() {
             ))}
           </motion.div>
         )}
+
+        {/* Study Notes (Metadata) */}
+        {song.lyrics_metadata && <StudyNotes metadata={song.lyrics_metadata} t={t} />}
 
         {/* Quiz CTA */}
         {song.generated_lyrics && (
