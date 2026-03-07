@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Progress } from "@/components/ui/progress";
 import { ArrowLeft, ArrowRight, Sparkles, Loader2, Check } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import CourseUploader from "@/components/create/CourseUploader";
@@ -14,12 +13,13 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+const ease = [0.25, 0.46, 0.45, 0.94] as [number, number, number, number];
 const spring = { type: "spring" as const, stiffness: 400, damping: 35 };
 const fadeSlide = {
-  initial: { opacity: 0, y: 24, filter: "blur(8px)" },
+  initial: { opacity: 0, y: 28, filter: "blur(10px)" },
   animate: { opacity: 1, y: 0, filter: "blur(0px)" },
-  exit: { opacity: 0, y: -16, filter: "blur(6px)" },
-  transition: { duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number] },
+  exit: { opacity: 0, y: -20, filter: "blur(8px)" },
+  transition: { duration: 0.55, ease },
 };
 
 export default function Create() {
@@ -78,15 +78,15 @@ export default function Create() {
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
-      {/* Ambient background mesh */}
+      {/* Ambient */}
       <div className="fixed inset-0 pointer-events-none" style={{ background: "var(--gradient-mesh)" }} />
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] pointer-events-none opacity-40"
-        style={{ background: "var(--gradient-glow)" }} />
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] pointer-events-none ambient-orb" style={{ background: "hsl(265, 90%, 60%)", opacity: 0.08 }} />
+      <div className="fixed bottom-20 right-1/4 w-[400px] h-[300px] pointer-events-none ambient-orb" style={{ background: "hsl(300, 70%, 50%)", animationDelay: "4s", opacity: 0.06 }} />
 
       <Navbar />
 
       <div className="container mx-auto pt-28 pb-16 px-4 max-w-3xl relative z-10">
-        {/* Apple-style stepper */}
+        {/* Stepper */}
         <div className="flex items-center gap-2 mb-16 max-w-md mx-auto">
           {stepLabels.map((label, i) => (
             <div key={i} className="flex items-center gap-3 flex-1">
@@ -95,14 +95,14 @@ export default function Create() {
                 transition={spring}
                 className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-500 shrink-0 ${
                   i < step
-                    ? "gradient-bg text-primary-foreground shadow-lg shadow-primary/20"
+                    ? "gradient-bg-premium text-primary-foreground shadow-lg shadow-primary/25"
                     : i === step
-                    ? "gradient-bg text-primary-foreground glow-soft"
-                    : "bg-muted/60 text-muted-foreground"
+                    ? "gradient-bg-premium text-primary-foreground glow-soft"
+                    : "bg-muted/40 text-muted-foreground"
                 }`}
               >
                 {i < step ? (
-                  <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={spring}>
+                  <motion.div initial={{ scale: 0, rotate: -90 }} animate={{ scale: 1, rotate: 0 }} transition={spring}>
                     <Check className="w-4 h-4" />
                   </motion.div>
                 ) : (
@@ -110,17 +110,17 @@ export default function Create() {
                 )}
               </motion.div>
               <span className={`text-sm hidden sm:block font-medium transition-colors duration-500 ${
-                i <= step ? "text-foreground" : "text-muted-foreground/60"
+                i <= step ? "text-foreground" : "text-muted-foreground/50"
               }`}>
                 {label}
               </span>
               {i < 2 && (
-                <div className="flex-1 h-[2px] rounded-full bg-muted/40 overflow-hidden">
+                <div className="flex-1 h-[2px] rounded-full bg-muted/30 overflow-hidden">
                   <motion.div
-                    className="h-full gradient-bg rounded-full"
+                    className="h-full gradient-bg-premium rounded-full"
                     initial={{ width: "0%" }}
                     animate={{ width: i < step ? "100%" : "0%" }}
-                    transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
+                    transition={{ duration: 0.6, ease }}
                   />
                 </div>
               )}
@@ -128,50 +128,50 @@ export default function Create() {
           ))}
         </div>
 
-        {/* Step content */}
+        {/* Steps */}
         <AnimatePresence mode="wait">
           {step === 0 && (
             <motion.div key="step0" {...fadeSlide}>
-              <div className="text-center mb-10">
-                <h2 className="font-display text-4xl md:text-5xl font-bold mb-3 tracking-tight">
+              <div className="text-center mb-12">
+                <h2 className="font-display text-4xl md:text-5xl font-bold mb-4 tracking-tight">
                   {t("create.upload_title")}
                 </h2>
-                <p className="text-muted-foreground text-lg max-w-lg mx-auto">{t("create.upload_subtitle")}</p>
+                <p className="text-muted-foreground text-lg max-w-lg mx-auto leading-relaxed">{t("create.upload_subtitle")}</p>
               </div>
               <CourseUploader text={courseText} onTextChange={setCourseText} />
             </motion.div>
           )}
           {step === 1 && (
             <motion.div key="step1" {...fadeSlide}>
-              <div className="text-center mb-10">
-                <h2 className="font-display text-4xl md:text-5xl font-bold mb-3 tracking-tight">
+              <div className="text-center mb-12">
+                <h2 className="font-display text-4xl md:text-5xl font-bold mb-4 tracking-tight">
                   {t("create.style_title")}
                 </h2>
-                <p className="text-muted-foreground text-lg max-w-lg mx-auto">{t("create.style_subtitle")}</p>
+                <p className="text-muted-foreground text-lg max-w-lg mx-auto leading-relaxed">{t("create.style_subtitle")}</p>
               </div>
               <StylePicker selected={style} onSelect={setStyle} />
               <motion.div
-                initial={{ opacity: 0, y: 12 }}
+                initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3, duration: 0.5 }}
                 className="grid sm:grid-cols-2 gap-4 mt-10"
               >
                 <div className="space-y-2">
-                  <Label className="text-muted-foreground text-sm">{t("create.title_label")}</Label>
+                  <Label className="text-muted-foreground text-sm font-medium">{t("create.title_label")}</Label>
                   <Input
                     placeholder={t("create.title_placeholder")}
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    className="bg-muted/30 border-border/30 h-12 rounded-xl focus:ring-2 focus:ring-primary/30 transition-all"
+                    className="bg-muted/20 border-border/20 h-12 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all duration-300"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-muted-foreground text-sm">{t("create.subject_label")}</Label>
+                  <Label className="text-muted-foreground text-sm font-medium">{t("create.subject_label")}</Label>
                   <Input
                     placeholder={t("create.subject_placeholder")}
                     value={subject}
                     onChange={(e) => setSubject(e.target.value)}
-                    className="bg-muted/30 border-border/30 h-12 rounded-xl focus:ring-2 focus:ring-primary/30 transition-all"
+                    className="bg-muted/20 border-border/20 h-12 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all duration-300"
                   />
                 </div>
               </motion.div>
@@ -187,15 +187,14 @@ export default function Create() {
 
               {/* Summary card */}
               <motion.div
-                initial={{ opacity: 0, scale: 0.96 }}
-                animate={{ opacity: 1, scale: 1 }}
+                initial={{ opacity: 0, scale: 0.95, filter: "blur(6px)" }}
+                animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
                 transition={{ delay: 0.15, duration: 0.5 }}
-                className="glass-card p-8 space-y-4 text-left max-w-lg mx-auto relative overflow-hidden"
+                className="glass-card-elevated p-8 space-y-4 text-left max-w-lg mx-auto relative overflow-hidden"
               >
-                {/* Pro quality badge */}
-                <div className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20">
+                <div className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/8 border border-primary/15">
                   <Sparkles className="w-3 h-3 text-primary" />
-                  <span className="text-[11px] font-semibold text-primary tracking-wide uppercase">Pro Quality</span>
+                  <span className="text-[10px] font-bold text-primary tracking-widest uppercase">Pro Quality</span>
                 </div>
                 {[
                   { label: t("create.text_label"), value: `${courseText.length} ${t("create.chars")}` },
@@ -205,13 +204,13 @@ export default function Create() {
                 ].map((row, i) => (
                   <motion.div
                     key={row.label}
-                    initial={{ opacity: 0, x: -10 }}
+                    initial={{ opacity: 0, x: -12 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.2 + i * 0.08 }}
-                    className="flex justify-between items-center text-sm py-2 border-b border-border/20 last:border-0"
+                    className="flex justify-between items-center text-sm py-2.5 border-b border-border/15 last:border-0"
                   >
                     <span className="text-muted-foreground">{row.label}</span>
-                    <span className="font-medium capitalize">{row.value}</span>
+                    <span className="font-semibold capitalize">{row.value}</span>
                   </motion.div>
                 ))}
               </motion.div>
@@ -219,20 +218,18 @@ export default function Create() {
               {/* Progress */}
               {generating && (
                 <motion.div
-                  initial={{ opacity: 0, y: 10 }}
+                  initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   className="space-y-4 max-w-lg mx-auto"
                 >
-                  <div className="relative h-2 rounded-full bg-muted/40 overflow-hidden">
+                  <div className="relative h-2 rounded-full bg-muted/30 overflow-hidden">
                     <motion.div
-                      className="absolute inset-y-0 left-0 gradient-bg rounded-full"
+                      className="absolute inset-y-0 left-0 gradient-bg-premium rounded-full"
                       animate={{ width: `${progress}%` }}
                       transition={{ duration: 0.6, ease: "easeOut" }}
                     />
-                    {/* Shimmer overlay */}
-                    <div className="absolute inset-0 shimmer-btn" style={{ background: "transparent" }} />
                   </div>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-muted-foreground font-medium">
                     {progress < 30 ? t("create.analyzing") : progress < 60 ? t("create.creating_lyrics") : t("create.generating_music")}
                   </p>
                 </motion.div>
@@ -240,22 +237,24 @@ export default function Create() {
 
               {/* Generate button */}
               <motion.div
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
               >
-                <Button
-                  size="lg"
-                  className="gradient-bg h-14 px-12 text-lg rounded-2xl glow shimmer-btn hover:scale-[1.02] active:scale-[0.98] transition-transform duration-200"
-                  onClick={handleGenerate}
-                  disabled={generating}
-                >
-                  {generating ? (
-                    <><Loader2 className="w-5 h-5 animate-spin mr-2" /> {t("create.generating")}</>
-                  ) : (
-                    <><Sparkles className="w-5 h-5 mr-2" /> {t("create.generate_button")}</>
-                  )}
-                </Button>
+                <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                  <Button
+                    size="lg"
+                    className="gradient-bg-premium h-14 px-14 text-lg rounded-2xl glow-intense shimmer-btn shadow-xl shadow-primary/25"
+                    onClick={handleGenerate}
+                    disabled={generating}
+                  >
+                    {generating ? (
+                      <><Loader2 className="w-5 h-5 animate-spin mr-2" /> {t("create.generating")}</>
+                    ) : (
+                      <><Sparkles className="w-5 h-5 mr-2" /> {t("create.generate_button")}</>
+                    )}
+                  </Button>
+                </motion.div>
               </motion.div>
             </motion.div>
           )}
@@ -272,18 +271,20 @@ export default function Create() {
             variant="ghost"
             onClick={() => setStep(s => s - 1)}
             disabled={step === 0}
-            className="gap-2 rounded-xl h-11 px-6 hover:bg-muted/40 transition-all"
+            className="gap-2 rounded-xl h-11 px-6 hover:bg-muted/30 transition-all text-muted-foreground"
           >
             <ArrowLeft className="w-4 h-4" /> {t("create.back")}
           </Button>
           {step < 2 && (
-            <Button
-              onClick={() => setStep(s => s + 1)}
-              disabled={!canNext}
-              className="gap-2 gradient-bg rounded-xl h-11 px-6 hover:scale-[1.02] active:scale-[0.98] transition-transform duration-200"
-            >
-              {t("create.next")} <ArrowRight className="w-4 h-4" />
-            </Button>
+            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+              <Button
+                onClick={() => setStep(s => s + 1)}
+                disabled={!canNext}
+                className="gap-2 gradient-bg-premium rounded-xl h-11 px-7 shadow-lg shadow-primary/20"
+              >
+                {t("create.next")} <ArrowRight className="w-4 h-4" />
+              </Button>
+            </motion.div>
           )}
         </motion.div>
       </div>

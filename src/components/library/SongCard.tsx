@@ -24,20 +24,20 @@ interface SongCardProps {
 }
 
 const styleColors: Record<string, string> = {
-  rap: "bg-red-500/15 text-red-400",
-  lofi: "bg-indigo-500/15 text-indigo-400",
-  pop: "bg-pink-500/15 text-pink-400",
-  jazz: "bg-amber-500/15 text-amber-400",
-  rock: "bg-red-600/15 text-red-400",
-  "spoken-word": "bg-teal-500/15 text-teal-400",
-  reggaeton: "bg-green-500/15 text-green-400",
-  classique: "bg-violet-500/15 text-violet-400",
-  techno: "bg-gray-500/15 text-gray-400",
-  afrobeat: "bg-amber-500/15 text-amber-400",
+  rap: "from-red-500/80 to-orange-500/80",
+  lofi: "from-indigo-500/80 to-purple-500/80",
+  pop: "from-pink-500/80 to-rose-500/80",
+  jazz: "from-amber-500/80 to-yellow-500/80",
+  rock: "from-red-600/80 to-red-400/80",
+  "spoken-word": "from-teal-500/80 to-cyan-500/80",
+  reggaeton: "from-green-500/80 to-emerald-500/80",
+  classique: "from-violet-500/80 to-purple-500/80",
+  techno: "from-gray-400/80 to-zinc-500/80",
+  afrobeat: "from-amber-500/80 to-red-500/80",
 };
 
 const item = {
-  hidden: { opacity: 0, y: 16, filter: "blur(6px)" },
+  hidden: { opacity: 0, y: 20, filter: "blur(8px)" },
   show: {
     opacity: 1,
     y: 0,
@@ -51,34 +51,34 @@ export function SongCard({ song, isFavorite, onToggleFavorite }: SongCardProps) 
   const navigate = useNavigate();
   const isClickable = song.status === "ready";
   const genProgress = getGeneratingProgress(song);
+  const styleGradient = styleColors[song.style] || "from-primary/80 to-secondary/80";
 
   return (
     <motion.div
       variants={item}
       layout
-      className={`glass-card p-5 flex flex-col gap-3 card-hover ${
-        isClickable ? "cursor-pointer" : "opacity-80"
-      } group`}
+      className={`glass-card-elevated p-5 card-hover group ${
+        isClickable ? "cursor-pointer" : "opacity-75"
+      }`}
       onClick={() => isClickable && navigate(`/player/${song.id}`)}
     >
       <div className="flex items-center gap-4">
-        {/* Play icon */}
-        <div
-          className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 relative transition-all duration-300 ${
-            song.status === "generating"
-              ? "bg-muted/60"
-              : "gradient-bg group-hover:shadow-lg group-hover:shadow-primary/20 group-hover:scale-105"
+        {/* Album art mini */}
+        <motion.div
+          whileHover={isClickable ? { scale: 1.08 } : {}}
+          className={`w-14 h-14 rounded-xl flex items-center justify-center shrink-0 relative transition-all duration-500 bg-gradient-to-br ${
+            song.status === "generating" ? "from-muted/60 to-muted/40" : styleGradient
           }`}
         >
           {song.status === "generating" ? (
             <Loader2 className="w-5 h-5 text-primary animate-spin" />
           ) : (
-            <Play className="w-5 h-5 text-primary-foreground ml-0.5" />
+            <Play className="w-5 h-5 text-primary-foreground ml-0.5 drop-shadow-lg" />
           )}
           {song.status === "ready" && !song.is_final_quality && (
-            <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-blue-400 animate-pulse border-2 border-card" />
+            <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-blue-400 animate-pulse-glow border-2 border-card" />
           )}
-        </div>
+        </motion.div>
 
         {/* Info */}
         <div className="flex-1 min-w-0">
@@ -86,69 +86,69 @@ export function SongCard({ song, isFavorite, onToggleFavorite }: SongCardProps) 
             {song.title}
           </h3>
           <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-            <span
-              className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${
-                styleColors[song.style] || "bg-muted/60 text-muted-foreground"
-              }`}
-            >
+            <span className={`text-[11px] px-2.5 py-0.5 rounded-full font-semibold uppercase tracking-wider bg-gradient-to-r ${styleGradient} text-primary-foreground`}>
               {song.style}
             </span>
-            {song.subject && <span className="text-xs text-muted-foreground">{song.subject}</span>}
+            {song.subject && <span className="text-xs text-muted-foreground truncate max-w-[120px]">{song.subject}</span>}
             <StatusBadge status={song.status} isFinalQuality={song.is_final_quality} />
           </div>
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-3 text-muted-foreground">
+        <div className="flex items-center gap-2 text-muted-foreground">
           {song.duration && (
-            <span className="text-sm flex items-center gap-1 tabular-nums">
-              <Clock className="w-3.5 h-3.5" />
+            <span className="text-xs flex items-center gap-1 tabular-nums font-mono opacity-60">
+              <Clock className="w-3 h-3" />
               {Math.floor(song.duration / 60)}:{(song.duration % 60).toString().padStart(2, "0")}
             </span>
           )}
           {song.status === "ready" && (
             <Tooltip>
               <TooltipTrigger asChild>
-                <button
+                <motion.button
+                  whileHover={{ scale: 1.15 }}
+                  whileTap={{ scale: 0.9 }}
                   onClick={(e) => {
                     e.stopPropagation();
                     navigate(`/quiz/${song.id}`);
                   }}
-                  className="hover:text-primary transition-colors duration-300 p-1"
+                  className="hover:text-primary transition-colors duration-300 p-1.5 rounded-lg hover:bg-primary/10"
                 >
-                  <Brain className="w-5 h-5" />
-                </button>
+                  <Brain className="w-4.5 h-4.5" />
+                </motion.button>
               </TooltipTrigger>
               <TooltipContent>{t("library.quiz_tooltip")}</TooltipContent>
             </Tooltip>
           )}
-          <button
+          <motion.button
+            whileHover={{ scale: 1.15 }}
+            whileTap={{ scale: 0.9 }}
             onClick={(e) => {
               e.stopPropagation();
               onToggleFavorite(song.id);
             }}
-            className="hover:text-primary transition-all duration-300 p-1 hover:scale-110"
+            className="hover:text-primary transition-all duration-300 p-1.5 rounded-lg hover:bg-primary/10"
           >
             <Heart
-              className={`w-5 h-5 transition-all duration-300 ${
-                isFavorite ? "fill-primary text-primary scale-110" : ""
+              className={`w-4.5 h-4.5 transition-all duration-300 ${
+                isFavorite ? "fill-primary text-primary" : ""
               }`}
             />
-          </button>
+          </motion.button>
         </div>
       </div>
 
       {/* Progress bar for generating songs */}
       {genProgress !== null && (
-        <div className="pl-[72px] pr-2">
-          <div className="h-1.5 rounded-full bg-muted/40 overflow-hidden">
+        <div className="pl-[72px] pr-2 mt-3">
+          <div className="h-1 rounded-full bg-muted/30 overflow-hidden">
             <motion.div
-              className="h-full gradient-bg rounded-full"
+              className="h-full gradient-bg-premium rounded-full"
               animate={{ width: `${genProgress}%` }}
               transition={{ duration: 0.8, ease: "easeOut" }}
             />
           </div>
-          <p className="text-xs text-muted-foreground mt-1.5">
+          <p className="text-[11px] text-muted-foreground mt-1.5 font-medium">
             {genProgress < 50
               ? t("create.analyzing", "Analyse en cours…")
               : t("create.generating_music", "Génération de la musique…")}
