@@ -159,7 +159,7 @@
     "tab_text": "Texte",
     "tab_pdf": "PDF",
     "tab_image": "Image / Photo",
-    "file_too_large": "Fichier trop volumineux (max 20 Mo)",
+    "file_too_large": "Fichier trop volumineux (max 200 Mo)",
     "extracted_from": "Texte extrait de <strong>{{file}}</strong> — tu peux l'éditer ci-dessous",
     "no_text_extracted": "Aucun texte extrait",
     "extract_success": "Texte extrait de \"{{file}}\" avec succès ! 🎉",
