@@ -215,6 +215,9 @@ export default function Player() {
           </motion.div>
         )}
 
+        {/* Study Notes (Metadata) */}
+        {song.lyrics_metadata && <StudyNotes metadata={song.lyrics_metadata} t={t} />}
+
         {/* Quiz CTA */}
         {song.generated_lyrics && (
           <motion.div
