@@ -96,12 +96,12 @@ serve(async (req) => {
         Authorization: `Bearer ${SUNO_API_KEY}`,
       },
       body: JSON.stringify({
-        prompt: lyrics.slice(0, 1500),
+        prompt: lyrics.slice(0, 5000),
         style: styleMap[style] || "pop",
-        title: title,
+        title: (title || "StudyBeats").slice(0, 80),
         customMode: true,
         instrumental: false,
-        model: "V4",
+        model: "V4_5ALL",
         callBackUrl: `${supabaseUrl}/functions/v1/suno-callback?songId=${songId}`,
       }),
     });

@@ -22,16 +22,47 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    if (body.data && body.data.length > 0) {
-      const track = body.data[0];
-      await supabase.from("songs").update({
-        audio_url: track.audio_url || track.audioUrl,
+    const code = body.code;
+    const callbackType = body.data?.callbackType;
+    const tracks = body.data?.data;
+
+    console.log(`[suno-callback] songId=${songId}, code=${code}, callbackType=${callbackType}, tracks=${tracks?.length || 0}`);
+
+    // Handle error callbacks
+    if (code !== 200 || callbackType === "error") {
+      console.error(`[suno-callback] Error callback: code=${code}, msg=${body.msg}`);
+      await supabase.from("songs").update({ status: "error" }).eq("id", songId);
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Handle "text" stage — lyrics generated, music still processing
+    if (callbackType === "text") {
+      console.log(`[suno-callback] Text stage received, still generating music...`);
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Handle "first" or "complete" — at least one track is ready
+    if ((callbackType === "first" || callbackType === "complete") && Array.isArray(tracks) && tracks.length > 0) {
+      const track = tracks[0];
+      const updateData: Record<string, unknown> = {
+        audio_url: track.audio_url || track.audioUrl || null,
         duration: track.duration ? Math.round(track.duration) : null,
         cover_image_url: track.image_url || track.imageUrl || null,
-        status: "ready",
-      }).eq("id", songId);
-    } else if (body.code !== 200 && body.code !== undefined) {
-      await supabase.from("songs").update({ status: "error" }).eq("id", songId);
+        status: callbackType === "complete" ? "ready" : "generating",
+      };
+
+      // Only mark ready if we actually have an audio URL
+      if (!updateData.audio_url && callbackType === "complete") {
+        console.error(`[suno-callback] Complete but no audio_url, marking error`);
+        updateData.status = "error";
+      }
+
+      await supabase.from("songs").update(updateData).eq("id", songId);
+      console.log(`[suno-callback] Updated song ${songId}: status=${updateData.status}, audio=${!!updateData.audio_url}`);
     }
 
     return new Response(JSON.stringify({ success: true }), {
