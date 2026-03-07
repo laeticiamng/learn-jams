@@ -53,8 +53,8 @@ serve(async (req) => {
         audio_url: audioUrl,
         duration: track.duration ? Math.round(track.duration) : null,
         cover_image_url: track.image_url || track.imageUrl || null,
-        // "first" with audio → ready immediately (streaming ~20s), "complete" → ready with final quality
         status: audioUrl ? "ready" : (callbackType === "complete" ? "error" : "generating"),
+        is_final_quality: callbackType === "complete" && !!audioUrl,
       };
 
       if (!audioUrl && callbackType === "complete") {
@@ -62,7 +62,7 @@ serve(async (req) => {
       }
 
       await supabase.from("songs").update(updateData).eq("id", songId);
-      console.log(`[suno-callback] Updated song ${songId}: status=${updateData.status}, audio=${!!updateData.audio_url}`);
+      console.log(`[suno-callback] Updated song ${songId}: status=${updateData.status}, final=${updateData.is_final_quality}, audio=${!!updateData.audio_url}`);
     }
 
     return new Response(JSON.stringify({ success: true }), {
