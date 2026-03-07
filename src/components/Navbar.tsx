@@ -1,53 +1,72 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Music, Library, User, LogOut, Plus, Menu, X } from "lucide-react";
+import { Music, Library, User, LogOut, Plus, Menu } from "lucide-react";
 import LanguageSelector from "@/components/LanguageSelector";
-import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useState } from "react";
+import { motion } from "framer-motion";
 
 export default function Navbar() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
 
   const go = (path: string) => { navigate(path); setOpen(false); };
+  const isActive = (path: string) => location.pathname === path;
+
+  const navButtonClass = (path: string) =>
+    `gap-2 rounded-xl transition-all duration-300 ${
+      isActive(path)
+        ? "bg-primary/10 text-primary hover:bg-primary/15"
+        : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
+    }`;
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 glass-nav border-b border-border/20">
+    <nav className="fixed top-0 left-0 right-0 z-50 glass-nav border-b border-border/10">
       <div className="container mx-auto flex items-center justify-between h-16 px-4">
-        <Link to="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg gradient-bg flex items-center justify-center">
+        <Link to="/" className="flex items-center gap-2.5 group">
+          <motion.div
+            whileHover={{ scale: 1.05, rotate: -3 }}
+            whileTap={{ scale: 0.95 }}
+            className="w-9 h-9 rounded-xl gradient-bg-premium flex items-center justify-center shadow-lg shadow-primary/20"
+          >
             <Music className="w-5 h-5 text-primary-foreground" />
-          </div>
+          </motion.div>
           <span className="font-display text-xl font-bold gradient-text">StudyBeats</span>
         </Link>
 
         {/* Desktop */}
-        <div className="hidden md:flex items-center gap-2">
+        <div className="hidden md:flex items-center gap-1.5">
           <LanguageSelector />
           {user ? (
             <>
-              <Button variant="ghost" size="sm" onClick={() => navigate("/create")} className="gap-2">
+              <Button variant="ghost" size="sm" onClick={() => navigate("/create")} className={navButtonClass("/create")}>
                 <Plus className="w-4 h-4" /> {t("nav.create")}
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => navigate("/library")} className="gap-2">
+              <Button variant="ghost" size="sm" onClick={() => navigate("/library")} className={navButtonClass("/library")}>
                 <Library className="w-4 h-4" /> {t("nav.library")}
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => navigate("/profile")} className="gap-2">
+              <Button variant="ghost" size="sm" onClick={() => navigate("/profile")} className={navButtonClass("/profile")}>
                 <User className="w-4 h-4" />
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => { signOut(); navigate("/"); }}>
+              <div className="w-px h-5 bg-border/30 mx-1" />
+              <Button variant="ghost" size="sm" onClick={() => { signOut(); navigate("/"); }}
+                className="text-muted-foreground hover:text-foreground rounded-xl">
                 <LogOut className="w-4 h-4" />
               </Button>
             </>
           ) : (
             <>
-              <Button variant="ghost" size="sm" onClick={() => navigate("/pricing")}>{t("nav.pricing")}</Button>
-              <Button variant="ghost" size="sm" onClick={() => navigate("/login")}>{t("nav.login")}</Button>
-              <Button size="sm" className="gradient-bg" onClick={() => navigate("/signup")}>{t("nav.signup")}</Button>
+              <Button variant="ghost" size="sm" onClick={() => navigate("/pricing")}
+                className={navButtonClass("/pricing")}>{t("nav.pricing")}</Button>
+              <Button variant="ghost" size="sm" onClick={() => navigate("/login")}
+                className={navButtonClass("/login")}>{t("nav.login")}</Button>
+              <Button size="sm" className="gradient-bg-premium rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
+                onClick={() => navigate("/signup")}>{t("nav.signup")}</Button>
             </>
           )}
         </div>
@@ -57,32 +76,33 @@ export default function Navbar() {
           <LanguageSelector />
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" className="rounded-xl">
                 <Menu className="w-5 h-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-72 pt-12">
-              <div className="flex flex-col gap-2">
+            <SheetContent side="right" className="w-72 pt-12 bg-card/95 backdrop-blur-2xl border-border/20">
+              <div className="flex flex-col gap-1">
                 {user ? (
                   <>
-                    <Button variant="ghost" className="justify-start gap-3" onClick={() => go("/create")}>
+                    <Button variant="ghost" className="justify-start gap-3 rounded-xl h-12" onClick={() => go("/create")}>
                       <Plus className="w-4 h-4" /> {t("nav.create")}
                     </Button>
-                    <Button variant="ghost" className="justify-start gap-3" onClick={() => go("/library")}>
+                    <Button variant="ghost" className="justify-start gap-3 rounded-xl h-12" onClick={() => go("/library")}>
                       <Library className="w-4 h-4" /> {t("nav.library")}
                     </Button>
-                    <Button variant="ghost" className="justify-start gap-3" onClick={() => go("/profile")}>
+                    <Button variant="ghost" className="justify-start gap-3 rounded-xl h-12" onClick={() => go("/profile")}>
                       <User className="w-4 h-4" /> {t("profile.title")}
                     </Button>
-                    <Button variant="ghost" className="justify-start gap-3 text-destructive" onClick={() => { signOut(); go("/"); }}>
+                    <div className="h-px bg-border/20 my-2" />
+                    <Button variant="ghost" className="justify-start gap-3 rounded-xl h-12 text-destructive" onClick={() => { signOut(); go("/"); }}>
                       <LogOut className="w-4 h-4" /> {t("nav.logout")}
                     </Button>
                   </>
                 ) : (
                   <>
-                    <Button variant="ghost" className="justify-start" onClick={() => go("/pricing")}>{t("nav.pricing")}</Button>
-                    <Button variant="ghost" className="justify-start" onClick={() => go("/login")}>{t("nav.login")}</Button>
-                    <Button className="gradient-bg mt-2" onClick={() => go("/signup")}>{t("nav.signup")}</Button>
+                    <Button variant="ghost" className="justify-start rounded-xl h-12" onClick={() => go("/pricing")}>{t("nav.pricing")}</Button>
+                    <Button variant="ghost" className="justify-start rounded-xl h-12" onClick={() => go("/login")}>{t("nav.login")}</Button>
+                    <Button className="gradient-bg-premium mt-3 rounded-xl h-12 shadow-lg shadow-primary/20" onClick={() => go("/signup")}>{t("nav.signup")}</Button>
                   </>
                 )}
               </div>
