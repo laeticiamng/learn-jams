@@ -8,6 +8,8 @@ export default function Privacy() {
   const { t } = useTranslation();
   usePageSEO({ title: t("privacy.title"), description: t("privacy.title"), canonical: "/privacy" });
 
+  const sections = [1, 2, 3, 4, 5, 6] as const;
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-12 max-w-3xl">
@@ -20,12 +22,12 @@ export default function Privacy() {
         </div>
         <div className="glass-card p-8 space-y-6 text-foreground/80 leading-relaxed">
           <p className="text-sm text-muted-foreground">{t("privacy.last_updated")}</p>
-          <section className="space-y-3"><h2 className="font-display text-xl font-semibold text-foreground">1. Données collectées</h2><p>StudyBeats collecte : email, prénom, filière d'études, contenus uploadés, données d'usage.</p></section>
-          <section className="space-y-3"><h2 className="font-display text-xl font-semibold text-foreground">2. Finalité</h2><p>Vos données sont utilisées exclusivement pour fournir le service, personnaliser l'expérience, et améliorer la qualité.</p></section>
-          <section className="space-y-3"><h2 className="font-display text-xl font-semibold text-foreground">3. Partage</h2><p>Vos données ne sont jamais vendues. Elles peuvent être partagées avec nos sous-traitants techniques dans le strict cadre du service.</p></section>
-          <section className="space-y-3"><h2 className="font-display text-xl font-semibold text-foreground">4. Conservation</h2><p>Vos données sont conservées tant que votre compte est actif. En cas de suppression, effacement sous 30 jours.</p></section>
-          <section className="space-y-3"><h2 className="font-display text-xl font-semibold text-foreground">5. Vos droits (RGPD)</h2><p>Accès, rectification, suppression, portabilité, opposition. Contactez-nous via la <Link to="/contact" className="text-primary hover:underline">page de contact</Link>.</p></section>
-          <section className="space-y-3"><h2 className="font-display text-xl font-semibold text-foreground">6. Sécurité</h2><p>Chiffrement, contrôle d'accès, authentification sécurisée.</p></section>
+          {sections.map(n => (
+            <section key={n} className="space-y-3">
+              <h2 className="font-display text-xl font-semibold text-foreground">{t(`privacy.s${n}_title`)}</h2>
+              <p dangerouslySetInnerHTML={{ __html: t(`privacy.s${n}_text`) }} />
+            </section>
+          ))}
         </div>
       </div>
     </div>
