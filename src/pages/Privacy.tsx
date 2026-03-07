@@ -6,7 +6,7 @@ import { usePageSEO } from "@/hooks/usePageSEO";
 
 export default function Privacy() {
   const { t } = useTranslation();
-  usePageSEO({ title: t("privacy.title"), canonical: "/privacy" });
+  usePageSEO({ title: t("privacy.title"), description: t("privacy.title"), canonical: "/privacy" });
 
   return (
     <div className="min-h-screen bg-background">

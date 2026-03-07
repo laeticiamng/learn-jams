@@ -11,7 +11,7 @@ import { usePageSEO } from "@/hooks/usePageSEO";
 
 export default function ForgotPassword() {
   const { t } = useTranslation();
-  usePageSEO({ title: t("auth.forgot_title"), canonical: "/forgot-password", noindex: true });
+  usePageSEO({ title: t("auth.forgot_title"), description: t("auth.forgot_title"), canonical: "/forgot-password", noindex: true });
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);

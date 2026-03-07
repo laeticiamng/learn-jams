@@ -6,7 +6,7 @@ import { usePageSEO } from "@/hooks/usePageSEO";
 
 export default function Terms() {
   const { t } = useTranslation();
-  usePageSEO({ title: t("terms.title"), canonical: "/terms" });
+  usePageSEO({ title: t("terms.title"), description: t("terms.title"), canonical: "/terms" });
 
   return (
     <div className="min-h-screen bg-background">

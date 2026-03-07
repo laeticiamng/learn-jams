@@ -8,7 +8,7 @@ import { usePageSEO } from "@/hooks/usePageSEO";
 const NotFound = () => {
   const { t } = useTranslation();
   const location = useLocation();
-  usePageSEO({ title: t("notfound.title"), noindex: true });
+  usePageSEO({ title: t("notfound.title"), description: t("notfound.text"), noindex: true });
 
   useEffect(() => {
     console.error("404 Error: User attempted to access non-existent route:", location.pathname);
