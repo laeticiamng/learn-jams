@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Play, Heart, Search, Plus, Music, Clock, Loader2 } from "lucide-react";
+import { Play, Heart, Search, Plus, Music, Clock, Loader2, Brain } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -133,6 +133,15 @@ export default function Library() {
                       <Clock className="w-3 h-3" />
                       {Math.floor(song.duration / 60)}:{(song.duration % 60).toString().padStart(2, "0")}
                     </span>
+                  )}
+                  {song.status === "ready" && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); navigate(`/quiz/${song.id}`); }}
+                      className="hover:text-primary transition-colors"
+                      title="Quiz"
+                    >
+                      <Brain className="w-5 h-5" />
+                    </button>
                   )}
                   <button
                     onClick={(e) => { e.stopPropagation(); toggleFavorite(song.id); }}

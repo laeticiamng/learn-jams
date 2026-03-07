@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { Play, Pause, SkipBack, SkipForward, Heart, ArrowLeft, Volume2, Repeat, Share2, Loader2 } from "lucide-react";
+import { Play, Pause, SkipBack, SkipForward, Heart, ArrowLeft, Volume2, Repeat, Share2, Loader2, Brain } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -167,6 +167,15 @@ export default function Player() {
               <p key={i} className="text-foreground/80 leading-relaxed">{line}</p>
             ))}
           </div>
+        )}
+
+        {/* Quiz button */}
+        {song.generated_lyrics && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-6">
+            <Button className="w-full gradient-bg gap-2 h-12 text-base" onClick={() => navigate(`/quiz/${song.id}`)}>
+              <Brain className="w-5 h-5" /> Mode Quiz 🧠
+            </Button>
+          </motion.div>
         )}
       </div>
     </div>

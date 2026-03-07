@@ -13,6 +13,7 @@ import ResetPassword from "./pages/ResetPassword";
 import Create from "./pages/Create";
 import Library from "./pages/Library";
 import Player from "./pages/Player";
+import Quiz from "./pages/Quiz";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
@@ -34,6 +35,7 @@ const App = () => (
             <Route path="/create" element={<ProtectedRoute><Create /></ProtectedRoute>} />
             <Route path="/library" element={<ProtectedRoute><Library /></ProtectedRoute>} />
             <Route path="/player/:id" element={<ProtectedRoute><Player /></ProtectedRoute>} />
+            <Route path="/quiz/:id" element={<ProtectedRoute><Quiz /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
