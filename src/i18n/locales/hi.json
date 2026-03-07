@@ -1,5 +1,5 @@
 {
-  "nav": { "create": "बनाएं", "library": "लाइब्रेरी", "login": "लॉग इन", "signup": "साइन अप" },
+  "nav": { "create": "बनाएं", "library": "लाइब्रेरी", "login": "लॉग इन", "signup": "साइन अप", "pricing": "मूल्य" },
   "home": {
     "badge": "न्यूरोसाइंस पर आधारित संगीत स्मृति — मुफ्त",
     "title1": "अपने नोट्स को",
@@ -155,5 +155,27 @@
   "common": { "back": "वापस", "loading": "लोड हो रहा है...", "error": "त्रुटि", "return": "होम पर वापस" },
   "notfound": { "title": "पेज नहीं मिला", "text": "यह पेज मौजूद नहीं है।" },
   "styles": { "pop": "पॉप", "rap": "रैप", "rnb": "R&B", "rock": "रॉक", "indie": "इंडी", "country": "कंट्री", "lofi": "Lo-Fi", "edm": "EDM", "house": "हाउस", "techno": "टेक्नो", "synthwave": "सिंथवेव", "drum-and-bass": "ड्रम एंड बेस", "reggaeton": "रेगेटन", "afrobeat": "एफ्रोबीट", "reggae": "रेगे", "latin": "लैटिन", "kpop": "K-Pop", "bossa-nova": "बोसा नोवा", "jazz": "जैज़", "blues": "ब्लूज़", "soul": "सोल", "funk": "फंक", "classical": "क्लासिकल", "gospel": "गॉस्पल", "metal": "मेटल", "punk": "पंक", "acoustic": "एकॉस्टिक", "folk": "फोक", "ambient": "एम्बियंट", "spoken-word": "स्पोकन वर्ड" },
-  "style_categories": { "popular": "लोकप्रिय", "electronic": "इलेक्ट्रॉनिक", "world": "विश्व", "classic": "क्लासिक और सोल", "alternative": "वैकल्पिक" }
+  "style_categories": { "popular": "लोकप्रिय", "electronic": "इलेक्ट्रॉनिक", "world": "विश्व", "classic": "क्लासिक और सोल", "alternative": "वैकल्पिक" },
+  "pricing": {
+    "title": "मूल्य",
+    "subtitle": "एक प्लान, सब कुछ शामिल। अपने नोट्स को शैक्षिक गानों में बदलें।",
+    "plan_name": "StudyBeats Pro",
+    "month": "महीना",
+    "cancel_anytime": "कोई बाध्यता नहीं — कभी भी रद्द करें",
+    "feature_unlimited_songs": "असीमित शैक्षिक गाने",
+    "feature_unlimited_songs_desc": "अपने नोट्स से जितने चाहें उतने गाने बनाएं।",
+    "feature_all_styles": "30 संगीत शैलियां",
+    "feature_all_styles_desc": "रैप, Lo-Fi, पॉप, जैज़, रॉक, EDM, एफ्रोबीट, K-Pop और अधिक।",
+    "feature_quiz": "इंटरैक्टिव क्विज़",
+    "feature_quiz_desc": "शैक्षिक व्याख्याओं के साथ स्वचालित MCQ।",
+    "feature_secure": "सुरक्षित डेटा",
+    "feature_secure_desc": "एन्क्रिप्टेड डेटा, GDPR अनुरूप। आपके नोट्स निजी रहते हैं।",
+    "subscribe": "सब्सक्राइब करें",
+    "signup_first": "सब्सक्राइब करने के लिए अकाउंट बनाएं",
+    "redirecting": "रीडायरेक्ट हो रहा है...",
+    "active": "आप सब्सक्राइब हैं ✅",
+    "already_subscribed": "आप पहले से सब्सक्राइब हैं!",
+    "error": "भुगतान पर रीडायरेक्ट करने में त्रुटि",
+    "guarantee": "Stripe के माध्यम से सुरक्षित भुगतान। एक क्लिक में रद्द करें।"
+  }
 }

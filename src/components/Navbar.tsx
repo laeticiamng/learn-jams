@@ -2,7 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Music, Library, User, LogOut, Plus } from "lucide-react";
+import { Music, Library, User, LogOut, Plus, CreditCard } from "lucide-react";
 import LanguageSelector from "@/components/LanguageSelector";
 
 export default function Navbar() {
@@ -39,6 +39,7 @@ export default function Navbar() {
             </>
           ) : (
             <>
+              <Button variant="ghost" size="sm" onClick={() => navigate("/pricing")}>{t("nav.pricing")}</Button>
               <Button variant="ghost" size="sm" onClick={() => navigate("/login")}>{t("nav.login")}</Button>
               <Button size="sm" className="gradient-bg" onClick={() => navigate("/signup")}>{t("nav.signup")}</Button>
             </>

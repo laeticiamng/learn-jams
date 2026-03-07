@@ -1,5 +1,5 @@
 {
-  "nav": { "create": "إنشاء", "library": "المكتبة", "login": "تسجيل الدخول", "signup": "إنشاء حساب" },
+  "nav": { "create": "إنشاء", "library": "المكتبة", "login": "تسجيل الدخول", "signup": "إنشاء حساب", "pricing": "الأسعار" },
   "home": {
     "badge": "حفظ موسيقي مبني على علم الأعصاب — مجاني",
     "title1": "حوّل دروسك",
@@ -155,5 +155,27 @@
   "common": { "back": "رجوع", "loading": "جارٍ التحميل...", "error": "خطأ", "return": "العودة للرئيسية" },
   "notfound": { "title": "الصفحة غير موجودة", "text": "هذه الصفحة غير موجودة أو تم نقلها." },
   "styles": { "pop": "بوب", "rap": "راب", "rnb": "آر أند بي", "rock": "روك", "indie": "إندي", "country": "كانتري", "lofi": "لو-فاي", "edm": "إلكترونية", "house": "هاوس", "techno": "تكنو", "synthwave": "سينثويف", "drum-and-bass": "درام أند بيس", "reggaeton": "ريغيتون", "afrobeat": "أفروبيت", "reggae": "ريغي", "latin": "لاتيني", "kpop": "كي-بوب", "bossa-nova": "بوسا نوفا", "jazz": "جاز", "blues": "بلوز", "soul": "سول", "funk": "فانك", "classical": "كلاسيكي", "gospel": "غوسبل", "metal": "ميتال", "punk": "بانك", "acoustic": "أكوستيك", "folk": "فولك", "ambient": "أمبينت", "spoken-word": "كلمة منطوقة" },
-  "style_categories": { "popular": "شائع", "electronic": "إلكتروني", "world": "عالمي", "classic": "كلاسيكي وسول", "alternative": "بديل" }
+  "style_categories": { "popular": "شائع", "electronic": "إلكتروني", "world": "عالمي", "classic": "كلاسيكي وسول", "alternative": "بديل" },
+  "pricing": {
+    "title": "الأسعار",
+    "subtitle": "خطة واحدة، كل شيء مشمول. حوّل دروسك إلى أغانٍ تعليمية.",
+    "plan_name": "StudyBeats Pro",
+    "month": "شهر",
+    "cancel_anytime": "بدون التزام — ألغِ في أي وقت",
+    "feature_unlimited_songs": "أغانٍ تعليمية غير محدودة",
+    "feature_unlimited_songs_desc": "أنشئ أي عدد من الأغاني من دروسك.",
+    "feature_all_styles": "30 نمطاً موسيقياً",
+    "feature_all_styles_desc": "راب، لو-فاي، بوب، جاز، روك، إلكترونية، أفروبيت، كي-بوب والمزيد.",
+    "feature_quiz": "اختبار تفاعلي",
+    "feature_quiz_desc": "أسئلة اختيار متعدد تُنشأ تلقائياً مع شروحات تعليمية.",
+    "feature_secure": "بيانات آمنة",
+    "feature_secure_desc": "بيانات مشفرة، متوافقة مع GDPR. دروسك تبقى خاصة.",
+    "subscribe": "اشترك",
+    "signup_first": "أنشئ حساباً للاشتراك",
+    "redirecting": "جارٍ التوجيه...",
+    "active": "أنت مشترك ✅",
+    "already_subscribed": "أنت مشترك بالفعل!",
+    "error": "خطأ في التوجيه إلى الدفع",
+    "guarantee": "دفع آمن عبر Stripe. إلغاء بنقرة واحدة."
+  }
 }

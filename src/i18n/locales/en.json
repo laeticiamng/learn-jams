@@ -1,5 +1,5 @@
 {
-  "nav": { "create": "Create", "library": "Library", "login": "Sign in", "signup": "Sign up" },
+  "nav": { "create": "Create", "library": "Library", "login": "Sign in", "signup": "Sign up", "pricing": "Pricing" },
   "home": {
     "badge": "Music-based memorization backed by neuroscience — free",
     "title1": "Turn your notes",
@@ -199,5 +199,27 @@
   "common": { "back": "Back", "loading": "Loading...", "error": "Error", "return": "Back to home" },
   "notfound": { "title": "Page not found", "text": "This page doesn't exist or has been moved." },
   "styles": { "pop": "Pop", "rap": "Rap", "rnb": "R&B", "rock": "Rock", "indie": "Indie", "country": "Country", "lofi": "Lo-Fi", "edm": "EDM", "house": "House", "techno": "Techno", "synthwave": "Synthwave", "drum-and-bass": "Drum & Bass", "reggaeton": "Reggaeton", "afrobeat": "Afrobeat", "reggae": "Reggae", "latin": "Latin", "kpop": "K-Pop", "bossa-nova": "Bossa Nova", "jazz": "Jazz", "blues": "Blues", "soul": "Soul", "funk": "Funk", "classical": "Classical", "gospel": "Gospel", "metal": "Metal", "punk": "Punk", "acoustic": "Acoustic", "folk": "Folk", "ambient": "Ambient", "spoken-word": "Spoken Word" },
-  "style_categories": { "popular": "Popular", "electronic": "Electronic", "world": "World", "classic": "Classic & Soul", "alternative": "Alternative" }
+  "style_categories": { "popular": "Popular", "electronic": "Electronic", "world": "World", "classic": "Classic & Soul", "alternative": "Alternative" },
+  "pricing": {
+    "title": "Pricing",
+    "subtitle": "One plan, everything included. Turn your notes into educational songs.",
+    "plan_name": "StudyBeats Pro",
+    "month": "month",
+    "cancel_anytime": "No commitment — cancel anytime",
+    "feature_unlimited_songs": "Unlimited educational songs",
+    "feature_unlimited_songs_desc": "Generate as many songs as you want from your notes.",
+    "feature_all_styles": "30 music styles",
+    "feature_all_styles_desc": "Rap, Lo-Fi, Pop, Jazz, Rock, EDM, Afrobeat, K-Pop and more.",
+    "feature_quiz": "Interactive quiz",
+    "feature_quiz_desc": "Auto-generated MCQs with educational explanations.",
+    "feature_secure": "Secure data",
+    "feature_secure_desc": "Encrypted data, GDPR compliant. Your notes stay private.",
+    "subscribe": "Subscribe",
+    "signup_first": "Create an account to subscribe",
+    "redirecting": "Redirecting...",
+    "active": "You're subscribed ✅",
+    "already_subscribed": "You're already subscribed!",
+    "error": "Error redirecting to payment",
+    "guarantee": "Secure payment via Stripe. Cancel with one click."
+  }
 }
