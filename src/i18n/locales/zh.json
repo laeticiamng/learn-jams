@@ -41,7 +41,17 @@
     "faq5_q": "数据安全吗？", "faq5_a": "是的。加密且私密。符合GDPR。",
     "cta_title": "准备用不同方式学习？",
     "cta_text": "加入500+学生的行列。2分钟内创建第一首教学歌曲。",
-    "cta_button": "立即开始"
+    "cta_button": "立即开始",
+    "testimonials_title": "他们用StudyBeats学习",
+    "testimonial1_name": "Marie L.", "testimonial1_field": "医学 — 三年级", "testimonial1_quote": "在地铁上听歌记住了解剖学笔记。成绩提高了3分。",
+    "testimonial2_name": "Karim B.", "testimonial2_field": "法律 — 二年级", "testimonial2_quote": "宪法用说唱听起来疯狂，但确实有效。",
+    "testimonial3_name": "Chloé D.", "testimonial3_field": "商学预科", "testimonial3_quote": "StudyBeats把通勤变成了学习时间。再也不浪费一分钟。",
+    "before_after_title": "从笔记到歌曲", "before_after_subtitle": "AI如何处理你的内容",
+    "before_label": "你的笔记", "after_label": "生成的歌曲",
+    "before_text": "心脏是由4个腔室组成的中空肌肉：2个心房和2个心室。血液通过心脏瓣膜单向流动。",
+    "after_text": "🎵 四个腔室心跳动，\n两个心房在上方，两个心室在下送，\n瓣膜让血液方向定，\n单行道上永不停... 🎵",
+    "trust_gdpr": "符合GDPR", "trust_encrypted": "数据加密", "trust_cancel": "随时取消",
+    "sticky_cta": "免费开始"
   },
   "auth": {
     "login_title": "欢迎回来！👋", "login_subtitle": "登录查看你的歌曲",

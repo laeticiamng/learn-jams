@@ -87,4 +87,30 @@
   .glow-text {
     text-shadow: 0 0 20px hsl(262 83% 58% / 0.5);
   }
+
+  .shimmer-btn {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .shimmer-btn::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      hsla(0, 0%, 100%, 0.15),
+      transparent
+    );
+    animation: shimmer 3s ease-in-out infinite;
+  }
+
+  @keyframes shimmer {
+    0%, 100% { left: -100%; }
+    50% { left: 100%; }
+  }
 }
