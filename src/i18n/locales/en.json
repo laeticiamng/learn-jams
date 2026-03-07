@@ -124,7 +124,7 @@
     "extracting": "Extracting text...",
     "pdf_analyzing": "Analyzing PDF with AI...", "image_analyzing": "OCR on image with AI...",
     "extract_done": "Text extracted successfully!",
-    "view_text": "View text", "restart": "Start over", "delete": "Remove",
+    "view_text": "View text", "restart": "Start over",
     "upload_pdf_label": "Upload your course PDF", "upload_image_label": "Upload a photo of your notes",
     "upload_pdf_hint": "Drag your PDF here or click to select (max 20 MB)",
     "upload_image_hint": "Photo of notes, slides, whiteboard... (max 20 MB)",
