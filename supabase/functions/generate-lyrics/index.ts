@@ -123,7 +123,7 @@ serve(async (req) => {
       });
     }
 
-    const { text, style, title } = await req.json();
+    const { text, style, title, language } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
