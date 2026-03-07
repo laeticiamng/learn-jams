@@ -25,7 +25,7 @@ const AudioWave = () => {
   );
 };
 
-// Animated counter component
+// Animated counter component – count up on scroll
 const CountUp = ({ target, suffix = "", duration = 2000 }: { target: number; suffix?: string; duration?: number }) => {
   const [count, setCount] = useState(0);
   const [hasAnimated, setHasAnimated] = useState(false);
