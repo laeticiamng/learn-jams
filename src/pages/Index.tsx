@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Upload, Music, Headphones, BookOpen, Brain, Shield, Repeat, Timer, Dumbbell, ChevronRight, Quote, Lock, ShieldCheck, CreditCard, ArrowRight } from "lucide-react";
+import { Upload, Music, Headphones, BookOpen, Brain, Shield, Repeat, Timer, Dumbbell, ChevronRight, Quote, Lock, ShieldCheck, CreditCard, ArrowRight, Play, Pause, Volume2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { usePageSEO } from "@/hooks/usePageSEO";
@@ -21,6 +21,82 @@ const AudioWave = () => {
           transition={{ duration: 0.8 + (h - 32) / 32 * 0.8, repeat: Infinity, delay: i * 0.05 }}
         />
       ))}
+    </div>
+  );
+};
+
+// Animated counter component
+const CountUp = ({ target, suffix = "", duration = 2000 }: { target: number; suffix?: string; duration?: number }) => {
+  const [count, setCount] = useState(0);
+  const [hasAnimated, setHasAnimated] = useState(false);
+  const ref = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !hasAnimated) {
+          setHasAnimated(true);
+          const startTime = performance.now();
+          const animate = (now: number) => {
+            const elapsed = now - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            setCount(Math.round(eased * target));
+            if (progress < 1) requestAnimationFrame(animate);
+          };
+          requestAnimationFrame(animate);
+        }
+      },
+      { threshold: 0.5 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [target, duration, hasAnimated]);
+
+  return <span ref={ref}>{count.toLocaleString()}{suffix}</span>;
+};
+
+// Mini demo player
+const DemoPlayer = ({ listenLabel, titleLabel }: { listenLabel: string; titleLabel: string }) => {
+  const [playing, setPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  const togglePlay = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (playing) { audio.pause(); } else { audio.play().catch(() => {}); }
+    setPlaying(!playing);
+  }, [playing]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const update = () => { if (audio.duration) setProgress((audio.currentTime / audio.duration) * 100); };
+    const onEnd = () => { setPlaying(false); setProgress(0); };
+    audio.addEventListener("timeupdate", update);
+    audio.addEventListener("ended", onEnd);
+    return () => { audio.removeEventListener("timeupdate", update); audio.removeEventListener("ended", onEnd); };
+  }, []);
+
+  return (
+    <div className="mt-6 max-w-sm mx-auto">
+      <audio ref={audioRef} src="/demo.mp3" preload="none" />
+      <button onClick={togglePlay} className="w-full glass-card p-3 flex items-center gap-3 hover:border-primary/30 transition-all group">
+        <div className="w-10 h-10 rounded-lg gradient-bg flex items-center justify-center shrink-0">
+          {playing ? <Pause className="w-4 h-4 text-primary-foreground" /> : <Play className="w-4 h-4 text-primary-foreground ml-0.5" />}
+        </div>
+        <div className="flex-1 text-left min-w-0">
+          <p className="text-xs text-muted-foreground">{listenLabel}</p>
+          <p className="text-sm font-medium truncate">{titleLabel}</p>
+          <div className="mt-1.5 h-1 rounded-full bg-muted overflow-hidden">
+            <div className="h-full gradient-bg rounded-full transition-all duration-300" style={{ width: `${progress}%` }} />
+          </div>
+        </div>
+        <Volume2 className="w-4 h-4 text-muted-foreground shrink-0 group-hover:text-primary transition-colors" />
+      </button>
     </div>
   );
 };
@@ -113,14 +189,16 @@ export default function Index() {
               {t("home.cta_login")}
             </button>
 
-            {/* Social proof */}
-            <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 mb-8 text-xs sm:text-sm text-muted-foreground px-2">
-              <span>🎵 <strong className="text-foreground">{t("home.social_songs")}</strong></span>
-              <span>🎓 <strong className="text-foreground">{t("home.social_students")}</strong></span>
-              <span>🎶 <strong className="text-foreground">{t("home.social_styles")}</strong></span>
+            {/* Social proof — animated counters */}
+            <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8 mb-8 text-xs sm:text-sm text-muted-foreground px-2">
+              <span className="flex items-center gap-1.5">🎵 <strong className="text-foreground tabular-nums"><CountUp target={1200} suffix="+" /></strong> {t("home.social_songs_label")}</span>
+              <span className="flex items-center gap-1.5">🎓 <strong className="text-foreground tabular-nums"><CountUp target={500} suffix="+" /></strong> {t("home.social_students_label")}</span>
+              <span className="flex items-center gap-1.5">🎶 <strong className="text-foreground tabular-nums"><CountUp target={30} /></strong> {t("home.social_styles_label")}</span>
             </div>
 
             <AudioWave />
+
+            <DemoPlayer listenLabel={t("home.demo_listen")} titleLabel={t("home.demo_title")} />
           </motion.div>
         </div>
       </header>
