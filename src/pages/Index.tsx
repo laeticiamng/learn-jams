@@ -1,13 +1,13 @@
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Upload, Music, Headphones, BookOpen, Brain, Shield, Repeat, Timer, Dumbbell, ChevronRight } from "lucide-react";
+import { Upload, Music, Headphones, BookOpen, Brain, Shield, Repeat, Timer, Dumbbell, ChevronRight, Quote, Lock, ShieldCheck, CreditCard, ArrowRight } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { usePageSEO } from "@/hooks/usePageSEO";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { useMemo, useEffect } from "react";
+import { useMemo, useEffect, useState, useRef, useCallback } from "react";
 
 const AudioWave = () => {
   const heights = useMemo(() => Array.from({ length: 20 }, () => 32 + Math.random() * 32), []);
@@ -30,9 +30,18 @@ const stepColors = ["from-primary to-secondary", "from-secondary to-primary", "f
 const scienceIcons = [Brain, Repeat, Timer, Dumbbell];
 const featureIcons = [Brain, BookOpen, Shield];
 
+const testimonialAvatars = [
+  "https://api.dicebear.com/9.x/notionists/svg?seed=Marie&backgroundColor=b6e3f4",
+  "https://api.dicebear.com/9.x/notionists/svg?seed=Karim&backgroundColor=c0aede",
+  "https://api.dicebear.com/9.x/notionists/svg?seed=Chloe&backgroundColor=ffd5dc",
+];
+
 export default function Index() {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const [showStickyCta, setShowStickyCta] = useState(false);
+  const heroRef = useRef<HTMLElement>(null);
+  const ctaRef = useRef<HTMLElement>(null);
 
   usePageSEO({
     title: "StudyBeats — " + t("home.title1") + " " + t("home.title2"),
@@ -52,7 +61,6 @@ export default function Index() {
     })),
   }), [t]);
 
-  // Inject JSON-LD into head
   useEffect(() => {
     const script = document.createElement("script");
     script.type = "application/ld+json";
@@ -61,12 +69,25 @@ export default function Index() {
     return () => { document.head.removeChild(script); };
   }, [faqJsonLd]);
 
+  // Sticky CTA visibility logic
+  const handleScroll = useCallback(() => {
+    const heroBottom = heroRef.current?.getBoundingClientRect().bottom ?? 0;
+    const ctaTop = ctaRef.current?.getBoundingClientRect().top ?? Infinity;
+    const windowHeight = window.innerHeight;
+    setShowStickyCta(heroBottom < 0 && ctaTop > windowHeight);
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [handleScroll]);
+
   return (
     <div className="min-h-screen bg-background overflow-hidden">
       <Navbar />
 
       {/* Hero */}
-      <header className="relative pt-32 pb-20 px-4">
+      <header ref={heroRef} className="relative pt-32 pb-20 px-4">
         <div className="absolute inset-0" style={{ background: "var(--gradient-glow)" }} />
         <div className="container mx-auto text-center relative z-10">
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
@@ -81,7 +102,7 @@ export default function Index() {
               {t("home.subtitle")}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-4 px-4">
-              <Button size="lg" className="gradient-bg text-base sm:text-lg px-6 sm:px-8 h-12 sm:h-14 glow w-full sm:w-auto" onClick={() => navigate("/signup")}>
+              <Button size="lg" className="gradient-bg text-base sm:text-lg px-6 sm:px-8 h-12 sm:h-14 glow w-full sm:w-auto shimmer-btn" onClick={() => navigate("/signup")}>
                 {t("home.cta_signup")}
               </Button>
             </div>
@@ -104,6 +125,22 @@ export default function Index() {
         </div>
       </header>
 
+      {/* Trust badges */}
+      <section className="py-6 px-4">
+        <div className="container mx-auto flex flex-wrap items-center justify-center gap-6 sm:gap-10">
+          {[
+            { icon: ShieldCheck, key: "trust_gdpr" },
+            { icon: Lock, key: "trust_encrypted" },
+            { icon: CreditCard, key: "trust_cancel" },
+          ].map(({ icon: Icon, key }) => (
+            <div key={key} className="flex items-center gap-2 text-muted-foreground text-sm">
+              <Icon className="w-4 h-4 text-primary/70" />
+              <span>{t(`home.${key}`)}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* Steps */}
       <section className="py-16 px-4">
         <div className="container mx-auto">
@@ -113,7 +150,6 @@ export default function Index() {
           </motion.h2>
           <p className="text-center text-muted-foreground mb-16 max-w-xl mx-auto">{t("home.how_subtitle")}</p>
           <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto relative">
-            {/* Connectors (desktop only) */}
             <div className="hidden md:block absolute top-20 left-[33%] w-[34%] h-0.5 bg-gradient-to-r from-primary/30 to-secondary/30" />
             <div className="hidden md:block absolute top-20 left-[66%] w-[34%] h-0.5 bg-gradient-to-r from-secondary/30 to-primary/30" />
             {[1, 2, 3].map((n, i) => {
@@ -135,7 +171,45 @@ export default function Index() {
         </div>
       </section>
 
-      {/* Features (moved up) */}
+      {/* Before → After */}
+      <section className="py-16 px-4">
+        <div className="container mx-auto max-w-4xl">
+          <motion.h2 initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
+            className="font-display text-3xl md:text-4xl font-bold text-center mb-4">
+            {t("home.before_after_title")}
+          </motion.h2>
+          <p className="text-center text-muted-foreground mb-12">{t("home.before_after_subtitle")}</p>
+          <div className="grid md:grid-cols-2 gap-6 items-stretch">
+            <motion.div initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
+              className="glass-card p-6 sm:p-8 relative">
+              <div className="absolute top-4 left-4 sm:top-6 sm:left-6 text-xs font-medium uppercase tracking-wider text-muted-foreground bg-muted px-3 py-1 rounded-full">
+                {t("home.before_label")}
+              </div>
+              <div className="pt-8 text-sm sm:text-base text-muted-foreground leading-relaxed font-mono">
+                {t("home.before_text")}
+              </div>
+            </motion.div>
+            <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              className="glass-card p-6 sm:p-8 relative border-primary/30 glow">
+              <div className="absolute top-4 left-4 sm:top-6 sm:left-6 text-xs font-medium uppercase tracking-wider text-primary bg-primary/10 px-3 py-1 rounded-full">
+                {t("home.after_label")}
+              </div>
+              <div className="pt-8 text-sm sm:text-base text-foreground leading-relaxed whitespace-pre-line">
+                {t("home.after_text")}
+              </div>
+            </motion.div>
+          </div>
+          {/* Arrow between cards on mobile */}
+          <div className="flex justify-center md:hidden -my-3 relative z-10">
+            <div className="w-10 h-10 rounded-full gradient-bg flex items-center justify-center">
+              <ArrowRight className="w-5 h-5 text-primary-foreground rotate-90" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features */}
       <section className="py-16 px-4">
         <div className="container mx-auto max-w-4xl">
           <h2 className="font-display text-3xl font-bold text-center mb-12">{t("home.features_title")}</h2>
@@ -179,6 +253,40 @@ export default function Index() {
                 </motion.article>
               );
             })}
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials */}
+      <section className="py-16 px-4">
+        <div className="container mx-auto max-w-4xl">
+          <motion.h2 initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
+            className="font-display text-3xl md:text-4xl font-bold text-center mb-12">
+            {t("home.testimonials_title")}
+          </motion.h2>
+          <div className="grid md:grid-cols-3 gap-6">
+            {[1, 2, 3].map((n, i) => (
+              <motion.article key={n} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }} transition={{ delay: i * 0.15 }}
+                className="glass-card p-6 sm:p-8 flex flex-col">
+                <Quote className="w-8 h-8 text-primary/30 mb-4" />
+                <p className="text-sm text-foreground leading-relaxed flex-1 italic">
+                  "{t(`home.testimonial${n}_quote`)}"
+                </p>
+                <div className="flex items-center gap-3 mt-6 pt-4 border-t border-border/30">
+                  <img
+                    src={testimonialAvatars[i]}
+                    alt={t(`home.testimonial${n}_name`)}
+                    className="w-10 h-10 rounded-full bg-muted"
+                    loading="lazy"
+                  />
+                  <div>
+                    <p className="text-sm font-semibold">{t(`home.testimonial${n}_name`)}</p>
+                    <p className="text-xs text-muted-foreground">{t(`home.testimonial${n}_field`)}</p>
+                  </div>
+                </div>
+              </motion.article>
+            ))}
           </div>
         </div>
       </section>
@@ -241,17 +349,34 @@ export default function Index() {
       </section>
 
       {/* CTA */}
-      <section className="py-16 px-4">
+      <section ref={ctaRef} className="py-16 px-4">
         <div className="container mx-auto max-w-2xl">
           <div className="glass-card p-12 text-center glow">
             <h2 className="font-display text-3xl font-bold mb-4">{t("home.cta_title")}</h2>
             <p className="text-muted-foreground mb-8">{t("home.cta_text")}</p>
-            <Button size="lg" className="gradient-bg text-lg px-8 h-14" onClick={() => navigate("/signup")}>
+            <Button size="lg" className="gradient-bg text-lg px-8 h-14 shimmer-btn" onClick={() => navigate("/signup")}>
               {t("home.cta_button")}
             </Button>
           </div>
         </div>
       </section>
+
+      {/* Sticky CTA mobile */}
+      <AnimatePresence>
+        {showStickyCta && (
+          <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            className="fixed bottom-0 left-0 right-0 z-40 md:hidden p-3 bg-background/80 backdrop-blur-xl border-t border-border/30"
+          >
+            <Button className="w-full gradient-bg h-12 text-base font-semibold shimmer-btn" onClick={() => navigate("/signup")}>
+              {t("home.sticky_cta")} <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <Footer />
     </div>
