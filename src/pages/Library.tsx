@@ -134,6 +134,15 @@ export default function Library() {
                       {Math.floor(song.duration / 60)}:{(song.duration % 60).toString().padStart(2, "0")}
                     </span>
                   )}
+                  {song.status === "ready" && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); navigate(`/quiz/${song.id}`); }}
+                      className="hover:text-primary transition-colors"
+                      title="Quiz"
+                    >
+                      <Brain className="w-5 h-5" />
+                    </button>
+                  )}
                   <button
                     onClick={(e) => { e.stopPropagation(); toggleFavorite(song.id); }}
                     className="hover:text-primary transition-colors"

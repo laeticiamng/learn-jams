@@ -168,6 +168,15 @@ export default function Player() {
             ))}
           </div>
         )}
+
+        {/* Quiz button */}
+        {song.generated_lyrics && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-6">
+            <Button className="w-full gradient-bg gap-2 h-12 text-base" onClick={() => navigate(`/quiz/${song.id}`)}>
+              <Brain className="w-5 h-5" /> Mode Quiz 🧠
+            </Button>
+          </motion.div>
+        )}
       </div>
     </div>
   );
