@@ -96,8 +96,8 @@
     "extract_done": "Text erfolgreich extrahiert!",
     "view_text": "Text anzeigen", "restart": "Neu starten", "delete_file": "Entfernen",
     "upload_pdf_label": "Lade dein Kurs-PDF hoch", "upload_image_label": "Lade ein Foto deiner Notizen hoch",
-    "upload_pdf_hint": "Ziehe dein PDF hierher oder klicke zum Auswählen (max. 20 MB)",
-    "upload_image_hint": "Foto von Notizen, Folien, Tafel... (max. 20 MB)",
+    "upload_pdf_hint": "Ziehe dein PDF hierher oder klicke zum Auswählen (max. 200 MB)",
+    "upload_image_hint": "Foto von Notizen, Folien, Tafel... (max. 200 MB)",
     "char_count": "{{chars}} Zeichen · ~{{minutes}} Min. Lesezeit",
     "default_title": "Mein StudyBeats-Song"
   },

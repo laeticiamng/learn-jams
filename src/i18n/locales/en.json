@@ -126,8 +126,8 @@
     "extract_done": "Text extracted successfully!",
     "view_text": "View text", "restart": "Start over",
     "upload_pdf_label": "Upload your course PDF", "upload_image_label": "Upload a photo of your notes",
-    "upload_pdf_hint": "Drag your PDF here or click to select (max 20 MB)",
-    "upload_image_hint": "Photo of notes, slides, whiteboard... (max 20 MB)",
+    "upload_pdf_hint": "Drag your PDF here or click to select (max 200 MB)",
+    "upload_image_hint": "Photo of notes, slides, whiteboard... (max 200 MB)",
     "delete_file": "Remove",
     "char_count": "{{chars}} characters · ~{{minutes}} min read",
     "default_title": "My StudyBeats song"
