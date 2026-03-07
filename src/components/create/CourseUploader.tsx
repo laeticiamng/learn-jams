@@ -19,7 +19,7 @@ export default function CourseUploader({ text, onTextChange }: Props) {
   const [extracted, setExtracted] = useState(false);
 
   const handleFile = useCallback(async (file: File) => {
-    if (file.size > 20 * 1024 * 1024) {
+    if (file.size > 200 * 1024 * 1024) {
       toast.error(t("create.file_too_large"));
       return;
     }
