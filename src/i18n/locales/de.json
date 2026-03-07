@@ -10,6 +10,11 @@
     "social_songs": "1.200+ Songs generiert",
     "social_students": "500+ Studierende",
     "social_styles": "30 Musikstile",
+    "social_songs_label": "Songs generiert",
+    "social_students_label": "Studierende",
+    "social_styles_label": "Musikstile",
+    "demo_listen": "Hör dir ein Beispiel an",
+    "demo_title": "Biologie — Das menschliche Herz"
     "how_title": "Wie funktioniert es?",
     "how_subtitle": "3 Schritte, um jeden Kurs in einen einprägsamen Song zu verwandeln",
     "step1_title": "Lade deine Unterlagen hoch", "step1_desc": "Füge Text ein, importiere ein PDF oder fotografiere deine handschriftlichen Notizen. Die KI extrahiert den Inhalt automatisch.",
