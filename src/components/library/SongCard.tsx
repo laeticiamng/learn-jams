@@ -15,6 +15,11 @@ export interface Song {
   duration: number | null;
   created_at: string;
   is_final_quality: boolean;
+  generated_lyrics: string | null;
+  cover_image_url: string | null;
+  lyrics_metadata: string | null;
+  original_text: string;
+  suno_task_id: string | null;
 }
 
 interface SongCardProps {
