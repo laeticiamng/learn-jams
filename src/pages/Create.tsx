@@ -86,7 +86,7 @@ export default function Create() {
       const { data: song, error: insertError } = await supabase.from("songs").insert({
         user_id: user.id, title: generatedTitle, original_text: courseText,
         generated_lyrics: generatedLyrics, lyrics_metadata: lyricsMetadata, style, subject: subject || null, status: "generating",
-      } as any).select().single();
+      }).select().single();
       if (insertError) throw insertError;
       setProgress(70);
 

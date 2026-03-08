@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Play, Heart, Clock, Loader2, Brain, RotateCcw } from "lucide-react";
+import { Play, Heart, Clock, Loader2, Brain, RotateCcw, Trash2 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -30,6 +30,7 @@ interface SongCardProps {
   isFavorite: boolean;
   onToggleFavorite: (songId: string) => void;
   onRetry?: (songId: string) => void;
+  onDelete?: (songId: string) => void;
 }
 
 const styleColors: Record<string, string> = {
@@ -55,7 +56,7 @@ const item = {
   },
 };
 
-export function SongCard({ song, isFavorite, onToggleFavorite, onRetry }: SongCardProps) {
+export function SongCard({ song, isFavorite, onToggleFavorite, onRetry, onDelete }: SongCardProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const isClickable = song.status === "ready";
@@ -181,6 +182,24 @@ export function SongCard({ song, isFavorite, onToggleFavorite, onRetry }: SongCa
               }`}
             />
           </motion.button>
+          {onDelete && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <motion.button
+                  whileHover={{ scale: 1.15 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(song.id);
+                  }}
+                  className="hover:text-destructive transition-colors duration-300 p-1.5 rounded-lg hover:bg-destructive/10 opacity-0 group-hover:opacity-100"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </motion.button>
+              </TooltipTrigger>
+              <TooltipContent>{t("library.delete_tooltip", "Supprimer")}</TooltipContent>
+            </Tooltip>
+          )}
         </div>
       </div>
 

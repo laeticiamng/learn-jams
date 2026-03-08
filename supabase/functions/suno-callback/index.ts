@@ -16,8 +16,18 @@ serve(async (req) => {
   try {
     const url = new URL(req.url);
     const songId = url.searchParams.get("songId");
-    
+    const secret = url.searchParams.get("secret");
+
     if (!songId) throw new Error("Missing songId");
+
+    // Validate callback secret
+    const expectedSecret = Deno.env.get("SUNO_CALLBACK_SECRET");
+    if (expectedSecret && secret !== expectedSecret) {
+      log("AUTH", "Invalid callback secret", { songId });
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const body = await req.json();
     log("RECEIVED", "Callback payload", { songId, code: body.code, callbackType: body.data?.callbackType });

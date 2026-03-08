@@ -63,6 +63,22 @@ export default function Player() {
     fetchSong();
   }, [id, user]);
 
+  // Realtime: update song when it changes (e.g. generating → ready)
+  useEffect(() => {
+    if (!id || !user) return;
+    const channel = supabase
+      .channel(`player-song-${id}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "songs", filter: `id=eq.${id}` },
+        (payload) => {
+          setSong((prev) => prev ? { ...prev, ...(payload.new as Song) } : prev);
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [id, user]);
+
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -275,9 +291,19 @@ export default function Player() {
             transition={{ delay: 0.3 }}
             className="glass-card-elevated p-10 mb-12 text-center"
           >
-            <Music className="w-10 h-10 text-muted-foreground/40 mx-auto mb-4" />
-            <p className="text-foreground font-semibold mb-1">{t("player.no_audio_title")}</p>
-            <p className="text-sm text-muted-foreground">{t("player.no_audio_text")}</p>
+            {song.status === "generating" ? (
+              <>
+                <Loader2 className="w-10 h-10 text-primary animate-spin mx-auto mb-4" />
+                <p className="text-foreground font-semibold mb-1">{t("player.generating_title", "Génération en cours…")}</p>
+                <p className="text-sm text-muted-foreground">{t("player.generating_text", "Ta chanson sera prête dans quelques instants.")}</p>
+              </>
+            ) : (
+              <>
+                <Music className="w-10 h-10 text-muted-foreground/40 mx-auto mb-4" />
+                <p className="text-foreground font-semibold mb-1">{t("player.no_audio_title")}</p>
+                <p className="text-sm text-muted-foreground">{t("player.no_audio_text")}</p>
+              </>
+            )}
             <div className="flex justify-center gap-3 mt-5">
               <motion.button whileHover={{ scale: 1.15 }} whileTap={{ scale: 0.9 }} onClick={toggleFav} className="text-muted-foreground hover:text-primary transition-colors">
                 <Heart className={`w-6 h-6 ${isFav ? "fill-primary text-primary" : ""}`} />
