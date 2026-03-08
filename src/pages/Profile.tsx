@@ -84,13 +84,14 @@ export default function Profile() {
   };
 
   if (loading) return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
-      <div className="flex items-center justify-center pt-32">
+      <div className="flex-1 flex items-center justify-center">
         <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}>
           <Loader2 className="w-8 h-8 text-primary" />
         </motion.div>
       </div>
+      <Footer />
     </div>
   );
 

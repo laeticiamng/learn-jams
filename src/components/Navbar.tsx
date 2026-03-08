@@ -6,7 +6,7 @@ import { Music, Library, User, LogOut, Plus, Menu, Search } from "lucide-react";
 import LanguageSelector from "@/components/LanguageSelector";
 import NotificationBell from "@/components/NotificationBell";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 
 export default function Navbar() {
@@ -15,6 +15,7 @@ export default function Navbar() {
   const location = useLocation();
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  const isMac = useMemo(() => typeof navigator !== "undefined" && /Mac|iPod|iPhone|iPad/.test(navigator.userAgent), []);
 
   const go = (path: string) => { navigate(path); setOpen(false); };
   const isActive = (path: string) => location.pathname === path;
@@ -49,7 +50,7 @@ export default function Navbar() {
             <Search className="w-3.5 h-3.5" />
             <span className="hidden lg:inline text-xs">{t("command.search_placeholder", "Search…")}</span>
             <kbd className="pointer-events-none hidden lg:inline-flex h-5 select-none items-center gap-0.5 rounded border border-border/30 bg-muted/30 px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
-              ⌘K
+              {isMac ? "⌘K" : "Ctrl+K"}
             </kbd>
           </button>
           <LanguageSelector />
