@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { ParallaxOrbs } from "@/components/ParallaxOrbs";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
