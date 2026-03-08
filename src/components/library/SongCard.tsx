@@ -21,6 +21,7 @@ interface SongCardProps {
   song: Song;
   isFavorite: boolean;
   onToggleFavorite: (songId: string) => void;
+  onRetry?: (songId: string) => void;
 }
 
 const styleColors: Record<string, string> = {
