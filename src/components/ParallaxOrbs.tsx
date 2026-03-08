@@ -6,7 +6,7 @@ interface OrbConfig {
 }
 
 interface ParallaxOrbsProps {
-  orbs: OrbConfig[];
+  orbs?: OrbConfig[];
   mesh?: boolean;
   glow?: boolean;
 }
