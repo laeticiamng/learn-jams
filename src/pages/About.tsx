@@ -102,7 +102,7 @@ export default function About() {
           className="glass-card-elevated p-9 mb-8"
         >
           <h2 className="font-display text-xl font-semibold text-foreground mb-4">{t("about.how_title")}</h2>
-          <ol className="space-y-3 text-foreground/75 leading-relaxed list-decimal pl-6 text-sm">
+          <ol className="space-y-3 text-foreground/85 leading-relaxed list-decimal pl-6 text-sm">
             {[1, 2, 3, 4, 5].map(n => <li key={n} dangerouslySetInnerHTML={{ __html: t(`about.how_step${n}`) }} />)}
           </ol>
         </motion.section>

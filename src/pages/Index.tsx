@@ -461,7 +461,7 @@ export default function Index() {
               <motion.article key={n} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }} transition={{ delay: i * 0.15, duration: 0.6, ease }}
                 className="glass-card-elevated p-8 sm:p-9 flex flex-col gradient-border">
-                <Quote className="w-8 h-8 text-primary/20 mb-5" />
+                <Quote className="w-8 h-8 text-primary/40 mb-5" />
                 <p className="text-sm text-foreground/80 leading-relaxed flex-1 italic">
                   "{t(`home.testimonial${n}_quote`)}"
                 </p>

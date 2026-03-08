@@ -62,7 +62,7 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-border/15 pt-7 text-center">
-          <p className="text-xs text-muted-foreground/60">{t("footer.rights", { year })}</p>
+          <p className="text-xs text-muted-foreground">{t("footer.rights", { year })}</p>
         </div>
       </div>
     </footer>
