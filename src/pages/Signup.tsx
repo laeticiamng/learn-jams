@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Music } from "lucide-react";
+import Navbar from "@/components/Navbar";
 import { toast } from "sonner";
 import { usePageSEO } from "@/hooks/usePageSEO";
 import { motion } from "framer-motion";

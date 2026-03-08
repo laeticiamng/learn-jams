@@ -361,6 +361,7 @@ export default function Player() {
           </motion.div>
         )}
       </div>
+      <Footer />
     </div>
   );
 }

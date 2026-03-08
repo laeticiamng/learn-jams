@@ -210,6 +210,7 @@ export default function Profile() {
           </AlertDialog>
         </motion.div>
       </div>
+      <Footer />
     </div>
   );
 }

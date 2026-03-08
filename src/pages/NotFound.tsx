@@ -5,6 +5,7 @@ import { Music, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { usePageSEO } from "@/hooks/usePageSEO";
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
 const NotFound = () => {
   const { t } = useTranslation();
@@ -16,17 +17,22 @@ const NotFound = () => {
   }, [location.pathname]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-background" style={{ background: "var(--gradient-glow)" }}>
+    <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
       <div className="flex-1 flex items-center justify-center px-4">
-      <div className="glass-card p-12 text-center max-w-md">
-        <div className="w-16 h-16 rounded-2xl gradient-bg flex items-center justify-center mx-auto mb-6"><Music className="w-8 h-8 text-primary-foreground" /></div>
-        <h1 className="font-display text-5xl font-bold gradient-text mb-4">404</h1>
-        <p className="text-xl text-foreground mb-2">{t("notfound.title")}</p>
-        <p className="text-muted-foreground mb-8">{t("notfound.text")}</p>
-        <Button asChild className="gradient-bg gap-2"><Link to="/"><ArrowLeft className="w-4 h-4" /> {t("common.return")}</Link></Button>
+        <div className="glass-card-elevated p-12 text-center max-w-md">
+          <div className="w-16 h-16 rounded-2xl gradient-bg-premium flex items-center justify-center mx-auto mb-6 shadow-lg shadow-primary/20">
+            <Music className="w-8 h-8 text-primary-foreground" />
+          </div>
+          <h1 className="font-display text-5xl font-bold gradient-text mb-4">404</h1>
+          <p className="text-xl text-foreground mb-2">{t("notfound.title")}</p>
+          <p className="text-muted-foreground mb-8">{t("notfound.text")}</p>
+          <Button asChild className="gradient-bg-premium gap-2 rounded-xl shadow-lg shadow-primary/20">
+            <Link to="/"><ArrowLeft className="w-4 h-4" /> {t("common.return")}</Link>
+          </Button>
+        </div>
       </div>
-      </div>
+      <Footer />
     </div>
   );
 };
