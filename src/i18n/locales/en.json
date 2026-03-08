@@ -167,7 +167,7 @@
   "player": {
     "back": "Library", "lyrics": "Lyrics",
     "no_audio_title": "Audio not available",
-    "no_audio_text": "The lyrics were generated successfully. Audio music generation is being deployed — you can already read the lyrics below and test your knowledge with the quiz.",
+    "no_audio_text": "The lyrics were generated successfully! You can read them below and test your knowledge with the quiz. Audio will be available shortly.",
     "quiz_button": "Quiz Mode 🧠", "not_found": "Song not found",
     "study_notes": "Study Notes & Exam Anchors",
     "tab_notions": "Notions",
