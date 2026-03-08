@@ -124,7 +124,9 @@ export function SongCard({ song, isFavorite, onToggleFavorite, onRetry, onDelete
             e.stopPropagation();
             onToggleFavorite(song.id);
           }}
-          className="absolute top-3 right-3 p-2 rounded-xl bg-black/30 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-black/50"
+          className={`absolute top-3 right-3 p-2 rounded-xl backdrop-blur-sm transition-all duration-300 hover:bg-black/50 ${
+            isFavorite ? "opacity-100 bg-black/40" : "opacity-100 sm:opacity-0 sm:group-hover:opacity-100 bg-black/30"
+          }`}
         >
           <Heart
             className={`w-4 h-4 transition-all duration-300 ${
