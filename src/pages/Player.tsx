@@ -1,13 +1,14 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { Play, Pause, Heart, ArrowLeft, Volume2, Loader2, Brain, Music } from "lucide-react";
+import { Play, Pause, Heart, ArrowLeft, Volume2, VolumeX, Loader2, Brain, Music, SkipBack, SkipForward } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { StudyNotes } from "@/components/player/StudyNotes";
+import { AudioVisualizer } from "@/components/player/AudioVisualizer";
 
 interface Song { id: string; title: string; style: string; original_text: string; generated_lyrics: string | null; audio_url: string | null; duration: number | null; status: string; subject: string | null; lyrics_metadata: string | null; }
 
@@ -24,6 +25,11 @@ const styleGradients: Record<string, string> = {
   classique: "from-violet-500 to-purple-500",
   techno: "from-gray-400 to-zinc-500",
   afrobeat: "from-amber-500 to-red-500",
+};
+
+const styleEmojis: Record<string, string> = {
+  rap: "🎤", lofi: "🌙", pop: "🎵", jazz: "🎷", rock: "🎸",
+  "spoken-word": "🎙️", reggaeton: "💃", classique: "🎻", techno: "🔊", afrobeat: "🥁",
 };
 
 export default function Player() {
@@ -43,6 +49,7 @@ export default function Player() {
 
   const hasAudio = !!song?.audio_url;
   const gradient = song ? (styleGradients[song.style] || "from-primary to-secondary") : "from-primary to-secondary";
+  const emoji = song ? (styleEmojis[song.style] || "🎵") : "🎵";
 
   useEffect(() => {
     if (!id || !user) return;
@@ -70,14 +77,22 @@ export default function Player() {
 
   useEffect(() => { if (audioRef.current) audioRef.current.volume = volume / 100; }, [volume]);
 
-  const togglePlay = () => { if (!audioRef.current || !hasAudio) return; if (playing) audioRef.current.pause(); else audioRef.current.play(); setPlaying(!playing); };
+  const togglePlay = useCallback(() => {
+    if (!audioRef.current || !hasAudio) return;
+    if (playing) audioRef.current.pause(); else audioRef.current.play();
+    setPlaying(!playing);
+  }, [playing, hasAudio]);
+
   const seek = (val: number[]) => { if (audioRef.current) { audioRef.current.currentTime = val[0]; setCurrentTime(val[0]); } };
+  const skip = (delta: number) => { if (audioRef.current) { audioRef.current.currentTime = Math.max(0, Math.min(duration, audioRef.current.currentTime + delta)); } };
+
   const toggleFav = async () => {
     if (!user || !id) return;
     if (isFav) await supabase.from("favorites").delete().eq("user_id", user.id).eq("song_id", id);
     else await supabase.from("favorites").insert({ user_id: user.id, song_id: id });
     setIsFav(!isFav);
   };
+
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, "0")}`;
   const lyricsLines = song?.generated_lyrics?.split("\n").filter(Boolean) || [];
 
@@ -105,7 +120,7 @@ export default function Player() {
       <div className="fixed inset-0 pointer-events-none" style={{ background: "var(--gradient-mesh)" }} />
       <div className={`fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] pointer-events-none ambient-orb bg-gradient-to-b ${gradient}`} style={{ opacity: 0.08 }} />
 
-      {hasAudio && <audio ref={audioRef} src={song.audio_url!} preload="metadata" />}
+      {hasAudio && <audio ref={audioRef} src={song.audio_url!} preload="metadata" crossOrigin="anonymous" />}
 
       <div className="container mx-auto pt-8 pb-40 px-4 max-w-2xl relative z-10">
         <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}>
@@ -114,39 +129,58 @@ export default function Player() {
           </Button>
         </motion.div>
 
-        {/* Album art */}
+        {/* Vinyl-style album art */}
         <motion.div
           initial={{ scale: 0.8, opacity: 0, filter: "blur(20px)" }}
           animate={{ scale: 1, opacity: 1, filter: "blur(0px)" }}
           transition={{ duration: 1, ease }}
-          className={`w-64 h-64 md:w-80 md:h-80 rounded-[2.5rem] bg-gradient-to-br ${gradient} mx-auto mb-12 flex items-center justify-center relative`}
-          style={{
-            boxShadow: `0 40px 100px -20px hsl(265, 90%, 60% / 0.25), 0 0 0 1px hsl(0 0% 100% / 0.05) inset`,
-          }}
+          className="relative mx-auto mb-12 w-64 h-64 md:w-80 md:h-80"
         >
-          {/* Animated rings */}
+          {/* Outer vinyl ring */}
           <motion.div
-            className="absolute inset-0 rounded-[2.5rem]"
-            style={{ border: "1px solid hsl(0 0% 100% / 0.1)" }}
-            animate={{ scale: [1, 1.04, 1], opacity: [0.3, 0.6, 0.3] }}
+            animate={playing ? { rotate: 360 } : {}}
+            transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+            className="absolute inset-0 rounded-full"
+            style={{
+              background: `conic-gradient(from 0deg, hsl(240 10% 10%), hsl(240 10% 14%), hsl(240 10% 10%), hsl(240 10% 16%), hsl(240 10% 10%))`,
+              boxShadow: "0 0 0 1px hsl(0 0% 100% / 0.04) inset, 0 40px 100px -20px hsl(0 0% 0% / 0.6)",
+            }}
+          >
+            {/* Vinyl grooves */}
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="absolute rounded-full border border-border/10" style={{ inset: `${20 + i * 12}%` }} />
+            ))}
+          </motion.div>
+
+          {/* Center label */}
+          <motion.div
+            animate={playing ? { rotate: 360 } : {}}
+            transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+            className={`absolute rounded-full bg-gradient-to-br ${gradient} flex items-center justify-center`}
+            style={{
+              inset: "25%",
+              boxShadow: "0 0 40px hsl(265 90% 60% / 0.2), inset 0 1px 0 hsl(0 0% 100% / 0.15)",
+            }}
+          >
+            <div className="text-center text-primary-foreground relative z-10">
+              <motion.div
+                animate={playing ? { scale: [1, 1.15, 1] } : {}}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="text-4xl md:text-5xl mb-1 drop-shadow-2xl"
+              >
+                {emoji}
+              </motion.div>
+              <div className="font-display text-xs font-bold capitalize drop-shadow-lg tracking-wider uppercase">{song.style}</div>
+            </div>
+          </motion.div>
+
+          {/* Glow ring */}
+          <motion.div
+            className="absolute -inset-4 rounded-full"
+            style={{ border: "1px solid hsl(0 0% 100% / 0.04)" }}
+            animate={playing ? { scale: [1, 1.03, 1], opacity: [0.3, 0.6, 0.3] } : { opacity: 0.2 }}
             transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
           />
-          <motion.div
-            className="absolute -inset-4 rounded-[3rem]"
-            style={{ border: "1px solid hsl(0 0% 100% / 0.04)" }}
-            animate={{ scale: [1, 1.02, 1] }}
-            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-          />
-          <div className="text-center text-primary-foreground relative z-10">
-            <motion.div
-              animate={playing ? { scale: [1, 1.15, 1], rotate: [0, 5, -5, 0] } : {}}
-              transition={{ duration: 2, repeat: Infinity }}
-              className="text-6xl mb-3 drop-shadow-2xl"
-            >
-              🎵
-            </motion.div>
-            <div className="font-display text-lg font-bold capitalize drop-shadow-lg">{song.style}</div>
-          </div>
         </motion.div>
 
         {/* Title */}
@@ -154,7 +188,7 @@ export default function Player() {
           initial={{ opacity: 0, y: 16, filter: "blur(8px)" }}
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           transition={{ delay: 0.3, duration: 0.7, ease }}
-          className="text-center mb-12"
+          className="text-center mb-10"
         >
           <h1 className="font-display text-3xl md:text-4xl font-bold tracking-tight">{song.title}</h1>
           {song.subject && <p className="text-muted-foreground mt-2 text-lg">{song.subject}</p>}
@@ -166,8 +200,13 @@ export default function Player() {
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             transition={{ delay: 0.4, duration: 0.6, ease }}
           >
+            {/* Audio Visualizer */}
+            <div className="mb-6">
+              <AudioVisualizer audioElement={audioRef.current} playing={playing} gradient={gradient} />
+            </div>
+
             {/* Progress */}
-            <div className="space-y-2 mb-10">
+            <div className="space-y-2 mb-8">
               <Slider value={[currentTime]} max={duration || 100} step={1} onValueChange={seek} />
               <div className="flex justify-between text-xs text-muted-foreground tabular-nums font-mono">
                 <span>{formatTime(currentTime)}</span>
@@ -176,7 +215,7 @@ export default function Player() {
             </div>
 
             {/* Controls */}
-            <div className="flex items-center justify-center gap-10 mb-12">
+            <div className="flex items-center justify-center gap-8 mb-10">
               <motion.button
                 whileHover={{ scale: 1.15 }}
                 whileTap={{ scale: 0.9 }}
@@ -185,23 +224,47 @@ export default function Player() {
               >
                 <Heart className={`w-6 h-6 transition-all duration-300 ${isFav ? "fill-primary text-primary" : ""}`} />
               </motion.button>
+
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => skip(-10)}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <SkipBack className="w-5 h-5" />
+              </motion.button>
+
               <motion.button
                 whileTap={{ scale: 0.92 }}
                 whileHover={{ scale: 1.05 }}
                 onClick={togglePlay}
                 className={`w-20 h-20 rounded-full bg-gradient-to-br ${gradient} flex items-center justify-center transition-all duration-500`}
                 style={{
-                  boxShadow: "0 8px 40px hsl(265, 90%, 60% / 0.3), inset 0 1px 0 hsl(0 0% 100% / 0.15)",
+                  boxShadow: playing
+                    ? "0 0 60px hsl(265 90% 60% / 0.35), 0 8px 40px hsl(265 90% 60% / 0.2), inset 0 1px 0 hsl(0 0% 100% / 0.15)"
+                    : "0 8px 40px hsl(265 90% 60% / 0.2), inset 0 1px 0 hsl(0 0% 100% / 0.15)",
                 }}
               >
                 {playing ? <Pause className="w-8 h-8 text-primary-foreground" /> : <Play className="w-8 h-8 text-primary-foreground ml-1" />}
               </motion.button>
+
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => skip(10)}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <SkipForward className="w-5 h-5" />
+              </motion.button>
+
               <div className="w-6 h-6" />
             </div>
 
             {/* Volume */}
             <div className="flex items-center gap-3 max-w-xs mx-auto mb-14">
-              <Volume2 className="w-4 h-4 text-muted-foreground shrink-0" />
+              <button onClick={() => setVolume(v => v > 0 ? 0 : 80)} className="text-muted-foreground hover:text-foreground transition-colors">
+                {volume === 0 ? <VolumeX className="w-4 h-4 shrink-0" /> : <Volume2 className="w-4 h-4 shrink-0" />}
+              </button>
               <Slider value={[volume]} max={100} step={1} onValueChange={(v) => setVolume(v[0])} />
             </div>
           </motion.div>

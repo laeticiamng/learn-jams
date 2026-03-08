@@ -255,4 +255,28 @@
   .focus-ring {
     @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
   }
+
+  /* Vinyl spin */
+  .vinyl-spin {
+    animation: vinyl-rotate 8s linear infinite;
+  }
+
+  @keyframes vinyl-rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  /* Musical equalizer bars */
+  .eq-bar {
+    animation: eq-bounce var(--eq-speed, 0.8s) ease-in-out infinite alternate;
+  }
+
+  @keyframes eq-bounce {
+    0% { height: 4px; }
+    100% { height: var(--eq-height, 24px); }
+  }
+
+  /* Scrollbar hide utility */
+  .scrollbar-none::-webkit-scrollbar { display: none; }
+  .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
 }
