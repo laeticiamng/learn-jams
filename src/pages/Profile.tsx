@@ -30,14 +30,16 @@ export default function Profile() {
   useEffect(() => {
     if (!user) return;
     const fetchData = async () => {
-      const [profileRes, songsRes, favsRes] = await Promise.all([
+      const [profileRes, songsRes, favsRes, subRes] = await Promise.all([
         supabase.from("profiles").select("*").eq("user_id", user.id).single(),
         supabase.from("songs").select("id", { count: "exact" }).eq("user_id", user.id),
         supabase.from("favorites").select("id", { count: "exact" }).eq("user_id", user.id),
+        supabase.from("subscriptions").select("status").eq("user_id", user.id).maybeSingle(),
       ]);
       if (profileRes.data) { setDisplayName(profileRes.data.display_name || ""); setFieldOfStudy(profileRes.data.field_of_study || ""); }
       setSongCount(songsRes.count || 0);
       setFavCount(favsRes.count || 0);
+      setIsPro(subRes.data?.status === "active");
       setLoading(false);
     };
     fetchData();
