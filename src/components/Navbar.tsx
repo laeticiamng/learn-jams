@@ -50,7 +50,7 @@ export default function Navbar() {
             <Search className="w-3.5 h-3.5" />
             <span className="hidden lg:inline text-xs">{t("command.search_placeholder", "Search…")}</span>
             <kbd className="pointer-events-none hidden lg:inline-flex h-5 select-none items-center gap-0.5 rounded border border-border/30 bg-muted/30 px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
-              ⌘K
+              {isMac ? "⌘K" : "Ctrl+K"}
             </kbd>
           </button>
           <LanguageSelector />
