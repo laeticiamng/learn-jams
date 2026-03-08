@@ -25,7 +25,7 @@
     "step3_title": "Listen & memorize",
     "step3_desc": "The AI generates educational lyrics based on your notes. Listen on repeat, anywhere, anytime — then test yourself with an automatic quiz.",
     "step_label": "Step {{n}}",
-    "science_title": "Why does it work? 🧠",
+    "science_title": "Why does it work?",
     "science_subtitle": "It's not magic — it's cognitive science applied to music",
     "science1_title": "Neuroscience & musical memory",
     "science1_desc": "Music simultaneously activates the hippocampus, prefrontal cortex, and auditory areas — the key regions for long-term memory consolidation (McGill, 2014).",
@@ -97,7 +97,7 @@
     "sticky_cta": "Create my song for free"
   },
   "auth": {
-    "login_title": "Welcome back! 👋", "login_subtitle": "Sign in to access your songs",
+    "login_title": "Welcome back", "login_subtitle": "Sign in to access your songs",
     "email": "Email", "email_placeholder": "you@email.com",
     "password": "Password", "password_placeholder": "••••••••", "password_min": "Min. 6 characters",
     "forgot": "Forgot?", "login_button": "Sign in", "login_loading": "Signing in...",
@@ -281,12 +281,12 @@
   "style_categories": { "popular": "Popular", "electronic": "Electronic", "world": "World", "classic": "Classic & Soul", "alternative": "Alternative" },
   "pricing": {
     "title": "Pricing",
-    "subtitle": "One plan, everything included. Turn your notes into educational songs.",
+    "subtitle": "Try for free, then go Pro to unlock everything.",
     "free_plan": "Free",
     "free_price": "Free",
     "free_feature1": "1 song",
     "free_feature2": "Text import only",
-    "free_feature3": "No quiz",
+    "free_feature3": "Try the quiz (limited)",
     "plan_name": "StudyBeats Pro",
     "month": "month",
     "cancel_anytime": "No commitment — cancel anytime",
