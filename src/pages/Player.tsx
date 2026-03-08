@@ -6,6 +6,7 @@ import { ParallaxOrbs } from "@/components/ParallaxOrbs";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import { Slider } from "@/components/ui/slider";
+import Footer from "@/components/Footer";
 import { Play, Pause, Heart, ArrowLeft, Volume2, VolumeX, Loader2, Brain, Music, SkipBack, SkipForward } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
