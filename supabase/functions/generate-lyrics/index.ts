@@ -377,29 +377,7 @@ D) COVERAGE CHECK-LIST:
       generatedTitle = firstLine.replace(/[*_]/g, "").trim();
     }
 
-    // --- Increment usage quota ---
-    if (!isProUser) {
-      const currentMonth = new Date().toISOString().slice(0, 7);
-      const { data: existing } = await supabaseAdmin
-        .from("usage_quotas")
-        .select("songs_generated")
-        .eq("user_id", userId)
-        .eq("month", currentMonth)
-        .maybeSingle();
-
-      if (existing) {
-        await supabaseAdmin
-          .from("usage_quotas")
-          .update({ songs_generated: existing.songs_generated + 1 })
-          .eq("user_id", userId)
-          .eq("month", currentMonth);
-      } else {
-        await supabaseAdmin
-          .from("usage_quotas")
-          .insert({ user_id: userId, month: currentMonth, songs_generated: 1 });
-      }
-    }
-    // --- END increment ---
+    // Quota already incremented atomically above — no need to increment again here
 
     return new Response(JSON.stringify({ 
       title: generatedTitle || title || "StudyBeats Song",
