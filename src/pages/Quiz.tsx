@@ -79,6 +79,7 @@ export default function Quiz() {
 
   if (questions.length === 0) return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-4 relative overflow-hidden">
+      <Navbar />
       {ambientOrbs}
       <Brain className="w-12 h-12 text-muted-foreground relative z-10" />
       <p className="text-muted-foreground relative z-10">{t("quiz.impossible")}</p>
