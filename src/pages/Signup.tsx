@@ -24,8 +24,13 @@ export default function Signup() {
   const [displayName, setDisplayName] = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { signUp } = useAuth();
+  const { signUp, user } = useAuth();
   const navigate = useNavigate();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (user) navigate("/create", { replace: true });
+  }, [user, navigate]);
 
   const humanizeError = (message: string): string => {
     if (message.includes("already registered") || message.includes("already been registered")) return t("auth.error_already_registered", "Cette adresse e-mail est déjà utilisée.");
