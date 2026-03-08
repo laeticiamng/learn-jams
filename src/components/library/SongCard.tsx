@@ -47,10 +47,11 @@ const item = {
   },
 };
 
-export function SongCard({ song, isFavorite, onToggleFavorite }: SongCardProps) {
+export function SongCard({ song, isFavorite, onToggleFavorite, onRetry }: SongCardProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const isClickable = song.status === "ready";
+  const isError = song.status === "error";
   const genProgress = getGeneratingProgress(song);
   const styleGradient = styleColors[song.style] || "from-primary/80 to-secondary/80";
 
