@@ -365,7 +365,7 @@ export default function Index() {
             <motion.div initial={{ opacity: 0, x: 24 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
               transition={{ delay: 0.15, duration: 0.6, ease }}
               className="glass-card-elevated p-8 sm:p-10 relative glow-intense">
-              <div className="absolute top-5 left-5 sm:top-6 sm:left-6 text-[11px] font-semibold uppercase tracking-widest text-primary bg-primary/10 px-3 py-1 rounded-full">
+              <div className="absolute top-5 left-5 sm:top-6 sm:left-6 text-[11px] font-semibold uppercase tracking-widest text-foreground/90 bg-foreground/5 border border-foreground/10 px-3 py-1 rounded-full">
                 {t("home.after_label")}
               </div>
               <div className="pt-10 text-sm sm:text-base text-foreground leading-relaxed whitespace-pre-line">
