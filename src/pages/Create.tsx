@@ -56,16 +56,17 @@ export default function Create() {
         body: { text: courseText, style, title: title || "Sans titre", language: i18n.language },
       });
 
-      // Handle quota exceeded
+      // Handle quota exceeded — supabase.functions.invoke puts non-2xx body in error.context
       if (lyricsError) {
-        // Check if the response body contains quota_exceeded
-        const errorBody = lyricsData;
-        if (errorBody?.error === "quota_exceeded") {
-          setShowPaywall(true);
-          setGenerating(false);
-          setProgress(0);
-          return;
-        }
+        try {
+          const errBody = lyricsError.context ? await lyricsError.context.json() : null;
+          if (errBody?.error === "quota_exceeded") {
+            setShowPaywall(true);
+            setGenerating(false);
+            setProgress(0);
+            return;
+          }
+        } catch {}
         throw lyricsError;
       }
 
