@@ -169,7 +169,7 @@ export default function Library() {
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/30 border border-transparent"
                 }`}
               >
-                <Icon className={`w-3.5 h-3.5 ${tab.key === "generating" && !isActive ? "animate-spin" : ""}`} />
+                <Icon className={`w-3.5 h-3.5 ${tab.key === "generating" && tab.count > 0 && !isActive ? "animate-spin" : ""}`} />
                 {tab.label}
                 {tab.count > 0 && (
                   <span className={`text-[11px] px-1.5 py-0.5 rounded-md font-mono tabular-nums ${
