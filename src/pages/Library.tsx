@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Plus, Music, Loader2, Heart, ListMusic, Clock, Trash2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import { useAuth } from "@/hooks/useAuth";
 import { useSongs } from "@/hooks/useSongs";
 import { SongCard } from "@/components/library/SongCard";
