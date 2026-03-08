@@ -4,6 +4,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { FileUp, Music, Headphones, BookOpen, Brain, Shield, Repeat, Timer, Dumbbell, ChevronRight, Quote, Lock, ShieldCheck, CreditCard, ArrowRight, Play, Pause, Volume2 } from "lucide-react";
+import testimonialMarie from "@/assets/testimonial-marie.jpg";
+import testimonialKarim from "@/assets/testimonial-karim.jpg";
+import testimonialChloe from "@/assets/testimonial-chloe.jpg";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { usePageSEO } from "@/hooks/usePageSEO";
@@ -167,9 +170,9 @@ const scienceIcons = [Brain, Repeat, Timer, Dumbbell];
 const featureIcons = [Brain, BookOpen, Shield];
 
 const testimonialAvatars = [
-  "https://api.dicebear.com/9.x/notionists/svg?seed=Marie&backgroundColor=b6e3f4",
-  "https://api.dicebear.com/9.x/notionists/svg?seed=Karim&backgroundColor=c0aede",
-  "https://api.dicebear.com/9.x/notionists/svg?seed=Chloe&backgroundColor=ffd5dc",
+  testimonialMarie,
+  testimonialKarim,
+  testimonialChloe,
 ];
 
 export default function Index() {
@@ -252,12 +255,15 @@ export default function Index() {
               </motion.div>
             </div>
             {!user && (
-              <button
-                onClick={() => navigate("/login")}
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors underline-offset-4 hover:underline mb-12 inline-block"
-              >
-                {t("home.cta_login")}
-              </button>
+              <div className="flex flex-col items-center gap-2 mb-12">
+                <p className="text-xs text-muted-foreground">{t("home.free_hint")}</p>
+                <button
+                  onClick={() => navigate("/login")}
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors underline-offset-4 hover:underline inline-block"
+                >
+                  {t("home.cta_login")}
+                </button>
+              </div>
             )}
 
             {/* Social proof */}
@@ -487,8 +493,6 @@ export default function Index() {
           </div>
         </div>
       </section>
-
-      <SectionDivider />
 
       <SectionDivider />
 
