@@ -101,6 +101,29 @@ serve(async (req) => {
     const langTag = langMap[language] || langMap["en"];
     const sunoStyle = `${styleMap[style] || "pop"}, ${langTag}`;
 
+    // Sanitize lyrics: replace words Suno rejects as "producer tags"
+    // Suno's filter is aggressive with certain scientific/chemical terms
+    const WORD_REPLACEMENTS: Record<string, string> = {
+      "phosphate": "P-group",
+      "phosphates": "P-groups",
+      "phosphorylation": "P-transfer",
+      "phospholipid": "P-lipid",
+      "phospholipids": "P-lipids",
+      "phosphorus": "P-element",
+      "adenosine": "A-nucleoside",
+      "triphosphate": "tri-P-group",
+      "diphosphate": "di-P-group",
+      "monophosphate": "mono-P-group",
+    };
+    let cleanLyrics = lyrics;
+    for (const [word, replacement] of Object.entries(WORD_REPLACEMENTS)) {
+      cleanLyrics = cleanLyrics.replace(new RegExp(`\\b${word}\\b`, "gi"), replacement);
+    }
+    // Also remove common producer-tag patterns
+    cleanLyrics = cleanLyrics.replace(/\b(feat\.?\s+\w+)/gi, "");
+    cleanLyrics = cleanLyrics.replace(/\b(produced\s+by\s+\w+)/gi, "");
+    console.log(`[generate-music] Sanitized lyrics, ${Object.keys(WORD_REPLACEMENTS).filter(w => lyrics.toLowerCase().includes(w)).length} words replaced`);
+
     const response = await fetch("https://api.sunoapi.org/api/v1/generate", {
       method: "POST",
       headers: {
@@ -108,7 +131,7 @@ serve(async (req) => {
         Authorization: `Bearer ${SUNO_API_KEY}`,
       },
       body: JSON.stringify({
-        prompt: lyrics.slice(0, 5000),
+        prompt: cleanLyrics.slice(0, 5000),
         style: sunoStyle,
         title: (title || "StudyBeats").slice(0, 80),
         customMode: true,

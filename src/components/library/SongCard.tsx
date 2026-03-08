@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Play, Heart, Clock, Loader2, Brain } from "lucide-react";
+import { Play, Heart, Clock, Loader2, Brain, RotateCcw } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -21,6 +21,7 @@ interface SongCardProps {
   song: Song;
   isFavorite: boolean;
   onToggleFavorite: (songId: string) => void;
+  onRetry?: (songId: string) => void;
 }
 
 const styleColors: Record<string, string> = {
@@ -46,10 +47,11 @@ const item = {
   },
 };
 
-export function SongCard({ song, isFavorite, onToggleFavorite }: SongCardProps) {
+export function SongCard({ song, isFavorite, onToggleFavorite, onRetry }: SongCardProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const isClickable = song.status === "ready";
+  const isError = song.status === "error";
   const genProgress = getGeneratingProgress(song);
   const styleGradient = styleColors[song.style] || "from-primary/80 to-secondary/80";
 
@@ -101,6 +103,24 @@ export function SongCard({ song, isFavorite, onToggleFavorite }: SongCardProps) 
               <Clock className="w-3 h-3" />
               {Math.floor(song.duration / 60)}:{(song.duration % 60).toString().padStart(2, "0")}
             </span>
+          )}
+          {isError && onRetry && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <motion.button
+                  whileHover={{ scale: 1.15 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRetry(song.id);
+                  }}
+                  className="hover:text-primary transition-colors duration-300 p-1.5 rounded-lg hover:bg-primary/10"
+                >
+                  <RotateCcw className="w-4.5 h-4.5" />
+                </motion.button>
+              </TooltipTrigger>
+              <TooltipContent>{t("library.retry_tooltip", "Retry generation")}</TooltipContent>
+            </Tooltip>
           )}
           {song.status === "ready" && (
             <Tooltip>
