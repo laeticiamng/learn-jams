@@ -13,6 +13,7 @@ import { useSongs } from "@/hooks/useSongs";
 import { SongCard } from "@/components/library/SongCard";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { usePageSEO } from "@/hooks/usePageSEO";
 import {
   AlertDialog,
   AlertDialogAction,
