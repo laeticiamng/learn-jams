@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Save, Loader2, Trash2, CreditCard } from "lucide-react";
+import { Save, Loader2, Trash2, CreditCard, ArrowLeft } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -99,6 +99,14 @@ export default function Profile() {
       <Navbar />
       <div className="container mx-auto pt-28 pb-16 px-4 max-w-lg relative z-10">
         <motion.div
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+        >
+          <Button variant="ghost" size="sm" onClick={() => navigate("/library")} className="gap-2 mb-6 rounded-xl hover:bg-muted/30 text-muted-foreground">
+            <ArrowLeft className="w-4 h-4" /> {t("library.title", "Bibliothèque")}
+          </Button>
+        </motion.div>
+        <motion.div
           initial={{ opacity: 0, y: 24, filter: "blur(10px)" }}
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           transition={{ duration: 0.7, ease }}
@@ -121,14 +129,14 @@ export default function Profile() {
           className="glass-card-elevated p-7 mb-6"
         >
           <div className="grid grid-cols-2 gap-6 text-center">
-            <div>
+            <button onClick={() => navigate("/library")} className="group hover:bg-muted/20 rounded-xl p-3 transition-colors">
               <div className="font-display text-3xl font-bold gradient-text">{songCount}</div>
-              <div className="text-xs text-muted-foreground mt-1 uppercase tracking-wider font-medium">{t("profile.songs")}</div>
-            </div>
-            <div>
+              <div className="text-xs text-muted-foreground mt-1 uppercase tracking-wider font-medium group-hover:text-foreground transition-colors">{t("profile.songs")}</div>
+            </button>
+            <button onClick={() => navigate("/library")} className="group hover:bg-muted/20 rounded-xl p-3 transition-colors">
               <div className="font-display text-3xl font-bold gradient-text">{favCount}</div>
-              <div className="text-xs text-muted-foreground mt-1 uppercase tracking-wider font-medium">{t("profile.favorites")}</div>
-            </div>
+              <div className="text-xs text-muted-foreground mt-1 uppercase tracking-wider font-medium group-hover:text-foreground transition-colors">{t("profile.favorites")}</div>
+            </button>
           </div>
         </motion.div>
 

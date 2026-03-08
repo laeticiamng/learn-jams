@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { ArrowLeft, Brain, CheckCircle2, XCircle, Loader2, RotateCcw, Trophy, Sparkles } from "lucide-react";
+import Navbar from "@/components/Navbar";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -68,6 +69,7 @@ export default function Quiz() {
 
   if (loading) return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-4 relative overflow-hidden">
+      <Navbar />
       {ambientOrbs}
       <Loader2 className="w-10 h-10 animate-spin text-primary relative z-10" />
       <p className="text-muted-foreground relative z-10">{t("quiz.generating")}</p>
@@ -77,6 +79,7 @@ export default function Quiz() {
 
   if (questions.length === 0) return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-4 relative overflow-hidden">
+      <Navbar />
       {ambientOrbs}
       <Brain className="w-12 h-12 text-muted-foreground relative z-10" />
       <p className="text-muted-foreground relative z-10">{t("quiz.impossible")}</p>
@@ -89,6 +92,7 @@ export default function Quiz() {
 
   if (finished) return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 relative overflow-hidden">
+      <Navbar />
       {ambientOrbs}
       <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="glass-card-elevated p-8 max-w-md w-full text-center space-y-6 relative z-10">
         <div className="text-6xl">{scoreEmoji}</div>
@@ -114,6 +118,7 @@ export default function Quiz() {
 
   return (
     <div className="min-h-screen bg-background px-4 py-8 relative overflow-hidden">
+      <Navbar />
       {ambientOrbs}
 
       <div className="max-w-2xl mx-auto relative z-10">
