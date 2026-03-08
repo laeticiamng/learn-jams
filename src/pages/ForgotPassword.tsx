@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Music, ArrowLeft } from "lucide-react";
+import Navbar from "@/components/Navbar";
 import { toast } from "sonner";
 import { usePageSEO } from "@/hooks/usePageSEO";
 import { motion } from "framer-motion";
@@ -31,8 +32,8 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4 relative overflow-hidden">
-      <ParallaxOrbs glow />
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 pt-20 relative overflow-hidden">
+      <Navbar />
 
       <motion.div
         initial={{ opacity: 0, y: 24, scale: 0.97, filter: "blur(10px)" }}

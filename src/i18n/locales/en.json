@@ -303,5 +303,10 @@
     "already_subscribed": "You're already subscribed!",
     "error": "Error redirecting to payment",
     "guarantee": "Secure payment via Stripe. Cancel in one click."
+  },
+  "notifications": {
+    "title": "Notifications",
+    "mark_all_read": "Mark all read",
+    "empty": "No notifications yet"
   }
 }

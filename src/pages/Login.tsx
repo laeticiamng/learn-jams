@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Music } from "lucide-react";
+import Navbar from "@/components/Navbar";
 import { toast } from "sonner";
 import { usePageSEO } from "@/hooks/usePageSEO";
 import { motion } from "framer-motion";
@@ -39,8 +40,8 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4 relative overflow-hidden">
-      {/* Ambient */}
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 pt-20 relative overflow-hidden">
+      <Navbar />
       <ParallaxOrbs glow orbs={[
         { className: "fixed top-1/4 left-1/3 w-[400px] h-[400px] pointer-events-none ambient-orb", style: { background: "hsl(265, 90%, 60%)", opacity: 0.08 } },
       ]} />

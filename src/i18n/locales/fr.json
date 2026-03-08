@@ -396,5 +396,10 @@
     "already_subscribed": "Vous êtes déjà abonné !",
     "error": "Erreur lors de la redirection vers le paiement",
     "guarantee": "Paiement sécurisé via Stripe. Résiliation en un clic."
+  },
+  "notifications": {
+    "title": "Notifications",
+    "mark_all_read": "Tout marquer lu",
+    "empty": "Aucune notification"
   }
 }

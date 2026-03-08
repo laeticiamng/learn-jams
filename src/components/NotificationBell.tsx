@@ -1,6 +1,7 @@
 import { Bell, Music, Check, CheckCheck } from "lucide-react";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { formatDistanceToNow } from "date-fns";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,6 +16,7 @@ export default function NotificationBell() {
   const { notifications, unreadCount, markAsRead, markAllAsRead } =
     useNotifications();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const handleClick = (notif: { id: string; song_id: string | null; is_read: boolean }) => {
     if (!notif.is_read) markAsRead(notif.id);
@@ -49,7 +51,7 @@ export default function NotificationBell() {
         className="w-80 p-0 bg-card/95 backdrop-blur-2xl border-border/20 rounded-2xl shadow-2xl"
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-border/10">
-          <h3 className="text-sm font-semibold text-foreground">Notifications</h3>
+          <h3 className="text-sm font-semibold text-foreground">{t("notifications.title", "Notifications")}</h3>
           {unreadCount > 0 && (
             <Button
               variant="ghost"
@@ -58,7 +60,7 @@ export default function NotificationBell() {
               className="text-xs text-muted-foreground hover:text-foreground h-7 px-2 gap-1"
             >
               <CheckCheck className="w-3 h-3" />
-              Mark all read
+              {t("notifications.mark_all_read", "Tout marquer lu")}
             </Button>
           )}
         </div>
@@ -66,7 +68,7 @@ export default function NotificationBell() {
           {notifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 text-muted-foreground">
               <Bell className="w-8 h-8 mb-2 opacity-30" />
-              <p className="text-sm">No notifications yet</p>
+              <p className="text-sm">{t("notifications.empty", "Aucune notification")}</p>
             </div>
           ) : (
             <div className="divide-y divide-border/10">

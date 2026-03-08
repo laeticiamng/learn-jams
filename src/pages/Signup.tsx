@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Music } from "lucide-react";
+import Navbar from "@/components/Navbar";
 import { toast } from "sonner";
 import { usePageSEO } from "@/hooks/usePageSEO";
 import { motion } from "framer-motion";
@@ -37,8 +38,8 @@ export default function Signup() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4 relative overflow-hidden">
-      {/* Ambient */}
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 pt-20 relative overflow-hidden">
+      <Navbar />
       <ParallaxOrbs glow orbs={[
         { className: "fixed bottom-1/4 right-1/3 w-[400px] h-[400px] pointer-events-none ambient-orb", style: { background: "hsl(300, 70%, 50%)", opacity: 0.06 } },
       ]} />

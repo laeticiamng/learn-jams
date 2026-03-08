@@ -6,6 +6,7 @@ import { ParallaxOrbs } from "@/components/ParallaxOrbs";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import { Slider } from "@/components/ui/slider";
+import Footer from "@/components/Footer";
 import { Play, Pause, Heart, ArrowLeft, Volume2, VolumeX, Loader2, Brain, Music, SkipBack, SkipForward } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -141,7 +142,7 @@ export default function Player() {
 
       {hasAudio && <audio ref={audioRef} src={song.audio_url!} preload="metadata" crossOrigin="anonymous" />}
 
-      <div className="container mx-auto pt-8 pb-40 px-4 max-w-2xl relative z-10">
+      <div className="container mx-auto pt-28 pb-20 px-4 max-w-2xl relative z-10">
         <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}>
           <Button variant="ghost" size="sm" onClick={() => navigate("/library")} className="gap-2 mb-10 rounded-xl hover:bg-muted/30 text-muted-foreground">
             <ArrowLeft className="w-4 h-4" /> {t("player.back")}
@@ -360,6 +361,7 @@ export default function Player() {
           </motion.div>
         )}
       </div>
+      <Footer />
     </div>
   );
 }
