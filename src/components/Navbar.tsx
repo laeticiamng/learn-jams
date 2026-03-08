@@ -15,6 +15,7 @@ export default function Navbar() {
   const location = useLocation();
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  const isMac = useMemo(() => typeof navigator !== "undefined" && /Mac|iPod|iPhone|iPad/.test(navigator.userAgent), []);
 
   const go = (path: string) => { navigate(path); setOpen(false); };
   const isActive = (path: string) => location.pathname === path;
