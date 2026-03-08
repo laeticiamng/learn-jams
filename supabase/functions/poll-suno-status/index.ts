@@ -76,7 +76,7 @@ serve(async (req) => {
     }
 
     if (song.status !== "generating" || !song.suno_task_id) {
-      log("SKIP", "No polling needed", { songId, status: song.status, hasTaskId: !!song.suno_task_id });
+      log("info", "skip_no_polling", { song_id: songId, status: song.status, has_task_id: !!song.suno_task_id });
       return new Response(JSON.stringify({ status: song.status, message: "No polling needed" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
