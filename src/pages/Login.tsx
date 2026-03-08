@@ -23,6 +23,8 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const { signIn } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = (location.state as { from?: string })?.from || "/create";
 
   const humanizeError = (message: string): string => {
     if (message.includes("Email not confirmed")) return t("auth.error_email_not_confirmed");
