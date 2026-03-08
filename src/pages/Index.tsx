@@ -583,8 +583,8 @@ export default function Index() {
             <h2 className="font-display text-3xl md:text-5xl font-bold mb-5 tracking-tight relative z-10">{t("home.cta_title")}</h2>
             <p className="text-muted-foreground mb-12 text-lg relative z-10">{t("home.cta_text")}</p>
             <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="relative z-10">
-              <Button size="lg" className="gradient-bg-premium text-lg px-10 h-14 shimmer-btn rounded-2xl shadow-xl shadow-primary/25" onClick={() => navigate("/signup")}>
-                {t("home.cta_button")}
+              <Button size="lg" className="gradient-bg-premium text-lg px-10 h-14 shimmer-btn rounded-2xl shadow-xl shadow-primary/25" onClick={() => navigate(user ? "/create" : "/signup")}>
+                {user ? t("home.cta_create", "Create a song") : t("home.cta_button")}
               </Button>
             </motion.div>
           </motion.div>
