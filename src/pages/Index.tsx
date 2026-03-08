@@ -166,7 +166,7 @@ const ParallaxOrbs = () => {
 };
 
 const stepIcons = [FileUp, Music, Headphones];
-const scienceIcons = [Brain, Repeat, Timer, Dumbbell];
+
 const featureIcons = [Brain, BookOpen, Shield];
 
 const testimonialAvatars = [
