@@ -192,6 +192,11 @@ export default function Create() {
                 <p className="text-foreground/70 text-lg max-w-lg mx-auto leading-relaxed">{t("create.upload_subtitle")}</p>
               </div>
               <CourseUploader text={courseText} onTextChange={setCourseText} />
+              {courseText.length > 0 && courseText.trim().length <= 20 && (
+                <p className="text-xs text-amber-500 mt-3 text-center">
+                  {t("create.min_text_hint", "Le texte doit contenir au moins 20 caractères pour continuer.")}
+                </p>
+              )}
             </motion.div>
           )}
           {step === 1 && (
