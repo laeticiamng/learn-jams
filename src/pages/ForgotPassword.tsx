@@ -35,6 +35,9 @@ export default function ForgotPassword() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 pt-20 relative overflow-hidden">
       <Navbar />
+      <ParallaxOrbs glow orbs={[
+        { className: "fixed top-1/3 right-1/3 w-[400px] h-[400px] pointer-events-none ambient-orb", style: { background: "hsl(265, 90%, 60%)", opacity: 0.07 } },
+      ]} />
 
       <motion.div
         initial={{ opacity: 0, y: 24, scale: 0.97, filter: "blur(10px)" }}
