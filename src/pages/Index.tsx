@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "@/hooks/useAuth";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Upload, Music, Headphones, BookOpen, Brain, Shield, Repeat, Timer, Dumbbell, ChevronRight, Quote, Lock, ShieldCheck, CreditCard, ArrowRight, Play, Pause, Volume2 } from "lucide-react";
@@ -164,6 +165,7 @@ const testimonialAvatars = [
 export default function Index() {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [showStickyCta, setShowStickyCta] = useState(false);
   const heroRef = useRef<HTMLElement>(null);
   const ctaRef = useRef<HTMLElement>(null);
@@ -234,17 +236,19 @@ export default function Index() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-5 px-4">
               <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
                 <Button size="lg" className="gradient-bg-premium text-base sm:text-lg px-8 sm:px-10 h-13 sm:h-14 w-full sm:w-auto shimmer-btn rounded-2xl shadow-xl shadow-primary/25"
-                  onClick={() => navigate("/signup")}>
-                  {t("home.cta_signup")}
+                  onClick={() => navigate(user ? "/create" : "/signup")}>
+                  {user ? t("home.cta_create", "Create a song") : t("home.cta_signup")}
                 </Button>
               </motion.div>
             </div>
-            <button
-              onClick={() => navigate("/login")}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors underline-offset-4 hover:underline mb-12 inline-block"
-            >
-              {t("home.cta_login")}
-            </button>
+            {!user && (
+              <button
+                onClick={() => navigate("/login")}
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors underline-offset-4 hover:underline mb-12 inline-block"
+              >
+                {t("home.cta_login")}
+              </button>
+            )}
 
             {/* Social proof */}
             <div className="flex flex-wrap items-center justify-center gap-5 sm:gap-10 mb-12 text-xs sm:text-sm text-muted-foreground px-2">
@@ -579,8 +583,8 @@ export default function Index() {
             <h2 className="font-display text-3xl md:text-5xl font-bold mb-5 tracking-tight relative z-10">{t("home.cta_title")}</h2>
             <p className="text-muted-foreground mb-12 text-lg relative z-10">{t("home.cta_text")}</p>
             <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="relative z-10">
-              <Button size="lg" className="gradient-bg-premium text-lg px-10 h-14 shimmer-btn rounded-2xl shadow-xl shadow-primary/25" onClick={() => navigate("/signup")}>
-                {t("home.cta_button")}
+              <Button size="lg" className="gradient-bg-premium text-lg px-10 h-14 shimmer-btn rounded-2xl shadow-xl shadow-primary/25" onClick={() => navigate(user ? "/create" : "/signup")}>
+                {user ? t("home.cta_create", "Create a song") : t("home.cta_button")}
               </Button>
             </motion.div>
           </motion.div>
@@ -597,8 +601,8 @@ export default function Index() {
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
             className="fixed bottom-0 left-0 right-0 z-40 md:hidden p-3 bg-background/85 backdrop-blur-2xl border-t border-border/20"
           >
-            <Button className="w-full gradient-bg-premium h-12 text-base font-semibold shimmer-btn rounded-xl shadow-lg shadow-primary/20" onClick={() => navigate("/signup")}>
-              {t("home.sticky_cta")} <ArrowRight className="w-4 h-4 ml-2" />
+            <Button className="w-full gradient-bg-premium h-12 text-base font-semibold shimmer-btn rounded-xl shadow-lg shadow-primary/20" onClick={() => navigate(user ? "/create" : "/signup")}>
+              {user ? t("home.cta_create", "Create a song") : t("home.sticky_cta")} <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </motion.div>
         )}
