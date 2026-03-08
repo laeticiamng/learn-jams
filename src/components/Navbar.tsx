@@ -43,16 +43,18 @@ export default function Navbar() {
 
         {/* Desktop */}
         <div className="hidden md:flex items-center gap-1.5">
-          <button
-            onClick={() => document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }))}
-            className="flex items-center gap-2 px-3 h-9 rounded-xl border border-border/20 bg-muted/20 text-muted-foreground text-sm hover:bg-muted/40 hover:text-foreground transition-all duration-300 mr-1"
-          >
-            <Search className="w-3.5 h-3.5" />
-            <span className="hidden lg:inline text-xs">{t("command.search_placeholder", "Search…")}</span>
-            <kbd className="pointer-events-none hidden lg:inline-flex h-5 select-none items-center gap-0.5 rounded border border-border/30 bg-muted/30 px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
-              {isMac ? "⌘K" : "Ctrl+K"}
-            </kbd>
-          </button>
+          {user && (
+            <button
+              onClick={() => document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }))}
+              className="flex items-center gap-2 px-3 h-9 rounded-xl border border-border/20 bg-muted/20 text-muted-foreground text-sm hover:bg-muted/40 hover:text-foreground transition-all duration-300 mr-1"
+            >
+              <Search className="w-3.5 h-3.5" />
+              <span className="hidden lg:inline text-xs">{t("command.search_placeholder", "Search…")}</span>
+              <kbd className="pointer-events-none hidden lg:inline-flex h-5 select-none items-center gap-0.5 rounded border border-border/30 bg-muted/30 px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+                {isMac ? "⌘K" : "Ctrl+K"}
+              </kbd>
+            </button>
+          )}
           <LanguageSelector />
           {user ? (
             <>
@@ -88,13 +90,15 @@ export default function Navbar() {
 
         {/* Mobile */}
         <div className="flex md:hidden items-center gap-2">
-          <button
-            onClick={() => document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }))}
-            className="flex items-center justify-center w-9 h-9 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-all"
-            aria-label={t("command.search_placeholder", "Search…")}
-          >
-            <Search className="w-4 h-4" />
-          </button>
+          {user && (
+            <button
+              onClick={() => document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }))}
+              className="flex items-center justify-center w-9 h-9 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-all"
+              aria-label={t("command.search_placeholder", "Search…")}
+            >
+              <Search className="w-4 h-4" />
+            </button>
+          )}
           <LanguageSelector />
           {user && <NotificationBell />}
           <Sheet open={open} onOpenChange={setOpen}>

@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { FileUp, Music, Headphones, BookOpen, Brain, Shield, Repeat, Timer, Dumbbell, ChevronRight, Quote, Lock, ShieldCheck, CreditCard, ArrowRight, Play, Pause, Volume2 } from "lucide-react";
+import { FileUp, Music, Headphones, BookOpen, Brain, Shield, Quote, Lock, ShieldCheck, CreditCard, ArrowRight, Play, Pause, Volume2 } from "lucide-react";
 import testimonialMarie from "@/assets/testimonial-marie.jpg";
 import testimonialKarim from "@/assets/testimonial-karim.jpg";
 import testimonialChloe from "@/assets/testimonial-chloe.jpg";
@@ -166,7 +166,7 @@ const ParallaxOrbs = () => {
 };
 
 const stepIcons = [FileUp, Music, Headphones];
-const scienceIcons = [Brain, Repeat, Timer, Dumbbell];
+
 const featureIcons = [Brain, BookOpen, Shield];
 
 const testimonialAvatars = [
@@ -411,7 +411,7 @@ export default function Index() {
                   "{t(`home.testimonial${n}_quote`)}"
                 </p>
                 <div className="flex items-center gap-3 mt-7 pt-6 border-t border-border/20">
-                  <img src={testimonialAvatars[i]} alt={t(`home.testimonial${n}_name`)} className="w-10 h-10 rounded-full bg-muted ring-2 ring-border/20" loading="lazy" />
+                  <img src={testimonialAvatars[i]} alt={t(`home.testimonial${n}_name`)} className="w-10 h-10 rounded-full object-cover bg-muted ring-2 ring-border/20" loading="lazy" />
                   <div>
                     <p className="text-sm font-semibold">{t(`home.testimonial${n}_name`)}</p>
                     <p className="text-xs text-muted-foreground">{t(`home.testimonial${n}_field`)}</p>
@@ -448,45 +448,6 @@ export default function Index() {
                   </div>
                   <h3 className="font-display font-semibold mb-3 text-lg">{t(`home.feature${n}_title`)}</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed">{t(`home.feature${n}_desc`)}</p>
-                </motion.article>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      <SectionDivider />
-
-      {/* Science */}
-      <section className="py-28 md:py-32 px-4">
-        <div className="container mx-auto max-w-5xl">
-          <motion.p
-            initial={{ opacity: 0, y: 10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-4"
-          >
-            {t("home.science_subtitle")}
-          </motion.p>
-          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-            className="font-display text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-20 tracking-tight">
-            {t("home.science_title")}
-          </motion.h2>
-          <div className="grid md:grid-cols-2 gap-8">
-            {[1, 2, 3, 4].map((n, i) => {
-              const Icon = scienceIcons[i];
-              return (
-                <motion.article key={n} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.6, ease }}
-                  className="glass-card-elevated p-9 group gradient-border">
-                  <motion.div
-                    whileHover={{ scale: 1.1, rotate: -3 }}
-                    className="w-12 h-12 rounded-xl gradient-bg-premium flex items-center justify-center mb-6 shadow-lg shadow-primary/20"
-                  >
-                    <Icon className="w-6 h-6 text-primary-foreground" />
-                  </motion.div>
-                  <h3 className="font-display text-lg font-semibold mb-3">{t(`home.science${n}_title`)}</h3>
-                  <p className="text-muted-foreground leading-relaxed text-sm">{t(`home.science${n}_desc`)}</p>
                 </motion.article>
               );
             })}

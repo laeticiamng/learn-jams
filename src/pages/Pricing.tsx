@@ -145,7 +145,7 @@ export default function Pricing() {
                   size="lg"
                   onClick={() => navigate(user ? "/create" : "/signup")}
                 >
-                  {user ? t("nav.create") : t("nav.signup")}
+                  {user ? t("nav.create") : t("pricing.free_cta", t("nav.signup"))}
                 </Button>
               </motion.div>
             </motion.div>
