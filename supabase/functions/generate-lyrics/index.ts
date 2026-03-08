@@ -234,6 +234,45 @@ serve(async (req) => {
       });
     }
 
+    // --- PAYWALL: Check quota ---
+    const userId = claimsData.claims.sub as string;
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Check subscription status
+    const { data: subData } = await supabaseAdmin
+      .from("subscriptions")
+      .select("status")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    const isProUser = subData?.status === "active";
+    const FREE_QUOTA = 1;
+
+    if (!isProUser) {
+      const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+      const { data: quota } = await supabaseAdmin
+        .from("usage_quotas")
+        .select("songs_generated")
+        .eq("user_id", userId)
+        .eq("month", currentMonth)
+        .maybeSingle();
+
+      const used = quota?.songs_generated ?? 0;
+      if (used >= FREE_QUOTA) {
+        console.log(`[generate-lyrics] Quota exceeded for user ${userId}: ${used}/${FREE_QUOTA}`);
+        return new Response(JSON.stringify({ 
+          error: "quota_exceeded",
+          used,
+          limit: FREE_QUOTA,
+        }), {
+          status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+    // --- END PAYWALL ---
+
     const lang = normalizeLanguage(language);
     const targetLang = LANG_NAMES[lang];
     const systemPrompt = SYSTEM_PROMPTS[lang] + "\n" + COMMON_INSTRUCTIONS;
