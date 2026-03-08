@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Upload, Music, Headphones, BookOpen, Brain, Shield, Repeat, Timer, Dumbbell, ChevronRight, Quote, Lock, ShieldCheck, CreditCard, ArrowRight, Play, Pause, Volume2 } from "lucide-react";
+import { FileUp, Music, Headphones, BookOpen, Brain, Shield, Repeat, Timer, Dumbbell, ChevronRight, Quote, Lock, ShieldCheck, CreditCard, ArrowRight, Play, Pause, Volume2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { usePageSEO } from "@/hooks/usePageSEO";
@@ -162,7 +162,7 @@ const ParallaxOrbs = () => {
   );
 };
 
-const stepIcons = [Upload, Music, Headphones];
+const stepIcons = [FileUp, Music, Headphones];
 const scienceIcons = [Brain, Repeat, Timer, Dumbbell];
 const featureIcons = [Brain, BookOpen, Shield];
 
@@ -419,6 +419,38 @@ export default function Index() {
 
       <SectionDivider />
 
+      {/* Features */}
+      <section className="py-28 md:py-32 px-4">
+        <div className="container mx-auto max-w-5xl">
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="font-display text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-20 tracking-tight"
+          >
+            {t("home.features_title")}
+          </motion.h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            {[1, 2, 3].map((n, i) => {
+              const Icon = featureIcons[i];
+              return (
+                <motion.article key={n} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+                  transition={{ delay: i * 0.1, duration: 0.6, ease }}
+                  className="glass-card-elevated p-9 text-center gradient-border">
+                  <div className="w-14 h-14 rounded-2xl gradient-bg-premium flex items-center justify-center mx-auto mb-6 shadow-lg shadow-primary/20">
+                    <Icon className="w-7 h-7 text-primary-foreground" />
+                  </div>
+                  <h3 className="font-display font-semibold mb-3 text-lg">{t(`home.feature${n}_title`)}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{t(`home.feature${n}_desc`)}</p>
+                </motion.article>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      <SectionDivider />
+
       {/* Science */}
       <section className="py-28 md:py-32 px-4">
         <div className="container mx-auto max-w-5xl">
@@ -449,38 +481,6 @@ export default function Index() {
                   </motion.div>
                   <h3 className="font-display text-lg font-semibold mb-3">{t(`home.science${n}_title`)}</h3>
                   <p className="text-muted-foreground leading-relaxed text-sm">{t(`home.science${n}_desc`)}</p>
-                </motion.article>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      <SectionDivider />
-
-      {/* Features */}
-      <section className="py-28 md:py-32 px-4">
-        <div className="container mx-auto max-w-5xl">
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="font-display text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-20 tracking-tight"
-          >
-            {t("home.features_title")}
-          </motion.h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            {[1, 2, 3].map((n, i) => {
-              const Icon = featureIcons[i];
-              return (
-                <motion.article key={n} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-                  transition={{ delay: i * 0.1, duration: 0.6, ease }}
-                  className="glass-card-elevated p-9 text-center gradient-border">
-                  <div className="w-14 h-14 rounded-2xl gradient-bg-premium flex items-center justify-center mx-auto mb-6 shadow-lg shadow-primary/20">
-                    <Icon className="w-7 h-7 text-primary-foreground" />
-                  </div>
-                  <h3 className="font-display font-semibold mb-3 text-lg">{t(`home.feature${n}_title`)}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{t(`home.feature${n}_desc`)}</p>
                 </motion.article>
               );
             })}

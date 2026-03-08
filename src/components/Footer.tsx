@@ -53,10 +53,10 @@ export default function Footer() {
           <div>
             <h3 className="font-display font-semibold text-xs mb-4 text-foreground uppercase tracking-widest">{t("footer.features")}</h3>
             <ul className="space-y-2.5 text-sm text-muted-foreground">
-              <li>{t("footer.lyrics_gen")}</li>
-              <li>{t("footer.styles_count")}</li>
-              <li>{t("footer.import")}</li>
-              <li>{t("footer.quiz")}</li>
+              <li><Link to={user ? "/create" : "/signup"} className="hover:text-foreground transition-colors duration-300">{t("footer.lyrics_gen")}</Link></li>
+              <li><Link to={user ? "/create" : "/signup"} className="hover:text-foreground transition-colors duration-300">{t("footer.styles_count")}</Link></li>
+              <li><Link to={user ? "/create" : "/signup"} className="hover:text-foreground transition-colors duration-300">{t("footer.import")}</Link></li>
+              <li><Link to={user ? "/create" : "/signup"} className="hover:text-foreground transition-colors duration-300">{t("footer.quiz")}</Link></li>
             </ul>
           </div>
         </div>

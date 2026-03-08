@@ -102,7 +102,7 @@
     "password": "Password", "password_placeholder": "••••••••", "password_min": "Min. 6 characters",
     "forgot": "Forgot?", "login_button": "Sign in", "login_loading": "Signing in...",
     "no_account": "Don't have an account?", "signup_link": "Sign up",
-    "signup_title": "Create your account 🎵", "signup_subtitle": "Turn your notes into music",
+    "signup_title": "Create your account", "signup_subtitle": "Turn your notes into music",
     "name": "First name", "name_placeholder": "Your first name",
     "accept_terms": "I accept the", "terms_link": "Terms", "and": "and the", "privacy_link": "Privacy Policy",
     "signup_button": "Create my account", "signup_loading": "Creating...",
@@ -123,11 +123,11 @@
   },
   "create": {
     "step_upload": "Upload", "step_style": "Style", "step_generate": "Generate",
-    "upload_title": "Upload your notes 📚", "upload_subtitle": "Paste your text, upload a PDF, or take a photo",
-    "style_title": "Choose your style 🎶", "style_subtitle": "Which music genre for your song?",
+    "upload_title": "Upload your notes", "upload_subtitle": "Paste your text, upload a PDF, or take a photo",
+    "style_title": "Choose your style", "style_subtitle": "Which music genre for your song?",
     "title_label": "Title (optional)", "title_placeholder": "E.g.: Heart anatomy",
     "subject_label": "Subject (optional)", "subject_placeholder": "E.g.: Biology",
-    "generate_title": "Ready to generate? 🚀", "text_label": "Text", "chars": "characters", "style_label": "Style",
+    "generate_title": "Ready to generate?", "text_label": "Text", "chars": "characters", "style_label": "Style",
     "generate_button": "Generate my song", "generating": "Generating...",
     "analyzing": "Analyzing notes...", "creating_lyrics": "Creating lyrics...", "generating_music": "Generating music...",
     "success": "Song is being generated! 🎵", "error_generic": "Error during generation", "back": "Back", "next": "Next",
@@ -167,7 +167,7 @@
   "player": {
     "back": "Library", "lyrics": "Lyrics",
     "no_audio_title": "Audio not available",
-    "no_audio_text": "The lyrics were generated successfully. Audio music generation is being deployed — you can already read the lyrics below and test your knowledge with the quiz.",
+    "no_audio_text": "The lyrics were generated successfully! You can read them below and test your knowledge with the quiz. Audio will be available shortly.",
     "quiz_button": "Quiz Mode 🧠", "not_found": "Song not found",
     "study_notes": "Study Notes & Exam Anchors",
     "tab_notions": "Notions",
@@ -203,7 +203,7 @@
     "faq1_q": "How does StudyBeats work?", "faq1_a": "Upload your notes (text, PDF or photo), choose a music style, and the AI generates an educational song to help you memorize.",
     "faq2_q": "Is my data protected?", "faq2_a": "Yes. Your data is encrypted and never sold. See our privacy policy for details.",
     "faq3_q": "Can I delete my account?", "faq3_a": "Yes, you can delete your account from the Profile page. All your data will be erased.",
-    "faq4_q": "Is audio generation available?", "faq4_a": "AI lyrics generation is available. Audio music generation is being progressively rolled out."
+    "faq4_q": "How does music generation work?", "faq4_a": "The AI first generates educational lyrics from your notes, then composes music in your chosen style. You get a complete song you can listen to on repeat."
   },
   "about": {
     "title": "About StudyBeats", "subtitle": "Neuroscience, music and memorization",
