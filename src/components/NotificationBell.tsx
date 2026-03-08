@@ -16,6 +16,7 @@ export default function NotificationBell() {
   const { notifications, unreadCount, markAsRead, markAllAsRead } =
     useNotifications();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const handleClick = (notif: { id: string; song_id: string | null; is_read: boolean }) => {
     if (!notif.is_read) markAsRead(notif.id);
