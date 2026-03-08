@@ -311,7 +311,14 @@
     "active": "You're subscribed ✅",
     "already_subscribed": "You're already subscribed!",
     "error": "Error redirecting to payment",
-    "guarantee": "Secure payment via Stripe. Cancel in one click."
+    "guarantee": "Secure payment via Stripe. Cancel in one click.",
+    "faq_title": "Frequently asked questions",
+    "faq1_q": "Can I cancel anytime?",
+    "faq1_a": "Yes, no commitment. You can cancel your subscription in one click from your profile. No hidden fees, no minimum period.",
+    "faq2_q": "Can I get a refund if I'm not satisfied?",
+    "faq2_a": "If you're not satisfied within the first 7 days, contact us and we'll issue a full refund — no questions asked.",
+    "faq3_q": "What happens if I stop paying?",
+    "faq3_a": "You keep access until the end of your current billing period. After that, your account automatically switches back to the free plan. Your existing songs remain accessible."
   },
   "notifications": {
     "title": "Notifications",

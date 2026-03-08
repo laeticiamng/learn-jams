@@ -404,7 +404,14 @@
     "active": "Tu es abonné ✅",
     "already_subscribed": "Tu es déjà abonné !",
     "error": "Erreur lors de la redirection vers le paiement",
-    "guarantee": "Paiement sécurisé via Stripe. Résiliation en un clic."
+    "guarantee": "Paiement sécurisé via Stripe. Résiliation en un clic.",
+    "faq_title": "Questions fréquentes",
+    "faq1_q": "Puis-je annuler à tout moment ?",
+    "faq1_a": "Oui, sans engagement. Tu peux annuler ton abonnement en un clic depuis ton profil. Pas de frais cachés, pas de période minimum.",
+    "faq2_q": "Est-ce que je serai remboursé si ça ne me convient pas ?",
+    "faq2_a": "Si tu n'es pas satisfait dans les 7 premiers jours, contacte-nous et nous te remboursons intégralement — sans condition.",
+    "faq3_q": "Que se passe-t-il si j'arrête de payer ?",
+    "faq3_a": "Tu conserves l'accès jusqu'à la fin de ta période en cours. Ensuite, ton compte repasse automatiquement en plan Découverte gratuit. Tes chansons existantes restent accessibles."
   },
   "notifications": {
     "title": "Notifications",
