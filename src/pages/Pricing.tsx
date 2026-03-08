@@ -3,30 +3,32 @@ import { ParallaxOrbs } from "@/components/ParallaxOrbs";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Check, Zap, Shield, Music, Brain, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { usePageSEO } from "@/hooks/usePageSEO";
-import { motion } from "framer-motion";
+import { motion, useInView } from "framer-motion";
 import i18next from "i18next";
 
 const ease = [0.25, 0.46, 0.45, 0.94] as [number, number, number, number];
 
+const localeMap: Record<string, string> = {
+  fr: "fr-FR", en: "en-US", de: "de-DE", es: "es-ES",
+  ar: "ar-SA", zh: "zh-CN", hi: "hi-IN",
+};
+
 function formatPrice(lang: string) {
   try {
-    const localeMap: Record<string, string> = {
-      fr: "fr-FR", en: "en-US", de: "de-DE", es: "es-ES",
-      ar: "ar-SA", zh: "zh-CN", hi: "hi-IN",
-    };
-    return new Intl.NumberFormat(localeMap[lang] || "en-US", {
+    return new Intl.NumberFormat(localeMap[lang] || "fr-FR", {
+      style: "currency",
+      currency: "EUR",
       minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
     }).format(14.90);
   } catch {
-    return "14.90";
+    return "14,90 €";
   }
 }
 
@@ -37,6 +39,8 @@ export default function Pricing() {
   const [loading, setLoading] = useState(false);
   const [subscription, setSubscription] = useState<any>(null);
   const lang = i18next.language?.substring(0, 2) || "fr";
+  const footerRef = useRef<HTMLDivElement>(null);
+  const footerInView = useInView(footerRef, { margin: "0px 0px 80px 0px" });
 
   usePageSEO({
     title: "StudyBeats — " + t("pricing.title"),
@@ -164,7 +168,6 @@ export default function Pricing() {
                   </span>
                   <div className="flex items-baseline justify-center gap-1">
                     <span className="text-5xl font-display font-bold gradient-text">{formatPrice(lang)}</span>
-                    <span className="text-2xl font-display font-bold text-muted-foreground">€</span>
                     <span className="text-muted-foreground ml-1">/ {t("pricing.month")}</span>
                   </div>
                   <p className="text-muted-foreground mt-3 text-sm">
@@ -220,7 +223,29 @@ export default function Pricing() {
           </div>
         </div>
       </main>
-      <Footer />
+
+      {/* Sticky mobile CTA — hidden when footer is visible */}
+      {!isActive && (
+        <motion.div
+          className="fixed bottom-0 left-0 right-0 z-40 p-4 bg-background/80 backdrop-blur-xl border-t border-border/20 md:hidden"
+          initial={false}
+          animate={{ y: footerInView ? 80 : 0, opacity: footerInView ? 0 : 1 }}
+          transition={{ duration: 0.25 }}
+        >
+          <Button
+            onClick={handleCheckout}
+            disabled={loading}
+            className="w-full gradient-bg-premium text-primary-foreground font-semibold py-5 text-base rounded-xl shadow-xl shadow-primary/25"
+            size="lg"
+          >
+            {loading ? t("pricing.redirecting") : user ? t("pricing.subscribe") : t("pricing.signup_first")}
+          </Button>
+        </motion.div>
+      )}
+
+      <div ref={footerRef}>
+        <Footer />
+      </div>
     </div>
   );
 }
