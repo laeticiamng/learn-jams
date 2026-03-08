@@ -195,7 +195,7 @@ export default function Quiz() {
             )}
             {answered && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                <Button className="w-full gradient-bg h-12 text-base" onClick={handleNext}>
+                <Button className="w-full gradient-bg-premium h-12 text-base rounded-xl" onClick={handleNext}>
                   {current + 1 >= questions.length ? t("quiz.see_results") : t("quiz.next")}
                 </Button>
               </motion.div>
