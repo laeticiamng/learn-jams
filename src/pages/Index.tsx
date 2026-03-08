@@ -211,7 +211,8 @@ export default function Index() {
       <Navbar />
 
       {/* Hero */}
-      <ParallaxHero heroRef={heroRef} />
+      <header ref={heroRef} className="relative pt-40 pb-28 px-4">
+        <ParallaxOrbs />
 
         <div className="container mx-auto text-center relative z-10">
           <motion.div initial={{ opacity: 0, y: 40, filter: "blur(12px)" }} animate={{ opacity: 1, y: 0, filter: "blur(0px)" }} transition={{ duration: 0.9, ease }}>
