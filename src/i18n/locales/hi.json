@@ -222,8 +222,7 @@
     "lyrics_gen": "AI गीत जनरेशन", "styles_count": "30 संगीत शैलियाँ", "import": "PDF और फोटो इम्पोर्ट", "quiz": "इंटरैक्टिव क्विज़",
     "rights": "© {{year}} StudyBeats. सर्वाधिकार सुरक्षित।"
   },
-  "common": { "back": "वापस", "loading": "लोड हो रहा है...", "error": "त्रुटि", "return": "होम पर वापस", "listen": "सुनें" },
-  "banner": { "text": "🎵 अपने नोट्स को गानों में बदलें — मुफ़्त में आज़माएं", "cta": "शुरू करें" },
+  "common": { "back": "वापस", "loading": "लोड हो रहा है...", "error": "त्रुटि", "return": "होम पर वापस" },
   "notfound": { "title": "पृष्ठ नहीं मिला", "text": "यह पृष्ठ मौजूद नहीं है।" },
   "styles": { "pop": "पॉप", "rap": "रैप", "rnb": "R&B", "rock": "रॉक", "indie": "इंडी", "country": "कंट्री", "lofi": "Lo-Fi", "edm": "EDM", "house": "हाउस", "techno": "टेक्नो", "synthwave": "सिंथवेव", "drum-and-bass": "ड्रम एंड बेस", "reggaeton": "रेगेटन", "afrobeat": "एफ्रोबीट", "reggae": "रेगे", "latin": "लैटिन", "kpop": "K-Pop", "bossa-nova": "बोसा नोवा", "jazz": "जैज़", "blues": "ब्लूज़", "soul": "सोल", "funk": "फंक", "classical": "क्लासिकल", "gospel": "गॉस्पेल", "metal": "मेटल", "punk": "पंक", "acoustic": "अकूस्टिक", "folk": "फोक", "ambient": "एम्बिएंट", "spoken-word": "स्पोकन वर्ड" },
   "style_categories": { "popular": "लोकप्रिय", "electronic": "इलेक्ट्रॉनिक", "world": "विश्व", "classic": "क्लासिक और सोल", "alternative": "वैकल्पिक" },

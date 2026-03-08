@@ -273,8 +273,7 @@
     "lyrics_gen": "AI lyrics generation", "styles_count": "30 music styles", "import": "PDF & photo import", "quiz": "Interactive quiz",
     "rights": "© {{year}} StudyBeats. All rights reserved."
   },
-  "common": { "back": "Back", "loading": "Loading...", "error": "Error", "return": "Back to home", "listen": "Listen" },
-  "banner": { "text": "🎵 Turn your notes into songs — try it free", "cta": "Get started" },
+  "common": { "back": "Back", "loading": "Loading...", "error": "Error", "return": "Back to home" },
   "notfound": { "title": "Page not found", "text": "This page doesn't exist or has been moved." },
   "styles": { "pop": "Pop", "rap": "Rap", "rnb": "R&B", "rock": "Rock", "indie": "Indie", "country": "Country", "lofi": "Lo-Fi", "edm": "EDM", "house": "House", "techno": "Techno", "synthwave": "Synthwave", "drum-and-bass": "Drum & Bass", "reggaeton": "Reggaeton", "afrobeat": "Afrobeat", "reggae": "Reggae", "latin": "Latin", "kpop": "K-Pop", "bossa-nova": "Bossa Nova", "jazz": "Jazz", "blues": "Blues", "soul": "Soul", "funk": "Funk", "classical": "Classical", "gospel": "Gospel", "metal": "Metal", "punk": "Punk", "acoustic": "Acoustic", "folk": "Folk", "ambient": "Ambient", "spoken-word": "Spoken Word" },
   "style_categories": { "popular": "Popular", "electronic": "Electronic", "world": "World", "classic": "Classic & Soul", "alternative": "Alternative" },

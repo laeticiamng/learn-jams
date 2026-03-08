@@ -222,8 +222,7 @@
     "lyrics_gen": "توليد كلمات بالذكاء الاصطناعي", "styles_count": "30 نمطاً موسيقياً", "import": "استيراد PDF وصور", "quiz": "مسابقة تفاعلية",
     "rights": "© {{year}} StudyBeats. جميع الحقوق محفوظة."
   },
-  "common": { "back": "رجوع", "loading": "جارٍ التحميل...", "error": "خطأ", "return": "العودة للرئيسية", "listen": "استمع" },
-  "banner": { "text": "🎵 حوّل ملاحظاتك إلى أغانٍ — جرّب مجاناً", "cta": "ابدأ" },
+  "common": { "back": "رجوع", "loading": "جارٍ التحميل...", "error": "خطأ", "return": "العودة للرئيسية" },
   "notfound": { "title": "الصفحة غير موجودة", "text": "هذه الصفحة غير موجودة أو تم نقلها." },
   "styles": { "pop": "بوب", "rap": "راب", "rnb": "R&B", "rock": "روك", "indie": "إندي", "country": "كانتري", "lofi": "لو-فاي", "edm": "EDM", "house": "هاوس", "techno": "تكنو", "synthwave": "سينث ويف", "drum-and-bass": "درام آند بيس", "reggaeton": "ريغيتون", "afrobeat": "أفروبيت", "reggae": "ريغي", "latin": "لاتيني", "kpop": "كي-بوب", "bossa-nova": "بوسا نوفا", "jazz": "جاز", "blues": "بلوز", "soul": "سول", "funk": "فانك", "classical": "كلاسيكي", "gospel": "غوسبل", "metal": "ميتال", "punk": "بانك", "acoustic": "أكوستيك", "folk": "فولك", "ambient": "أمبينت", "spoken-word": "كلمة منطوقة" },
   "style_categories": { "popular": "شائع", "electronic": "إلكتروني", "world": "عالمي", "classic": "كلاسيكي وسول", "alternative": "بديل" },

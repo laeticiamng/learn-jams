@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Upload, Music, Headphones, BookOpen, Brain, Shield, Repeat, Timer, Dumbbell, ChevronRight, Quote, Lock, ShieldCheck, CreditCard, ArrowRight, Play, Pause, Volume2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import AnnouncementBanner from "@/components/AnnouncementBanner";
 import { usePageSEO } from "@/hooks/usePageSEO";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useMemo, useEffect, useState, useRef, useCallback } from "react";
@@ -177,11 +176,11 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-background overflow-hidden">
-      <AnnouncementBanner />
       <Navbar />
 
       {/* Hero */}
       <header ref={heroRef} className="relative pt-36 pb-24 px-4">
+        {/* Ambient orbs */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] pointer-events-none" style={{ background: "var(--gradient-glow)" }} />
         <div className="absolute top-20 left-1/4 w-[400px] h-[400px] pointer-events-none ambient-orb" style={{ background: "hsl(265, 90%, 60%)" }} />
         <div className="absolute top-40 right-1/4 w-[300px] h-[300px] pointer-events-none ambient-orb" style={{ background: "hsl(300, 70%, 50%)", animationDelay: "3s" }} />
@@ -208,17 +207,6 @@ export default function Index() {
                 <Button size="lg" className="gradient-bg-premium text-base sm:text-lg px-8 sm:px-10 h-13 sm:h-14 w-full sm:w-auto shimmer-btn rounded-2xl shadow-xl shadow-primary/25"
                   onClick={() => navigate("/signup")}>
                   {t("home.cta_signup")}
-                </Button>
-              </motion.div>
-              <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-                <Button
-                  variant="outline-premium"
-                  size="lg"
-                  className="text-base sm:text-lg px-8 sm:px-10 h-13 sm:h-14 w-full sm:w-auto rounded-2xl"
-                  onClick={() => navigate("/pricing")}
-                >
-                  {t("home.cta_pricing", "Voir les plans")}
-                  <ArrowRight className="w-4 h-4 ml-1" />
                 </Button>
               </motion.div>
             </div>
@@ -336,150 +324,44 @@ export default function Index() {
         </div>
       </section>
 
-      {/* Bento Features Grid */}
+      {/* Features */}
       <section className="py-20 px-4">
-        <div className="container mx-auto max-w-5xl">
-          <h2 className="font-display text-3xl md:text-5xl font-bold text-center mb-4 tracking-tight">{t("home.features_title")}</h2>
-          <p className="text-center text-muted-foreground mb-14 max-w-xl mx-auto text-lg">{t("home.how_subtitle")}</p>
-          
-          {/* Bento grid — asymmetric layout */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-5">
-            {/* Large card — spans 7 columns */}
-            <motion.article
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, ease }}
-              className="md:col-span-7 glass-card-elevated p-8 md:p-10 gradient-border group relative overflow-hidden"
-            >
-              <div className="absolute top-0 right-0 w-[200px] h-[200px] ambient-orb" style={{ background: "hsl(265, 90%, 60%)", opacity: 0.06 }} />
-              <div className="relative z-10">
-                <motion.div
-                  whileHover={{ scale: 1.1, rotate: -3 }}
-                  className="w-14 h-14 rounded-2xl gradient-bg-premium flex items-center justify-center mb-6 shadow-lg shadow-primary/20"
-                >
-                  <Brain className="w-7 h-7 text-primary-foreground" />
-                </motion.div>
-                <h3 className="font-display text-2xl font-semibold mb-3">{t("home.feature1_title")}</h3>
-                <p className="text-muted-foreground leading-relaxed max-w-md">{t("home.feature1_desc")}</p>
-              </div>
-            </motion.article>
-
-            {/* Tall card — spans 5 columns */}
-            <motion.article
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.1, duration: 0.6, ease }}
-              className="md:col-span-5 glass-card-elevated p-8 gradient-border group flex flex-col justify-between relative overflow-hidden"
-            >
-              <div className="absolute bottom-0 left-0 w-[150px] h-[150px] ambient-orb" style={{ background: "hsl(215, 80%, 55%)", opacity: 0.06 }} />
-              <div className="relative z-10">
-                <motion.div
-                  whileHover={{ scale: 1.1, rotate: -3 }}
-                  className="w-14 h-14 rounded-2xl gradient-bg-premium flex items-center justify-center mb-6 shadow-lg shadow-primary/20"
-                >
-                  <BookOpen className="w-7 h-7 text-primary-foreground" />
-                </motion.div>
-                <h3 className="font-display text-xl font-semibold mb-3">{t("home.feature2_title")}</h3>
-                <p className="text-muted-foreground text-sm leading-relaxed">{t("home.feature2_desc")}</p>
-              </div>
-            </motion.article>
-
-            {/* Bottom row — 3 equal cards spanning 4 columns each */}
-            <motion.article
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.15, duration: 0.6, ease }}
-              className="md:col-span-4 glass-card-elevated p-7 gradient-border group"
-            >
-              <motion.div
-                whileHover={{ scale: 1.1, rotate: -3 }}
-                className="w-12 h-12 rounded-xl gradient-bg-premium flex items-center justify-center mb-5 shadow-lg shadow-primary/20"
-              >
-                <Shield className="w-6 h-6 text-primary-foreground" />
-              </motion.div>
-              <h3 className="font-display font-semibold mb-2">{t("home.feature3_title")}</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">{t("home.feature3_desc")}</p>
-            </motion.article>
-
-            <motion.article
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.2, duration: 0.6, ease }}
-              className="md:col-span-4 glass-card-elevated p-7 gradient-border group"
-            >
-              <motion.div
-                whileHover={{ scale: 1.1, rotate: -3 }}
-                className="w-12 h-12 rounded-xl gradient-bg-premium flex items-center justify-center mb-5 shadow-lg shadow-primary/20"
-              >
-                <Music className="w-6 h-6 text-primary-foreground" />
-              </motion.div>
-              <h3 className="font-display font-semibold mb-2">{t("home.bento_styles_title", "30+ styles musicaux")}</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">{t("home.bento_styles_desc", "Pop, rap, lo-fi, jazz, techno… adapte le style à ta matière")}</p>
-            </motion.article>
-
-            <motion.article
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.25, duration: 0.6, ease }}
-              className="md:col-span-4 glass-card-elevated p-7 gradient-border group"
-            >
-              <motion.div
-                whileHover={{ scale: 1.1, rotate: -3 }}
-                className="w-12 h-12 rounded-xl gradient-bg-premium flex items-center justify-center mb-5 shadow-lg shadow-primary/20"
-              >
-                <Headphones className="w-6 h-6 text-primary-foreground" />
-              </motion.div>
-              <h3 className="font-display font-semibold mb-2">{t("home.bento_listen_title", "Écoute partout")}</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">{t("home.bento_listen_desc", "Révise en marchant, en transport ou à la salle de sport")}</p>
-            </motion.article>
+        <div className="container mx-auto max-w-4xl">
+          <h2 className="font-display text-3xl md:text-4xl font-bold text-center mb-14 tracking-tight">{t("home.features_title")}</h2>
+          <div className="grid md:grid-cols-3 gap-6">
+            {[1, 2, 3].map((n, i) => {
+              const Icon = featureIcons[i];
+              return (
+                <motion.article key={n} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+                  transition={{ delay: i * 0.1, duration: 0.6, ease }}
+                  className="glass-card-elevated p-7 text-center gradient-border">
+                  <div className="w-14 h-14 rounded-2xl gradient-bg-premium flex items-center justify-center mx-auto mb-5 shadow-lg shadow-primary/20">
+                    <Icon className="w-7 h-7 text-primary-foreground" />
+                  </div>
+                  <h3 className="font-display font-semibold mb-2 text-lg">{t(`home.feature${n}_title`)}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{t(`home.feature${n}_desc`)}</p>
+                </motion.article>
+              );
+            })}
           </div>
         </div>
       </section>
 
-      {/* Science — Bento 2x2 asymmetric */}
+      {/* Science */}
       <section className="py-20 px-4">
-        <div className="container mx-auto max-w-5xl">
+        <div className="container mx-auto max-w-4xl">
           <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
             className="font-display text-3xl md:text-5xl font-bold text-center mb-4 tracking-tight">
             {t("home.science_title")}
           </motion.h2>
           <p className="text-center text-muted-foreground mb-14 max-w-xl mx-auto text-lg">{t("home.science_subtitle")}</p>
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-5">
-            {/* Top row: 5+7 */}
-            {[1, 2].map((n, i) => {
+          <div className="grid md:grid-cols-2 gap-6">
+            {[1, 2, 3, 4].map((n, i) => {
               const Icon = scienceIcons[i];
-              const span = i === 0 ? "md:col-span-5" : "md:col-span-7";
               return (
                 <motion.article key={n} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.6, ease }}
-                  className={`${span} glass-card-elevated p-8 group gradient-border relative overflow-hidden`}>
-                  {i === 1 && <div className="absolute top-0 right-0 w-[180px] h-[180px] ambient-orb" style={{ background: "hsl(300, 70%, 50%)", opacity: 0.05 }} />}
-                  <div className="relative z-10">
-                    <motion.div
-                      whileHover={{ scale: 1.1, rotate: -3 }}
-                      className="w-12 h-12 rounded-xl gradient-bg-premium flex items-center justify-center mb-5 shadow-lg shadow-primary/20"
-                    >
-                      <Icon className="w-6 h-6 text-primary-foreground" />
-                    </motion.div>
-                    <h3 className="font-display text-lg font-semibold mb-3">{t(`home.science${n}_title`)}</h3>
-                    <p className="text-muted-foreground leading-relaxed text-sm">{t(`home.science${n}_desc`)}</p>
-                  </div>
-                </motion.article>
-              );
-            })}
-            {/* Bottom row: 7+5 */}
-            {[3, 4].map((n, i) => {
-              const Icon = scienceIcons[n - 1];
-              const span = i === 0 ? "md:col-span-7" : "md:col-span-5";
-              return (
-                <motion.article key={n} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }} transition={{ delay: (i + 2) * 0.1, duration: 0.6, ease }}
-                  className={`${span} glass-card-elevated p-8 group gradient-border`}>
+                  className="glass-card-elevated p-8 group gradient-border">
                   <motion.div
                     whileHover={{ scale: 1.1, rotate: -3 }}
                     className="w-12 h-12 rounded-xl gradient-bg-premium flex items-center justify-center mb-5 shadow-lg shadow-primary/20"
@@ -529,45 +411,39 @@ export default function Index() {
         </div>
       </section>
 
-      {/* Listen + Target — Combined bento */}
+      {/* Listen anywhere */}
       <section className="py-20 px-4">
-        <div className="container mx-auto max-w-5xl">
+        <div className="container mx-auto max-w-3xl">
           <h2 className="font-display text-3xl md:text-4xl font-bold text-center mb-4 tracking-tight">{t("home.listen_title")}</h2>
           <p className="text-center text-muted-foreground mb-12 text-lg">{t("home.listen_subtitle")}</p>
-          <div className="grid grid-cols-2 md:grid-cols-12 gap-4 md:gap-5">
-            {[1, 2, 3, 4].map((n, i) => {
-              const spans = ["md:col-span-7", "md:col-span-5", "md:col-span-5", "md:col-span-7"];
-              return (
-                <motion.div key={n} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.5, ease }}
-                  className={`col-span-1 ${spans[i]} glass-card-elevated p-7 gradient-border`}>
-                  <div className="text-2xl mb-3">{t(`home.listen${n}_emoji`)}</div>
-                  <h3 className="font-display font-semibold mb-1">{t(`home.listen${n}_label`)}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{t(`home.listen${n}_desc`)}</p>
-                </motion.div>
-              );
-            })}
+          <div className="grid sm:grid-cols-2 gap-5">
+            {[1, 2, 3, 4].map((n, i) => (
+              <motion.div key={n} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.5, ease }}
+                className="glass-card-elevated p-7 gradient-border">
+                <div className="text-2xl mb-3">{t(`home.listen${n}_emoji`)}</div>
+                <h3 className="font-display font-semibold mb-1">{t(`home.listen${n}_label`)}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{t(`home.listen${n}_desc`)}</p>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* Target */}
       <section className="py-20 px-4">
-        <div className="container mx-auto max-w-5xl">
+        <div className="container mx-auto max-w-3xl">
           <h2 className="font-display text-3xl md:text-4xl font-bold text-center mb-10 tracking-tight">{t("home.target_title")}</h2>
-          <div className="grid grid-cols-2 md:grid-cols-12 gap-4 md:gap-5">
-            {[1, 2, 3, 4].map((n, i) => {
-              const spans = ["md:col-span-6", "md:col-span-6", "md:col-span-4", "md:col-span-8"];
-              return (
-                <motion.div key={n} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.5, ease }}
-                  className={`col-span-1 ${spans[i]} glass-card-elevated p-7 gradient-border`}>
-                  <div className="text-2xl mb-3">{t(`home.target${n}_emoji`)}</div>
-                  <h3 className="font-display font-semibold mb-1">{t(`home.target${n}_label`)}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{t(`home.target${n}_desc`)}</p>
-                </motion.div>
-              );
-            })}
+          <div className="grid sm:grid-cols-2 gap-5">
+            {[1, 2, 3, 4].map((n, i) => (
+              <motion.div key={n} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.5, ease }}
+                className="glass-card-elevated p-7 gradient-border">
+                <div className="text-2xl mb-3">{t(`home.target${n}_emoji`)}</div>
+                <h3 className="font-display font-semibold mb-1">{t(`home.target${n}_label`)}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{t(`home.target${n}_desc`)}</p>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
@@ -602,21 +478,15 @@ export default function Index() {
             transition={{ duration: 0.7, ease }}
             className="glass-card-elevated p-14 text-center glow-intense relative overflow-hidden"
           >
+            {/* Decorative orb */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[200px] ambient-orb" style={{ background: "hsl(265, 90%, 60%)", opacity: 0.1 }} />
             <h2 className="font-display text-3xl md:text-4xl font-bold mb-4 tracking-tight relative z-10">{t("home.cta_title")}</h2>
             <p className="text-muted-foreground mb-10 text-lg relative z-10">{t("home.cta_text")}</p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center relative z-10">
-              <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-                <Button size="lg" className="gradient-bg-premium text-lg px-10 h-14 shimmer-btn rounded-2xl shadow-xl shadow-primary/25" onClick={() => navigate("/signup")}>
-                  {t("home.cta_button")}
-                </Button>
-              </motion.div>
-              <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-                <Button variant="outline-premium" size="lg" className="text-lg px-10 h-14 rounded-2xl" onClick={() => navigate("/pricing")}>
-                  {t("home.cta_pricing", "Voir les plans")}
-                </Button>
-              </motion.div>
-            </div>
+            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="relative z-10">
+              <Button size="lg" className="gradient-bg-premium text-lg px-10 h-14 shimmer-btn rounded-2xl shadow-xl shadow-primary/25" onClick={() => navigate("/signup")}>
+                {t("home.cta_button")}
+              </Button>
+            </motion.div>
           </motion.div>
         </div>
       </section>
