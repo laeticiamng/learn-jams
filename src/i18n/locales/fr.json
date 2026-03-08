@@ -104,7 +104,7 @@
     "sticky_cta": "Créer ma chanson gratuitement"
   },
   "auth": {
-    "login_title": "Bon retour ! 👋",
+    "login_title": "Bon retour",
     "login_subtitle": "Connecte-toi pour retrouver tes chansons",
     "email": "Email",
     "email_placeholder": "ton@email.com",
