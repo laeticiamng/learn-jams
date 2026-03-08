@@ -147,7 +147,7 @@ serve(async (req) => {
     }
 
     if (songOwner.user_id !== userId) {
-      log("AUTH", "Ownership check failed", { songId, userId, ownerId: songOwner.user_id });
+      log("error", "ownership_check_failed", { song_id: songId, user_id: userId, owner_id: songOwner.user_id });
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
