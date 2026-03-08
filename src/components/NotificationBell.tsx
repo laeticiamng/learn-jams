@@ -3,6 +3,7 @@ import { useNotifications } from "@/hooks/useNotifications";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { formatDistanceToNow } from "date-fns";
+import { fr, de, es, ar, zhCN, hi } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
