@@ -165,6 +165,7 @@ const testimonialAvatars = [
 export default function Index() {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [showStickyCta, setShowStickyCta] = useState(false);
   const heroRef = useRef<HTMLElement>(null);
   const ctaRef = useRef<HTMLElement>(null);
