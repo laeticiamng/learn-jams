@@ -279,7 +279,7 @@ export default function Index() {
               transition={{ delay: i * 0.1 }}
               className="flex items-center gap-2 text-muted-foreground text-sm"
             >
-              <Icon className="w-4 h-4 text-primary/60" />
+              <Icon className="w-4 h-4 text-primary" />
               <span>{t(`home.${key}`)}</span>
             </motion.div>
           ))}
