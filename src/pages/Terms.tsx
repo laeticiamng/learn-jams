@@ -30,7 +30,7 @@ export default function Terms() {
           {sections.map(n => (
             <section key={n} className="space-y-3">
               <h2 className="font-display text-xl font-semibold text-foreground">{t(`terms.s${n}_title`)}</h2>
-              <p dangerouslySetInnerHTML={{ __html: t(`terms.s${n}_text`) }} />
+              <p dangerouslySetInnerHTML={{ __html: sanitizeHtml(t(`terms.s${n}_text`)) }} />
             </section>
           ))}
         </div>

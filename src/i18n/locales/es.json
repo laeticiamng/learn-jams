@@ -251,6 +251,18 @@
     "active": "Estás suscrito ✅",
     "already_subscribed": "¡Ya estás suscrito!",
     "error": "Error al redirigir al pago",
-    "guarantee": "Pago seguro vía Stripe. Cancelación en un clic."
+    "guarantee": "Pago seguro vía Stripe. Cancelación en un clic.",
+    "faq_title": "Preguntas frecuentes",
+    "faq1_q": "¿Puedo cancelar en cualquier momento?",
+    "faq1_a": "Sí, sin compromiso. Puedes cancelar tu suscripción en un clic desde tu perfil. Sin cargos ocultos, sin período mínimo.",
+    "faq2_q": "¿Puedo obtener un reembolso?",
+    "faq2_a": "Si no estás satisfecho en los primeros 7 días, contáctanos y te reembolsamos íntegramente — sin condiciones.",
+    "faq3_q": "¿Qué pasa si dejo de pagar?",
+    "faq3_a": "Conservas el acceso hasta el final de tu período actual. Después, tu cuenta vuelve automáticamente al plan gratuito. Tus canciones existentes siguen accesibles."
+  },
+  "cookies": {
+    "text": "Usamos cookies para mejorar tu experiencia. Al usar StudyBeats, aceptas nuestra política de privacidad.",
+    "accept": "Aceptar",
+    "decline": "Rechazar"
   }
 }

@@ -333,5 +333,10 @@
     "actions": "Actions",
     "new_song": "Create new song",
     "take_quiz": "Take a quiz"
+  },
+  "cookies": {
+    "text": "We use cookies to improve your experience. By using StudyBeats, you agree to our privacy policy.",
+    "accept": "Accept",
+    "decline": "Decline"
   }
 }

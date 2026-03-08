@@ -30,7 +30,7 @@ export default function Privacy() {
           {sections.map(n => (
             <section key={n} className="space-y-3">
               <h2 className="font-display text-xl font-semibold text-foreground">{t(`privacy.s${n}_title`)}</h2>
-              <p dangerouslySetInnerHTML={{ __html: t(`privacy.s${n}_text`) }} />
+              <p dangerouslySetInnerHTML={{ __html: sanitizeHtml(t(`privacy.s${n}_text`)) }} />
             </section>
           ))}
         </div>

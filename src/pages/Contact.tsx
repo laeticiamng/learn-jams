@@ -40,6 +40,7 @@ export default function Contact() {
       if (error) throw error;
       toast.success(t("contact.sent"));
       setName(""); setEmail(""); setMessage("");
+      setLastSubmit(Date.now());
     } catch (err: any) {
       console.error("Contact form error:", err);
       toast.error(t("contact.error", "Une erreur est survenue. Réessaye plus tard."));
