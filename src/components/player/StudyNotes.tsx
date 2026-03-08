@@ -168,7 +168,7 @@ export function StudyNotes({ metadata, t }: StudyNotesProps) {
                       return (
                         <div key={i} className="flex items-start gap-2.5 py-1.5">
                           <CheckCircle2 className="w-4 h-4 text-green-400 mt-0.5 shrink-0" />
-                          <span className="text-foreground/70 text-sm leading-relaxed">{concept}</span>
+                          <span className="text-foreground/85 text-sm leading-relaxed">{concept}</span>
                         </div>
                       );
                     }
@@ -178,7 +178,7 @@ export function StudyNotes({ metadata, t }: StudyNotesProps) {
                       return (
                         <div key={i} className="flex items-start gap-2.5 py-1.5">
                           <Zap className="w-3.5 h-3.5 text-amber-400 mt-0.5 shrink-0" />
-                          <span className="text-foreground/80 text-sm leading-relaxed">{trimmed}</span>
+                          <span className="text-foreground/85 text-sm leading-relaxed">{trimmed}</span>
                         </div>
                       );
                     }
@@ -187,14 +187,14 @@ export function StudyNotes({ metadata, t }: StudyNotesProps) {
                     if (activeTab === "anchors" && /^".*"$/.test(trimmed)) {
                       return (
                         <blockquote key={i} className="border-l-2 border-primary/30 pl-4 py-1 my-2">
-                          <span className="text-foreground/80 text-sm italic leading-relaxed">{trimmed}</span>
+                          <span className="text-foreground/85 text-sm italic leading-relaxed">{trimmed}</span>
                         </blockquote>
                       );
                     }
 
                     // Default line
                     return (
-                      <p key={i} className="text-foreground/70 text-sm leading-relaxed pl-1">
+                      <p key={i} className="text-foreground/85 text-sm leading-relaxed pl-1">
                         {trimmed}
                       </p>
                     );
