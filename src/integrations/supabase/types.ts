@@ -80,6 +80,9 @@ export type Database = {
           created_at: string
           duration: number | null
           generated_lyrics: string | null
+          generation_error: string | null
+          generation_error_at: string | null
+          generation_error_code: string | null
           id: string
           is_final_quality: boolean
           lyrics_metadata: string | null
@@ -98,6 +101,9 @@ export type Database = {
           created_at?: string
           duration?: number | null
           generated_lyrics?: string | null
+          generation_error?: string | null
+          generation_error_at?: string | null
+          generation_error_code?: string | null
           id?: string
           is_final_quality?: boolean
           lyrics_metadata?: string | null
@@ -116,6 +122,9 @@ export type Database = {
           created_at?: string
           duration?: number | null
           generated_lyrics?: string | null
+          generation_error?: string | null
+          generation_error_at?: string | null
+          generation_error_code?: string | null
           id?: string
           is_final_quality?: boolean
           lyrics_metadata?: string | null

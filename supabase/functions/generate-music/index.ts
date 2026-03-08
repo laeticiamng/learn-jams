@@ -6,6 +6,91 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// Centralized Suno lyrics sanitizer — replaces terms that trigger SENSITIVE_WORD_ERROR
+function sanitizeForSuno(text: string): { cleaned: string; replacedCount: number; replacedWords: string[] } {
+  const WORD_REPLACEMENTS: Record<string, string> = {
+    // Phosphorus family
+    "phosphate": "P-group",
+    "phosphates": "P-groups",
+    "phosphorylation": "P-transfer",
+    "phosphorylated": "P-transferred",
+    "dephosphorylation": "de-P-transfer",
+    "phospholipid": "P-lipid",
+    "phospholipids": "P-lipids",
+    "phosphorus": "P-element",
+    "phosphodiester": "P-linkage",
+    "phosphoenolpyruvate": "PEP-molecule",
+    // Nucleotides & energy
+    "adenosine": "A-nucleoside",
+    "triphosphate": "tri-P-group",
+    "diphosphate": "di-P-group",
+    "monophosphate": "mono-P-group",
+    "guanosine": "G-nucleoside",
+    "cytidine": "C-nucleoside",
+    "thymidine": "T-nucleoside",
+    "uridine": "U-nucleoside",
+    "nucleotide": "base-unit",
+    "nucleotides": "base-units",
+    // Metabolism
+    "glycolysis": "sugar-splitting",
+    "gluconeogenesis": "sugar-building",
+    "glycogenolysis": "glyco-breakdown",
+    "glycogenesis": "glyco-synthesis",
+    "ketogenesis": "keto-formation",
+    "lipolysis": "fat-splitting",
+    "proteolysis": "protein-splitting",
+    "hydrolysis": "water-splitting",
+    "oxidative phosphorylation": "oxy-P-chain",
+    // Enzymes commonly flagged
+    "ATP synthase": "energy-enzyme",
+    "kinase": "transfer-enzyme",
+    "kinases": "transfer-enzymes",
+    "phosphatase": "P-remover",
+    "phosphatases": "P-removers",
+    "dehydrogenase": "H-remover",
+    "synthetase": "builder-enzyme",
+    "synthase": "maker-enzyme",
+    // Organelles
+    "mitochondria": "power-house",
+    "mitochondrial": "power-house",
+    "mitochondrion": "power-unit",
+    "endoplasmic reticulum": "ER-network",
+    "ribosomes": "protein-factories",
+    "ribosome": "protein-factory",
+    // Other sensitive scientific terms
+    "cytochrome": "electron-carrier",
+    "ubiquinone": "Q-carrier",
+    "nicotinamide": "NAD-base",
+    "coenzyme": "co-factor",
+    "substrate": "starting-material",
+  };
+
+  let cleaned = text;
+  const replacedWords: string[] = [];
+
+  for (const [word, replacement] of Object.entries(WORD_REPLACEMENTS)) {
+    const regex = new RegExp(`\\b${word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, "gi");
+    if (regex.test(cleaned)) {
+      replacedWords.push(word);
+      cleaned = cleaned.replace(regex, replacement);
+    }
+  }
+
+  // Remove producer-tag patterns
+  cleaned = cleaned.replace(/\b(feat\.?\s+\w+)/gi, "");
+  cleaned = cleaned.replace(/\b(produced\s+by\s+\w+)/gi, "");
+  cleaned = cleaned.replace(/\b(mixed\s+by\s+\w+)/gi, "");
+  cleaned = cleaned.replace(/\b(mastered\s+by\s+\w+)/gi, "");
+
+  return { cleaned, replacedCount: replacedWords.length, replacedWords };
+}
+
+const log = (tag: string, msg: string, data?: Record<string, unknown>) => {
+  const parts = [`[generate-music] ${tag}: ${msg}`];
+  if (data) parts.push(JSON.stringify(data));
+  console.log(parts.join(" "));
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -33,6 +118,9 @@ serve(async (req) => {
     }
 
     const { songId, lyrics, style, title, language } = await req.json();
+    const userId = claimsData.claims.sub as string;
+    log("START", "Generation requested", { songId, userId, style, lyricsLen: lyrics?.length });
+
     const SUNO_API_KEY = Deno.env.get("SUNO_API_KEY");
     
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -40,6 +128,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     if (!SUNO_API_KEY) {
+      log("DEMO", "No Suno API key, saving as ready without audio", { songId });
       await supabase.from("songs").update({
         status: "ready",
         generated_lyrics: lyrics,
@@ -54,39 +143,18 @@ serve(async (req) => {
       });
     }
 
+    // Style mapping
     const styleMap: Record<string, string> = {
-      pop: "catchy pop",
-      rap: "hip hop rap",
-      rnb: "r&b soul",
-      rock: "indie rock",
-      indie: "indie alternative",
-      country: "country",
-      lofi: "lo-fi chill beats",
-      edm: "electronic dance music EDM",
-      house: "deep house",
-      techno: "techno",
-      synthwave: "synthwave retro",
-      "drum-and-bass": "drum and bass",
-      reggaeton: "reggaeton latin",
-      afrobeat: "afrobeat",
-      reggae: "reggae",
-      latin: "latin salsa cumbia",
-      kpop: "k-pop",
-      "bossa-nova": "bossa nova",
-      jazz: "smooth jazz",
-      blues: "blues",
-      soul: "soul",
-      funk: "funk groovy",
-      classical: "classical orchestral",
-      gospel: "gospel",
-      metal: "heavy metal",
-      punk: "punk rock",
-      acoustic: "acoustic",
-      folk: "folk",
-      ambient: "ambient chill",
-      "spoken-word": "spoken word poetry",
-      // Legacy support
-      classique: "classical orchestral",
+      pop: "catchy pop", rap: "hip hop rap", rnb: "r&b soul", rock: "indie rock",
+      indie: "indie alternative", country: "country", lofi: "lo-fi chill beats",
+      edm: "electronic dance music EDM", house: "deep house", techno: "techno",
+      synthwave: "synthwave retro", "drum-and-bass": "drum and bass",
+      reggaeton: "reggaeton latin", afrobeat: "afrobeat", reggae: "reggae",
+      latin: "latin salsa cumbia", kpop: "k-pop", "bossa-nova": "bossa nova",
+      jazz: "smooth jazz", blues: "blues", soul: "soul", funk: "funk groovy",
+      classical: "classical orchestral", gospel: "gospel", metal: "heavy metal",
+      punk: "punk rock", acoustic: "acoustic", folk: "folk", ambient: "ambient chill",
+      "spoken-word": "spoken word poetry", classique: "classical orchestral",
     };
 
     const langMap: Record<string, string> = {
@@ -101,28 +169,9 @@ serve(async (req) => {
     const langTag = langMap[language] || langMap["en"];
     const sunoStyle = `${styleMap[style] || "pop"}, ${langTag}`;
 
-    // Sanitize lyrics: replace words Suno rejects as "producer tags"
-    // Suno's filter is aggressive with certain scientific/chemical terms
-    const WORD_REPLACEMENTS: Record<string, string> = {
-      "phosphate": "P-group",
-      "phosphates": "P-groups",
-      "phosphorylation": "P-transfer",
-      "phospholipid": "P-lipid",
-      "phospholipids": "P-lipids",
-      "phosphorus": "P-element",
-      "adenosine": "A-nucleoside",
-      "triphosphate": "tri-P-group",
-      "diphosphate": "di-P-group",
-      "monophosphate": "mono-P-group",
-    };
-    let cleanLyrics = lyrics;
-    for (const [word, replacement] of Object.entries(WORD_REPLACEMENTS)) {
-      cleanLyrics = cleanLyrics.replace(new RegExp(`\\b${word}\\b`, "gi"), replacement);
-    }
-    // Also remove common producer-tag patterns
-    cleanLyrics = cleanLyrics.replace(/\b(feat\.?\s+\w+)/gi, "");
-    cleanLyrics = cleanLyrics.replace(/\b(produced\s+by\s+\w+)/gi, "");
-    console.log(`[generate-music] Sanitized lyrics, ${Object.keys(WORD_REPLACEMENTS).filter(w => lyrics.toLowerCase().includes(w)).length} words replaced`);
+    // Apply centralized sanitizer
+    const { cleaned: cleanLyrics, replacedCount, replacedWords } = sanitizeForSuno(lyrics);
+    log("SANITIZE", `Sanitized lyrics`, { songId, replacedCount, replacedWords });
 
     const response = await fetch("https://api.sunoapi.org/api/v1/generate", {
       method: "POST",
@@ -143,23 +192,45 @@ serve(async (req) => {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Suno API error:", errorText);
-      await supabase.from("songs").update({ status: "error" }).eq("id", songId);
-      throw new Error("Music generation failed");
+      log("ERROR", "Suno API returned error", { songId, status: response.status, errorText });
+      
+      // Parse error code if possible
+      let errorCode = "SUNO_API_ERROR";
+      let errorMsg = errorText;
+      try {
+        const parsed = JSON.parse(errorText);
+        errorCode = parsed.code || parsed.error || errorCode;
+        errorMsg = parsed.message || parsed.msg || errorText;
+      } catch {}
+
+      await supabase.from("songs").update({ 
+        status: "error",
+        generation_error: errorMsg,
+        generation_error_code: errorCode,
+        generation_error_at: new Date().toISOString(),
+      }).eq("id", songId);
+
+      throw new Error(`Music generation failed: ${errorCode}`);
     }
 
     const data = await response.json();
+    const taskId = data.data?.taskId || null;
     
     await supabase.from("songs").update({
-      suno_task_id: data.data?.taskId || null,
+      suno_task_id: taskId,
       status: "generating",
+      generation_error: null,
+      generation_error_code: null,
+      generation_error_at: null,
     }).eq("id", songId);
 
-    return new Response(JSON.stringify({ success: true, taskId: data.data?.taskId }), {
+    log("SUCCESS", "Suno task created", { songId, taskId });
+
+    return new Response(JSON.stringify({ success: true, taskId }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
-    console.error("generate-music error:", e);
+    log("FATAL", "Unhandled error", { error: e instanceof Error ? e.message : String(e) });
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
