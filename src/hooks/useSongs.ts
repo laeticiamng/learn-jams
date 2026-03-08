@@ -61,8 +61,8 @@ export function useSongs(userId: string | undefined) {
   const songsRef = useRef(songs);
   songsRef.current = songs;
 
+  const hasGenerating = songs.some((s) => s.status === "generating");
   useEffect(() => {
-    const hasGenerating = songs.some((s) => s.status === "generating");
     if (!hasGenerating) return;
     const interval = setInterval(async () => {
       const generating = songsRef.current.filter((s) => s.status === "generating");
@@ -72,8 +72,7 @@ export function useSongs(userId: string | undefined) {
       );
     }, 10000);
     return () => clearInterval(interval);
-    // Only re-create interval when generating state changes, not every song update
-  }, [songs.some((s) => s.status === "generating")]);
+  }, [hasGenerating]);
 
   const toggleFavorite = useCallback(
     async (songId: string) => {

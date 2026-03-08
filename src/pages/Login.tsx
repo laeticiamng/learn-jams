@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ParallaxOrbs } from "@/components/ParallaxOrbs";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -21,10 +21,15 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const { signIn } = useAuth();
+  const { signIn, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const from = (location.state as { from?: string })?.from || "/create";
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (user) navigate("/create", { replace: true });
+  }, [user, navigate]);
 
   const humanizeError = (message: string): string => {
     if (message.includes("Email not confirmed")) return t("auth.error_email_not_confirmed");
