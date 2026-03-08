@@ -203,7 +203,7 @@
     "faq1_q": "How does StudyBeats work?", "faq1_a": "Upload your notes (text, PDF or photo), choose a music style, and the AI generates an educational song to help you memorize.",
     "faq2_q": "Is my data protected?", "faq2_a": "Yes. Your data is encrypted and never sold. See our privacy policy for details.",
     "faq3_q": "Can I delete my account?", "faq3_a": "Yes, you can delete your account from the Profile page. All your data will be erased.",
-    "faq4_q": "Is audio generation available?", "faq4_a": "AI lyrics generation is available. Audio music generation is being progressively rolled out."
+    "faq4_q": "How does music generation work?", "faq4_a": "The AI first generates educational lyrics from your notes, then composes music in your chosen style. You get a complete song you can listen to on repeat."
   },
   "about": {
     "title": "About StudyBeats", "subtitle": "Neuroscience, music and memorization",
