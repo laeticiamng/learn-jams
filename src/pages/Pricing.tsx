@@ -223,7 +223,6 @@ export default function Pricing() {
               </div>
             </motion.div>
           </div>
-        </div>
 
           {/* FAQ */}
           <motion.div
