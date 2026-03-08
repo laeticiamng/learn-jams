@@ -86,22 +86,32 @@ const DemoPlayer = ({ listenLabel, titleLabel }: { listenLabel: string; titleLab
   return (
     <div className="mt-10 max-w-sm mx-auto">
       <audio ref={audioRef} src="/demo.mp3" preload="none" />
-      <motion.button
+      <motion.div
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
-        onClick={togglePlay}
-        className="w-full glass-card-elevated p-4 flex items-center gap-4 group"
+        className="w-full glass-card-elevated p-4 flex items-center gap-4 group cursor-pointer"
+        role="group"
+        aria-label={titleLabel}
       >
-        <div className="w-12 h-12 rounded-xl gradient-bg-premium flex items-center justify-center shrink-0 shadow-lg shadow-primary/20">
+        <button
+          onClick={togglePlay}
+          className="w-12 h-12 rounded-xl gradient-bg-premium flex items-center justify-center shrink-0 shadow-lg shadow-primary/20"
+          aria-label={playing ? "Pause" : "Play"}
+        >
           {playing ? <Pause className="w-5 h-5 text-primary-foreground" /> : <Play className="w-5 h-5 text-primary-foreground ml-0.5" />}
-        </div>
+        </button>
         <div className="flex-1 text-left min-w-0">
           <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">{listenLabel}</p>
           <p className="text-sm font-semibold truncate">{titleLabel}</p>
           <div
             className="mt-2 h-1 rounded-full bg-muted/30 overflow-hidden cursor-pointer"
+            role="slider"
+            aria-label="Progress"
+            aria-valuenow={Math.round(progress)}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            tabIndex={0}
             onClick={(e) => {
-              e.stopPropagation();
               const audio = audioRef.current;
               if (!audio || !audio.duration) return;
               const rect = e.currentTarget.getBoundingClientRect();
@@ -115,7 +125,7 @@ const DemoPlayer = ({ listenLabel, titleLabel }: { listenLabel: string; titleLab
           </div>
         </div>
         <Volume2 className="w-4 h-4 text-muted-foreground shrink-0 group-hover:text-primary transition-colors" />
-      </motion.button>
+      </motion.div>
     </div>
   );
 };

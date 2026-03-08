@@ -39,7 +39,7 @@ export default function Login() {
     const { error } = await signIn(email, password);
     setLoading(false);
     if (error) toast.error(humanizeError(error.message));
-    else navigate("/create");
+    else navigate(from, { replace: true });
   };
 
   return (
