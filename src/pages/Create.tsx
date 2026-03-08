@@ -132,8 +132,9 @@ export default function Create() {
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
-      {/* Ambient */}
-      <ParallaxOrbs orbs={[]} mesh={false} />
+      {/* Subtle ambient gradient */}
+      <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,hsl(var(--primary)/0.08),transparent_70%)]" />
+      <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(ellipse_60%_40%_at_80%_100%,hsl(var(--primary)/0.05),transparent_60%)]" />
 
       <Navbar />
 
