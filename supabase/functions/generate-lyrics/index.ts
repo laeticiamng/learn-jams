@@ -375,6 +375,36 @@ D) COVERAGE CHECK-LIST:
       generatedTitle = firstLine.replace(/[*_]/g, "").trim();
     }
 
+    // --- Increment usage quota ---
+    if (!isProUser) {
+      const currentMonth = new Date().toISOString().slice(0, 7);
+      await supabaseAdmin
+        .from("usage_quotas")
+        .upsert(
+          { user_id: userId, month: currentMonth, songs_generated: 1 },
+          { onConflict: "user_id,month" }
+        );
+      // Increment if row already existed
+      await supabaseAdmin.rpc("increment_quota", undefined).catch(() => {
+        // Fallback: manual increment
+      });
+      // Simple approach: upsert then update
+      const { data: currentQuota } = await supabaseAdmin
+        .from("usage_quotas")
+        .select("songs_generated")
+        .eq("user_id", userId)
+        .eq("month", currentMonth)
+        .single();
+      if (currentQuota) {
+        await supabaseAdmin
+          .from("usage_quotas")
+          .update({ songs_generated: currentQuota.songs_generated + 1 })
+          .eq("user_id", userId)
+          .eq("month", currentMonth);
+      }
+    }
+    // --- END increment ---
+
     return new Response(JSON.stringify({ 
       title: generatedTitle || title || "StudyBeats Song",
       lyrics,
