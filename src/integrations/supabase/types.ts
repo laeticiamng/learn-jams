@@ -14,6 +14,56 @@ export type Database = {
   }
   public: {
     Tables: {
+      collaborative_sessions: {
+        Row: {
+          created_at: string
+          creator_id: string
+          final_song_id: string | null
+          id: string
+          invite_code: string
+          max_participants: number
+          status: string
+          style: string
+          title: string
+          topic: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          final_song_id?: string | null
+          id?: string
+          invite_code?: string
+          max_participants?: number
+          status?: string
+          style?: string
+          title: string
+          topic: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          final_song_id?: string | null
+          id?: string
+          invite_code?: string
+          max_participants?: number
+          status?: string
+          style?: string
+          title?: string
+          topic?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collaborative_sessions_final_song_id_fkey"
+            columns: ["final_song_id"]
+            isOneToOne: false
+            referencedRelation: "songs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contact_messages: {
         Row: {
           created_at: string
@@ -67,6 +117,44 @@ export type Database = {
           },
         ]
       }
+      league_points: {
+        Row: {
+          created_at: string
+          id: string
+          points: number
+          reason: string
+          song_id: string | null
+          user_id: string
+          week: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          points?: number
+          reason: string
+          song_id?: string | null
+          user_id: string
+          week: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          points?: number
+          reason?: string
+          song_id?: string | null
+          user_id?: string
+          week?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "league_points_song_id_fkey"
+            columns: ["song_id"]
+            isOneToOne: false
+            referencedRelation: "songs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string
@@ -108,32 +196,105 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          country: string | null
           created_at: string
           display_name: string | null
           field_of_study: string | null
           id: string
+          university: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           avatar_url?: string | null
+          country?: string | null
           created_at?: string
           display_name?: string | null
           field_of_study?: string | null
           id?: string
+          university?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           avatar_url?: string | null
+          country?: string | null
           created_at?: string
           display_name?: string | null
           field_of_study?: string | null
           id?: string
+          university?: string | null
           updated_at?: string
           user_id?: string
         }
         Relationships: []
+      }
+      session_participants: {
+        Row: {
+          id: string
+          joined_at: string
+          session_id: string
+          subtopic: string | null
+          user_id: string
+          verse_text: string | null
+        }
+        Insert: {
+          id?: string
+          joined_at?: string
+          session_id: string
+          subtopic?: string | null
+          user_id: string
+          verse_text?: string | null
+        }
+        Update: {
+          id?: string
+          joined_at?: string
+          session_id?: string
+          subtopic?: string | null
+          user_id?: string
+          verse_text?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_participants_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "collaborative_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      song_ratings: {
+        Row: {
+          created_at: string
+          id: string
+          rating: number
+          song_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          rating?: number
+          song_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          rating?: number
+          song_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "song_ratings_song_id_fkey"
+            columns: ["song_id"]
+            isOneToOne: false
+            referencedRelation: "songs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       songs: {
         Row: {
@@ -147,6 +308,7 @@ export type Database = {
           generation_error_code: string | null
           id: string
           is_final_quality: boolean
+          is_public: boolean
           lyrics_metadata: string | null
           original_text: string
           status: string
@@ -168,6 +330,7 @@ export type Database = {
           generation_error_code?: string | null
           id?: string
           is_final_quality?: boolean
+          is_public?: boolean
           lyrics_metadata?: string | null
           original_text: string
           status?: string
@@ -189,6 +352,7 @@ export type Database = {
           generation_error_code?: string | null
           id?: string
           is_final_quality?: boolean
+          is_public?: boolean
           lyrics_metadata?: string | null
           original_text?: string
           status?: string
