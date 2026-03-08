@@ -411,7 +411,7 @@ export default function Index() {
                   "{t(`home.testimonial${n}_quote`)}"
                 </p>
                 <div className="flex items-center gap-3 mt-7 pt-6 border-t border-border/20">
-                  <img src={testimonialAvatars[i]} alt={t(`home.testimonial${n}_name`)} className="w-10 h-10 rounded-full bg-muted ring-2 ring-border/20" loading="lazy" />
+                  <img src={testimonialAvatars[i]} alt={t(`home.testimonial${n}_name`)} className="w-10 h-10 rounded-full object-cover bg-muted ring-2 ring-border/20" loading="lazy" />
                   <div>
                     <p className="text-sm font-semibold">{t(`home.testimonial${n}_name`)}</p>
                     <p className="text-xs text-muted-foreground">{t(`home.testimonial${n}_field`)}</p>
