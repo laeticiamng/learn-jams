@@ -129,14 +129,21 @@ export default function Pricing() {
                 </div>
               </div>
               <ul className="space-y-4 mb-9">
-                {["free_feature1", "free_feature2", "free_feature3"].map((key) => (
-                  <li key={key} className="flex items-center gap-3 text-muted-foreground">
-                    <div className="w-5 h-5 rounded-full bg-muted/50 flex items-center justify-center flex-shrink-0">
-                      <Check className="w-3 h-3 text-muted-foreground/60" />
-                    </div>
-                    <span className="text-sm">{t(`pricing.${key}`)}</span>
-                  </li>
-                ))}
+                {["free_feature1", "free_feature2", "free_feature3"].map((key) => {
+                  const isLimitation = key === "free_feature3";
+                  return (
+                    <li key={key} className={`flex items-center gap-3 ${isLimitation ? "text-muted-foreground/50" : "text-muted-foreground"}`}>
+                      <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${isLimitation ? "bg-destructive/10" : "bg-muted/50"}`}>
+                        {isLimitation ? (
+                          <span className="text-destructive/60 text-xs font-bold">✕</span>
+                        ) : (
+                          <Check className="w-3 h-3 text-muted-foreground/60" />
+                        )}
+                      </div>
+                      <span className={`text-sm ${isLimitation ? "line-through" : ""}`}>{t(`pricing.${key}`)}</span>
+                    </li>
+                  );
+                })}
               </ul>
               <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                 <Button
