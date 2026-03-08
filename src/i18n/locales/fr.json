@@ -225,7 +225,7 @@
     "back": "Bibliothèque",
     "lyrics": "Paroles",
     "no_audio_title": "Audio non disponible",
-    "no_audio_text": "Les paroles ont été générées avec succès. La génération audio musicale est en cours de déploiement — tu peux déjà lire les paroles ci-dessous et tester tes connaissances avec le quiz.",
+    "no_audio_text": "Les paroles ont été générées avec succès ! Tu peux les lire ci-dessous et tester tes connaissances avec le quiz. L'audio sera disponible sous peu.",
     "quiz_button": "Mode Quiz 🧠",
     "not_found": "Chanson introuvable",
     "study_notes": "Notes de révision & Ancrages examen",
