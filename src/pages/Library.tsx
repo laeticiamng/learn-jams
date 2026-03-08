@@ -108,7 +108,7 @@ export default function Library() {
       <div className="fixed bottom-0 right-1/4 w-[500px] h-[300px] pointer-events-none ambient-orb" style={{ background: "hsl(215, 80%, 55%)", animationDelay: "4s" }} />
       <Navbar />
 
-      <div className="container mx-auto pt-28 pb-16 px-4 max-w-4xl relative z-10">
+      <div className="container mx-auto pt-28 pb-16 px-4 max-w-6xl relative z-10">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 24, filter: "blur(8px)" }}
@@ -239,7 +239,7 @@ export default function Library() {
               variants={container}
               initial="hidden"
               animate="show"
-              className="space-y-3"
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"
             >
               {filtered.map((song) => (
                 <SongCard
