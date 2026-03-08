@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, ArrowRight, Sparkles, Loader2, Check, Crown } from "lucide-react";
+import { ArrowLeft, ArrowRight, Sparkles, Loader2, Check, Crown, Music } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import CourseUploader from "@/components/create/CourseUploader";
 import StylePicker from "@/components/create/StylePicker";
