@@ -125,6 +125,7 @@ export default function Player() {
           <Loader2 className="w-8 h-8 text-primary" />
         </motion.div>
       </div>
+      <Footer />
     </div>
   );
 
@@ -137,6 +138,7 @@ export default function Player() {
           <Button onClick={() => navigate("/library")} className="rounded-xl">{t("common.back")}</Button>
         </motion.div>
       </div>
+      <Footer />
     </div>
   );
 
