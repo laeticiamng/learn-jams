@@ -54,7 +54,7 @@ export default function About() {
           className="glass-card-elevated p-9 mb-8"
         >
           <h2 className="font-display text-xl font-semibold text-foreground mb-4">{t("about.summary_title")}</h2>
-          <p className="text-foreground/75 leading-relaxed" dangerouslySetInnerHTML={{ __html: t("about.summary_text") }} />
+          <p className="text-foreground/85 leading-relaxed" dangerouslySetInnerHTML={{ __html: t("about.summary_text") }} />
         </motion.section>
 
         <motion.section
