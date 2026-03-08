@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Music, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { usePageSEO } from "@/hooks/usePageSEO";
+import Navbar from "@/components/Navbar";
 
 const NotFound = () => {
   const { t } = useTranslation();
