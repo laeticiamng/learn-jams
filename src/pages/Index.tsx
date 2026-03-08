@@ -185,11 +185,7 @@ export default function Index() {
       <Navbar />
 
       {/* Hero */}
-      <header ref={heroRef} className="relative pt-40 pb-28 px-4">
-        {/* Ambient orbs */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] pointer-events-none" style={{ background: "var(--gradient-glow)" }} />
-        <div className="absolute top-20 left-1/4 w-[400px] h-[400px] pointer-events-none ambient-orb" style={{ background: "hsl(265, 90%, 60%)" }} />
-        <div className="absolute top-40 right-1/4 w-[300px] h-[300px] pointer-events-none ambient-orb" style={{ background: "hsl(300, 70%, 50%)", animationDelay: "3s" }} />
+      <ParallaxHero heroRef={heroRef} />
 
         <div className="container mx-auto text-center relative z-10">
           <motion.div initial={{ opacity: 0, y: 40, filter: "blur(12px)" }} animate={{ opacity: 1, y: 0, filter: "blur(0px)" }} transition={{ duration: 0.9, ease }}>
