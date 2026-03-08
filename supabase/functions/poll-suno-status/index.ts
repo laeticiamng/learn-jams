@@ -6,6 +6,10 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const log = (tag: string, msg: string, data?: Record<string, unknown>) => {
+  console.log(`[poll-suno] ${tag}: ${msg}${data ? " " + JSON.stringify(data) : ""}`);
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -72,6 +76,7 @@ serve(async (req) => {
     }
 
     if (song.status !== "generating" || !song.suno_task_id) {
+      log("SKIP", "No polling needed", { songId, status: song.status, hasTaskId: !!song.suno_task_id });
       return new Response(JSON.stringify({ status: song.status, message: "No polling needed" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -81,14 +86,20 @@ serve(async (req) => {
     const createdAt = new Date(song.created_at || Date.now()).getTime();
     const TEN_MINUTES = 10 * 60 * 1000;
     if (Date.now() - createdAt > TEN_MINUTES) {
-      await supabase.from("songs").update({ status: "error" }).eq("id", songId);
-      console.log(`[poll-suno] Song ${songId} timed out after 10 minutes`);
+      await supabase.from("songs").update({ 
+        status: "error",
+        generation_error: "Generation timed out after 10 minutes",
+        generation_error_code: "TIMEOUT",
+        generation_error_at: new Date().toISOString(),
+      }).eq("id", songId);
+      log("TIMEOUT", "Song timed out", { songId, elapsed: Date.now() - createdAt });
       return new Response(JSON.stringify({ status: "error", reason: "timeout" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     // Query Suno API for task status
+    log("POLL", "Querying Suno API", { songId, taskId: song.suno_task_id });
     const sunoResponse = await fetch(
       `https://api.sunoapi.org/api/v1/generate/record-info?taskId=${song.suno_task_id}`,
       {
@@ -99,54 +110,67 @@ serve(async (req) => {
 
     if (!sunoResponse.ok) {
       const errorText = await sunoResponse.text();
-      console.error(`[poll-suno] Suno API error ${sunoResponse.status}:`, errorText);
+      log("ERROR", "Suno API error", { songId, status: sunoResponse.status, errorText });
       return new Response(JSON.stringify({ error: "Failed to poll Suno API" }), {
         status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const sunoData = await sunoResponse.json();
-    console.log(`[poll-suno] songId=${songId}, taskId=${song.suno_task_id}, sunoStatus=${sunoData.data?.status}`);
-
     const taskStatus = sunoData.data?.status;
     const tracks = sunoData.data?.response?.sunoData;
+    log("RESPONSE", "Suno API response", { songId, taskId: song.suno_task_id, taskStatus, trackCount: tracks?.length || 0 });
 
     // Map Suno status to our status
     if (taskStatus === "SUCCESS" && Array.isArray(tracks) && tracks.length > 0) {
       const track = tracks[0];
+      const audioUrl = track.audioUrl || track.audio_url || null;
+      const coverUrl = track.imageUrl || track.image_url || null;
+      const duration = track.duration ? Math.round(track.duration) : null;
+
       await supabase.from("songs").update({
-        audio_url: track.audioUrl || track.audio_url || null,
-        duration: track.duration ? Math.round(track.duration) : null,
-        cover_image_url: track.imageUrl || track.image_url || null,
+        audio_url: audioUrl,
+        duration,
+        cover_image_url: coverUrl,
         status: "ready",
         is_final_quality: true,
+        generation_error: null,
+        generation_error_code: null,
       }).eq("id", songId);
 
-      console.log(`[poll-suno] Song ${songId} updated to ready via polling`);
+      log("READY", "Song updated to ready via polling", { songId, hasAudio: !!audioUrl, duration });
       return new Response(JSON.stringify({ status: "ready", updated: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    if (
-      taskStatus === "CREATE_TASK_FAILED" ||
-      taskStatus === "GENERATE_AUDIO_FAILED" ||
-      taskStatus === "SENSITIVE_WORD_ERROR" ||
-      taskStatus === "CALLBACK_EXCEPTION"
-    ) {
-      await supabase.from("songs").update({ status: "error" }).eq("id", songId);
-      console.log(`[poll-suno] Song ${songId} marked as error: ${taskStatus}`);
+    const ERROR_STATUSES = [
+      "CREATE_TASK_FAILED",
+      "GENERATE_AUDIO_FAILED", 
+      "SENSITIVE_WORD_ERROR",
+      "CALLBACK_EXCEPTION",
+    ];
+
+    if (ERROR_STATUSES.includes(taskStatus)) {
+      await supabase.from("songs").update({ 
+        status: "error",
+        generation_error: `Suno generation failed: ${taskStatus}`,
+        generation_error_code: taskStatus,
+        generation_error_at: new Date().toISOString(),
+      }).eq("id", songId);
+      log("ERROR", "Song marked as error", { songId, taskStatus });
       return new Response(JSON.stringify({ status: "error", sunoStatus: taskStatus }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Still processing (PENDING, TEXT_SUCCESS, FIRST_SUCCESS)
+    // Still processing
+    log("PENDING", "Still generating", { songId, taskStatus });
     return new Response(JSON.stringify({ status: "generating", sunoStatus: taskStatus }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
-    console.error("poll-suno-status error:", e);
+    log("FATAL", "Unhandled error", { error: e instanceof Error ? e.message : String(e) });
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
