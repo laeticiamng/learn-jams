@@ -91,12 +91,12 @@ serve(async (req) => {
       }
 
       await supabase.from("songs").update(updateData).eq("id", songId);
-      log("UPDATE", `Song updated via ${callbackType}`, { 
-        songId, 
+      log("info", "song_updated", { 
+        song_id: songId, 
         status: updateData.status, 
-        isFinal: updateData.is_final_quality, 
-        hasAudio: !!audioUrl, 
-        hasCover: !!coverUrl, 
+        is_final: updateData.is_final_quality, 
+        has_audio: !!audioUrl, 
+        has_cover: !!coverUrl, 
         duration 
       });
     }
