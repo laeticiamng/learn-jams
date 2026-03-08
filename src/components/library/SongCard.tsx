@@ -233,7 +233,7 @@ export function SongCard({ song, isFavorite, onToggleFavorite, onRetry, onDelete
                     whileHover={{ scale: 1.15 }}
                     whileTap={{ scale: 0.9 }}
                     onClick={(e) => { e.stopPropagation(); onDelete(song.id); }}
-                    className="hover:text-destructive transition-colors duration-300 p-1.5 rounded-lg hover:bg-destructive/10 opacity-0 group-hover:opacity-100"
+                    className="hover:text-destructive transition-colors duration-300 p-1.5 rounded-lg hover:bg-destructive/10 sm:opacity-0 sm:group-hover:opacity-100"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </motion.button>

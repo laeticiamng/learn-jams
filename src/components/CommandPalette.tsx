@@ -54,11 +54,11 @@ export default function CommandPalette() {
   const pages = useMemo(() => [
     { label: t("nav.create", "Create"), icon: Plus, path: "/create", auth: true },
     { label: t("nav.library", "Library"), icon: Library, path: "/library", auth: true },
-    { label: "Profile", icon: User, path: "/profile", auth: true },
+    { label: t("profile.title", "Profile"), icon: User, path: "/profile", auth: true },
     { label: t("nav.pricing", "Pricing"), icon: CreditCard, path: "/pricing", auth: false },
     { label: t("home.how_title", "How it works"), icon: Home, path: "/", auth: false },
-    { label: "About", icon: Info, path: "/about", auth: false },
-    { label: "Contact", icon: Mail, path: "/contact", auth: false },
+    { label: t("about.title", "About"), icon: Info, path: "/about", auth: false },
+    { label: t("contact.title", "Contact"), icon: Mail, path: "/contact", auth: false },
     { label: t("footer.terms", "Terms"), icon: FileText, path: "/terms", auth: false },
     { label: t("footer.privacy", "Privacy"), icon: Shield, path: "/privacy", auth: false },
   ], [t]);
