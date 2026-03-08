@@ -159,7 +159,11 @@
     "no_audio_title": "Audio not available",
     "no_audio_text": "The lyrics were generated successfully. Audio music generation is being deployed — you can already read the lyrics below and test your knowledge with the quiz.",
     "quiz_button": "Quiz Mode 🧠", "not_found": "Song not found",
-    "study_notes": "Study Notes & Exam Anchors"
+    "study_notes": "Study Notes & Exam Anchors",
+    "tab_notions": "Notions",
+    "tab_punchlines": "Punchlines",
+    "tab_anchors": "Exam Anchors",
+    "tab_coverage": "Coverage"
   },
   "quiz": {
     "generating": "Generating quiz...", "generating_sub": "AI is analyzing your notes and lyrics",
