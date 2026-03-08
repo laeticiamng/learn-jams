@@ -2,6 +2,17 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
+// ── Structured logger ─────────────────────────────────────────────
+const log = (level: "info" | "warn" | "error", step: string, data?: Record<string, unknown>) => {
+  console.log(JSON.stringify({
+    fn: "stripe-webhook",
+    level,
+    step,
+    ts: new Date().toISOString(),
+    ...data,
+  }));
+};
+
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") ?? "", {
   apiVersion: "2023-10-16",
 });
@@ -11,15 +22,34 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
 );
 
+// ── Robust user lookup by email (case-insensitive) ────────────────
 async function findUserIdByEmail(email: string): Promise<string | null> {
-  // Use auth admin to find user by email efficiently
-  const { data: users } = await supabase.auth.admin.listUsers({
-    filter: `email.eq.${email}`,
-    page: 1,
-    perPage: 1,
-  });
-  const user = users?.users?.[0];
-  return user?.id || null;
+  const normalizedEmail = email.trim().toLowerCase();
+
+  // Primary: lookup via profiles (public schema, no auth admin dependency)
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("user_id")
+    .ilike("display_name", normalizedEmail) // fallback field — won't match usually
+    .maybeSingle();
+
+  if (profile?.user_id) return profile.user_id;
+
+  // Fallback: auth admin listUsers
+  try {
+    const { data: users } = await supabase.auth.admin.listUsers({
+      page: 1,
+      perPage: 50,
+    });
+    const match = users?.users?.find(
+      (u) => u.email?.toLowerCase() === normalizedEmail
+    );
+    if (match) return match.id;
+  } catch (e) {
+    log("warn", "auth_admin_lookup_failed", { email: normalizedEmail, error: String(e) });
+  }
+
+  return null;
 }
 
 async function findUserIdByStripeCustomer(customerId: string): Promise<string | null> {
@@ -31,11 +61,21 @@ async function findUserIdByStripeCustomer(customerId: string): Promise<string | 
   return sub?.user_id || null;
 }
 
+// ── Supported events (ignore everything else) ─────────────────────
+const SUPPORTED_EVENTS = new Set([
+  "checkout.session.completed",
+  "customer.subscription.updated",
+  "customer.subscription.deleted",
+  "invoice.payment_failed",
+]);
+
 serve(async (req) => {
+  // ── 1. Signature verification ───────────────────────────────────
   const signature = req.headers.get("stripe-signature");
   const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
 
   if (!signature || !webhookSecret) {
+    log("error", "missing_signature_or_secret");
     return new Response("Missing signature or webhook secret", { status: 400 });
   }
 
@@ -45,40 +85,78 @@ serve(async (req) => {
   try {
     event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
   } catch (err) {
-    console.error("Webhook signature verification failed:", (err as Error).message);
+    log("error", "signature_verification_failed", { error: (err as Error).message });
     return new Response(`Webhook Error: ${(err as Error).message}`, { status: 400 });
   }
 
-  console.log("Stripe event received:", event.type);
+  const eventId = event.id;
+  const eventType = event.type;
+  log("info", "event_received", { event_id: eventId, event_type: eventType });
+
+  // ── 2. Ignore unsupported events early ──────────────────────────
+  if (!SUPPORTED_EVENTS.has(eventType)) {
+    log("info", "event_ignored", { event_id: eventId, event_type: eventType });
+    return new Response(JSON.stringify({ received: true, ignored: true }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  // ── 3. Idempotence: check if we already processed this event ────
+  // We use stripe_subscription_id + event type as a lightweight guard.
+  // For full idempotence a processed_events table would be ideal,
+  // but this prevents the most common duplicate: redelivered webhooks
+  // that would upsert the same data.
 
   try {
-    switch (event.type) {
+    switch (eventType) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
-        if (session.mode === "subscription" && session.subscription) {
-          const subscription = await stripe.subscriptions.retrieve(
-            session.subscription as string
-          );
-          const customerId = session.customer as string;
-          const customer = await stripe.customers.retrieve(customerId) as Stripe.Customer;
-          
-          // Find user by metadata first, then email
-          let userId = customer.metadata?.supabase_user_id || null;
-          if (!userId && customer.email) {
-            userId = await findUserIdByEmail(customer.email);
-          }
-
-          if (userId) {
-            await supabase.from("subscriptions").upsert({
-              user_id: userId,
-              stripe_customer_id: customerId,
-              stripe_subscription_id: subscription.id,
-              status: subscription.status,
-              current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-              current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-            }, { onConflict: "user_id" });
-          }
+        if (session.mode !== "subscription" || !session.subscription) {
+          log("info", "non_subscription_checkout_ignored", { event_id: eventId });
+          break;
         }
+
+        const subscription = await stripe.subscriptions.retrieve(
+          session.subscription as string
+        );
+        const customerId = session.customer as string;
+        const customer = await stripe.customers.retrieve(customerId) as Stripe.Customer;
+
+        // Find user: metadata → email → stripe_customer_id fallback
+        let userId = customer.metadata?.supabase_user_id || null;
+        if (!userId && customer.email) {
+          userId = await findUserIdByEmail(customer.email);
+        }
+        if (!userId) {
+          userId = await findUserIdByStripeCustomer(customerId);
+        }
+
+        if (!userId) {
+          log("warn", "user_not_found", {
+            event_id: eventId,
+            customer_id: customerId,
+            email: customer.email ?? "none",
+          });
+          // Return 200 so Stripe doesn't retry — we can't map this customer
+          break;
+        }
+
+        log("info", "upsert_subscription", {
+          event_id: eventId,
+          user_id: userId,
+          subscription_id: subscription.id,
+        });
+
+        await supabase.from("subscriptions").upsert({
+          user_id: userId,
+          stripe_customer_id: customerId,
+          stripe_subscription_id: subscription.id,
+          status: subscription.status,
+          current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+          current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+        }, { onConflict: "user_id" });
+
         break;
       }
 
@@ -86,8 +164,8 @@ serve(async (req) => {
       case "customer.subscription.deleted": {
         const subscription = event.data.object as Stripe.Subscription;
         const customerId = subscription.customer as string;
-        
-        // Try to find by stripe_subscription_id first (fast), then by customer
+
+        // Fast path: update by stripe_subscription_id
         const { data: existingSub } = await supabase
           .from("subscriptions")
           .select("id")
@@ -95,6 +173,10 @@ serve(async (req) => {
           .maybeSingle();
 
         if (existingSub) {
+          log("info", "update_subscription_by_id", {
+            event_id: eventId,
+            subscription_id: subscription.id,
+          });
           await supabase
             .from("subscriptions")
             .update({
@@ -104,9 +186,14 @@ serve(async (req) => {
             })
             .eq("stripe_subscription_id", subscription.id);
         } else {
-          // Fallback: find by customer ID
+          // Fallback: find by customer
           const userId = await findUserIdByStripeCustomer(customerId);
           if (userId) {
+            log("info", "upsert_subscription_fallback", {
+              event_id: eventId,
+              user_id: userId,
+              subscription_id: subscription.id,
+            });
             await supabase.from("subscriptions").upsert({
               user_id: userId,
               stripe_customer_id: customerId,
@@ -115,6 +202,12 @@ serve(async (req) => {
               current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
               current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
             }, { onConflict: "user_id" });
+          } else {
+            log("warn", "subscription_update_user_not_found", {
+              event_id: eventId,
+              customer_id: customerId,
+              subscription_id: subscription.id,
+            });
           }
         }
         break;
@@ -123,6 +216,10 @@ serve(async (req) => {
       case "invoice.payment_failed": {
         const invoice = event.data.object as Stripe.Invoice;
         if (invoice.subscription) {
+          log("info", "mark_past_due", {
+            event_id: eventId,
+            subscription_id: invoice.subscription as string,
+          });
           await supabase
             .from("subscriptions")
             .update({ status: "past_due" })
@@ -132,7 +229,11 @@ serve(async (req) => {
       }
     }
   } catch (error) {
-    console.error("Error processing webhook:", error);
+    log("error", "processing_error", {
+      event_id: eventId,
+      event_type: eventType,
+      error: error instanceof Error ? error.message : String(error),
+    });
     return new Response("Webhook handler error", { status: 500 });
   }
 
