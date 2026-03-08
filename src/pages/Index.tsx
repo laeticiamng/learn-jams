@@ -222,7 +222,7 @@ export default function Index() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2, duration: 0.5 }}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-primary/30 bg-primary/10 mb-12 text-sm text-primary-foreground font-medium backdrop-blur-sm"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-primary/30 bg-primary/10 mb-12 text-sm text-primary font-medium backdrop-blur-sm"
             >
               {t("home.badge")}
             </motion.p>
@@ -345,7 +345,7 @@ export default function Index() {
             className="font-display text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-16 tracking-tight">
             {t("home.before_after_title")}
           </motion.h2>
-          <div className="grid md:grid-cols-2 gap-8 items-stretch">
+          <div className="grid md:grid-cols-2 gap-8 items-stretch relative">
             <motion.div initial={{ opacity: 0, x: -24 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
               transition={{ duration: 0.6, ease }}
               className="glass-card p-8 sm:p-10 relative">
@@ -356,6 +356,12 @@ export default function Index() {
                 {t("home.before_text")}
               </div>
             </motion.div>
+            {/* Arrow between cards on mobile */}
+            <div className="flex justify-center md:hidden -my-1 relative z-10">
+              <div className="w-10 h-10 rounded-full gradient-bg-premium flex items-center justify-center shadow-lg shadow-primary/20">
+                <ArrowRight className="w-5 h-5 text-primary-foreground rotate-90" />
+              </div>
+            </div>
             <motion.div initial={{ opacity: 0, x: 24 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
               transition={{ delay: 0.15, duration: 0.6, ease }}
               className="glass-card-elevated p-8 sm:p-10 relative glow-intense">
@@ -366,11 +372,6 @@ export default function Index() {
                 {t("home.after_text")}
               </div>
             </motion.div>
-          </div>
-          <div className="flex justify-center md:hidden -my-3 relative z-10">
-            <div className="w-10 h-10 rounded-full gradient-bg-premium flex items-center justify-center shadow-lg shadow-primary/20">
-              <ArrowRight className="w-5 h-5 text-primary-foreground rotate-90" />
-            </div>
           </div>
         </div>
       </section>
