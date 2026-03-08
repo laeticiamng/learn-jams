@@ -34,11 +34,21 @@ export default function Library() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
   const { songs, favorites, loading, toggleFavorite } = useSongs(user?.id);
   const { i18n } = useTranslation();
   const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  // Handle checkout=success parameter
+  useEffect(() => {
+    if (searchParams.get("checkout") === "success") {
+      toast.success(t("library.checkout_success", "Bienvenue dans StudyBeats Pro ! 🎉"));
+      searchParams.delete("checkout");
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams, t]);
 
   const handleRetry = useCallback(async (songId: string) => {
     const song = songs.find(s => s.id === songId);
