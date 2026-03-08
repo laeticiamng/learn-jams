@@ -35,8 +35,9 @@ export default function Contact() {
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
-      <div className="fixed inset-0 pointer-events-none" style={{ background: "var(--gradient-mesh)" }} />
-      <div className="fixed bottom-0 left-1/3 w-[500px] h-[300px] pointer-events-none ambient-orb" style={{ background: "hsl(215, 80%, 55%)", opacity: 0.06 }} />
+      <ParallaxOrbs orbs={[
+        { className: "fixed bottom-0 left-1/3 w-[500px] h-[300px] pointer-events-none ambient-orb", style: { background: "hsl(215, 80%, 55%)", opacity: 0.06 } },
+      ]} />
 
       <Navbar />
       <div className="container mx-auto px-4 pt-28 pb-16 max-w-2xl relative z-10">

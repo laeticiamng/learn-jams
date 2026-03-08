@@ -84,8 +84,9 @@ export default function Pricing() {
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Ambient */}
-      <div className="fixed inset-0 pointer-events-none" style={{ background: "var(--gradient-mesh)" }} />
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[700px] h-[400px] pointer-events-none ambient-orb" style={{ background: "hsl(265, 90%, 60%)", opacity: 0.08 }} />
+      <ParallaxOrbs orbs={[
+        { className: "fixed top-0 left-1/2 -translate-x-1/2 w-[700px] h-[400px] pointer-events-none ambient-orb", style: { background: "hsl(265, 90%, 60%)", opacity: 0.08 } },
+      ]} />
 
       <Navbar />
       <main className="pt-28 pb-20 relative z-10">

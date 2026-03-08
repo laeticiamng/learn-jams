@@ -23,8 +23,9 @@ export default function About() {
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
-      <div className="fixed inset-0 pointer-events-none" style={{ background: "var(--gradient-mesh)" }} />
-      <div className="fixed top-20 right-1/4 w-[500px] h-[400px] pointer-events-none ambient-orb" style={{ background: "hsl(265, 90%, 60%)", opacity: 0.06 }} />
+      <ParallaxOrbs orbs={[
+        { className: "fixed top-20 right-1/4 w-[500px] h-[400px] pointer-events-none ambient-orb", style: { background: "hsl(265, 90%, 60%)", opacity: 0.06 } },
+      ]} />
 
       <Navbar />
       <main className="container mx-auto px-4 pt-28 pb-16 max-w-3xl relative z-10">

@@ -39,9 +39,9 @@ export default function Signup() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 relative overflow-hidden">
       {/* Ambient */}
-      <div className="fixed inset-0 pointer-events-none" style={{ background: "var(--gradient-glow)" }} />
-      <div className="fixed inset-0 pointer-events-none" style={{ background: "var(--gradient-mesh)" }} />
-      <div className="fixed bottom-1/4 right-1/3 w-[400px] h-[400px] pointer-events-none ambient-orb" style={{ background: "hsl(300, 70%, 50%)", opacity: 0.06 }} />
+      <ParallaxOrbs glow orbs={[
+        { className: "fixed bottom-1/4 right-1/3 w-[400px] h-[400px] pointer-events-none ambient-orb", style: { background: "hsl(300, 70%, 50%)", opacity: 0.06 } },
+      ]} />
 
       <motion.div
         initial={{ opacity: 0, y: 24, scale: 0.97, filter: "blur(10px)" }}

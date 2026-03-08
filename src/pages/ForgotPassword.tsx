@@ -32,8 +32,7 @@ export default function ForgotPassword() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 relative overflow-hidden">
-      <div className="fixed inset-0 pointer-events-none" style={{ background: "var(--gradient-glow)" }} />
-      <div className="fixed inset-0 pointer-events-none" style={{ background: "var(--gradient-mesh)" }} />
+      <ParallaxOrbs glow />
 
       <motion.div
         initial={{ opacity: 0, y: 24, scale: 0.97, filter: "blur(10px)" }}
