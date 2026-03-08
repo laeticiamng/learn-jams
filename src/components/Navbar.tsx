@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Music, Library, User, LogOut, Plus, Menu, Search } from "lucide-react";
 import LanguageSelector from "@/components/LanguageSelector";
+import NotificationBell from "@/components/NotificationBell";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useState } from "react";
 import { motion } from "framer-motion";
@@ -63,6 +64,7 @@ export default function Navbar() {
               <Button variant="ghost" size="sm" onClick={() => navigate("/profile")} className={navButtonClass("/profile")}>
                 <User className="w-4 h-4" />
               </Button>
+              <NotificationBell />
               <div className="w-px h-5 bg-border/30 mx-1" />
               <Button variant="ghost" size="sm" onClick={() => { signOut(); navigate("/"); }}
                 className="text-muted-foreground hover:text-foreground rounded-xl">
