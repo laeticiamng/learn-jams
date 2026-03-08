@@ -83,7 +83,7 @@ const DemoPlayer = ({ listenLabel, titleLabel }: { listenLabel: string; titleLab
   }, []);
 
   return (
-    <div className="mt-8 max-w-sm mx-auto">
+    <div className="mt-10 max-w-sm mx-auto">
       <audio ref={audioRef} src="/demo.mp3" preload="none" />
       <motion.button
         whileHover={{ scale: 1.02 }}
@@ -118,6 +118,12 @@ const DemoPlayer = ({ listenLabel, titleLabel }: { listenLabel: string; titleLab
     </div>
   );
 };
+
+const SectionDivider = () => (
+  <div className="container mx-auto px-4">
+    <div className="h-px bg-gradient-to-r from-transparent via-border/30 to-transparent" />
+  </div>
+);
 
 const stepIcons = [Upload, Music, Headphones];
 const scienceIcons = [Brain, Repeat, Timer, Dumbbell];
@@ -179,7 +185,7 @@ export default function Index() {
       <Navbar />
 
       {/* Hero */}
-      <header ref={heroRef} className="relative pt-36 pb-24 px-4">
+      <header ref={heroRef} className="relative pt-40 pb-28 px-4">
         {/* Ambient orbs */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] pointer-events-none" style={{ background: "var(--gradient-glow)" }} />
         <div className="absolute top-20 left-1/4 w-[400px] h-[400px] pointer-events-none ambient-orb" style={{ background: "hsl(265, 90%, 60%)" }} />
@@ -191,15 +197,15 @@ export default function Index() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2, duration: 0.5 }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/20 bg-primary/5 mb-10 text-sm text-primary font-medium"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/20 bg-primary/5 mb-12 text-sm text-primary font-medium"
             >
               {t("home.badge")}
             </motion.p>
-            <h1 className="font-display text-5xl sm:text-6xl md:text-8xl font-bold mb-8 leading-[1.05] px-2 tracking-tight">
+            <h1 className="font-display text-5xl sm:text-7xl md:text-[5.5rem] font-bold mb-8 leading-[1.02] px-2 tracking-tight">
               {t("home.title1")}<br />
               <span className="gradient-text glow-text">{t("home.title2")}</span>
             </h1>
-            <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-12 px-2 leading-relaxed">
+            <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-14 px-2 leading-relaxed">
               {t("home.subtitle")}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-5 px-4">
@@ -212,13 +218,13 @@ export default function Index() {
             </div>
             <button
               onClick={() => navigate("/login")}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors underline-offset-4 hover:underline mb-10 inline-block"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors underline-offset-4 hover:underline mb-12 inline-block"
             >
               {t("home.cta_login")}
             </button>
 
             {/* Social proof */}
-            <div className="flex flex-wrap items-center justify-center gap-5 sm:gap-10 mb-10 text-xs sm:text-sm text-muted-foreground px-2">
+            <div className="flex flex-wrap items-center justify-center gap-5 sm:gap-10 mb-12 text-xs sm:text-sm text-muted-foreground px-2">
               <span className="flex items-center gap-1.5">🎵 <strong className="text-foreground tabular-nums font-mono"><CountUp target={1200} suffix="+" /></strong> {t("home.social_songs_label")}</span>
               <span className="flex items-center gap-1.5">🎓 <strong className="text-foreground tabular-nums font-mono"><CountUp target={500} suffix="+" /></strong> {t("home.social_students_label")}</span>
               <span className="flex items-center gap-1.5">🎶 <strong className="text-foreground tabular-nums font-mono"><CountUp target={30} /></strong> {t("home.social_styles_label")}</span>
@@ -231,7 +237,7 @@ export default function Index() {
       </header>
 
       {/* Trust badges */}
-      <section className="py-8 px-4">
+      <section className="py-10 px-4">
         <div className="container mx-auto flex flex-wrap items-center justify-center gap-8 sm:gap-12">
           {[
             { icon: ShieldCheck, key: "trust_gdpr" },
@@ -253,15 +259,24 @@ export default function Index() {
         </div>
       </section>
 
+      <SectionDivider />
+
       {/* Steps */}
-      <section className="py-20 px-4">
+      <section className="py-28 md:py-32 px-4">
         <div className="container mx-auto">
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-4"
+          >
+            {t("home.how_subtitle")}
+          </motion.p>
           <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-            className="font-display text-3xl md:text-5xl font-bold text-center mb-4 tracking-tight">
+            className="font-display text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-20 tracking-tight">
             {t("home.how_title")}
           </motion.h2>
-          <p className="text-center text-muted-foreground mb-16 max-w-xl mx-auto text-lg">{t("home.how_subtitle")}</p>
-          <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto relative">
+          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto relative">
             <div className="hidden md:block absolute top-24 left-[33%] w-[34%] h-px bg-gradient-to-r from-primary/20 to-secondary/20" />
             <div className="hidden md:block absolute top-24 left-[66%] w-[34%] h-px bg-gradient-to-r from-secondary/20 to-primary/20" />
             {[1, 2, 3].map((n, i) => {
@@ -269,15 +284,15 @@ export default function Index() {
               return (
                 <motion.article key={n} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }} transition={{ delay: i * 0.15, duration: 0.6, ease }}
-                  className="glass-card-elevated p-8 text-center group gradient-border">
+                  className="glass-card-elevated p-10 text-center group gradient-border">
                   <motion.div
                     whileHover={{ scale: 1.1, rotate: -3 }}
-                    className="w-16 h-16 rounded-2xl gradient-bg-premium flex items-center justify-center mx-auto mb-6 shadow-lg shadow-primary/20"
+                    className="w-16 h-16 rounded-2xl gradient-bg-premium flex items-center justify-center mx-auto mb-7 shadow-lg shadow-primary/20"
                   >
                     <Icon className="w-8 h-8 text-primary-foreground" />
                   </motion.div>
-                  <div className="text-xs text-muted-foreground mb-2 uppercase tracking-widest font-medium">{t("home.step_label", { n })}</div>
-                  <h3 className="font-display text-xl font-semibold mb-3">{t(`home.step${n}_title`)}</h3>
+                  <div className="text-xs text-muted-foreground mb-3 uppercase tracking-widest font-medium">{t("home.step_label", { n })}</div>
+                  <h3 className="font-display text-xl font-semibold mb-4">{t(`home.step${n}_title`)}</h3>
                   <p className="text-muted-foreground text-sm leading-relaxed">{t(`home.step${n}_desc`)}</p>
                 </motion.article>
               );
@@ -286,18 +301,27 @@ export default function Index() {
         </div>
       </section>
 
+      <SectionDivider />
+
       {/* Before → After */}
-      <section className="py-20 px-4">
-        <div className="container mx-auto max-w-4xl">
+      <section className="py-28 md:py-32 px-4">
+        <div className="container mx-auto max-w-5xl">
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-4"
+          >
+            {t("home.before_after_subtitle")}
+          </motion.p>
           <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-            className="font-display text-3xl md:text-5xl font-bold text-center mb-4 tracking-tight">
+            className="font-display text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-16 tracking-tight">
             {t("home.before_after_title")}
           </motion.h2>
-          <p className="text-center text-muted-foreground mb-14 text-lg">{t("home.before_after_subtitle")}</p>
-          <div className="grid md:grid-cols-2 gap-6 items-stretch">
+          <div className="grid md:grid-cols-2 gap-8 items-stretch">
             <motion.div initial={{ opacity: 0, x: -24 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
               transition={{ duration: 0.6, ease }}
-              className="glass-card p-7 sm:p-9 relative">
+              className="glass-card p-8 sm:p-10 relative">
               <div className="absolute top-5 left-5 sm:top-6 sm:left-6 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground bg-muted/60 px-3 py-1 rounded-full">
                 {t("home.before_label")}
               </div>
@@ -307,7 +331,7 @@ export default function Index() {
             </motion.div>
             <motion.div initial={{ opacity: 0, x: 24 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
               transition={{ delay: 0.15, duration: 0.6, ease }}
-              className="glass-card-elevated p-7 sm:p-9 relative glow-intense">
+              className="glass-card-elevated p-8 sm:p-10 relative glow-intense">
               <div className="absolute top-5 left-5 sm:top-6 sm:left-6 text-[11px] font-semibold uppercase tracking-widest text-primary bg-primary/10 px-3 py-1 rounded-full">
                 {t("home.after_label")}
               </div>
@@ -324,21 +348,30 @@ export default function Index() {
         </div>
       </section>
 
+      <SectionDivider />
+
       {/* Features */}
-      <section className="py-20 px-4">
-        <div className="container mx-auto max-w-4xl">
-          <h2 className="font-display text-3xl md:text-4xl font-bold text-center mb-14 tracking-tight">{t("home.features_title")}</h2>
-          <div className="grid md:grid-cols-3 gap-6">
+      <section className="py-28 md:py-32 px-4">
+        <div className="container mx-auto max-w-5xl">
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="font-display text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-20 tracking-tight"
+          >
+            {t("home.features_title")}
+          </motion.h2>
+          <div className="grid md:grid-cols-3 gap-8">
             {[1, 2, 3].map((n, i) => {
               const Icon = featureIcons[i];
               return (
                 <motion.article key={n} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
                   transition={{ delay: i * 0.1, duration: 0.6, ease }}
-                  className="glass-card-elevated p-7 text-center gradient-border">
-                  <div className="w-14 h-14 rounded-2xl gradient-bg-premium flex items-center justify-center mx-auto mb-5 shadow-lg shadow-primary/20">
+                  className="glass-card-elevated p-9 text-center gradient-border">
+                  <div className="w-14 h-14 rounded-2xl gradient-bg-premium flex items-center justify-center mx-auto mb-6 shadow-lg shadow-primary/20">
                     <Icon className="w-7 h-7 text-primary-foreground" />
                   </div>
-                  <h3 className="font-display font-semibold mb-2 text-lg">{t(`home.feature${n}_title`)}</h3>
+                  <h3 className="font-display font-semibold mb-3 text-lg">{t(`home.feature${n}_title`)}</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed">{t(`home.feature${n}_desc`)}</p>
                 </motion.article>
               );
@@ -347,24 +380,33 @@ export default function Index() {
         </div>
       </section>
 
+      <SectionDivider />
+
       {/* Science */}
-      <section className="py-20 px-4">
-        <div className="container mx-auto max-w-4xl">
+      <section className="py-28 md:py-32 px-4">
+        <div className="container mx-auto max-w-5xl">
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-4"
+          >
+            {t("home.science_subtitle")}
+          </motion.p>
           <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-            className="font-display text-3xl md:text-5xl font-bold text-center mb-4 tracking-tight">
+            className="font-display text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-20 tracking-tight">
             {t("home.science_title")}
           </motion.h2>
-          <p className="text-center text-muted-foreground mb-14 max-w-xl mx-auto text-lg">{t("home.science_subtitle")}</p>
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid md:grid-cols-2 gap-8">
             {[1, 2, 3, 4].map((n, i) => {
               const Icon = scienceIcons[i];
               return (
                 <motion.article key={n} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.6, ease }}
-                  className="glass-card-elevated p-8 group gradient-border">
+                  className="glass-card-elevated p-9 group gradient-border">
                   <motion.div
                     whileHover={{ scale: 1.1, rotate: -3 }}
-                    className="w-12 h-12 rounded-xl gradient-bg-premium flex items-center justify-center mb-5 shadow-lg shadow-primary/20"
+                    className="w-12 h-12 rounded-xl gradient-bg-premium flex items-center justify-center mb-6 shadow-lg shadow-primary/20"
                   >
                     <Icon className="w-6 h-6 text-primary-foreground" />
                   </motion.div>
@@ -377,23 +419,25 @@ export default function Index() {
         </div>
       </section>
 
+      <SectionDivider />
+
       {/* Testimonials */}
-      <section className="py-20 px-4">
-        <div className="container mx-auto max-w-4xl">
+      <section className="py-28 md:py-32 px-4">
+        <div className="container mx-auto max-w-5xl">
           <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-            className="font-display text-3xl md:text-5xl font-bold text-center mb-14 tracking-tight">
+            className="font-display text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-20 tracking-tight">
             {t("home.testimonials_title")}
           </motion.h2>
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-3 gap-8">
             {[1, 2, 3].map((n, i) => (
               <motion.article key={n} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }} transition={{ delay: i * 0.15, duration: 0.6, ease }}
-                className="glass-card-elevated p-7 sm:p-8 flex flex-col gradient-border">
-                <Quote className="w-8 h-8 text-primary/20 mb-4" />
+                className="glass-card-elevated p-8 sm:p-9 flex flex-col gradient-border">
+                <Quote className="w-8 h-8 text-primary/20 mb-5" />
                 <p className="text-sm text-foreground/80 leading-relaxed flex-1 italic">
                   "{t(`home.testimonial${n}_quote`)}"
                 </p>
-                <div className="flex items-center gap-3 mt-6 pt-5 border-t border-border/20">
+                <div className="flex items-center gap-3 mt-7 pt-6 border-t border-border/20">
                   <img
                     src={testimonialAvatars[i]}
                     alt={t(`home.testimonial${n}_name`)}
@@ -411,18 +455,27 @@ export default function Index() {
         </div>
       </section>
 
+      <SectionDivider />
+
       {/* Listen anywhere */}
-      <section className="py-20 px-4">
-        <div className="container mx-auto max-w-3xl">
-          <h2 className="font-display text-3xl md:text-4xl font-bold text-center mb-4 tracking-tight">{t("home.listen_title")}</h2>
-          <p className="text-center text-muted-foreground mb-12 text-lg">{t("home.listen_subtitle")}</p>
-          <div className="grid sm:grid-cols-2 gap-5">
+      <section className="py-28 md:py-32 px-4">
+        <div className="container mx-auto max-w-4xl">
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="font-display text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-5 tracking-tight"
+          >
+            {t("home.listen_title")}
+          </motion.h2>
+          <p className="text-center text-muted-foreground mb-16 text-lg max-w-xl mx-auto">{t("home.listen_subtitle")}</p>
+          <div className="grid sm:grid-cols-2 gap-6">
             {[1, 2, 3, 4].map((n, i) => (
               <motion.div key={n} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.5, ease }}
-                className="glass-card-elevated p-7 gradient-border">
-                <div className="text-2xl mb-3">{t(`home.listen${n}_emoji`)}</div>
-                <h3 className="font-display font-semibold mb-1">{t(`home.listen${n}_label`)}</h3>
+                className="glass-card-elevated p-8 gradient-border">
+                <div className="text-2xl mb-4">{t(`home.listen${n}_emoji`)}</div>
+                <h3 className="font-display font-semibold mb-2 text-lg">{t(`home.listen${n}_label`)}</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">{t(`home.listen${n}_desc`)}</p>
               </motion.div>
             ))}
@@ -430,17 +483,26 @@ export default function Index() {
         </div>
       </section>
 
+      <SectionDivider />
+
       {/* Target */}
-      <section className="py-20 px-4">
-        <div className="container mx-auto max-w-3xl">
-          <h2 className="font-display text-3xl md:text-4xl font-bold text-center mb-10 tracking-tight">{t("home.target_title")}</h2>
-          <div className="grid sm:grid-cols-2 gap-5">
+      <section className="py-28 md:py-32 px-4">
+        <div className="container mx-auto max-w-4xl">
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="font-display text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-16 tracking-tight"
+          >
+            {t("home.target_title")}
+          </motion.h2>
+          <div className="grid sm:grid-cols-2 gap-6">
             {[1, 2, 3, 4].map((n, i) => (
               <motion.div key={n} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.5, ease }}
-                className="glass-card-elevated p-7 gradient-border">
-                <div className="text-2xl mb-3">{t(`home.target${n}_emoji`)}</div>
-                <h3 className="font-display font-semibold mb-1">{t(`home.target${n}_label`)}</h3>
+                className="glass-card-elevated p-8 gradient-border">
+                <div className="text-2xl mb-4">{t(`home.target${n}_emoji`)}</div>
+                <h3 className="font-display font-semibold mb-2 text-lg">{t(`home.target${n}_label`)}</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">{t(`home.target${n}_desc`)}</p>
               </motion.div>
             ))}
@@ -448,11 +510,20 @@ export default function Index() {
         </div>
       </section>
 
+      <SectionDivider />
+
       {/* FAQ */}
-      <section className="py-20 px-4">
+      <section className="py-28 md:py-32 px-4">
         <div className="container mx-auto max-w-2xl">
-          <h2 className="font-display text-3xl md:text-4xl font-bold text-center mb-4 tracking-tight">{t("home.faq_title")}</h2>
-          <p className="text-center text-muted-foreground mb-12 text-lg">{t("home.faq_subtitle")}</p>
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="font-display text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-5 tracking-tight"
+          >
+            {t("home.faq_title")}
+          </motion.h2>
+          <p className="text-center text-muted-foreground mb-16 text-lg">{t("home.faq_subtitle")}</p>
           <Accordion type="single" collapsible className="space-y-3">
             {faqKeys.map(n => (
               <AccordionItem key={n} value={`faq-${n}`} className="glass-card-elevated px-6 border-none">
@@ -468,20 +539,22 @@ export default function Index() {
         </div>
       </section>
 
+      <SectionDivider />
+
       {/* CTA */}
-      <section ref={ctaRef} className="py-20 px-4">
+      <section ref={ctaRef} className="py-28 md:py-32 px-4">
         <div className="container mx-auto max-w-2xl">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.7, ease }}
-            className="glass-card-elevated p-14 text-center glow-intense relative overflow-hidden"
+            className="glass-card-elevated p-16 text-center glow-intense relative overflow-hidden"
           >
             {/* Decorative orb */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[200px] ambient-orb" style={{ background: "hsl(265, 90%, 60%)", opacity: 0.1 }} />
-            <h2 className="font-display text-3xl md:text-4xl font-bold mb-4 tracking-tight relative z-10">{t("home.cta_title")}</h2>
-            <p className="text-muted-foreground mb-10 text-lg relative z-10">{t("home.cta_text")}</p>
+            <h2 className="font-display text-3xl md:text-5xl font-bold mb-5 tracking-tight relative z-10">{t("home.cta_title")}</h2>
+            <p className="text-muted-foreground mb-12 text-lg relative z-10">{t("home.cta_text")}</p>
             <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="relative z-10">
               <Button size="lg" className="gradient-bg-premium text-lg px-10 h-14 shimmer-btn rounded-2xl shadow-xl shadow-primary/25" onClick={() => navigate("/signup")}>
                 {t("home.cta_button")}
