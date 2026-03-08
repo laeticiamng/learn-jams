@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import { Music } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { ParallaxOrbs } from "@/components/ParallaxOrbs";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 
