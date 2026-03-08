@@ -32,7 +32,16 @@ export default function Library() {
     const song = songs.find(s => s.id === songId);
     if (!song || !user) return;
     try {
-      await supabase.from("songs").update({ status: "generating" }).eq("id", songId);
+      // Clear error and reset status
+      await supabase.from("songs").update({ 
+        status: "generating",
+        generation_error: null,
+        generation_error_code: null,
+        generation_error_at: null,
+        audio_url: null,
+        suno_task_id: null,
+      } as any).eq("id", songId);
+      // Retry will re-sanitize lyrics inside generate-music edge function
       const { error } = await supabase.functions.invoke("generate-music", {
         body: { songId: song.id, lyrics: song.generated_lyrics || "", style: song.style, title: song.title, language: i18n.language },
       });
