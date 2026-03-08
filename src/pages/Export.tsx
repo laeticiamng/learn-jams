@@ -117,7 +117,7 @@ function generateSCORMHtml(song: Song) {
 
 export default function Export() {
   const { t } = useTranslation();
-  usePageSEO({ title: t("export.title", "LMS Export") + " — StudyBeats", noindex: true });
+  usePageSEO({ title: t("export.title", "LMS Export") + " — StudyBeats", description: t("export.subtitle", "Generate SCORM packages for LMS"), noindex: true });
   const { user } = useAuth();
   const navigate = useNavigate();
 

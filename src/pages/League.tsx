@@ -44,7 +44,7 @@ const rankColors = ["text-amber-400", "text-zinc-300", "text-amber-600"];
 
 export default function League() {
   const { t } = useTranslation();
-  usePageSEO({ title: t("league.title", "European League") + " — StudyBeats", noindex: true });
+  usePageSEO({ title: t("league.title", "European League") + " — StudyBeats", description: t("league.subtitle", "Compete with students across Europe"), noindex: true });
   const { user } = useAuth();
   const navigate = useNavigate();
 

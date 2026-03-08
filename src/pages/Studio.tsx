@@ -41,7 +41,7 @@ interface Participant {
 
 export default function Studio() {
   const { t } = useTranslation();
-  usePageSEO({ title: t("studio.title", "Collaborative Studio") + " — StudyBeats", noindex: true });
+  usePageSEO({ title: t("studio.title", "Collaborative Studio") + " — StudyBeats", description: t("studio.subtitle", "Co-create StudyBeats with up to 8 students"), noindex: true });
   const { user } = useAuth();
   const navigate = useNavigate();
 

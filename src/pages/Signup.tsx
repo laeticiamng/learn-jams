@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Music } from "lucide-react";
+import { Music, GraduationCap } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { toast } from "sonner";
@@ -16,18 +17,30 @@ import { motion } from "framer-motion";
 
 const ease = [0.25, 0.46, 0.45, 0.94] as [number, number, number, number];
 
+const SUBJECTS = [
+  { id: "medicine", emoji: "🩺" },
+  { id: "law", emoji: "⚖️" },
+  { id: "history", emoji: "📜" },
+  { id: "languages", emoji: "🌍" },
+  { id: "sciences", emoji: "🔬" },
+  { id: "engineering", emoji: "⚙️" },
+  { id: "business", emoji: "📊" },
+  { id: "arts", emoji: "🎨" },
+  { id: "other", emoji: "📚" },
+];
+
 export default function Signup() {
   const { t } = useTranslation();
   usePageSEO({ title: t("auth.signup_title"), description: t("auth.signup_subtitle"), canonical: "/signup" });
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [fieldOfStudy, setFieldOfStudy] = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const { signUp, user } = useAuth();
   const navigate = useNavigate();
 
-  // Redirect if already authenticated
   useEffect(() => {
     if (user) navigate("/create", { replace: true });
   }, [user, navigate]);
@@ -83,6 +96,31 @@ export default function Signup() {
             <Input id="name" placeholder={t("auth.name_placeholder")} value={displayName} onChange={(e) => setDisplayName(e.target.value)} required
               className="bg-muted/15 border-border/20 h-11 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all duration-300" />
           </div>
+
+          {/* Subject Selector */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium flex items-center gap-2">
+              <GraduationCap className="w-4 h-4 text-primary" />
+              {t("auth.field_of_study", "Field of study")}
+            </Label>
+            <Select value={fieldOfStudy} onValueChange={setFieldOfStudy}>
+              <SelectTrigger className="bg-muted/15 border-border/20 h-11 rounded-xl">
+                <SelectValue placeholder={t("auth.field_placeholder", "Choose your field...")} />
+              </SelectTrigger>
+              <SelectContent>
+                {SUBJECTS.map(s => (
+                  <SelectItem key={s.id} value={s.id}>
+                    <span className="flex items-center gap-2">
+                      <span>{s.emoji}</span>
+                      <span>{t(`subjects.${s.id}`, s.id)}</span>
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-[11px] text-muted-foreground">{t("auth.field_hint", "This helps the AI adapt content to your field")}</p>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="email" className="text-sm font-medium">{t("auth.email")}</Label>
             <Input id="email" type="email" placeholder={t("auth.email_placeholder")} value={email} onChange={(e) => setEmail(e.target.value)} required

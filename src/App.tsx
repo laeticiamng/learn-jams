@@ -16,6 +16,9 @@ import Library from "./pages/Library";
 import Player from "./pages/Player";
 import Quiz from "./pages/Quiz";
 import Profile from "./pages/Profile";
+import Studio from "./pages/Studio";
+import League from "./pages/League";
+import Export from "./pages/Export";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import Contact from "./pages/Contact";
@@ -50,6 +53,9 @@ const App = () => (
             <Route path="/player/:id" element={<ProtectedRoute><Player /></ProtectedRoute>} />
             <Route path="/quiz/:id" element={<ProtectedRoute><Quiz /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/studio" element={<ProtectedRoute><Studio /></ProtectedRoute>} />
+            <Route path="/league" element={<ProtectedRoute><League /></ProtectedRoute>} />
+            <Route path="/export" element={<ProtectedRoute><Export /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <CookieConsent />

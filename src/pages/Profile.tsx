@@ -4,7 +4,8 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Save, Loader2, Trash2, CreditCard, ArrowLeft } from "lucide-react";
+import { Save, Loader2, Trash2, CreditCard, ArrowLeft, GraduationCap, Globe, BookOpen } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import { useAuth } from "@/hooks/useAuth";
@@ -16,6 +17,18 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 const ease = [0.25, 0.46, 0.45, 0.94] as [number, number, number, number];
 
+const SUBJECTS = [
+  { id: "medicine", emoji: "🩺" },
+  { id: "law", emoji: "⚖️" },
+  { id: "history", emoji: "📜" },
+  { id: "languages", emoji: "🌍" },
+  { id: "sciences", emoji: "🔬" },
+  { id: "engineering", emoji: "⚙️" },
+  { id: "business", emoji: "📊" },
+  { id: "arts", emoji: "🎨" },
+  { id: "other", emoji: "📚" },
+];
+
 export default function Profile() {
   const { t } = useTranslation();
   usePageSEO({ title: t("profile.title"), description: t("profile.title"), noindex: true });
@@ -23,6 +36,8 @@ export default function Profile() {
   const navigate = useNavigate();
   const [displayName, setDisplayName] = useState("");
   const [fieldOfStudy, setFieldOfStudy] = useState("");
+  const [university, setUniversity] = useState("");
+  const [country, setCountry] = useState("");
   const [songCount, setSongCount] = useState(0);
   const [favCount, setFavCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -39,7 +54,12 @@ export default function Profile() {
         supabase.from("favorites").select("id", { count: "exact" }).eq("user_id", user.id),
         supabase.from("subscriptions").select("status").eq("user_id", user.id).maybeSingle(),
       ]);
-      if (profileRes.data) { setDisplayName(profileRes.data.display_name || ""); setFieldOfStudy(profileRes.data.field_of_study || ""); }
+      if (profileRes.data) {
+        setDisplayName(profileRes.data.display_name || "");
+        setFieldOfStudy(profileRes.data.field_of_study || "");
+        setUniversity((profileRes.data as any).university || "");
+        setCountry((profileRes.data as any).country || "");
+      }
       setSongCount(songsRes.count || 0);
       setFavCount(favsRes.count || 0);
       setIsPro(subRes.data?.status === "active");
@@ -51,7 +71,12 @@ export default function Profile() {
   const handleSave = async () => {
     if (!user) return;
     setSaving(true);
-    const { error } = await supabase.from("profiles").update({ display_name: displayName, field_of_study: fieldOfStudy }).eq("user_id", user.id);
+    const { error } = await supabase.from("profiles").update({
+      display_name: displayName,
+      field_of_study: fieldOfStudy,
+      university: university || null,
+      country: country || null,
+    } as any).eq("user_id", user.id);
     setSaving(false);
     if (error) toast.error(error.message);
     else toast.success(t("profile.saved"));
@@ -102,10 +127,7 @@ export default function Profile() {
 
       <Navbar />
       <div className="container mx-auto pt-28 pb-16 px-4 max-w-lg relative z-10">
-        <motion.div
-          initial={{ opacity: 0, x: -10 }}
-          animate={{ opacity: 1, x: 0 }}
-        >
+        <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}>
           <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="gap-2 mb-6 rounded-xl hover:bg-muted/30 text-muted-foreground">
             <ArrowLeft className="w-4 h-4" /> {t("common.back", "Retour")}
           </Button>
@@ -155,11 +177,58 @@ export default function Profile() {
             <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)}
               className="bg-muted/15 border-border/20 h-11 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all duration-300" />
           </div>
+
+          {/* Field of study selector */}
           <div className="space-y-2">
-            <Label className="text-sm font-medium">{t("profile.field_of_study")}</Label>
-            <Input placeholder={t("profile.field_placeholder")} value={fieldOfStudy} onChange={(e) => setFieldOfStudy(e.target.value)}
-              className="bg-muted/15 border-border/20 h-11 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all duration-300" />
+            <Label className="text-sm font-medium flex items-center gap-2">
+              <GraduationCap className="w-4 h-4 text-primary" />
+              {t("profile.field_of_study")}
+            </Label>
+            <Select value={fieldOfStudy} onValueChange={setFieldOfStudy}>
+              <SelectTrigger className="bg-muted/15 border-border/20 h-11 rounded-xl">
+                <SelectValue placeholder={t("profile.field_placeholder")} />
+              </SelectTrigger>
+              <SelectContent>
+                {SUBJECTS.map(s => (
+                  <SelectItem key={s.id} value={s.id}>
+                    <span className="flex items-center gap-2">
+                      <span>{s.emoji}</span>
+                      <span>{t(`subjects.${s.id}`, s.id)}</span>
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
+
+          {/* University */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium flex items-center gap-2">
+              <BookOpen className="w-4 h-4 text-primary" />
+              {t("profile.university", "University")}
+            </Label>
+            <Input
+              placeholder={t("profile.university_placeholder", "E.g.: Sorbonne, TUM, Oxford...")}
+              value={university}
+              onChange={(e) => setUniversity(e.target.value)}
+              className="bg-muted/15 border-border/20 h-11 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all duration-300"
+            />
+          </div>
+
+          {/* Country */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium flex items-center gap-2">
+              <Globe className="w-4 h-4 text-primary" />
+              {t("profile.country", "Country")}
+            </Label>
+            <Input
+              placeholder={t("profile.country_placeholder", "E.g.: France, Germany, UK...")}
+              value={country}
+              onChange={(e) => setCountry(e.target.value)}
+              className="bg-muted/15 border-border/20 h-11 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all duration-300"
+            />
+          </div>
+
           <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
             <Button onClick={handleSave} className="w-full gradient-bg-premium gap-2 h-12 rounded-xl shadow-lg shadow-primary/20" disabled={saving}>
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} {saving ? t("profile.saving") : t("profile.save")}
