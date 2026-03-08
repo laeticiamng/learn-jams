@@ -601,8 +601,8 @@ export default function Index() {
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
             className="fixed bottom-0 left-0 right-0 z-40 md:hidden p-3 bg-background/85 backdrop-blur-2xl border-t border-border/20"
           >
-            <Button className="w-full gradient-bg-premium h-12 text-base font-semibold shimmer-btn rounded-xl shadow-lg shadow-primary/20" onClick={() => navigate("/signup")}>
-              {t("home.sticky_cta")} <ArrowRight className="w-4 h-4 ml-2" />
+            <Button className="w-full gradient-bg-premium h-12 text-base font-semibold shimmer-btn rounded-xl shadow-lg shadow-primary/20" onClick={() => navigate(user ? "/create" : "/signup")}>
+              {user ? t("home.cta_create", "Create a song") : t("home.sticky_cta")} <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </motion.div>
         )}

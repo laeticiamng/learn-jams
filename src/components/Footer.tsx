@@ -1,9 +1,11 @@
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Music } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Footer() {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const year = new Date().getFullYear();
 
   return (
@@ -25,8 +27,17 @@ export default function Footer() {
             <ul className="space-y-2.5 text-sm text-muted-foreground">
               <li><Link to="/about" className="hover:text-foreground transition-colors duration-300">{t("footer.about")}</Link></li>
               <li><Link to="/pricing" className="hover:text-foreground transition-colors duration-300">{t("nav.pricing")}</Link></li>
-              <li><Link to="/signup" className="hover:text-foreground transition-colors duration-300">{t("footer.signup")}</Link></li>
-              <li><Link to="/login" className="hover:text-foreground transition-colors duration-300">{t("footer.login")}</Link></li>
+              {user ? (
+                <>
+                  <li><Link to="/create" className="hover:text-foreground transition-colors duration-300">{t("nav.create")}</Link></li>
+                  <li><Link to="/library" className="hover:text-foreground transition-colors duration-300">{t("nav.library")}</Link></li>
+                </>
+              ) : (
+                <>
+                  <li><Link to="/signup" className="hover:text-foreground transition-colors duration-300">{t("footer.signup")}</Link></li>
+                  <li><Link to="/login" className="hover:text-foreground transition-colors duration-300">{t("footer.login")}</Link></li>
+                </>
+              )}
               <li><Link to="/contact" className="hover:text-foreground transition-colors duration-300">{t("footer.contact")}</Link></li>
             </ul>
           </nav>
