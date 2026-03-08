@@ -154,7 +154,7 @@ serve(async (req) => {
     }
 
     if (!SUNO_API_KEY) {
-      log("DEMO", "No Suno API key, saving as ready without audio", { songId });
+      log("info", "demo_mode", { song_id: songId });
       await supabase.from("songs").update({
         status: "ready",
         generated_lyrics: lyrics,
