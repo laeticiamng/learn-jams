@@ -56,12 +56,28 @@ export default function Profile() {
 
   const handleDeleteAccount = async () => {
     if (!user) return;
-    await supabase.from("favorites").delete().eq("user_id", user.id);
-    await supabase.from("songs").delete().eq("user_id", user.id);
-    await supabase.from("profiles").delete().eq("user_id", user.id);
-    await signOut();
-    toast.success(t("profile.deleted"));
-    navigate("/");
+    try {
+      const { error } = await supabase.functions.invoke("delete-account");
+      if (error) throw error;
+      await signOut();
+      toast.success(t("profile.deleted"));
+      navigate("/");
+    } catch (err: any) {
+      toast.error(err.message || t("common.error"));
+    }
+  };
+
+  const handleManageSubscription = async () => {
+    setManagingSubscription(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("customer-portal");
+      if (error) throw error;
+      if (data?.url) window.open(data.url, "_blank");
+    } catch (err: any) {
+      toast.error(err.message || t("common.error"));
+    } finally {
+      setManagingSubscription(false);
+    }
   };
 
   if (loading) return (
