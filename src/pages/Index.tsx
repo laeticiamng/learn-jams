@@ -356,6 +356,12 @@ export default function Index() {
                 {t("home.before_text")}
               </div>
             </motion.div>
+            {/* Arrow between cards on mobile */}
+            <div className="flex justify-center md:hidden -my-1 relative z-10">
+              <div className="w-10 h-10 rounded-full gradient-bg-premium flex items-center justify-center shadow-lg shadow-primary/20">
+                <ArrowRight className="w-5 h-5 text-primary-foreground rotate-90" />
+              </div>
+            </div>
             <motion.div initial={{ opacity: 0, x: 24 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
               transition={{ delay: 0.15, duration: 0.6, ease }}
               className="glass-card-elevated p-8 sm:p-10 relative glow-intense">

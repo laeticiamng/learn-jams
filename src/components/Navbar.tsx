@@ -85,6 +85,13 @@ export default function Navbar() {
 
         {/* Mobile */}
         <div className="flex md:hidden items-center gap-2">
+          <button
+            onClick={() => document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }))}
+            className="flex items-center justify-center w-9 h-9 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-all"
+            aria-label={t("command.search_placeholder", "Search…")}
+          >
+            <Search className="w-4 h-4" />
+          </button>
           <LanguageSelector />
           {user && <NotificationBell />}
           <Sheet open={open} onOpenChange={setOpen}>
