@@ -6,8 +6,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const log = (tag: string, msg: string, data?: Record<string, unknown>) => {
-  console.log(`[poll-suno] ${tag}: ${msg}${data ? " " + JSON.stringify(data) : ""}`);
+const log = (level: "info" | "warn" | "error", step: string, data?: Record<string, unknown>) => {
+  console.log(JSON.stringify({ fn: "poll-suno-status", level, step, ts: new Date().toISOString(), ...data }));
 };
 
 serve(async (req) => {
@@ -76,7 +76,7 @@ serve(async (req) => {
     }
 
     if (song.status !== "generating" || !song.suno_task_id) {
-      log("SKIP", "No polling needed", { songId, status: song.status, hasTaskId: !!song.suno_task_id });
+      log("info", "skip_no_polling", { song_id: songId, status: song.status, has_task_id: !!song.suno_task_id });
       return new Response(JSON.stringify({ status: song.status, message: "No polling needed" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -92,14 +92,14 @@ serve(async (req) => {
         generation_error_code: "TIMEOUT",
         generation_error_at: new Date().toISOString(),
       }).eq("id", songId);
-      log("TIMEOUT", "Song timed out", { songId, elapsed: Date.now() - createdAt });
+      log("warn", "timeout", { song_id: songId, elapsed: Date.now() - createdAt });
       return new Response(JSON.stringify({ status: "error", reason: "timeout" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     // Query Suno API for task status
-    log("POLL", "Querying Suno API", { songId, taskId: song.suno_task_id });
+    log("info", "polling_suno", { song_id: songId, task_id: song.suno_task_id });
     const sunoResponse = await fetch(
       `https://api.sunoapi.org/api/v1/generate/record-info?taskId=${song.suno_task_id}`,
       {
@@ -110,7 +110,7 @@ serve(async (req) => {
 
     if (!sunoResponse.ok) {
       const errorText = await sunoResponse.text();
-      log("ERROR", "Suno API error", { songId, status: sunoResponse.status, errorText });
+      log("error", "suno_api_error", { song_id: songId, status: sunoResponse.status, error_text: errorText });
       return new Response(JSON.stringify({ error: "Failed to poll Suno API" }), {
         status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -119,7 +119,7 @@ serve(async (req) => {
     const sunoData = await sunoResponse.json();
     const taskStatus = sunoData.data?.status;
     const tracks = sunoData.data?.response?.sunoData;
-    log("RESPONSE", "Suno API response", { songId, taskId: song.suno_task_id, taskStatus, trackCount: tracks?.length || 0 });
+    log("info", "suno_response", { song_id: songId, task_id: song.suno_task_id, task_status: taskStatus, track_count: tracks?.length || 0 });
 
     // Map Suno status to our status
     if (taskStatus === "SUCCESS" && Array.isArray(tracks) && tracks.length > 0) {
@@ -138,7 +138,7 @@ serve(async (req) => {
         generation_error_code: null,
       }).eq("id", songId);
 
-      log("READY", "Song updated to ready via polling", { songId, hasAudio: !!audioUrl, duration });
+      log("info", "song_ready", { song_id: songId, has_audio: !!audioUrl, duration });
       return new Response(JSON.stringify({ status: "ready", updated: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -158,19 +158,19 @@ serve(async (req) => {
         generation_error_code: taskStatus,
         generation_error_at: new Date().toISOString(),
       }).eq("id", songId);
-      log("ERROR", "Song marked as error", { songId, taskStatus });
+      log("error", "song_error", { song_id: songId, task_status: taskStatus });
       return new Response(JSON.stringify({ status: "error", sunoStatus: taskStatus }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     // Still processing
-    log("PENDING", "Still generating", { songId, taskStatus });
+    log("info", "still_generating", { song_id: songId, task_status: taskStatus });
     return new Response(JSON.stringify({ status: "generating", sunoStatus: taskStatus }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
-    log("FATAL", "Unhandled error", { error: e instanceof Error ? e.message : String(e) });
+    log("error", "unhandled_error", { error: e instanceof Error ? e.message : String(e) });
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

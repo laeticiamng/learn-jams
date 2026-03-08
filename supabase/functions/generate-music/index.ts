@@ -92,10 +92,8 @@ function sanitizeForSuno(text: string): { cleaned: string; replacedCount: number
   return { cleaned, replacedCount: replacedWords.length, replacedWords };
 }
 
-const log = (tag: string, msg: string, data?: Record<string, unknown>) => {
-  const parts = [`[generate-music] ${tag}: ${msg}`];
-  if (data) parts.push(JSON.stringify(data));
-  console.log(parts.join(" "));
+const log = (level: "info" | "warn" | "error", step: string, data?: Record<string, unknown>) => {
+  console.log(JSON.stringify({ fn: "generate-music", level, step, ts: new Date().toISOString(), ...data }));
 };
 
 serve(async (req) => {
@@ -126,7 +124,7 @@ serve(async (req) => {
 
     const { songId, lyrics, style, title, language } = await req.json();
     const userId = claimsData.claims.sub as string;
-    log("START", "Generation requested", { songId, userId, style, lyricsLen: lyrics?.length });
+    log("info", "generation_requested", { song_id: songId, user_id: userId, style, lyrics_len: lyrics?.length });
 
     const SUNO_API_KEY = Deno.env.get("SUNO_API_KEY");
     
@@ -142,21 +140,21 @@ serve(async (req) => {
       .single();
 
     if (ownerError || !songOwner) {
-      log("ERROR", "Song not found", { songId });
+      log("error", "song_not_found", { song_id: songId });
       return new Response(JSON.stringify({ error: "Song not found" }), {
         status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     if (songOwner.user_id !== userId) {
-      log("AUTH", "Ownership check failed", { songId, userId, ownerId: songOwner.user_id });
+      log("error", "ownership_check_failed", { song_id: songId, user_id: userId, owner_id: songOwner.user_id });
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     if (!SUNO_API_KEY) {
-      log("DEMO", "No Suno API key, saving as ready without audio", { songId });
+      log("info", "demo_mode", { song_id: songId });
       await supabase.from("songs").update({
         status: "ready",
         generated_lyrics: lyrics,
@@ -199,7 +197,7 @@ serve(async (req) => {
 
     // Apply centralized sanitizer
     const { cleaned: cleanLyrics, replacedCount, replacedWords } = sanitizeForSuno(lyrics);
-    log("SANITIZE", `Sanitized lyrics`, { songId, replacedCount, replacedWords });
+    log("info", "sanitized_lyrics", { song_id: songId, replaced_count: replacedCount, replaced_words: replacedWords });
 
     const response = await fetch("https://api.sunoapi.org/api/v1/generate", {
       method: "POST",
@@ -220,7 +218,7 @@ serve(async (req) => {
 
     if (!response.ok) {
       const errorText = await response.text();
-      log("ERROR", "Suno API returned error", { songId, status: response.status, errorText });
+      log("error", "suno_api_error", { song_id: songId, status: response.status, error_text: errorText });
       
       // Parse error code if possible
       let errorCode = "SUNO_API_ERROR";
@@ -252,13 +250,13 @@ serve(async (req) => {
       generation_error_at: null,
     }).eq("id", songId);
 
-    log("SUCCESS", "Suno task created", { songId, taskId });
+    log("info", "suno_task_created", { song_id: songId, task_id: taskId });
 
     return new Response(JSON.stringify({ success: true, taskId }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
-    log("FATAL", "Unhandled error", { error: e instanceof Error ? e.message : String(e) });
+    log("error", "unhandled_error", { error: e instanceof Error ? e.message : String(e) });
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

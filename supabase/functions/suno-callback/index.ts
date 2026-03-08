@@ -6,8 +6,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const log = (tag: string, msg: string, data?: Record<string, unknown>) => {
-  console.log(`[suno-callback] ${tag}: ${msg}${data ? " " + JSON.stringify(data) : ""}`);
+const log = (level: "info" | "warn" | "error", step: string, data?: Record<string, unknown>) => {
+  console.log(JSON.stringify({ fn: "suno-callback", level, step, ts: new Date().toISOString(), ...data }));
 };
 
 serve(async (req) => {
@@ -23,14 +23,14 @@ serve(async (req) => {
     // Validate callback secret
     const expectedSecret = Deno.env.get("SUNO_CALLBACK_SECRET");
     if (expectedSecret && secret !== expectedSecret) {
-      log("AUTH", "Invalid callback secret", { songId });
+      log("error", "invalid_callback_secret", { song_id: songId });
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const body = await req.json();
-    log("RECEIVED", "Callback payload", { songId, code: body.code, callbackType: body.data?.callbackType });
+    log("info", "callback_received", { song_id: songId, code: body.code, callback_type: body.data?.callbackType });
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -44,7 +44,7 @@ serve(async (req) => {
     if (code !== 200 || callbackType === "error") {
       const errorMsg = body.msg || body.data?.msg || "Unknown Suno error";
       const errorCode = body.data?.errorCode || `HTTP_${code}`;
-      log("ERROR", "Error callback received", { songId, errorCode, errorMsg });
+      log("error", "error_callback", { song_id: songId, error_code: errorCode, error_msg: errorMsg });
 
       await supabase.from("songs").update({ 
         status: "error",
@@ -60,7 +60,7 @@ serve(async (req) => {
 
     // Handle "text" stage — lyrics generated, music still processing
     if (callbackType === "text") {
-      log("STAGE", "Text stage received, still generating music", { songId });
+      log("info", "text_stage", { song_id: songId });
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -87,16 +87,16 @@ serve(async (req) => {
         updateData.generation_error = "Complete callback but no audio URL";
         updateData.generation_error_code = "NO_AUDIO_URL";
         updateData.generation_error_at = new Date().toISOString();
-        log("ERROR", "Complete but no audio_url", { songId });
+        log("error", "complete_no_audio", { song_id: songId });
       }
 
       await supabase.from("songs").update(updateData).eq("id", songId);
-      log("UPDATE", `Song updated via ${callbackType}`, { 
-        songId, 
+      log("info", "song_updated", { 
+        song_id: songId, 
         status: updateData.status, 
-        isFinal: updateData.is_final_quality, 
-        hasAudio: !!audioUrl, 
-        hasCover: !!coverUrl, 
+        is_final: updateData.is_final_quality, 
+        has_audio: !!audioUrl, 
+        has_cover: !!coverUrl, 
         duration 
       });
     }
@@ -105,7 +105,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
-    log("FATAL", "Unhandled error", { error: e instanceof Error ? e.message : String(e) });
+    log("error", "unhandled_error", { error: e instanceof Error ? e.message : String(e) });
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
