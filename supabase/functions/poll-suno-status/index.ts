@@ -110,7 +110,7 @@ serve(async (req) => {
 
     if (!sunoResponse.ok) {
       const errorText = await sunoResponse.text();
-      log("ERROR", "Suno API error", { songId, status: sunoResponse.status, errorText });
+      log("error", "suno_api_error", { song_id: songId, status: sunoResponse.status, error_text: errorText });
       return new Response(JSON.stringify({ error: "Failed to poll Suno API" }), {
         status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
