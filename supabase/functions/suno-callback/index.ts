@@ -6,8 +6,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const log = (tag: string, msg: string, data?: Record<string, unknown>) => {
-  console.log(`[suno-callback] ${tag}: ${msg}${data ? " " + JSON.stringify(data) : ""}`);
+const log = (level: "info" | "warn" | "error", step: string, data?: Record<string, unknown>) => {
+  console.log(JSON.stringify({ fn: "suno-callback", level, step, ts: new Date().toISOString(), ...data }));
 };
 
 serve(async (req) => {

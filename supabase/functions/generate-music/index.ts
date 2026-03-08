@@ -92,10 +92,8 @@ function sanitizeForSuno(text: string): { cleaned: string; replacedCount: number
   return { cleaned, replacedCount: replacedWords.length, replacedWords };
 }
 
-const log = (tag: string, msg: string, data?: Record<string, unknown>) => {
-  const parts = [`[generate-music] ${tag}: ${msg}`];
-  if (data) parts.push(JSON.stringify(data));
-  console.log(parts.join(" "));
+const log = (level: "info" | "warn" | "error", step: string, data?: Record<string, unknown>) => {
+  console.log(JSON.stringify({ fn: "generate-music", level, step, ts: new Date().toISOString(), ...data }));
 };
 
 serve(async (req) => {

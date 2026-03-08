@@ -6,8 +6,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const log = (tag: string, msg: string, data?: Record<string, unknown>) => {
-  console.log(`[poll-suno] ${tag}: ${msg}${data ? " " + JSON.stringify(data) : ""}`);
+const log = (level: "info" | "warn" | "error", step: string, data?: Record<string, unknown>) => {
+  console.log(JSON.stringify({ fn: "poll-suno-status", level, step, ts: new Date().toISOString(), ...data }));
 };
 
 serve(async (req) => {
