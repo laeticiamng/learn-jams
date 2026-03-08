@@ -149,7 +149,7 @@
     "success_password_updated": "Mot de passe mis à jour !"
   },
   "create": {
-    "step_upload": "Upload",
+    "step_upload": "Import",
     "step_style": "Style",
     "step_generate": "Génération",
     "upload_title": "Upload ton cours 📚",
