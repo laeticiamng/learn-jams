@@ -165,7 +165,7 @@ serve(async (req) => {
     }
 
     // Still processing
-    log("PENDING", "Still generating", { songId, taskStatus });
+    log("info", "still_generating", { song_id: songId, task_status: taskStatus });
     return new Response(JSON.stringify({ status: "generating", sunoStatus: taskStatus }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
