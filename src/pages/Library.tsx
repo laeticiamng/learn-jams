@@ -23,6 +23,26 @@ export default function Library() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const { songs, favorites, loading, toggleFavorite } = useSongs(user?.id);
+  const { i18n } = useTranslation();
+
+  const handleRetry = useCallback(async (songId: string) => {
+    const song = songs.find(s => s.id === songId);
+    if (!song || !user) return;
+    
+    try {
+      // Reset status to generating
+      await supabase.from("songs").update({ status: "generating" } as any).eq("id", songId);
+      
+      // Re-invoke generate-music
+      const { error } = await supabase.functions.invoke("generate-music", {
+        body: { songId: song.id, lyrics: (song as any).generated_lyrics || "", style: song.style, title: song.title, language: i18n.language },
+      });
+      if (error) throw error;
+      toast.success(t("library.retry_started", "Generation restarted"));
+    } catch (err: any) {
+      toast.error(err.message || "Retry failed");
+    }
+  }, [songs, user, i18n.language, t]);
 
   const filtered = songs.filter(
     (s) =>
