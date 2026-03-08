@@ -121,9 +121,8 @@ export default function Signup() {
           {t("auth.has_account")} <Link to="/login" className="text-primary hover:underline font-medium transition-colors">{t("auth.login_link")}</Link>
         </p>
       </motion.div>
-      <div className="fixed bottom-0 left-0 right-0 z-10">
-        <Footer />
       </div>
+      <Footer />
     </div>
   );
 }

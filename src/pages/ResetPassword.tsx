@@ -78,9 +78,8 @@ export default function ResetPassword() {
           </motion.div>
         </form>
       </motion.div>
-      <div className="fixed bottom-0 left-0 right-0 z-10">
-        <Footer />
       </div>
+      <Footer />
     </div>
   );
 }
