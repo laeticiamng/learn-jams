@@ -252,12 +252,15 @@ export default function Index() {
               </motion.div>
             </div>
             {!user && (
-              <button
-                onClick={() => navigate("/login")}
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors underline-offset-4 hover:underline mb-12 inline-block"
-              >
-                {t("home.cta_login")}
-              </button>
+              <div className="flex flex-col items-center gap-2 mb-12">
+                <p className="text-xs text-muted-foreground">{t("home.free_hint")}</p>
+                <button
+                  onClick={() => navigate("/login")}
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors underline-offset-4 hover:underline inline-block"
+                >
+                  {t("home.cta_login")}
+                </button>
+              </div>
             )}
 
             {/* Social proof */}

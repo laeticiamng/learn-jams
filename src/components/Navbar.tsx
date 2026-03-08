@@ -76,6 +76,8 @@ export default function Navbar() {
             <>
               <Button variant="ghost" size="sm" onClick={() => navigate("/pricing")}
                 className={navButtonClass("/pricing")}>{t("nav.pricing")}</Button>
+              <Button variant="ghost" size="sm" onClick={() => navigate("/about")}
+                className={navButtonClass("/about")}>{t("footer.about")}</Button>
               <Button variant="ghost" size="sm" onClick={() => navigate("/login")}
                 className={navButtonClass("/login")}>{t("nav.login")}</Button>
               <Button size="sm" className="gradient-bg-premium rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
