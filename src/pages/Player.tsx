@@ -133,9 +133,9 @@ export default function Player() {
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Immersive ambient background */}
-      <div className="fixed inset-0 pointer-events-none" style={{ background: "var(--gradient-glow)" }} />
-      <div className="fixed inset-0 pointer-events-none" style={{ background: "var(--gradient-mesh)" }} />
-      <div className={`fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] pointer-events-none ambient-orb bg-gradient-to-b ${gradient}`} style={{ opacity: 0.08 }} />
+      <ParallaxOrbs glow orbs={[
+        { className: `fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] pointer-events-none ambient-orb bg-gradient-to-b ${gradient}`, style: { opacity: 0.08 } },
+      ]} />
 
       {hasAudio && <audio ref={audioRef} src={song.audio_url!} preload="metadata" crossOrigin="anonymous" />}
 

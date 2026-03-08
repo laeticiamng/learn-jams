@@ -133,9 +133,10 @@ export default function Create() {
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Ambient */}
-      <div className="fixed inset-0 pointer-events-none" style={{ background: "var(--gradient-mesh)" }} />
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] pointer-events-none ambient-orb" style={{ background: "hsl(265, 90%, 60%)", opacity: 0.08 }} />
-      <div className="fixed bottom-20 right-1/4 w-[400px] h-[300px] pointer-events-none ambient-orb" style={{ background: "hsl(300, 70%, 50%)", animationDelay: "4s", opacity: 0.06 }} />
+      <ParallaxOrbs orbs={[
+        { className: "fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] pointer-events-none ambient-orb", style: { background: "hsl(265, 90%, 60%)", opacity: 0.08 } },
+        { className: "fixed bottom-20 right-1/4 w-[400px] h-[300px] pointer-events-none ambient-orb", style: { background: "hsl(300, 70%, 50%)", animationDelay: "4s", opacity: 0.06 } },
+      ]} />
 
       <Navbar />
 
