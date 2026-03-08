@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { ParallaxOrbs } from "@/components/ParallaxOrbs";
 import { useTranslation } from "react-i18next";
+import { sanitizeHtml } from "@/lib/sanitize";
 import { Music, Target, Heart, Lightbulb, Users, Brain, Repeat, Timer, Dumbbell, Linkedin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { usePageSEO } from "@/hooks/usePageSEO";
