@@ -115,6 +115,7 @@ export default function NotificationBell() {
                     <p className="text-[10px] text-muted-foreground/60 mt-1">
                       {formatDistanceToNow(new Date(notif.created_at), {
                         addSuffix: true,
+                        locale: dateFnsLocale,
                       })}
                     </p>
                   </div>
