@@ -215,6 +215,7 @@ export default function Create() {
                     placeholder={t("create.title_placeholder")}
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
+                    maxLength={100}
                     className="bg-muted/20 border-border/20 h-12 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all duration-300"
                   />
                 </div>
@@ -224,6 +225,7 @@ export default function Create() {
                     placeholder={t("create.subject_placeholder")}
                     value={subject}
                     onChange={(e) => setSubject(e.target.value)}
+                    maxLength={100}
                     className="bg-muted/20 border-border/20 h-12 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all duration-300"
                   />
                 </div>

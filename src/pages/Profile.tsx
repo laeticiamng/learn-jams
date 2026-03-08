@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Save, Loader2, Trash2 } from "lucide-react";
+import { Save, Loader2, Trash2, CreditCard } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,18 +24,22 @@ export default function Profile() {
   const [favCount, setFavCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [isPro, setIsPro] = useState(false);
+  const [managingSubscription, setManagingSubscription] = useState(false);
 
   useEffect(() => {
     if (!user) return;
     const fetchData = async () => {
-      const [profileRes, songsRes, favsRes] = await Promise.all([
+      const [profileRes, songsRes, favsRes, subRes] = await Promise.all([
         supabase.from("profiles").select("*").eq("user_id", user.id).single(),
         supabase.from("songs").select("id", { count: "exact" }).eq("user_id", user.id),
         supabase.from("favorites").select("id", { count: "exact" }).eq("user_id", user.id),
+        supabase.from("subscriptions").select("status").eq("user_id", user.id).maybeSingle(),
       ]);
       if (profileRes.data) { setDisplayName(profileRes.data.display_name || ""); setFieldOfStudy(profileRes.data.field_of_study || ""); }
       setSongCount(songsRes.count || 0);
       setFavCount(favsRes.count || 0);
+      setIsPro(subRes.data?.status === "active");
       setLoading(false);
     };
     fetchData();
@@ -52,12 +56,28 @@ export default function Profile() {
 
   const handleDeleteAccount = async () => {
     if (!user) return;
-    await supabase.from("favorites").delete().eq("user_id", user.id);
-    await supabase.from("songs").delete().eq("user_id", user.id);
-    await supabase.from("profiles").delete().eq("user_id", user.id);
-    await signOut();
-    toast.success(t("profile.deleted"));
-    navigate("/");
+    try {
+      const { error } = await supabase.functions.invoke("delete-account");
+      if (error) throw error;
+      await signOut();
+      toast.success(t("profile.deleted"));
+      navigate("/");
+    } catch (err: any) {
+      toast.error(err.message || t("common.error"));
+    }
+  };
+
+  const handleManageSubscription = async () => {
+    setManagingSubscription(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("customer-portal");
+      if (error) throw error;
+      if (data?.url) window.open(data.url, "_blank");
+    } catch (err: any) {
+      toast.error(err.message || t("common.error"));
+    } finally {
+      setManagingSubscription(false);
+    }
   };
 
   if (loading) return (
@@ -134,6 +154,25 @@ export default function Profile() {
             </Button>
           </motion.div>
         </motion.div>
+
+        {/* Subscription management */}
+        {isPro && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25, duration: 0.5, ease }}
+            className="glass-card-elevated p-7 mt-6"
+          >
+            <h3 className="font-display font-semibold mb-2">{t("profile.subscription_title", "Abonnement Pro")}</h3>
+            <p className="text-sm text-muted-foreground mb-4">{t("profile.subscription_text", "Gère ton abonnement, change de moyen de paiement ou annule.")}</p>
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <Button onClick={handleManageSubscription} disabled={managingSubscription} className="w-full gap-2 rounded-xl h-11" variant="outline">
+                {managingSubscription ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
+                {t("profile.manage_subscription", "Gérer mon abonnement")}
+              </Button>
+            </motion.div>
+          </motion.div>
+        )}
 
         <motion.div
           initial={{ opacity: 0, y: 16 }}
