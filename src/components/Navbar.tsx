@@ -86,6 +86,7 @@ export default function Navbar() {
         {/* Mobile */}
         <div className="flex md:hidden items-center gap-2">
           <LanguageSelector />
+          {user && <NotificationBell />}
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-xl">

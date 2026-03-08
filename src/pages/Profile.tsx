@@ -129,14 +129,14 @@ export default function Profile() {
           className="glass-card-elevated p-7 mb-6"
         >
           <div className="grid grid-cols-2 gap-6 text-center">
-            <div>
+            <button onClick={() => navigate("/library")} className="group hover:bg-muted/20 rounded-xl p-3 transition-colors">
               <div className="font-display text-3xl font-bold gradient-text">{songCount}</div>
-              <div className="text-xs text-muted-foreground mt-1 uppercase tracking-wider font-medium">{t("profile.songs")}</div>
-            </div>
-            <div>
+              <div className="text-xs text-muted-foreground mt-1 uppercase tracking-wider font-medium group-hover:text-foreground transition-colors">{t("profile.songs")}</div>
+            </button>
+            <button onClick={() => navigate("/library")} className="group hover:bg-muted/20 rounded-xl p-3 transition-colors">
               <div className="font-display text-3xl font-bold gradient-text">{favCount}</div>
-              <div className="text-xs text-muted-foreground mt-1 uppercase tracking-wider font-medium">{t("profile.favorites")}</div>
-            </div>
+              <div className="text-xs text-muted-foreground mt-1 uppercase tracking-wider font-medium group-hover:text-foreground transition-colors">{t("profile.favorites")}</div>
+            </button>
           </div>
         </motion.div>
 

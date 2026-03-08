@@ -76,6 +76,31 @@ export default function Signup() {
             <Label htmlFor="password" className="text-sm font-medium">{t("auth.password")}</Label>
             <Input id="password" type="password" placeholder={t("auth.password_min")} value={password} onChange={(e) => setPassword(e.target.value)} required
               className="bg-muted/15 border-border/20 h-11 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all duration-300" />
+            {password.length > 0 && (
+              <div className="space-y-1.5">
+                <div className="flex gap-1">
+                  {[1, 2, 3, 4].map((level) => (
+                    <div
+                      key={level}
+                      className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
+                        password.length >= level * 3
+                          ? level <= 1 ? "bg-destructive" : level <= 2 ? "bg-amber-500" : level <= 3 ? "bg-primary" : "bg-green-500"
+                          : "bg-muted/30"
+                      }`}
+                    />
+                  ))}
+                </div>
+                <p className={`text-[11px] transition-colors ${
+                  password.length < 6 ? "text-destructive" : password.length < 9 ? "text-amber-500" : "text-green-500"
+                }`}>
+                  {password.length < 6
+                    ? t("auth.password_weak", "Trop court (6 caractères minimum)")
+                    : password.length < 9
+                    ? t("auth.password_medium", "Correct — ajoute des caractères pour plus de sécurité")
+                    : t("auth.password_strong", "Mot de passe solide ✓")}
+                </p>
+              </div>
+            )}
           </div>
           <div className="flex items-start gap-3">
             <Checkbox id="terms" checked={acceptedTerms} onCheckedChange={(checked) => setAcceptedTerms(checked === true)} className="mt-0.5" />
