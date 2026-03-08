@@ -252,19 +252,21 @@ serve(async (req) => {
 
     if (!isProUser) {
       const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
-      const { data: quota } = await supabaseAdmin
-        .from("usage_quotas")
-        .select("songs_generated")
-        .eq("user_id", userId)
-        .eq("month", currentMonth)
-        .maybeSingle();
+      const { data: quotaResult, error: quotaError } = await supabaseAdmin.rpc(
+        "increment_quota_atomic",
+        { p_user_id: userId, p_month: currentMonth, p_limit: FREE_QUOTA }
+      );
 
-      const used = quota?.songs_generated ?? 0;
-      if (used >= FREE_QUOTA) {
-        console.log(`[generate-lyrics] Quota exceeded for user ${userId}: ${used}/${FREE_QUOTA}`);
+      if (quotaError) {
+        console.error("[generate-lyrics] Quota check error:", quotaError);
+        throw new Error("Quota check failed");
+      }
+
+      if (!quotaResult.allowed) {
+        console.log(`[generate-lyrics] Quota exceeded for user ${userId}: ${quotaResult.used}/${FREE_QUOTA}`);
         return new Response(JSON.stringify({ 
           error: "quota_exceeded",
-          used,
+          used: quotaResult.used,
           limit: FREE_QUOTA,
         }), {
           status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
