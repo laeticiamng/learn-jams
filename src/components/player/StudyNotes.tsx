@@ -194,7 +194,7 @@ export function StudyNotes({ metadata, t }: StudyNotesProps) {
 
                     // Default line
                     return (
-                      <p key={i} className="text-foreground/70 text-sm leading-relaxed pl-1">
+                      <p key={i} className="text-foreground/85 text-sm leading-relaxed pl-1">
                         {trimmed}
                       </p>
                     );

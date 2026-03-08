@@ -159,7 +159,7 @@ export default function CourseUploader({ text, onTextChange }: Props) {
           ) : (
             <label className="cursor-pointer space-y-3 block">
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center mx-auto border border-border/20">
-                <Upload className="w-8 h-8 text-muted-foreground/60" />
+                <Upload className="w-8 h-8 text-muted-foreground" />
               </div>
               <p className="font-semibold">
                 {activeTab === "pdf" ? t("create.upload_pdf_label") : t("create.upload_image_label")}
