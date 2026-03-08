@@ -12,16 +12,13 @@ const supabase = createClient(
 );
 
 async function findUserIdByEmail(email: string): Promise<string | null> {
-  // Look up by profile or by Stripe customer metadata first
-  const { data: profiles } = await supabase
-    .from("profiles")
-    .select("user_id")
-    .ilike("display_name", email)
-    .limit(1);
-  
-  // Fallback: use auth admin (still needed for initial checkout)
-  const { data: users } = await supabase.auth.admin.listUsers();
-  const user = users?.users?.find((u) => u.email === email);
+  // Use auth admin to find user by email efficiently
+  const { data: users } = await supabase.auth.admin.listUsers({
+    filter: `email.eq.${email}`,
+    page: 1,
+    perPage: 1,
+  });
+  const user = users?.users?.[0];
   return user?.id || null;
 }
 
