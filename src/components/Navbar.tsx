@@ -54,7 +54,7 @@ export default function Navbar() {
                 {isMac ? "⌘K" : "Ctrl+K"}
               </kbd>
             </button>
-          )
+          )}
           <LanguageSelector />
           {user ? (
             <>
