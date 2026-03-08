@@ -1,5 +1,5 @@
-import { useState, useCallback, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useCallback, useMemo, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { ParallaxOrbs } from "@/components/ParallaxOrbs";
