@@ -60,7 +60,7 @@ serve(async (req) => {
 
     // Handle "text" stage — lyrics generated, music still processing
     if (callbackType === "text") {
-      log("STAGE", "Text stage received, still generating music", { songId });
+      log("info", "text_stage", { song_id: songId });
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
