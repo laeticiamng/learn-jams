@@ -19,7 +19,7 @@ export default function NotificationBell() {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
 
-  const dateFnsLocaleMap: Record<string, Locale> = { fr, de, es, ar, zh: zhCN, hi };
+  const dateFnsLocaleMap: Record<string, typeof fr> = { fr, de, es, ar, zh: zhCN, hi };
   const dateFnsLocale = dateFnsLocaleMap[i18n.language?.substring(0, 2)] || undefined;
 
   const handleClick = (notif: { id: string; song_id: string | null; is_read: boolean }) => {
