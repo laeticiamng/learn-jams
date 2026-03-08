@@ -431,6 +431,7 @@ export default function Create() {
           </div>
         </DialogContent>
       </Dialog>
+      <Footer />
     </div>
   );
 }
