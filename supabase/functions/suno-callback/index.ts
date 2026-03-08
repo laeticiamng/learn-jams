@@ -44,7 +44,7 @@ serve(async (req) => {
     if (code !== 200 || callbackType === "error") {
       const errorMsg = body.msg || body.data?.msg || "Unknown Suno error";
       const errorCode = body.data?.errorCode || `HTTP_${code}`;
-      log("ERROR", "Error callback received", { songId, errorCode, errorMsg });
+      log("error", "error_callback", { song_id: songId, error_code: errorCode, error_msg: errorMsg });
 
       await supabase.from("songs").update({ 
         status: "error",
