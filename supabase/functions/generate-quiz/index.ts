@@ -32,6 +32,7 @@ serve(async (req) => {
       });
     }
 
+    const userId = claimsData.claims.sub as string;
     const { songId } = await req.json();
     if (!songId) {
       return new Response(JSON.stringify({ error: "songId is required" }), {
@@ -46,9 +47,22 @@ serve(async (req) => {
 
     const { data: song, error } = await supabase
       .from("songs")
-      .select("title, original_text, generated_lyrics, style, subject")
+      .select("title, original_text, generated_lyrics, style, subject, user_id")
       .eq("id", songId)
       .single();
+
+    if (error || !song) {
+      return new Response(JSON.stringify({ error: "Song not found" }), {
+        status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Ownership check
+    if (song.user_id !== userId) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     if (error || !song) {
       return new Response(JSON.stringify({ error: "Song not found" }), {
