@@ -218,7 +218,7 @@ serve(async (req) => {
 
     if (!response.ok) {
       const errorText = await response.text();
-      log("ERROR", "Suno API returned error", { songId, status: response.status, errorText });
+      log("error", "suno_api_error", { song_id: songId, status: response.status, error_text: errorText });
       
       // Parse error code if possible
       let errorCode = "SUNO_API_ERROR";
