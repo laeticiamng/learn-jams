@@ -1,12 +1,13 @@
 import { Link } from "react-router-dom";
 import { ParallaxOrbs } from "@/components/ParallaxOrbs";
 import { useTranslation } from "react-i18next";
-import { Music, Target, Heart, Lightbulb, Users, Brain, Repeat, Timer, Dumbbell } from "lucide-react";
+import { Music, Target, Heart, Lightbulb, Users, Brain, Repeat, Timer, Dumbbell, Linkedin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { usePageSEO } from "@/hooks/usePageSEO";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import { motion } from "framer-motion";
+import founderImg from "@/assets/founder-laeticia.png";
 
 const ease = [0.25, 0.46, 0.45, 0.94] as [number, number, number, number];
 
@@ -55,6 +56,40 @@ export default function About() {
         >
           <h2 className="font-display text-xl font-semibold text-foreground mb-4">{t("about.summary_title")}</h2>
           <p className="text-foreground/85 leading-relaxed" dangerouslySetInnerHTML={{ __html: t("about.summary_text") }} />
+        </motion.section>
+
+        {/* Qui sommes-nous / Team */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15, duration: 0.6, ease }}
+          className="glass-card-elevated p-9 mb-8"
+        >
+          <h2 className="font-display text-xl font-semibold text-foreground mb-6">{t("about.team_title")}</h2>
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+            <img
+              src={founderImg}
+              alt="Laëticia Motongane"
+              className="w-28 h-28 rounded-2xl object-cover ring-2 ring-border/20 shadow-lg shrink-0"
+              loading="lazy"
+            />
+            <div className="text-center sm:text-left">
+              <h3 className="font-display text-lg font-semibold">{t("about.founder_name")}</h3>
+              <p className="text-sm text-primary font-medium mb-2">{t("about.founder_role")}</p>
+              <p className="text-sm text-muted-foreground leading-relaxed mb-3">{t("about.founder_bio")}</p>
+              <div className="flex items-center gap-3 justify-center sm:justify-start">
+                <span className="text-xs text-muted-foreground bg-muted/40 px-3 py-1 rounded-full">{t("about.founder_company")}</span>
+                <a
+                  href="https://fr.linkedin.com/in/laeticiamotongane"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline transition-colors"
+                >
+                  <Linkedin className="w-3.5 h-3.5" /> LinkedIn
+                </a>
+              </div>
+            </div>
+          </div>
         </motion.section>
 
         <motion.section

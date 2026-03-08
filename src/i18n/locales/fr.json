@@ -324,7 +324,12 @@
     "value2_title": "Accessibilité", "value2_desc": "L'éducation doit être accessible à tous. StudyBeats est adapté à toutes les filières.",
     "value3_title": "Innovation responsable", "value3_desc": "L'IA comme levier pédagogique, pas comme raccourci. L'objectif est d'aider à comprendre et retenir.",
     "value4_title": "Écoute", "value4_desc": "StudyBeats évolue en fonction des retours des utilisateurs et de la communauté étudiante.",
-    "contact_title": "Une question ?", "contact_text": "N'hésite pas à nous contacter pour toute question, suggestion ou partenariat.", "contact_button": "Nous contacter"
+    "contact_title": "Une question ?", "contact_text": "N'hésite pas à nous contacter pour toute question, suggestion ou partenariat.", "contact_button": "Nous contacter",
+    "team_title": "Qui sommes-nous",
+    "founder_name": "Laëticia Motongane",
+    "founder_role": "Fondatrice & CEO",
+    "founder_bio": "Médecin urgentiste et passionnée d'innovation, Laëticia a fondé StudyBeats pour répondre à un constat simple : les étudiants en médecine passent des heures à relire sans retenir. En combinant neurosciences et IA musicale, elle a créé un outil qui transforme les temps morts en temps de révision.",
+    "founder_company": "EmotionsCare SASU"
   },
   "terms": {
     "title": "Conditions Générales d'Utilisation",
