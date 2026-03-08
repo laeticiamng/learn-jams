@@ -8,6 +8,7 @@ import { ArrowLeft, Brain, CheckCircle2, XCircle, Loader2, RotateCcw, Trophy, Sp
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { ParallaxOrbs } from "@/components/ParallaxOrbs";
 
 interface Question { question: string; options: string[]; correctIndex: number; explanation: string; }
 
@@ -58,19 +59,28 @@ export default function Quiz() {
   const scorePercent = questions.length ? Math.round((score / questions.length) * 100) : 0;
   const scoreEmoji = scorePercent >= 80 ? "🏆" : scorePercent >= 60 ? "👏" : scorePercent >= 40 ? "💪" : "📚";
 
+  const ambientOrbs = (
+    <ParallaxOrbs orbs={[
+      { className: "fixed top-0 left-1/3 w-[600px] h-[400px] pointer-events-none ambient-orb", style: { background: "hsl(265, 90%, 60%)", opacity: 0.1 } },
+      { className: "fixed bottom-20 right-1/4 w-[400px] h-[300px] pointer-events-none ambient-orb", style: { background: "hsl(215, 80%, 55%)", animationDelay: "4s", opacity: 0.08 } },
+    ]} />
+  );
+
   if (loading) return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-4">
-      <Loader2 className="w-10 h-10 animate-spin text-primary" />
-      <p className="text-muted-foreground">{t("quiz.generating")}</p>
-      <p className="text-xs text-muted-foreground">{t("quiz.generating_sub")}</p>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-4 relative overflow-hidden">
+      {ambientOrbs}
+      <Loader2 className="w-10 h-10 animate-spin text-primary relative z-10" />
+      <p className="text-muted-foreground relative z-10">{t("quiz.generating")}</p>
+      <p className="text-xs text-muted-foreground relative z-10">{t("quiz.generating_sub")}</p>
     </div>
   );
 
   if (questions.length === 0) return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-4">
-      <Brain className="w-12 h-12 text-muted-foreground" />
-      <p className="text-muted-foreground">{t("quiz.impossible")}</p>
-      <div className="flex gap-3">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-4 relative overflow-hidden">
+      {ambientOrbs}
+      <Brain className="w-12 h-12 text-muted-foreground relative z-10" />
+      <p className="text-muted-foreground relative z-10">{t("quiz.impossible")}</p>
+      <div className="flex gap-3 relative z-10">
         <Button variant="outline" onClick={() => navigate(`/player/${id}`)}>{t("quiz.back_to_player")}</Button>
         <Button className="gradient-bg" onClick={fetchQuiz}>{t("quiz.retry")}</Button>
       </div>
@@ -78,8 +88,9 @@ export default function Quiz() {
   );
 
   if (finished) return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="glass-card p-8 max-w-md w-full text-center space-y-6">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 relative overflow-hidden">
+      {ambientOrbs}
+      <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="glass-card-elevated p-8 max-w-md w-full text-center space-y-6 relative z-10">
         <div className="text-6xl">{scoreEmoji}</div>
         <h2 className="font-display text-2xl font-bold">{t("quiz.finished")}</h2>
         <div className="space-y-2">
@@ -102,8 +113,10 @@ export default function Quiz() {
   const q = questions[current];
 
   return (
-    <div className="min-h-screen bg-background px-4 py-8">
-      <div className="max-w-2xl mx-auto">
+    <div className="min-h-screen bg-background px-4 py-8 relative overflow-hidden">
+      {ambientOrbs}
+
+      <div className="max-w-2xl mx-auto relative z-10">
         <div className="flex items-center justify-between mb-6">
           <Button variant="ghost" size="sm" onClick={() => navigate(`/player/${id}`)} className="gap-2">
             <ArrowLeft className="w-4 h-4" /> {t("common.back")}
@@ -121,36 +134,54 @@ export default function Quiz() {
 
         <AnimatePresence mode="wait">
           <motion.div key={current} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
-            <div className="glass-card p-6"><h2 className="font-display text-lg font-semibold leading-relaxed">{q.question}</h2></div>
+            {/* Question card - brighter */}
+            <div className="glass-card-elevated p-6 md:p-8">
+              <h2 className="font-display text-lg md:text-xl font-semibold leading-relaxed text-foreground">{q.question}</h2>
+            </div>
+
+            {/* Option cards - lighter background */}
             <div className="space-y-3">
               {q.options.map((option, i) => {
                 const isCorrect = i === q.correctIndex;
                 const isSelected = i === selected;
-                let cls = "glass-card p-4 cursor-pointer transition-all hover:border-primary/30";
+                let cardStyle = "rounded-2xl border p-4 md:p-5 cursor-pointer transition-all duration-300";
+                
                 if (answered) {
-                  if (isCorrect) cls = "glass-card p-4 border-green-500/50 bg-green-500/10";
-                  else if (isSelected && !isCorrect) cls = "glass-card p-4 border-destructive/50 bg-destructive/10";
-                  else cls = "glass-card p-4 opacity-50";
+                  if (isCorrect) cardStyle += " border-green-500/50 bg-green-500/10";
+                  else if (isSelected && !isCorrect) cardStyle += " border-destructive/50 bg-destructive/10";
+                  else cardStyle += " border-border/20 bg-card/40 opacity-50";
+                } else {
+                  cardStyle += " border-border/30 bg-card/60 hover:bg-card/80 hover:border-primary/30";
                 }
+
                 return (
-                  <motion.button key={i} onClick={() => handleSelect(i)} className={`${cls} w-full text-left flex items-center gap-3`} whileTap={!answered ? { scale: 0.98 } : {}}>
-                    <span className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm font-medium shrink-0">{String.fromCharCode(65 + i)}</span>
-                    <span className="flex-1">{option}</span>
+                  <motion.button
+                    key={i}
+                    onClick={() => handleSelect(i)}
+                    className={`${cardStyle} w-full text-left flex items-center gap-4`}
+                    whileHover={!answered ? { scale: 1.01 } : {}}
+                    whileTap={!answered ? { scale: 0.98 } : {}}
+                  >
+                    <span className="w-9 h-9 rounded-full bg-muted/60 flex items-center justify-center text-sm font-semibold text-foreground/70 shrink-0">
+                      {String.fromCharCode(65 + i)}
+                    </span>
+                    <span className="flex-1 text-foreground/90">{option}</span>
                     {answered && isCorrect && <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />}
                     {answered && isSelected && !isCorrect && <XCircle className="w-5 h-5 text-destructive shrink-0" />}
                   </motion.button>
                 );
               })}
             </div>
+
             {answered && (
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-4 border-primary/20 space-y-2">
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-card-elevated p-5 border-primary/20 space-y-2">
                 <div className="flex items-center gap-2 text-sm font-medium text-primary"><Sparkles className="w-4 h-4" /> {t("quiz.explanation")}</div>
                 <p className="text-sm text-muted-foreground leading-relaxed">{q.explanation}</p>
               </motion.div>
             )}
             {answered && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                <Button className="w-full gradient-bg" onClick={handleNext}>
+                <Button className="w-full gradient-bg h-12 text-base" onClick={handleNext}>
                   {current + 1 >= questions.length ? t("quiz.see_results") : t("quiz.next")}
                 </Button>
               </motion.div>
