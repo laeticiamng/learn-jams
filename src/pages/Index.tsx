@@ -490,8 +490,6 @@ export default function Index() {
 
       <SectionDivider />
 
-      <SectionDivider />
-
       {/* FAQ */}
       <section className="py-28 md:py-32 px-4">
         <div className="container mx-auto max-w-2xl">
