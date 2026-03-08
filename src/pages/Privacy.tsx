@@ -23,7 +23,7 @@ export default function Privacy() {
           <div className="w-10 h-10 rounded-xl gradient-bg-premium flex items-center justify-center shadow-lg shadow-primary/15"><Music className="w-6 h-6 text-primary-foreground" /></div>
           <h1 className="font-display text-3xl font-bold">{t("privacy.title")}</h1>
         </div>
-        <div className="glass-card-elevated p-8 space-y-6 text-foreground/80 leading-relaxed">
+        <div className="glass-card-elevated p-8 space-y-6 text-foreground/85 leading-relaxed">
           <p className="text-sm text-muted-foreground">{t("privacy.last_updated")}</p>
           {sections.map(n => (
             <section key={n} className="space-y-3">

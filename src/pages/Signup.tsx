@@ -27,6 +27,14 @@ export default function Signup() {
   const { signUp } = useAuth();
   const navigate = useNavigate();
 
+  const humanizeError = (message: string): string => {
+    if (message.includes("already registered") || message.includes("already been registered")) return t("auth.error_already_registered", "Cette adresse e-mail est déjà utilisée.");
+    if (message.includes("Password should be")) return t("auth.error_password_min");
+    if (message.includes("valid email")) return t("auth.error_invalid_email", "Adresse e-mail invalide.");
+    if (message.includes("Too many requests")) return t("auth.error_too_many_requests", "Trop de tentatives. Réessaie dans quelques minutes.");
+    return message;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!acceptedTerms) { toast.error(t("auth.error_accept_terms")); return; }
@@ -34,7 +42,7 @@ export default function Signup() {
     setLoading(true);
     const { error } = await signUp(email, password, displayName);
     setLoading(false);
-    if (error) toast.error(error.message);
+    if (error) toast.error(humanizeError(error.message));
     else { toast.success(t("auth.success_signup")); navigate("/login"); }
   };
 

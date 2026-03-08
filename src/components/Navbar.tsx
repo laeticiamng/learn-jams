@@ -128,6 +128,8 @@ export default function Navbar() {
                 ) : (
                   <>
                     <Button variant="ghost" className="justify-start rounded-xl h-12" onClick={() => go("/pricing")}>{t("nav.pricing")}</Button>
+                    <Button variant="ghost" className="justify-start rounded-xl h-12 text-muted-foreground" onClick={() => go("/about")}>{t("footer.about")}</Button>
+                    <div className="h-px bg-border/20 my-2" />
                     <Button variant="ghost" className="justify-start rounded-xl h-12" onClick={() => go("/login")}>{t("nav.login")}</Button>
                     <Button className="gradient-bg-premium mt-3 rounded-xl h-12 shadow-lg shadow-primary/20" onClick={() => go("/signup")}>{t("nav.signup")}</Button>
                   </>
