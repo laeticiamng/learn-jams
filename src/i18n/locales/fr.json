@@ -206,7 +206,7 @@
     "pro_quality": "Qualité Pro"
   },
   "library": {
-    "title": "Ma bibliothèque 🎵",
+    "title": "Ma bibliothèque",
     "songs_count": "{{count}} chanson",
     "songs_count_plural": "{{count}} chansons",
     "new_song": "Nouvelle chanson",
