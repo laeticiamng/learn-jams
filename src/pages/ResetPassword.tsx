@@ -50,6 +50,7 @@ export default function ResetPassword() {
       <div className="flex-1 flex items-center justify-center">
         <p className="text-muted-foreground">{t("auth.invalid_recovery_link", "Redirection…")}</p>
       </div>
+      <Footer />
     </div>
   );
 
