@@ -105,7 +105,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
-    log("FATAL", "Unhandled error", { error: e instanceof Error ? e.message : String(e) });
+    log("error", "unhandled_error", { error: e instanceof Error ? e.message : String(e) });
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
