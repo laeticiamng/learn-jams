@@ -51,7 +51,7 @@ export default function NotificationBell() {
         className="w-80 p-0 bg-card/95 backdrop-blur-2xl border-border/20 rounded-2xl shadow-2xl"
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-border/10">
-          <h3 className="text-sm font-semibold text-foreground">Notifications</h3>
+          <h3 className="text-sm font-semibold text-foreground">{t("notifications.title", "Notifications")}</h3>
           {unreadCount > 0 && (
             <Button
               variant="ghost"
