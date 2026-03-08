@@ -259,6 +259,18 @@
     "active": "Du bist abonniert ✅",
     "already_subscribed": "Du bist bereits abonniert!",
     "error": "Fehler bei der Weiterleitung zur Zahlung",
-    "guarantee": "Sichere Zahlung über Stripe. Kündigung mit einem Klick."
+    "guarantee": "Sichere Zahlung über Stripe. Kündigung mit einem Klick.",
+    "faq_title": "Häufige Fragen",
+    "faq1_q": "Kann ich jederzeit kündigen?",
+    "faq1_a": "Ja, ohne Bindung. Du kannst dein Abo mit einem Klick in deinem Profil kündigen. Keine versteckten Gebühren, keine Mindestlaufzeit.",
+    "faq2_q": "Kann ich eine Rückerstattung erhalten?",
+    "faq2_a": "Wenn du innerhalb der ersten 7 Tage nicht zufrieden bist, kontaktiere uns und wir erstatten dir den vollen Betrag — ohne Bedingungen.",
+    "faq3_q": "Was passiert, wenn ich nicht mehr zahle?",
+    "faq3_a": "Du behältst den Zugang bis zum Ende deines aktuellen Abrechnungszeitraums. Danach wechselt dein Konto automatisch zum kostenlosen Plan. Deine bestehenden Songs bleiben zugänglich."
+  },
+  "cookies": {
+    "text": "Wir verwenden Cookies, um dein Erlebnis zu verbessern. Durch die Nutzung von StudyBeats stimmst du unserer Datenschutzrichtlinie zu.",
+    "accept": "Akzeptieren",
+    "decline": "Ablehnen"
   }
 }

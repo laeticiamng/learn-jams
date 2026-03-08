@@ -23,10 +23,13 @@ export default function Contact() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
+  const [lastSubmit, setLastSubmit] = useState(0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !email.trim() || !message.trim()) { toast.error(t("contact.fill_all")); return; }
+    const now = Date.now();
+    if (now - lastSubmit < 60000) { toast.error("Veuillez patienter avant de renvoyer un message."); return; }
     setSending(true);
     try {
       const { error } = await supabase.from("contact_messages").insert({
@@ -37,6 +40,7 @@ export default function Contact() {
       if (error) throw error;
       toast.success(t("contact.sent"));
       setName(""); setEmail(""); setMessage("");
+      setLastSubmit(Date.now());
     } catch (err: any) {
       console.error("Contact form error:", err);
       toast.error(t("contact.error", "Une erreur est survenue. Réessaye plus tard."));

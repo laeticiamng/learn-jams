@@ -426,5 +426,10 @@
     "actions": "Actions",
     "new_song": "Créer une chanson",
     "take_quiz": "Lancer un quiz"
+  },
+  "cookies": {
+    "text": "Nous utilisons des cookies pour améliorer ton expérience. En utilisant StudyBeats, tu acceptes notre politique de confidentialité.",
+    "accept": "Accepter",
+    "decline": "Refuser"
   }
 }
