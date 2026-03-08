@@ -39,6 +39,8 @@ export default function Pricing() {
   const [loading, setLoading] = useState(false);
   const [subscription, setSubscription] = useState<any>(null);
   const lang = i18next.language?.substring(0, 2) || "fr";
+  const footerRef = useRef<HTMLDivElement>(null);
+  const footerInView = useInView(footerRef, { margin: "0px 0px 80px 0px" });
 
   usePageSEO({
     title: "StudyBeats — " + t("pricing.title"),
