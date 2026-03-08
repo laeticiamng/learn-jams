@@ -202,7 +202,8 @@
     "paywall_title": "Quota atteint",
     "paywall_description": "Tu as utilisé ta chanson gratuite ce mois-ci. Passe à Pro pour créer des chansons illimitées !",
     "paywall_upgrade": "Passer à Pro — 14,90 €/mois",
-    "paywall_dismiss": "Plus tard"
+    "paywall_dismiss": "Plus tard",
+    "pro_quality": "Qualité Pro"
   },
   "library": {
     "title": "Ma bibliothèque 🎵",
