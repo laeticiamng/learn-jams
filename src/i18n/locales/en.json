@@ -102,7 +102,7 @@
     "password": "Password", "password_placeholder": "••••••••", "password_min": "Min. 6 characters",
     "forgot": "Forgot?", "login_button": "Sign in", "login_loading": "Signing in...",
     "no_account": "Don't have an account?", "signup_link": "Sign up",
-    "signup_title": "Create your account 🎵", "signup_subtitle": "Turn your notes into music",
+    "signup_title": "Create your account", "signup_subtitle": "Turn your notes into music",
     "name": "First name", "name_placeholder": "Your first name",
     "accept_terms": "I accept the", "terms_link": "Terms", "and": "and the", "privacy_link": "Privacy Policy",
     "signup_button": "Create my account", "signup_loading": "Creating...",
