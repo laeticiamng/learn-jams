@@ -44,6 +44,15 @@ export default function ResetPassword() {
     else { toast.success(t("auth.success_password_updated")); navigate("/create"); }
   };
 
+  if (!validRecovery) return (
+    <div className="min-h-screen flex flex-col bg-background">
+      <Navbar />
+      <div className="flex-1 flex items-center justify-center">
+        <p className="text-muted-foreground">{t("auth.invalid_recovery_link", "Redirection…")}</p>
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen flex flex-col bg-background relative overflow-hidden">
       <Navbar />
