@@ -124,7 +124,7 @@ serve(async (req) => {
 
     const { songId, lyrics, style, title, language } = await req.json();
     const userId = claimsData.claims.sub as string;
-    log("START", "Generation requested", { songId, userId, style, lyricsLen: lyrics?.length });
+    log("info", "generation_requested", { song_id: songId, user_id: userId, style, lyrics_len: lyrics?.length });
 
     const SUNO_API_KEY = Deno.env.get("SUNO_API_KEY");
     
