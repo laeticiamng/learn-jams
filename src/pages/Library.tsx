@@ -186,10 +186,29 @@ export default function Library() {
 
         {/* Content */}
         {loading ? (
-          <div className="flex items-center justify-center py-32">
-            <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}>
-              <Loader2 className="w-8 h-8 text-primary" />
-            </motion.div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="glass-card-elevated overflow-hidden animate-pulse">
+                <div className="aspect-square bg-muted/20 relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/5" />
+                  <div className="absolute top-3 left-3 h-5 w-12 rounded-lg bg-muted/30" />
+                </div>
+                <div className="p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="h-4 w-3/4 rounded-md bg-muted/20" />
+                    <div className="h-4 w-12 rounded-full bg-muted/15" />
+                  </div>
+                  <div className="h-3 w-1/2 rounded-md bg-muted/15" />
+                  <div className="flex items-center justify-between pt-2 border-t border-border/10">
+                    <div className="h-3 w-10 rounded bg-muted/15" />
+                    <div className="flex gap-1">
+                      <div className="h-6 w-6 rounded-lg bg-muted/10" />
+                      <div className="h-6 w-6 rounded-lg bg-muted/10" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         ) : filtered.length === 0 ? (
           <motion.div
