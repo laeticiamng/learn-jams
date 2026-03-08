@@ -223,7 +223,29 @@ export default function Pricing() {
           </div>
         </div>
       </main>
-      <Footer />
+
+      {/* Sticky mobile CTA — hidden when footer is visible */}
+      {!isActive && (
+        <motion.div
+          className="fixed bottom-0 left-0 right-0 z-40 p-4 bg-background/80 backdrop-blur-xl border-t border-border/20 md:hidden"
+          initial={false}
+          animate={{ y: footerInView ? 80 : 0, opacity: footerInView ? 0 : 1 }}
+          transition={{ duration: 0.25 }}
+        >
+          <Button
+            onClick={handleCheckout}
+            disabled={loading}
+            className="w-full gradient-bg-premium text-primary-foreground font-semibold py-5 text-base rounded-xl shadow-xl shadow-primary/25"
+            size="lg"
+          >
+            {loading ? t("pricing.redirecting") : user ? t("pricing.subscribe") : t("pricing.signup_first")}
+          </Button>
+        </motion.div>
+      )}
+
+      <div ref={footerRef}>
+        <Footer />
+      </div>
     </div>
   );
 }
