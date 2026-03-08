@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ParallaxOrbs } from "@/components/ParallaxOrbs";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
