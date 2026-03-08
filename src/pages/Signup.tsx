@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Music } from "lucide-react";
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import { toast } from "sonner";
 import { usePageSEO } from "@/hooks/usePageSEO";
 import { motion } from "framer-motion";
@@ -119,6 +120,9 @@ export default function Signup() {
           {t("auth.has_account")} <Link to="/login" className="text-primary hover:underline font-medium transition-colors">{t("auth.login_link")}</Link>
         </p>
       </motion.div>
+      <div className="fixed bottom-0 left-0 right-0 z-10">
+        <Footer />
+      </div>
     </div>
   );
 }

@@ -13,6 +13,7 @@ import { useSongs } from "@/hooks/useSongs";
 import { SongCard } from "@/components/library/SongCard";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { usePageSEO } from "@/hooks/usePageSEO";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,6 +34,7 @@ const container = {
 
 export default function Library() {
   const { t } = useTranslation();
+  usePageSEO({ title: t("library.title"), description: t("library.title"), noindex: true });
   const { user } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();

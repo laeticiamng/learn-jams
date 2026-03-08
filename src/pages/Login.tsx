@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Music } from "lucide-react";
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import { toast } from "sonner";
 import { usePageSEO } from "@/hooks/usePageSEO";
 import { motion } from "framer-motion";
@@ -88,6 +89,9 @@ export default function Login() {
           {t("auth.no_account")} <Link to="/signup" className="text-primary hover:underline font-medium transition-colors">{t("auth.signup_link")}</Link>
         </p>
       </motion.div>
+      <div className="fixed bottom-0 left-0 right-0 z-10">
+        <Footer />
+      </div>
     </div>
   );
 }
