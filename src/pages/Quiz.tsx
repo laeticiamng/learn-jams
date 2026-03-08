@@ -69,6 +69,7 @@ export default function Quiz() {
 
   if (loading) return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-4 relative overflow-hidden">
+      <Navbar />
       {ambientOrbs}
       <Loader2 className="w-10 h-10 animate-spin text-primary relative z-10" />
       <p className="text-muted-foreground relative z-10">{t("quiz.generating")}</p>
