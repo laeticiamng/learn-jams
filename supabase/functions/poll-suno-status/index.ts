@@ -92,7 +92,7 @@ serve(async (req) => {
         generation_error_code: "TIMEOUT",
         generation_error_at: new Date().toISOString(),
       }).eq("id", songId);
-      log("TIMEOUT", "Song timed out", { songId, elapsed: Date.now() - createdAt });
+      log("warn", "timeout", { song_id: songId, elapsed: Date.now() - createdAt });
       return new Response(JSON.stringify({ status: "error", reason: "timeout" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
