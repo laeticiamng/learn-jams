@@ -15,18 +15,20 @@ import i18next from "i18next";
 
 const ease = [0.25, 0.46, 0.45, 0.94] as [number, number, number, number];
 
+const localeMap: Record<string, string> = {
+  fr: "fr-FR", en: "en-US", de: "de-DE", es: "es-ES",
+  ar: "ar-SA", zh: "zh-CN", hi: "hi-IN",
+};
+
 function formatPrice(lang: string) {
   try {
-    const localeMap: Record<string, string> = {
-      fr: "fr-FR", en: "en-US", de: "de-DE", es: "es-ES",
-      ar: "ar-SA", zh: "zh-CN", hi: "hi-IN",
-    };
-    return new Intl.NumberFormat(localeMap[lang] || "en-US", {
+    return new Intl.NumberFormat(localeMap[lang] || "fr-FR", {
+      style: "currency",
+      currency: "EUR",
       minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
     }).format(14.90);
   } catch {
-    return "14.90";
+    return "14,90 €";
   }
 }
 
