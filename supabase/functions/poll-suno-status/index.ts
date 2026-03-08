@@ -158,7 +158,7 @@ serve(async (req) => {
         generation_error_code: taskStatus,
         generation_error_at: new Date().toISOString(),
       }).eq("id", songId);
-      log("ERROR", "Song marked as error", { songId, taskStatus });
+      log("error", "song_error", { song_id: songId, task_status: taskStatus });
       return new Response(JSON.stringify({ status: "error", sunoStatus: taskStatus }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
