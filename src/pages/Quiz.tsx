@@ -97,26 +97,29 @@ export default function Quiz() {
   );
 
   if (finished) return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4 relative overflow-hidden">
+    <div className="min-h-screen flex flex-col bg-background px-4 relative overflow-hidden">
       <Navbar />
       {ambientOrbs}
-      <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="glass-card-elevated p-8 max-w-md w-full text-center space-y-6 relative z-10">
-        <div className="text-6xl">{scoreEmoji}</div>
-        <h2 className="font-display text-2xl font-bold">{t("quiz.finished")}</h2>
-        <div className="space-y-2">
-          <div className="text-4xl font-bold text-primary">{score}/{questions.length}</div>
-          <p className="text-muted-foreground">{t("quiz.score_percent", { percent: scorePercent })}</p>
-        </div>
-        <Progress value={scorePercent} className="h-3" />
-        <p className="text-sm text-muted-foreground">
-          {scorePercent >= 80 ? t("quiz.score_excellent") : scorePercent >= 60 ? t("quiz.score_good") : t("quiz.score_keep_going")}
-        </p>
-        <div className="flex flex-col gap-3">
-          <Button className="gradient-bg gap-2" onClick={fetchQuiz}><RotateCcw className="w-4 h-4" /> {t("quiz.restart")}</Button>
-          <Button variant="outline" onClick={() => navigate(`/player/${id}`)}>{t("quiz.back_to_player")}</Button>
-          <Button variant="ghost" onClick={() => navigate("/library")}>{t("quiz.my_library")}</Button>
-        </div>
-      </motion.div>
+      <div className="flex-1 flex items-center justify-center relative z-10">
+        <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="glass-card-elevated p-8 max-w-md w-full text-center space-y-6">
+          <div className="text-6xl">{scoreEmoji}</div>
+          <h2 className="font-display text-2xl font-bold">{t("quiz.finished")}</h2>
+          <div className="space-y-2">
+            <div className="text-4xl font-bold text-primary">{score}/{questions.length}</div>
+            <p className="text-muted-foreground">{t("quiz.score_percent", { percent: scorePercent })}</p>
+          </div>
+          <Progress value={scorePercent} className="h-3" />
+          <p className="text-sm text-muted-foreground">
+            {scorePercent >= 80 ? t("quiz.score_excellent") : scorePercent >= 60 ? t("quiz.score_good") : t("quiz.score_keep_going")}
+          </p>
+          <div className="flex flex-col gap-3">
+            <Button className="gradient-bg-premium gap-2 rounded-xl" onClick={fetchQuiz}><RotateCcw className="w-4 h-4" /> {t("quiz.restart")}</Button>
+            <Button variant="outline" className="rounded-xl" onClick={() => navigate(`/player/${id}`)}>{t("quiz.back_to_player")}</Button>
+            <Button variant="ghost" className="rounded-xl" onClick={() => navigate("/library")}>{t("quiz.my_library")}</Button>
+          </div>
+        </motion.div>
+      </div>
+      <Footer />
     </div>
   );
 
