@@ -134,6 +134,27 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // Ownership check — verify the song belongs to the authenticated user
+    const { data: songOwner, error: ownerError } = await supabase
+      .from("songs")
+      .select("user_id")
+      .eq("id", songId)
+      .single();
+
+    if (ownerError || !songOwner) {
+      log("ERROR", "Song not found", { songId });
+      return new Response(JSON.stringify({ error: "Song not found" }), {
+        status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (songOwner.user_id !== userId) {
+      log("AUTH", "Ownership check failed", { songId, userId, ownerId: songOwner.user_id });
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     if (!SUNO_API_KEY) {
       log("DEMO", "No Suno API key, saving as ready without audio", { songId });
       await supabase.from("songs").update({
