@@ -101,23 +101,28 @@ serve(async (req) => {
     const langTag = langMap[language] || langMap["en"];
     const sunoStyle = `${styleMap[style] || "pop"}, ${langTag}`;
 
-    // Sanitize lyrics: remove words Suno may reject as "producer tags"
-    const BLOCKED_PATTERNS = [
-      // Chemical / scientific terms often flagged
-      /\bphosphate\b/gi, /\bphospho\w*/gi, /\badenosine\b/gi,
-      // Common producer tag patterns
-      /\b(dj\s+\w+)\b/gi, /\b(produced\s+by)\b/gi, /\b(feat\.\s*\w+)\b/gi,
-      // Artist name patterns Suno may flag
-      /\b(lil\s+\w+)\b/gi, /\b(mc\s+\w+)\b/gi, /\b(young\s+\w+)\b/gi,
-    ];
+    // Sanitize lyrics: replace words Suno rejects as "producer tags"
+    // Suno's filter is aggressive with certain scientific/chemical terms
+    const WORD_REPLACEMENTS: Record<string, string> = {
+      "phosphate": "P-group",
+      "phosphates": "P-groups",
+      "phosphorylation": "P-transfer",
+      "phospholipid": "P-lipid",
+      "phospholipids": "P-lipids",
+      "phosphorus": "P-element",
+      "adenosine": "A-nucleoside",
+      "triphosphate": "tri-P-group",
+      "diphosphate": "di-P-group",
+      "monophosphate": "mono-P-group",
+    };
     let cleanLyrics = lyrics;
-    for (const pattern of BLOCKED_PATTERNS) {
-      cleanLyrics = cleanLyrics.replace(pattern, (match: string) => {
-        // Replace with phonetically similar but safe version
-        return match.replace(/[aeiou]/gi, (v: string) => v === v.toUpperCase() ? "A" : "a").slice(0, -1);
-      });
+    for (const [word, replacement] of Object.entries(WORD_REPLACEMENTS)) {
+      cleanLyrics = cleanLyrics.replace(new RegExp(`\\b${word}\\b`, "gi"), replacement);
     }
-    console.log(`[generate-music] Sanitized lyrics: removed ${lyrics.length - cleanLyrics.length} chars of blocked patterns`);
+    // Also remove common producer-tag patterns
+    cleanLyrics = cleanLyrics.replace(/\b(feat\.?\s+\w+)/gi, "");
+    cleanLyrics = cleanLyrics.replace(/\b(produced\s+by\s+\w+)/gi, "");
+    console.log(`[generate-music] Sanitized lyrics, ${Object.keys(WORD_REPLACEMENTS).filter(w => lyrics.toLowerCase().includes(w)).length} words replaced`);
 
     const response = await fetch("https://api.sunoapi.org/api/v1/generate", {
       method: "POST",
