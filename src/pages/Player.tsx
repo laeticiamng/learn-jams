@@ -12,6 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { StudyNotes } from "@/components/player/StudyNotes";
 import { AudioVisualizer } from "@/components/player/AudioVisualizer";
+import { usePageSEO } from "@/hooks/usePageSEO";
 
 interface Song { id: string; title: string; style: string; original_text: string; generated_lyrics: string | null; audio_url: string | null; duration: number | null; status: string; subject: string | null; lyrics_metadata: string | null; }
 
