@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { ParallaxOrbs } from "@/components/ParallaxOrbs";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
