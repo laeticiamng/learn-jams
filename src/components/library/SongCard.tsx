@@ -103,6 +103,22 @@ export function SongCard({ song, isFavorite, onToggleFavorite, onRetry }: SongCa
             </span>
             {song.subject && <span className="text-xs text-muted-foreground truncate max-w-[120px]">{song.subject}</span>}
             <StatusBadge status={song.status} isFinalQuality={song.is_final_quality} />
+            {isError && song.generation_error_code && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="text-[10px] text-destructive/70 cursor-help truncate max-w-[140px]">
+                    {song.generation_error_code === "SENSITIVE_WORD_ERROR" 
+                      ? t("library.error_sensitive", "Mot sensible détecté")
+                      : song.generation_error_code === "TIMEOUT"
+                      ? t("library.error_timeout", "Timeout")
+                      : song.generation_error_code}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-[300px]">
+                  <p className="text-xs">{song.generation_error || t("library.error_unknown", "Erreur inconnue")}</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
           </div>
         </div>
 
