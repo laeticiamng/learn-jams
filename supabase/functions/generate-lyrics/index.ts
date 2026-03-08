@@ -378,29 +378,23 @@ D) COVERAGE CHECK-LIST:
     // --- Increment usage quota ---
     if (!isProUser) {
       const currentMonth = new Date().toISOString().slice(0, 7);
-      await supabaseAdmin
-        .from("usage_quotas")
-        .upsert(
-          { user_id: userId, month: currentMonth, songs_generated: 1 },
-          { onConflict: "user_id,month" }
-        );
-      // Increment if row already existed
-      await supabaseAdmin.rpc("increment_quota", undefined).catch(() => {
-        // Fallback: manual increment
-      });
-      // Simple approach: upsert then update
-      const { data: currentQuota } = await supabaseAdmin
+      const { data: existing } = await supabaseAdmin
         .from("usage_quotas")
         .select("songs_generated")
         .eq("user_id", userId)
         .eq("month", currentMonth)
-        .single();
-      if (currentQuota) {
+        .maybeSingle();
+
+      if (existing) {
         await supabaseAdmin
           .from("usage_quotas")
-          .update({ songs_generated: currentQuota.songs_generated + 1 })
+          .update({ songs_generated: existing.songs_generated + 1 })
           .eq("user_id", userId)
           .eq("month", currentMonth);
+      } else {
+        await supabaseAdmin
+          .from("usage_quotas")
+          .insert({ user_id: userId, month: currentMonth, songs_generated: 1 });
       }
     }
     // --- END increment ---
