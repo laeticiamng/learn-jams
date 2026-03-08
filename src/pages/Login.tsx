@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ParallaxOrbs } from "@/components/ParallaxOrbs";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,8 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const { signIn } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = (location.state as { from?: string })?.from || "/create";
 
   const humanizeError = (message: string): string => {
     if (message.includes("Email not confirmed")) return t("auth.error_email_not_confirmed");
@@ -37,7 +39,7 @@ export default function Login() {
     const { error } = await signIn(email, password);
     setLoading(false);
     if (error) toast.error(humanizeError(error.message));
-    else navigate("/create");
+    else navigate(from, { replace: true });
   };
 
   return (

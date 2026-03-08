@@ -13,7 +13,8 @@ export default function Terms() {
   const sections = [1, 2, 3, 4, 5, 6, 7] as const;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      <div className="fixed top-1/4 left-1/3 w-[400px] h-[300px] pointer-events-none ambient-orb" style={{ background: "hsl(265, 90%, 60%)", opacity: 0.05 }} />
       <Navbar />
       <div className="container mx-auto px-4 pt-28 pb-16 max-w-3xl">
         <Button variant="ghost" size="sm" asChild className="gap-2 mb-8 rounded-xl text-muted-foreground hover:text-foreground">
