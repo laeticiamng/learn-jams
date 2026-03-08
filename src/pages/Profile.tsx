@@ -107,7 +107,7 @@ export default function Profile() {
           animate={{ opacity: 1, x: 0 }}
         >
           <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="gap-2 mb-6 rounded-xl hover:bg-muted/30 text-muted-foreground">
-            <ArrowLeft className="w-4 h-4" /> {t("library.title", "Bibliothèque")}
+            <ArrowLeft className="w-4 h-4" /> {t("common.back", "Retour")}
           </Button>
         </motion.div>
         <motion.div
