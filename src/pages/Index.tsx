@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Upload, Music, Headphones, BookOpen, Brain, Shield, Repeat, Timer, Dumbbell, ChevronRight, Quote, Lock, ShieldCheck, CreditCard, ArrowRight, Play, Pause, Volume2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
@@ -125,6 +125,32 @@ const SectionDivider = () => (
   </div>
 );
 
+const ParallaxOrbs = () => {
+  const { scrollY } = useScroll();
+  const y1 = useTransform(scrollY, [0, 800], [0, -120]);
+  const y2 = useTransform(scrollY, [0, 800], [0, -180]);
+  const scale1 = useTransform(scrollY, [0, 600], [1, 1.15]);
+  const scale2 = useTransform(scrollY, [0, 600], [1, 0.9]);
+  const opacity = useTransform(scrollY, [0, 700], [1, 0.3]);
+
+  return (
+    <>
+      <motion.div
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] pointer-events-none"
+        style={{ background: "var(--gradient-glow)", y: y1, opacity }}
+      />
+      <motion.div
+        className="absolute top-20 left-1/4 w-[400px] h-[400px] pointer-events-none ambient-orb"
+        style={{ background: "hsl(265, 90%, 60%)", y: y1, scale: scale1, opacity }}
+      />
+      <motion.div
+        className="absolute top-40 right-1/4 w-[300px] h-[300px] pointer-events-none ambient-orb"
+        style={{ background: "hsl(300, 70%, 50%)", animationDelay: "3s", y: y2, scale: scale2, opacity }}
+      />
+    </>
+  );
+};
+
 const stepIcons = [Upload, Music, Headphones];
 const scienceIcons = [Brain, Repeat, Timer, Dumbbell];
 const featureIcons = [Brain, BookOpen, Shield];
@@ -186,10 +212,7 @@ export default function Index() {
 
       {/* Hero */}
       <header ref={heroRef} className="relative pt-40 pb-28 px-4">
-        {/* Ambient orbs */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] pointer-events-none" style={{ background: "var(--gradient-glow)" }} />
-        <div className="absolute top-20 left-1/4 w-[400px] h-[400px] pointer-events-none ambient-orb" style={{ background: "hsl(265, 90%, 60%)" }} />
-        <div className="absolute top-40 right-1/4 w-[300px] h-[300px] pointer-events-none ambient-orb" style={{ background: "hsl(300, 70%, 50%)", animationDelay: "3s" }} />
+        <ParallaxOrbs />
 
         <div className="container mx-auto text-center relative z-10">
           <motion.div initial={{ opacity: 0, y: 40, filter: "blur(12px)" }} animate={{ opacity: 1, y: 0, filter: "blur(0px)" }} transition={{ duration: 0.9, ease }}>
