@@ -127,11 +127,11 @@ export default function Quiz() {
   const q = questions[current];
 
   return (
-    <div className="min-h-screen bg-background px-4 py-8 relative overflow-hidden">
+    <div className="min-h-screen bg-background px-4 relative overflow-hidden">
       <Navbar />
       {ambientOrbs}
 
-      <div className="max-w-2xl mx-auto relative z-10">
+      <div className="max-w-2xl mx-auto pt-28 pb-16 relative z-10">
         <div className="flex items-center justify-between mb-6">
           <Button variant="ghost" size="sm" onClick={() => navigate(`/player/${id}`)} className="gap-2">
             <ArrowLeft className="w-4 h-4" /> {t("common.back")}
