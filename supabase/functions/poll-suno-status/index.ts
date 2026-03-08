@@ -138,7 +138,7 @@ serve(async (req) => {
         generation_error_code: null,
       }).eq("id", songId);
 
-      log("READY", "Song updated to ready via polling", { songId, hasAudio: !!audioUrl, duration });
+      log("info", "song_ready", { song_id: songId, has_audio: !!audioUrl, duration });
       return new Response(JSON.stringify({ status: "ready", updated: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
