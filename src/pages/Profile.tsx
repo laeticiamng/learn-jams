@@ -155,6 +155,25 @@ export default function Profile() {
           </motion.div>
         </motion.div>
 
+        {/* Subscription management */}
+        {isPro && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25, duration: 0.5, ease }}
+            className="glass-card-elevated p-7 mt-6"
+          >
+            <h3 className="font-display font-semibold mb-2">{t("profile.subscription_title", "Abonnement Pro")}</h3>
+            <p className="text-sm text-muted-foreground mb-4">{t("profile.subscription_text", "Gère ton abonnement, change de moyen de paiement ou annule.")}</p>
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <Button onClick={handleManageSubscription} disabled={managingSubscription} className="w-full gap-2 rounded-xl h-11" variant="outline">
+                {managingSubscription ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
+                {t("profile.manage_subscription", "Gérer mon abonnement")}
+              </Button>
+            </motion.div>
+          </motion.div>
+        )}
+
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
