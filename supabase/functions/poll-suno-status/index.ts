@@ -119,7 +119,7 @@ serve(async (req) => {
     const sunoData = await sunoResponse.json();
     const taskStatus = sunoData.data?.status;
     const tracks = sunoData.data?.response?.sunoData;
-    log("RESPONSE", "Suno API response", { songId, taskId: song.suno_task_id, taskStatus, trackCount: tracks?.length || 0 });
+    log("info", "suno_response", { song_id: songId, task_id: song.suno_task_id, task_status: taskStatus, track_count: tracks?.length || 0 });
 
     // Map Suno status to our status
     if (taskStatus === "SUCCESS" && Array.isArray(tracks) && tracks.length > 0) {
