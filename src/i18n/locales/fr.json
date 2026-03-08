@@ -366,7 +366,8 @@
     "lyrics_gen": "Génération de paroles par IA", "styles_count": "30 styles musicaux", "import": "Import PDF et photos", "quiz": "Quiz interactif",
     "rights": "© {{year}} StudyBeats. Tous droits réservés."
   },
-  "common": { "back": "Retour", "loading": "Chargement...", "error": "Erreur", "return": "Revenir à l'accueil" },
+  "common": { "back": "Retour", "loading": "Chargement...", "error": "Erreur", "return": "Revenir à l'accueil", "listen": "Écouter" },
+  "banner": { "text": "🎵 Transforme tes cours en chansons — essaie gratuitement", "cta": "Commencer" },
   "notfound": { "title": "Page introuvable", "text": "Cette page n'existe pas ou a été déplacée." },
   "styles": { "pop": "Pop", "rap": "Rap", "rnb": "R&B", "rock": "Rock", "indie": "Indie", "country": "Country", "lofi": "Lo-Fi", "edm": "EDM", "house": "House", "techno": "Techno", "synthwave": "Synthwave", "drum-and-bass": "Drum & Bass", "reggaeton": "Reggaeton", "afrobeat": "Afrobeat", "reggae": "Reggae", "latin": "Latin", "kpop": "K-Pop", "bossa-nova": "Bossa Nova", "jazz": "Jazz", "blues": "Blues", "soul": "Soul", "funk": "Funk", "classical": "Classique", "gospel": "Gospel", "metal": "Metal", "punk": "Punk", "acoustic": "Acoustique", "folk": "Folk", "ambient": "Ambient", "spoken-word": "Spoken Word" },
   "style_categories": { "popular": "Populaire", "electronic": "Électronique", "world": "Monde", "classic": "Classique & Soul", "alternative": "Alternatif" },
