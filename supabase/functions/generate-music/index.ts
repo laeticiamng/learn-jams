@@ -76,10 +76,10 @@ function sanitizeForSuno(text: string): { cleaned: string; replacedCount: number
   const replacedWords: string[] = [];
 
   for (const [word, replacement] of Object.entries(WORD_REPLACEMENTS)) {
-    const regex = new RegExp(`\\b${word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, "gi");
-    if (regex.test(cleaned)) {
+    const pattern = `\\b${word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`;
+    if (new RegExp(pattern, "i").test(cleaned)) {
       replacedWords.push(word);
-      cleaned = cleaned.replace(regex, replacement);
+      cleaned = cleaned.replace(new RegExp(pattern, "gi"), replacement);
     }
   }
 
