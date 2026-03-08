@@ -30,7 +30,7 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    log("RECEIVED", "Callback payload", { songId, code: body.code, callbackType: body.data?.callbackType });
+    log("info", "callback_received", { song_id: songId, code: body.code, callback_type: body.data?.callbackType });
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
