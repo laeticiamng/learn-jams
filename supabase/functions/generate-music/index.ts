@@ -140,7 +140,7 @@ serve(async (req) => {
       .single();
 
     if (ownerError || !songOwner) {
-      log("ERROR", "Song not found", { songId });
+      log("error", "song_not_found", { song_id: songId });
       return new Response(JSON.stringify({ error: "Song not found" }), {
         status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
