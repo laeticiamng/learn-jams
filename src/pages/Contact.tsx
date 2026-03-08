@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ParallaxOrbs } from "@/components/ParallaxOrbs";
+import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, Music, Mail, MessageSquare, Send } from "lucide-react";
