@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import { ParallaxOrbs } from "@/components/ParallaxOrbs";
 import { Button } from "@/components/ui/button";
+import Navbar from "@/components/Navbar";
 import { Slider } from "@/components/ui/slider";
 import { Play, Pause, Heart, ArrowLeft, Volume2, VolumeX, Loader2, Brain, Music, SkipBack, SkipForward } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
