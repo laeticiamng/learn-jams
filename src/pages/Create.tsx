@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, ArrowRight, Sparkles, Loader2, Check, Crown } from "lucide-react";
+import { ArrowLeft, ArrowRight, Sparkles, Loader2, Check, Crown, Music } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import CourseUploader from "@/components/create/CourseUploader";
 import StylePicker from "@/components/create/StylePicker";
@@ -41,6 +41,30 @@ export default function Create() {
   const [showPaywall, setShowPaywall] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  // Quota tracking
+  const FREE_LIMIT = 1;
+  const [quotaUsed, setQuotaUsed] = useState<number | null>(null);
+  const [isPro, setIsPro] = useState(false);
+  const [quotaLoading, setQuotaLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) return;
+    const fetchQuota = async () => {
+      setQuotaLoading(true);
+      const currentMonth = new Date().toISOString().slice(0, 7);
+      const [quotaRes, subRes] = await Promise.all([
+        supabase.from("usage_quotas").select("songs_generated").eq("user_id", user.id).eq("month", currentMonth).maybeSingle(),
+        supabase.from("subscriptions").select("status").eq("user_id", user.id).maybeSingle(),
+      ]);
+      setQuotaUsed(quotaRes.data?.songs_generated ?? 0);
+      setIsPro(subRes.data?.status === "active");
+      setQuotaLoading(false);
+    };
+    fetchQuota();
+  }, [user]);
+
+  const quotaRemaining = isPro ? Infinity : Math.max(0, FREE_LIMIT - (quotaUsed ?? 0));
 
   const stepLabels = [t("create.step_upload"), t("create.step_style"), t("create.step_generate")];
   const canNext = step === 0 ? courseText.trim().length > 20 : step === 1 ? !!style : false;
@@ -264,6 +288,53 @@ export default function Create() {
                 </motion.div>
               )}
 
+              {/* Quota indicator */}
+              {!generating && !quotaLoading && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.25 }}
+                  className="max-w-lg mx-auto"
+                >
+                  {isPro ? (
+                    <div className="flex items-center justify-center gap-2 text-sm text-primary">
+                      <Sparkles className="w-4 h-4" />
+                      <span className="font-medium">{t("create.quota_unlimited", "Chansons illimitées — Pro")}</span>
+                    </div>
+                  ) : quotaRemaining > 0 ? (
+                    <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                      <Music className="w-4 h-4" />
+                      <span>
+                        {t("create.quota_remaining", "{{remaining}}/{{limit}} chanson gratuite restante", {
+                          remaining: quotaRemaining,
+                          limit: FREE_LIMIT,
+                        })}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="glass-card-elevated p-4 flex items-center gap-3 rounded-xl border border-amber-500/20 bg-amber-500/5">
+                      <Crown className="w-5 h-5 text-amber-500 shrink-0" />
+                      <div className="text-left flex-1">
+                        <p className="text-sm font-semibold text-foreground">
+                          {t("create.quota_exhausted_title", "Quota épuisé")}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {t("create.quota_exhausted_text", "Passe à Pro pour créer des chansons illimitées")}
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        className="gradient-bg-premium rounded-lg shrink-0"
+                        onClick={() => navigate("/pricing")}
+                      >
+                        <Crown className="w-3.5 h-3.5 mr-1" />
+                        Pro
+                      </Button>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+
               {/* Generate button */}
               <motion.div
                 initial={{ opacity: 0, y: 12 }}
@@ -274,7 +345,7 @@ export default function Create() {
                   <Button
                     size="lg"
                     className="gradient-bg-premium h-14 px-14 text-lg rounded-2xl glow-intense shimmer-btn shadow-xl shadow-primary/25"
-                    onClick={handleGenerate}
+                    onClick={quotaRemaining <= 0 && !isPro ? () => setShowPaywall(true) : handleGenerate}
                     disabled={generating}
                   >
                     {generating ? (
