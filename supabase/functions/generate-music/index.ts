@@ -57,6 +57,13 @@ function sanitizeForSuno(text: string): { cleaned: string; replacedCount: number
     "endoplasmic reticulum": "ER-network",
     "ribosomes": "protein-factories",
     "ribosome": "protein-factory",
+    // Photosynthesis & ATP
+    "photosynthesis": "light-energy-process",
+    "ATP": "energy-molecule",
+    "ADP": "spent-energy-molecule",
+    "NADH": "electron-shuttle",
+    "NADPH": "electron-donor",
+    "FADH2": "electron-pair",
     // Other sensitive scientific terms
     "cytochrome": "electron-carrier",
     "ubiquinone": "Q-carrier",
