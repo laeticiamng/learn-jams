@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
@@ -9,6 +9,8 @@ import Navbar from "@/components/Navbar";
 import { useAuth } from "@/hooks/useAuth";
 import { useSongs } from "@/hooks/useSongs";
 import { SongCard } from "@/components/library/SongCard";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const container = {
   hidden: { opacity: 0 },
