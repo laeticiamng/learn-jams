@@ -118,6 +118,7 @@ export default function Quiz() {
 
   return (
     <div className="min-h-screen bg-background px-4 py-8 relative overflow-hidden">
+      <Navbar />
       {ambientOrbs}
 
       <div className="max-w-2xl mx-auto relative z-10">

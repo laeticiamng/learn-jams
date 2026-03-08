@@ -26,6 +26,7 @@ const NotFound = () => {
         <p className="text-muted-foreground mb-8">{t("notfound.text")}</p>
         <Button asChild className="gradient-bg gap-2"><Link to="/"><ArrowLeft className="w-4 h-4" /> {t("common.return")}</Link></Button>
       </div>
+      </div>
     </div>
   );
 };

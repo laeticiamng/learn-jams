@@ -133,6 +133,7 @@ export default function Player() {
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
+      <Navbar />
       {/* Immersive ambient background */}
       <ParallaxOrbs glow orbs={[
         { className: `fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] pointer-events-none ambient-orb bg-gradient-to-b ${gradient}`, style: { opacity: 0.08 } },

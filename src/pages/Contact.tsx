@@ -28,10 +28,21 @@ export default function Contact() {
     e.preventDefault();
     if (!name.trim() || !email.trim() || !message.trim()) { toast.error(t("contact.fill_all")); return; }
     setSending(true);
-    await new Promise(r => setTimeout(r, 1000));
-    toast.success(t("contact.sent"));
-    setName(""); setEmail(""); setMessage("");
-    setSending(false);
+    try {
+      const { error } = await supabase.from("contact_messages").insert({
+        name: name.trim(),
+        email: email.trim(),
+        message: message.trim(),
+      });
+      if (error) throw error;
+      toast.success(t("contact.sent"));
+      setName(""); setEmail(""); setMessage("");
+    } catch (err: any) {
+      console.error("Contact form error:", err);
+      toast.error(t("contact.error", "Une erreur est survenue. Réessaye plus tard."));
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
