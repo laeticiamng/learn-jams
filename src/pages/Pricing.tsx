@@ -224,6 +224,32 @@ export default function Pricing() {
             </motion.div>
           </div>
         </div>
+
+          {/* FAQ */}
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1, duration: 0.6, ease }}
+            className="mt-20 max-w-2xl mx-auto"
+          >
+            <h2 className="font-display text-2xl md:text-3xl font-bold text-center mb-10 tracking-tight">
+              {t("pricing.faq_title")}
+            </h2>
+            <Accordion type="single" collapsible className="space-y-3">
+              {[1, 2, 3].map(n => (
+                <AccordionItem key={n} value={`faq-${n}`} className="glass-card-elevated px-6 border-none">
+                  <AccordionTrigger className="text-left font-medium hover:no-underline py-5 text-[15px]">
+                    {t(`pricing.faq${n}_q`)}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground pb-5 leading-relaxed text-sm">
+                    {t(`pricing.faq${n}_a`)}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </motion.div>
+        </div>
       </main>
 
       {/* Sticky mobile CTA — hidden when footer is visible */}
