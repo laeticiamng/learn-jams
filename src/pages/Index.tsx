@@ -220,7 +220,7 @@ export default function Index() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2, duration: 0.5 }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/20 bg-primary/5 mb-12 text-sm text-primary font-medium"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-primary/30 bg-primary/10 mb-12 text-sm text-primary-foreground font-medium backdrop-blur-sm"
             >
               {t("home.badge")}
             </motion.p>
