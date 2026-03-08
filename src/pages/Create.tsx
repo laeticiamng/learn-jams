@@ -5,13 +5,20 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, ArrowRight, Sparkles, Loader2, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, Sparkles, Loader2, Check, Crown } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import CourseUploader from "@/components/create/CourseUploader";
 import StylePicker from "@/components/create/StylePicker";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 const ease = [0.25, 0.46, 0.45, 0.94] as [number, number, number, number];
 const spring = { type: "spring" as const, stiffness: 400, damping: 35 };
@@ -31,6 +38,7 @@ export default function Create() {
   const [subject, setSubject] = useState("");
   const [generating, setGenerating] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [showPaywall, setShowPaywall] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -47,7 +55,27 @@ export default function Create() {
       const { data: lyricsData, error: lyricsError } = await supabase.functions.invoke("generate-lyrics", {
         body: { text: courseText, style, title: title || "Sans titre", language: i18n.language },
       });
-      if (lyricsError) throw lyricsError;
+
+      // Handle quota exceeded
+      if (lyricsError) {
+        // Check if the response body contains quota_exceeded
+        const errorBody = lyricsData;
+        if (errorBody?.error === "quota_exceeded") {
+          setShowPaywall(true);
+          setGenerating(false);
+          setProgress(0);
+          return;
+        }
+        throw lyricsError;
+      }
+
+      if (lyricsData?.error === "quota_exceeded") {
+        setShowPaywall(true);
+        setGenerating(false);
+        setProgress(0);
+        return;
+      }
+
       setProgress(50);
 
       const generatedLyrics = lyricsData?.lyrics || courseText.slice(0, 500);
@@ -288,6 +316,41 @@ export default function Create() {
           )}
         </motion.div>
       </div>
+
+      {/* Paywall Dialog */}
+      <Dialog open={showPaywall} onOpenChange={setShowPaywall}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="w-16 h-16 rounded-2xl gradient-bg-premium flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary/20">
+              <Crown className="w-8 h-8 text-primary-foreground" />
+            </div>
+            <DialogTitle className="text-center font-display text-2xl">
+              {t("create.paywall_title", "Quota atteint")}
+            </DialogTitle>
+            <DialogDescription className="text-center text-base leading-relaxed">
+              {t("create.paywall_description", "Tu as utilisé ta chanson gratuite ce mois-ci. Passe à Pro pour créer des chansons illimitées !")}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 mt-4">
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <Button
+                className="w-full gradient-bg-premium h-12 text-base rounded-xl shadow-lg shadow-primary/20 shimmer-btn gap-2"
+                onClick={() => navigate("/pricing")}
+              >
+                <Sparkles className="w-4 h-4" />
+                {t("create.paywall_upgrade", "Passer à Pro — 14,90 €/mois")}
+              </Button>
+            </motion.div>
+            <Button
+              variant="ghost"
+              className="w-full rounded-xl text-muted-foreground"
+              onClick={() => setShowPaywall(false)}
+            >
+              {t("create.paywall_dismiss", "Plus tard")}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
