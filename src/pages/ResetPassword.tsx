@@ -11,20 +11,27 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import { usePageSEO } from "@/hooks/usePageSEO";
 
 const ease = [0.25, 0.46, 0.45, 0.94] as [number, number, number, number];
 
 export default function ResetPassword() {
   const { t } = useTranslation();
+  usePageSEO({ title: t("auth.reset_title"), description: t("auth.reset_title"), noindex: true });
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [validRecovery, setValidRecovery] = useState(true);
   const { updatePassword } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!window.location.hash.includes("type=recovery")) navigate("/login");
-  }, [navigate]);
+    if (!window.location.hash.includes("type=recovery")) {
+      setValidRecovery(false);
+      toast.error(t("auth.invalid_recovery_link", "Lien de récupération invalide ou expiré."));
+      setTimeout(() => navigate("/forgot-password"), 2500);
+    }
+  }, [navigate, t]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -62,9 +62,9 @@ export default function ForgotPassword() {
             className="text-center space-y-5"
           >
             <p className="text-muted-foreground text-sm">{t("auth.forgot_sent")} <strong className="text-foreground">{email}</strong></p>
-            <Link to="/login">
-              <Button variant="outline" className="gap-2 rounded-xl"><ArrowLeft className="w-4 h-4" /> {t("auth.back_to_login")}</Button>
-            </Link>
+            <Button variant="outline" className="gap-2 rounded-xl" asChild>
+              <Link to="/login"><ArrowLeft className="w-4 h-4" /> {t("auth.back_to_login")}</Link>
+            </Button>
           </motion.div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-5">

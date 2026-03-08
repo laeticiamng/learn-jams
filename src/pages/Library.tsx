@@ -292,7 +292,7 @@ export default function Library() {
 
       {/* Delete confirmation dialog */}
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="glass-card-elevated border-border/20">
           <AlertDialogHeader>
             <AlertDialogTitle>{t("library.delete_title", "Supprimer cette chanson ?")}</AlertDialogTitle>
             <AlertDialogDescription>
