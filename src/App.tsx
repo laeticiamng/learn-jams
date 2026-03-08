@@ -32,6 +32,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+          <CommandPalette />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
