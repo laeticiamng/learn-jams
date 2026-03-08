@@ -3,14 +3,14 @@ import { ParallaxOrbs } from "@/components/ParallaxOrbs";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Check, Zap, Shield, Music, Brain, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { usePageSEO } from "@/hooks/usePageSEO";
-import { motion } from "framer-motion";
+import { motion, useInView } from "framer-motion";
 import i18next from "i18next";
 
 const ease = [0.25, 0.46, 0.45, 0.94] as [number, number, number, number];
