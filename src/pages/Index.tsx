@@ -279,7 +279,7 @@ export default function Index() {
               transition={{ delay: i * 0.1 }}
               className="flex items-center gap-2 text-muted-foreground text-sm"
             >
-              <Icon className="w-4 h-4 text-primary/60" />
+              <Icon className="w-4 h-4 text-primary" />
               <span>{t(`home.${key}`)}</span>
             </motion.div>
           ))}
@@ -365,7 +365,7 @@ export default function Index() {
             <motion.div initial={{ opacity: 0, x: 24 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
               transition={{ delay: 0.15, duration: 0.6, ease }}
               className="glass-card-elevated p-8 sm:p-10 relative glow-intense">
-              <div className="absolute top-5 left-5 sm:top-6 sm:left-6 text-[11px] font-semibold uppercase tracking-widest text-primary bg-primary/10 px-3 py-1 rounded-full">
+              <div className="absolute top-5 left-5 sm:top-6 sm:left-6 text-[11px] font-semibold uppercase tracking-widest text-foreground/90 bg-foreground/5 border border-foreground/10 px-3 py-1 rounded-full">
                 {t("home.after_label")}
               </div>
               <div className="pt-10 text-sm sm:text-base text-foreground leading-relaxed whitespace-pre-line">
@@ -461,7 +461,7 @@ export default function Index() {
               <motion.article key={n} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }} transition={{ delay: i * 0.15, duration: 0.6, ease }}
                 className="glass-card-elevated p-8 sm:p-9 flex flex-col gradient-border">
-                <Quote className="w-8 h-8 text-primary/20 mb-5" />
+                <Quote className="w-8 h-8 text-primary/40 mb-5" />
                 <p className="text-sm text-foreground/80 leading-relaxed flex-1 italic">
                   "{t(`home.testimonial${n}_quote`)}"
                 </p>

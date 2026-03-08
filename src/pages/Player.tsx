@@ -339,7 +339,7 @@ export default function Player() {
                 initial={{ opacity: 0, x: -8 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.7 + i * 0.03 }}
-                className="text-foreground/70 leading-relaxed text-[15px]"
+                className="text-foreground/85 leading-relaxed text-[15px]"
               >
                 {line}
               </motion.p>
