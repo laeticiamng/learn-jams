@@ -400,8 +400,8 @@
     "subscribe": "S'abonner",
     "signup_first": "Créer un compte pour s'abonner",
     "redirecting": "Redirection...",
-    "active": "Vous êtes abonné ✅",
-    "already_subscribed": "Vous êtes déjà abonné !",
+    "active": "Tu es abonné ✅",
+    "already_subscribed": "Tu es déjà abonné !",
     "error": "Erreur lors de la redirection vers le paiement",
     "guarantee": "Paiement sécurisé via Stripe. Résiliation en un clic."
   },
