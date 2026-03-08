@@ -42,6 +42,30 @@ export default function Create() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
+  // Quota tracking
+  const FREE_LIMIT = 1;
+  const [quotaUsed, setQuotaUsed] = useState<number | null>(null);
+  const [isPro, setIsPro] = useState(false);
+  const [quotaLoading, setQuotaLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) return;
+    const fetchQuota = async () => {
+      setQuotaLoading(true);
+      const currentMonth = new Date().toISOString().slice(0, 7);
+      const [quotaRes, subRes] = await Promise.all([
+        supabase.from("usage_quotas").select("songs_generated").eq("user_id", user.id).eq("month", currentMonth).maybeSingle(),
+        supabase.from("subscriptions").select("status").eq("user_id", user.id).maybeSingle(),
+      ]);
+      setQuotaUsed(quotaRes.data?.songs_generated ?? 0);
+      setIsPro(subRes.data?.status === "active");
+      setQuotaLoading(false);
+    };
+    fetchQuota();
+  }, [user]);
+
+  const quotaRemaining = isPro ? Infinity : Math.max(0, FREE_LIMIT - (quotaUsed ?? 0));
+
   const stepLabels = [t("create.step_upload"), t("create.step_style"), t("create.step_generate")];
   const canNext = step === 0 ? courseText.trim().length > 20 : step === 1 ? !!style : false;
 
