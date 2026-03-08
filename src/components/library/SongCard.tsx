@@ -96,13 +96,9 @@ export function SongCard({ song, isFavorite, onToggleFavorite, onRetry, onDelete
         {/* Overlay on hover */}
         {isClickable && (
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-500 flex items-center justify-center">
-            <motion.div
-              initial={{ scale: 0, opacity: 0 }}
-              whileHover={{ scale: 1.1 }}
-              className="w-14 h-14 rounded-full bg-primary/90 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 group-hover:scale-100 transition-all duration-500 shadow-xl shadow-primary/30"
-            >
+            <div className="w-14 h-14 rounded-full bg-primary/90 backdrop-blur-sm flex items-center justify-center opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 transition-all duration-500 shadow-xl shadow-primary/30">
               <Play className="w-6 h-6 text-primary-foreground ml-0.5" />
-            </motion.div>
+            </div>
           </div>
         )}
 

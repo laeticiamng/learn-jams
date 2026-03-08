@@ -1,8 +1,21 @@
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useEffect, useRef } from "react";
+import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
+  const { t } = useTranslation();
+  const location = useLocation();
+  const hasShownToast = useRef(false);
+
+  useEffect(() => {
+    if (!loading && !user && !hasShownToast.current) {
+      hasShownToast.current = true;
+      toast.info(t("auth.login_required", "Connecte-toi pour accéder à cette page."));
+    }
+  }, [loading, user, t]);
 
   if (loading) {
     return (
@@ -12,6 +25,6 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
     );
   }
 
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   return <>{children}</>;
 }
