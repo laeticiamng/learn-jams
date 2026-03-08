@@ -345,7 +345,7 @@ export default function Index() {
             className="font-display text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-16 tracking-tight">
             {t("home.before_after_title")}
           </motion.h2>
-          <div className="grid md:grid-cols-2 gap-8 items-stretch">
+          <div className="grid md:grid-cols-2 gap-8 items-stretch relative">
             <motion.div initial={{ opacity: 0, x: -24 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
               transition={{ duration: 0.6, ease }}
               className="glass-card p-8 sm:p-10 relative">
