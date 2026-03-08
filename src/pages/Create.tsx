@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, ArrowRight, Sparkles, Loader2, Check, Crown, Music } from "lucide-react";
+import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import CourseUploader from "@/components/create/CourseUploader";
 import StylePicker from "@/components/create/StylePicker";
