@@ -106,7 +106,15 @@
     "upload_pdf_hint": "拖拽PDF到此处或点击选择（最大200 MB）",
     "upload_image_hint": "笔记、幻灯片、白板照片...（最大200 MB）",
     "char_count": "{{chars}} 字符 · ~{{minutes}} 分钟阅读",
-    "default_title": "我的StudyBeats歌曲"
+    "default_title": "我的StudyBeats歌曲",
+    "quota_unlimited": "无限歌曲 — Pro",
+    "quota_remaining": "{{remaining}}/{{limit}} 首免费歌曲剩余",
+    "quota_exhausted_title": "配额已用完",
+    "quota_exhausted_text": "升级到Pro以创建无限歌曲",
+    "paywall_title": "配额已达上限",
+    "paywall_description": "你本月的免费歌曲已用完。升级到Pro享受无限歌曲！",
+    "paywall_upgrade": "升级到Pro — €14.90/月",
+    "paywall_dismiss": "以后再说"
   },
   "library": {
     "title": "我的音乐库 🎵", "songs_count": "{{count}}首歌曲", "songs_count_plural": "{{count}}首歌曲",
