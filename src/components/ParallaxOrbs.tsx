@@ -11,7 +11,7 @@ interface ParallaxOrbsProps {
   glow?: boolean;
 }
 
-export const ParallaxOrbs = ({ orbs, mesh = true, glow = false }: ParallaxOrbsProps) => {
+export const ParallaxOrbs = ({ orbs = [], mesh = true, glow = false }: ParallaxOrbsProps) => {
   const { scrollY } = useScroll();
   const y1 = useTransform(scrollY, [0, 800], [0, -120]);
   const y2 = useTransform(scrollY, [0, 800], [0, -180]);
