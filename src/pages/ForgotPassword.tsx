@@ -33,8 +33,9 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4 pt-20 relative overflow-hidden">
+    <div className="min-h-screen flex flex-col bg-background relative overflow-hidden">
       <Navbar />
+      <div className="flex-1 flex items-center justify-center px-4 pt-20">
       <ParallaxOrbs glow orbs={[
         { className: "fixed top-1/3 right-1/3 w-[400px] h-[400px] pointer-events-none ambient-orb", style: { background: "hsl(265, 90%, 60%)", opacity: 0.07 } },
       ]} />
@@ -81,9 +82,8 @@ export default function ForgotPassword() {
           </form>
         )}
       </motion.div>
-      <div className="fixed bottom-0 left-0 right-0 z-10">
-        <Footer />
       </div>
+      <Footer />
     </div>
   );
 }

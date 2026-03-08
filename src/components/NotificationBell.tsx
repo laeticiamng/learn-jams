@@ -3,6 +3,7 @@ import { useNotifications } from "@/hooks/useNotifications";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { formatDistanceToNow } from "date-fns";
+import { fr, de, es, ar, zhCN, hi } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -16,7 +17,10 @@ export default function NotificationBell() {
   const { notifications, unreadCount, markAsRead, markAllAsRead } =
     useNotifications();
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+
+  const dateFnsLocaleMap: Record<string, typeof fr> = { fr, de, es, ar, zh: zhCN, hi };
+  const dateFnsLocale = dateFnsLocaleMap[i18n.language?.substring(0, 2)] || undefined;
 
   const handleClick = (notif: { id: string; song_id: string | null; is_read: boolean }) => {
     if (!notif.is_read) markAsRead(notif.id);
@@ -111,6 +115,7 @@ export default function NotificationBell() {
                     <p className="text-[10px] text-muted-foreground/60 mt-1">
                       {formatDistanceToNow(new Date(notif.created_at), {
                         addSuffix: true,
+                        locale: dateFnsLocale,
                       })}
                     </p>
                   </div>
