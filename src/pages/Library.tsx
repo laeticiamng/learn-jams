@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
+import { ParallaxOrbs } from "@/components/ParallaxOrbs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Plus, Music, Loader2, Heart, ListMusic, Clock, Trash2 } from "lucide-react";
@@ -103,9 +104,10 @@ export default function Library() {
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Ambient background */}
-      <div className="fixed inset-0 pointer-events-none" style={{ background: "var(--gradient-mesh)" }} />
-      <div className="fixed top-0 left-1/3 w-[600px] h-[400px] pointer-events-none ambient-orb" style={{ background: "hsl(265, 90%, 60%)" }} />
-      <div className="fixed bottom-0 right-1/4 w-[500px] h-[300px] pointer-events-none ambient-orb" style={{ background: "hsl(215, 80%, 55%)", animationDelay: "4s" }} />
+      <ParallaxOrbs orbs={[
+        { className: "fixed top-0 left-1/3 w-[600px] h-[400px] pointer-events-none ambient-orb", style: { background: "hsl(265, 90%, 60%)" } },
+        { className: "fixed bottom-0 right-1/4 w-[500px] h-[300px] pointer-events-none ambient-orb", style: { background: "hsl(215, 80%, 55%)", animationDelay: "4s" } },
+      ]} />
       <Navbar />
 
       <div className="container mx-auto pt-28 pb-16 px-4 max-w-6xl relative z-10">
