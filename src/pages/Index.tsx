@@ -388,32 +388,31 @@ export default function Index() {
 
       <SectionDivider />
 
-      {/* Features */}
+      {/* Testimonials — moved up for early social proof */}
       <section className="py-28 md:py-32 px-4">
         <div className="container mx-auto max-w-5xl">
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="font-display text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-20 tracking-tight"
-          >
-            {t("home.features_title")}
+          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+            className="font-display text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-20 tracking-tight">
+            {t("home.testimonials_title")}
           </motion.h2>
           <div className="grid md:grid-cols-3 gap-8">
-            {[1, 2, 3].map((n, i) => {
-              const Icon = featureIcons[i];
-              return (
-                <motion.article key={n} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-                  transition={{ delay: i * 0.1, duration: 0.6, ease }}
-                  className="glass-card-elevated p-9 text-center gradient-border">
-                  <div className="w-14 h-14 rounded-2xl gradient-bg-premium flex items-center justify-center mx-auto mb-6 shadow-lg shadow-primary/20">
-                    <Icon className="w-7 h-7 text-primary-foreground" />
+            {[1, 2, 3].map((n, i) => (
+              <motion.article key={n} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }} transition={{ delay: i * 0.15, duration: 0.6, ease }}
+                className="glass-card-elevated p-8 sm:p-9 flex flex-col gradient-border">
+                <Quote className="w-8 h-8 text-primary/40 mb-5" />
+                <p className="text-sm text-foreground/80 leading-relaxed flex-1 italic">
+                  "{t(`home.testimonial${n}_quote`)}"
+                </p>
+                <div className="flex items-center gap-3 mt-7 pt-6 border-t border-border/20">
+                  <img src={testimonialAvatars[i]} alt={t(`home.testimonial${n}_name`)} className="w-10 h-10 rounded-full bg-muted ring-2 ring-border/20" loading="lazy" />
+                  <div>
+                    <p className="text-sm font-semibold">{t(`home.testimonial${n}_name`)}</p>
+                    <p className="text-xs text-muted-foreground">{t(`home.testimonial${n}_field`)}</p>
                   </div>
-                  <h3 className="font-display font-semibold mb-3 text-lg">{t(`home.feature${n}_title`)}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{t(`home.feature${n}_desc`)}</p>
-                </motion.article>
-              );
-            })}
+                </div>
+              </motion.article>
+            ))}
           </div>
         </div>
       </section>
