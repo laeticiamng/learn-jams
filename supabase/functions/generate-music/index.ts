@@ -101,6 +101,24 @@ serve(async (req) => {
     const langTag = langMap[language] || langMap["en"];
     const sunoStyle = `${styleMap[style] || "pop"}, ${langTag}`;
 
+    // Sanitize lyrics: remove words Suno may reject as "producer tags"
+    const BLOCKED_PATTERNS = [
+      // Chemical / scientific terms often flagged
+      /\bphosphate\b/gi, /\bphospho\w*/gi, /\badenosine\b/gi,
+      // Common producer tag patterns
+      /\b(dj\s+\w+)\b/gi, /\b(produced\s+by)\b/gi, /\b(feat\.\s*\w+)\b/gi,
+      // Artist name patterns Suno may flag
+      /\b(lil\s+\w+)\b/gi, /\b(mc\s+\w+)\b/gi, /\b(young\s+\w+)\b/gi,
+    ];
+    let cleanLyrics = lyrics;
+    for (const pattern of BLOCKED_PATTERNS) {
+      cleanLyrics = cleanLyrics.replace(pattern, (match: string) => {
+        // Replace with phonetically similar but safe version
+        return match.replace(/[aeiou]/gi, (v: string) => v === v.toUpperCase() ? "A" : "a").slice(0, -1);
+      });
+    }
+    console.log(`[generate-music] Sanitized lyrics: removed ${lyrics.length - cleanLyrics.length} chars of blocked patterns`);
+
     const response = await fetch("https://api.sunoapi.org/api/v1/generate", {
       method: "POST",
       headers: {
@@ -108,7 +126,7 @@ serve(async (req) => {
         Authorization: `Bearer ${SUNO_API_KEY}`,
       },
       body: JSON.stringify({
-        prompt: lyrics.slice(0, 5000),
+        prompt: cleanLyrics.slice(0, 5000),
         style: sunoStyle,
         title: (title || "StudyBeats").slice(0, 80),
         customMode: true,

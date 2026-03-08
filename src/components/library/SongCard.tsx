@@ -104,6 +104,24 @@ export function SongCard({ song, isFavorite, onToggleFavorite, onRetry }: SongCa
               {Math.floor(song.duration / 60)}:{(song.duration % 60).toString().padStart(2, "0")}
             </span>
           )}
+          {isError && onRetry && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <motion.button
+                  whileHover={{ scale: 1.15 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRetry(song.id);
+                  }}
+                  className="hover:text-primary transition-colors duration-300 p-1.5 rounded-lg hover:bg-primary/10"
+                >
+                  <RotateCcw className="w-4.5 h-4.5" />
+                </motion.button>
+              </TooltipTrigger>
+              <TooltipContent>{t("library.retry_tooltip", "Retry generation")}</TooltipContent>
+            </Tooltip>
+          )}
           {song.status === "ready" && (
             <Tooltip>
               <TooltipTrigger asChild>

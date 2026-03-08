@@ -136,6 +136,7 @@ export default function Library() {
                 song={song}
                 isFavorite={favorites.has(song.id)}
                 onToggleFavorite={toggleFavorite}
+                onRetry={handleRetry}
               />
             ))}
           </motion.div>
