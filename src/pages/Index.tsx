@@ -490,59 +490,6 @@ export default function Index() {
 
       <SectionDivider />
 
-      {/* Listen anywhere */}
-      <section className="py-28 md:py-32 px-4">
-        <div className="container mx-auto max-w-4xl">
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="font-display text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-5 tracking-tight"
-          >
-            {t("home.listen_title")}
-          </motion.h2>
-          <p className="text-center text-muted-foreground mb-16 text-lg max-w-xl mx-auto">{t("home.listen_subtitle")}</p>
-          <div className="grid sm:grid-cols-2 gap-6">
-            {[1, 2, 3, 4].map((n, i) => (
-              <motion.div key={n} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.5, ease }}
-                className="glass-card-elevated p-8 gradient-border">
-                <div className="text-2xl mb-4">{t(`home.listen${n}_emoji`)}</div>
-                <h3 className="font-display font-semibold mb-2 text-lg">{t(`home.listen${n}_label`)}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{t(`home.listen${n}_desc`)}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <SectionDivider />
-
-      {/* Target */}
-      <section className="py-28 md:py-32 px-4">
-        <div className="container mx-auto max-w-4xl">
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="font-display text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-16 tracking-tight"
-          >
-            {t("home.target_title")}
-          </motion.h2>
-          <div className="grid sm:grid-cols-2 gap-6">
-            {[1, 2, 3, 4].map((n, i) => (
-              <motion.div key={n} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.5, ease }}
-                className="glass-card-elevated p-8 gradient-border">
-                <div className="text-2xl mb-4">{t(`home.target${n}_emoji`)}</div>
-                <h3 className="font-display font-semibold mb-2 text-lg">{t(`home.target${n}_label`)}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{t(`home.target${n}_desc`)}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       <SectionDivider />
 
       {/* FAQ */}
