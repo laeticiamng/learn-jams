@@ -99,7 +99,7 @@ serve(async (req) => {
     }
 
     // Query Suno API for task status
-    log("POLL", "Querying Suno API", { songId, taskId: song.suno_task_id });
+    log("info", "polling_suno", { song_id: songId, task_id: song.suno_task_id });
     const sunoResponse = await fetch(
       `https://api.sunoapi.org/api/v1/generate/record-info?taskId=${song.suno_task_id}`,
       {
