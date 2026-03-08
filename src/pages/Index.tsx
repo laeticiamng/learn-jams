@@ -170,9 +170,9 @@ const scienceIcons = [Brain, Repeat, Timer, Dumbbell];
 const featureIcons = [Brain, BookOpen, Shield];
 
 const testimonialAvatars = [
-  "https://api.dicebear.com/9.x/notionists/svg?seed=Marie&backgroundColor=b6e3f4",
-  "https://api.dicebear.com/9.x/notionists/svg?seed=Karim&backgroundColor=c0aede",
-  "https://api.dicebear.com/9.x/notionists/svg?seed=Chloe&backgroundColor=ffd5dc",
+  testimonialMarie,
+  testimonialKarim,
+  testimonialChloe,
 ];
 
 export default function Index() {
