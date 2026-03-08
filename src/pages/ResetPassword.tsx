@@ -41,7 +41,7 @@ export default function ResetPassword() {
     const { error } = await updatePassword(password);
     setLoading(false);
     if (error) toast.error(error.message);
-    else { toast.success(t("auth.success_password_updated")); navigate("/create"); }
+    else { toast.success(t("auth.success_password_updated")); navigate("/login"); }
   };
 
   if (!validRecovery) return (

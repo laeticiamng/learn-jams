@@ -89,17 +89,16 @@ const DemoPlayer = ({ listenLabel, titleLabel }: { listenLabel: string; titleLab
       <motion.div
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
+        onClick={togglePlay}
         className="w-full glass-card-elevated p-4 flex items-center gap-4 group cursor-pointer"
-        role="group"
-        aria-label={titleLabel}
+        role="button"
+        aria-label={playing ? "Pause" : "Play"}
+        tabIndex={0}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); togglePlay(); } }}
       >
-        <button
-          onClick={togglePlay}
-          className="w-12 h-12 rounded-xl gradient-bg-premium flex items-center justify-center shrink-0 shadow-lg shadow-primary/20"
-          aria-label={playing ? "Pause" : "Play"}
-        >
+        <div className="w-12 h-12 rounded-xl gradient-bg-premium flex items-center justify-center shrink-0 shadow-lg shadow-primary/20">
           {playing ? <Pause className="w-5 h-5 text-primary-foreground" /> : <Play className="w-5 h-5 text-primary-foreground ml-0.5" />}
-        </button>
+        </div>
         <div className="flex-1 text-left min-w-0">
           <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">{listenLabel}</p>
           <p className="text-sm font-semibold truncate">{titleLabel}</p>
@@ -112,6 +111,7 @@ const DemoPlayer = ({ listenLabel, titleLabel }: { listenLabel: string; titleLab
             aria-valuemax={100}
             tabIndex={0}
             onClick={(e) => {
+              e.stopPropagation();
               const audio = audioRef.current;
               if (!audio || !audio.duration) return;
               const rect = e.currentTarget.getBoundingClientRect();
