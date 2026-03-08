@@ -17,7 +17,7 @@ interface Question { question: string; options: string[]; correctIndex: number; 
 
 export default function Quiz() {
   const { t } = useTranslation();
-  usePageSEO({ title: `Quiz — StudyBeats`, noindex: true });
+  usePageSEO({ title: "Quiz — StudyBeats", description: "Quiz", noindex: true });
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();

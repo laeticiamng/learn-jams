@@ -38,7 +38,7 @@ const styleEmojis: Record<string, string> = {
 
 export default function Player() {
   const { t } = useTranslation();
-  usePageSEO({ title: song?.title ? `${song.title} — StudyBeats` : "Player — StudyBeats", noindex: true });
+  usePageSEO({ title: "Player — StudyBeats", description: "Player", noindex: true });
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
