@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ParallaxOrbs } from "@/components/ParallaxOrbs";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
@@ -40,9 +41,9 @@ export default function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 relative overflow-hidden">
       {/* Ambient */}
-      <div className="fixed inset-0 pointer-events-none" style={{ background: "var(--gradient-glow)" }} />
-      <div className="fixed inset-0 pointer-events-none" style={{ background: "var(--gradient-mesh)" }} />
-      <div className="fixed top-1/4 left-1/3 w-[400px] h-[400px] pointer-events-none ambient-orb" style={{ background: "hsl(265, 90%, 60%)", opacity: 0.08 }} />
+      <ParallaxOrbs glow orbs={[
+        { className: "fixed top-1/4 left-1/3 w-[400px] h-[400px] pointer-events-none ambient-orb", style: { background: "hsl(265, 90%, 60%)", opacity: 0.08 } },
+      ]} />
 
       <motion.div
         initial={{ opacity: 0, y: 24, scale: 0.97, filter: "blur(10px)" }}
