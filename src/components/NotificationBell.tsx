@@ -17,7 +17,10 @@ export default function NotificationBell() {
   const { notifications, unreadCount, markAsRead, markAllAsRead } =
     useNotifications();
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+
+  const dateFnsLocaleMap: Record<string, Locale> = { fr, de, es, ar, zh: zhCN, hi };
+  const dateFnsLocale = dateFnsLocaleMap[i18n.language?.substring(0, 2)] || undefined;
 
   const handleClick = (notif: { id: string; song_id: string | null; is_read: boolean }) => {
     if (!notif.is_read) markAsRead(notif.id);
