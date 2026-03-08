@@ -45,6 +45,7 @@ export default function Pricing() {
   usePageSEO({
     title: "StudyBeats — " + t("pricing.title"),
     description: t("pricing.subtitle"),
+    canonical: "/pricing",
   });
 
   useEffect(() => {

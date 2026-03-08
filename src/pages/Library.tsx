@@ -34,6 +34,7 @@ const container = {
 
 export default function Library() {
   const { t } = useTranslation();
+  usePageSEO({ title: t("library.title"), description: t("library.title"), noindex: true });
   const { user } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();

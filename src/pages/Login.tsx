@@ -89,6 +89,9 @@ export default function Login() {
           {t("auth.no_account")} <Link to="/signup" className="text-primary hover:underline font-medium transition-colors">{t("auth.signup_link")}</Link>
         </p>
       </motion.div>
+      <div className="fixed bottom-0 left-0 right-0 z-10">
+        <Footer />
+      </div>
     </div>
   );
 }

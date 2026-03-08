@@ -34,6 +34,7 @@ const fadeSlide = {
 
 export default function Create() {
   const { t, i18n } = useTranslation();
+  usePageSEO({ title: t("nav.create") + " — StudyBeats", description: t("create.upload_subtitle"), noindex: true });
   const [step, setStep] = useState(0);
   const [courseText, setCourseText] = useState("");
   const [style, setStyle] = useState("pop");
