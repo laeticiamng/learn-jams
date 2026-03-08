@@ -197,7 +197,7 @@ serve(async (req) => {
 
     // Apply centralized sanitizer
     const { cleaned: cleanLyrics, replacedCount, replacedWords } = sanitizeForSuno(lyrics);
-    log("SANITIZE", `Sanitized lyrics`, { songId, replacedCount, replacedWords });
+    log("info", "sanitized_lyrics", { song_id: songId, replaced_count: replacedCount, replaced_words: replacedWords });
 
     const response = await fetch("https://api.sunoapi.org/api/v1/generate", {
       method: "POST",
