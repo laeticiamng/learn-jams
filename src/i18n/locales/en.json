@@ -97,7 +97,7 @@
     "sticky_cta": "Create my song for free"
   },
   "auth": {
-    "login_title": "Welcome back! 👋", "login_subtitle": "Sign in to access your songs",
+    "login_title": "Welcome back", "login_subtitle": "Sign in to access your songs",
     "email": "Email", "email_placeholder": "you@email.com",
     "password": "Password", "password_placeholder": "••••••••", "password_min": "Min. 6 characters",
     "forgot": "Forgot?", "login_button": "Sign in", "login_loading": "Signing in...",
