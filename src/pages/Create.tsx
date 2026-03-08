@@ -188,10 +188,10 @@ export default function Create() {
           {step === 0 && (
             <motion.div key="step0" {...fadeSlide}>
               <div className="text-center mb-12">
-                <h2 className="font-display text-4xl md:text-5xl font-bold mb-4 tracking-tight">
+                <h2 className="font-display text-4xl md:text-5xl font-bold mb-4 tracking-tight text-foreground drop-shadow-[0_2px_12px_rgba(0,0,0,0.5)]">
                   {t("create.upload_title")}
                 </h2>
-                <p className="text-muted-foreground text-lg max-w-lg mx-auto leading-relaxed">{t("create.upload_subtitle")}</p>
+                <p className="text-foreground/70 text-lg max-w-lg mx-auto leading-relaxed">{t("create.upload_subtitle")}</p>
               </div>
               <CourseUploader text={courseText} onTextChange={setCourseText} />
             </motion.div>
