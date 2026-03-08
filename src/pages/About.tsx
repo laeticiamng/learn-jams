@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { ParallaxOrbs } from "@/components/ParallaxOrbs";
 import { useTranslation } from "react-i18next";
 import { Music, Target, Heart, Lightbulb, Users, Brain, Repeat, Timer, Dumbbell } from "lucide-react";
 import { Button } from "@/components/ui/button";
