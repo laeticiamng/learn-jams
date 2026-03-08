@@ -81,15 +81,18 @@ export default function Quiz() {
   );
 
   if (questions.length === 0) return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-4 relative overflow-hidden">
+    <div className="min-h-screen flex flex-col bg-background relative overflow-hidden">
       <Navbar />
       {ambientOrbs}
-      <Brain className="w-12 h-12 text-muted-foreground relative z-10" />
-      <p className="text-muted-foreground relative z-10">{t("quiz.impossible")}</p>
-      <div className="flex gap-3 relative z-10">
-        <Button variant="outline" onClick={() => navigate(`/player/${id}`)}>{t("quiz.back_to_player")}</Button>
-        <Button className="gradient-bg" onClick={fetchQuiz}>{t("quiz.retry")}</Button>
+      <div className="flex-1 flex flex-col items-center justify-center gap-4 relative z-10">
+        <Brain className="w-12 h-12 text-muted-foreground" />
+        <p className="text-muted-foreground">{t("quiz.impossible")}</p>
+        <div className="flex gap-3">
+          <Button variant="outline" onClick={() => navigate(`/player/${id}`)} className="rounded-xl">{t("quiz.back_to_player")}</Button>
+          <Button className="gradient-bg-premium rounded-xl" onClick={fetchQuiz}>{t("quiz.retry")}</Button>
+        </div>
       </div>
+      <Footer />
     </div>
   );
 
