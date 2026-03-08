@@ -11,6 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ParallaxOrbs } from "@/components/ParallaxOrbs";
+import { usePageSEO } from "@/hooks/usePageSEO";
 
 interface Question { question: string; options: string[]; correctIndex: number; explanation: string; }
 
