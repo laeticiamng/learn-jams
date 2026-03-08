@@ -250,7 +250,7 @@ serve(async (req) => {
       generation_error_at: null,
     }).eq("id", songId);
 
-    log("SUCCESS", "Suno task created", { songId, taskId });
+    log("info", "suno_task_created", { song_id: songId, task_id: taskId });
 
     return new Response(JSON.stringify({ success: true, taskId }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
