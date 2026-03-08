@@ -280,3 +280,48 @@
   .scrollbar-none::-webkit-scrollbar { display: none; }
   .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
 }
+
+/* Accessibility modes */
+@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap');
+
+/* Font scaling */
+html {
+  font-size: calc(16px * var(--a11y-font-scale, 1));
+}
+
+/* Dyslexia-friendly font */
+html.a11y-dyslexia body,
+html.a11y-dyslexia h1, html.a11y-dyslexia h2, html.a11y-dyslexia h3,
+html.a11y-dyslexia h4, html.a11y-dyslexia h5, html.a11y-dyslexia h6 {
+  font-family: 'Lexend', -apple-system, sans-serif !important;
+  letter-spacing: 0.03em;
+  word-spacing: 0.1em;
+  line-height: 1.8;
+}
+
+/* ADHD mode: reduced motion + focus indicators */
+html.a11y-adhd * {
+  animation-duration: 0.01ms !important;
+  transition-duration: 0.15s !important;
+}
+html.a11y-adhd *:focus-visible {
+  outline: 3px solid hsl(265, 90%, 60%) !important;
+  outline-offset: 2px;
+}
+
+/* Colorblind-safe palette overrides */
+html.a11y-colorblind {
+  --primary: 210 100% 45%;
+  --secondary: 30 100% 50%;
+  --destructive: 0 0% 30%;
+  --ring: 210 100% 45%;
+}
+
+/* High contrast mode */
+html.a11y-highcontrast {
+  --foreground: 0 0% 100%;
+  --muted-foreground: 0 0% 75%;
+  --border: 0 0% 30%;
+  --card: 240 15% 3%;
+  --background: 0 0% 0%;
+}

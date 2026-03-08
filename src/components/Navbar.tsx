@@ -2,9 +2,10 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Music, Library, User, LogOut, Plus, Menu, Search } from "lucide-react";
+import { Music, Library, User, LogOut, Plus, Menu, Search, Users, Trophy, BookOpen } from "lucide-react";
 import LanguageSelector from "@/components/LanguageSelector";
 import NotificationBell from "@/components/NotificationBell";
+import AccessibilityPanel from "@/components/AccessibilityPanel";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
@@ -56,6 +57,7 @@ export default function Navbar() {
             </button>
           )}
           <LanguageSelector />
+          <AccessibilityPanel />
           {user ? (
             <>
               <Button variant="ghost" size="sm" onClick={() => navigate("/create")} className={navButtonClass("/create")}>
@@ -63,6 +65,12 @@ export default function Navbar() {
               </Button>
               <Button variant="ghost" size="sm" onClick={() => navigate("/library")} className={navButtonClass("/library")}>
                 <Library className="w-4 h-4" /> {t("nav.library")}
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => navigate("/studio")} className={navButtonClass("/studio")}>
+                <Users className="w-4 h-4" /> {t("nav.studio", "Studio")}
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => navigate("/league")} className={navButtonClass("/league")}>
+                <Trophy className="w-4 h-4" /> {t("nav.league", "League")}
               </Button>
               <Button variant="ghost" size="sm" onClick={() => navigate("/profile")} className={navButtonClass("/profile")}>
                 <User className="w-4 h-4" />
@@ -100,6 +108,7 @@ export default function Navbar() {
             </button>
           )}
           <LanguageSelector />
+          <AccessibilityPanel />
           {user && <NotificationBell />}
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
@@ -116,6 +125,15 @@ export default function Navbar() {
                     </Button>
                     <Button variant="ghost" className="justify-start gap-3 rounded-xl h-12" onClick={() => go("/library")}>
                       <Library className="w-4 h-4" /> {t("nav.library")}
+                    </Button>
+                    <Button variant="ghost" className="justify-start gap-3 rounded-xl h-12" onClick={() => go("/studio")}>
+                      <Users className="w-4 h-4" /> {t("nav.studio", "Studio")}
+                    </Button>
+                    <Button variant="ghost" className="justify-start gap-3 rounded-xl h-12" onClick={() => go("/league")}>
+                      <Trophy className="w-4 h-4" /> {t("nav.league", "League")}
+                    </Button>
+                    <Button variant="ghost" className="justify-start gap-3 rounded-xl h-12" onClick={() => go("/export")}>
+                      <BookOpen className="w-4 h-4" /> {t("nav.export", "LMS Export")}
                     </Button>
                     <Button variant="ghost" className="justify-start gap-3 rounded-xl h-12" onClick={() => go("/profile")}>
                       <User className="w-4 h-4" /> {t("profile.title")}
