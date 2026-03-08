@@ -107,6 +107,13 @@ export default function Navbar() {
                       <User className="w-4 h-4" /> {t("profile.title")}
                     </Button>
                     <div className="h-px bg-border/20 my-2" />
+                    <Button variant="ghost" className="justify-start gap-3 rounded-xl h-12 text-muted-foreground" onClick={() => go("/pricing")}>
+                      {t("nav.pricing")}
+                    </Button>
+                    <Button variant="ghost" className="justify-start gap-3 rounded-xl h-12 text-muted-foreground" onClick={() => go("/about")}>
+                      {t("footer.about")}
+                    </Button>
+                    <div className="h-px bg-border/20 my-2" />
                     <Button variant="ghost" className="justify-start gap-3 rounded-xl h-12 text-destructive" onClick={() => { signOut(); go("/"); }}>
                       <LogOut className="w-4 h-4" /> {t("nav.logout")}
                     </Button>
