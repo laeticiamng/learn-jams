@@ -403,5 +403,14 @@
     "title": "Notifications",
     "mark_all_read": "Tout marquer lu",
     "empty": "Aucune notification"
+  },
+  "command": {
+    "search_placeholder": "Rechercher pages, chansons, actions…",
+    "no_results": "Aucun résultat.",
+    "pages": "Pages",
+    "songs": "Chansons",
+    "actions": "Actions",
+    "new_song": "Créer une chanson",
+    "take_quiz": "Lancer un quiz"
   }
 }

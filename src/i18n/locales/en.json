@@ -310,5 +310,14 @@
     "title": "Notifications",
     "mark_all_read": "Mark all read",
     "empty": "No notifications yet"
+  },
+  "command": {
+    "search_placeholder": "Search pages, songs, actions…",
+    "no_results": "No results found.",
+    "pages": "Pages",
+    "songs": "Songs",
+    "actions": "Actions",
+    "new_song": "Create new song",
+    "take_quiz": "Take a quiz"
   }
 }
