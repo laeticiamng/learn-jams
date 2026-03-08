@@ -64,11 +64,7 @@ serve(async (req) => {
       });
     }
 
-    if (error || !song) {
-      return new Response(JSON.stringify({ error: "Song not found" }), {
-        status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    // (song fetch + ownership check already done above)
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");

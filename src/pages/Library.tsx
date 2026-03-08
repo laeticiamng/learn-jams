@@ -4,13 +4,23 @@ import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, Music, Loader2, Heart, ListMusic, Grid3X3, Clock, Filter } from "lucide-react";
+import { Search, Plus, Music, Loader2, Heart, ListMusic, Clock, Trash2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { useAuth } from "@/hooks/useAuth";
 import { useSongs } from "@/hooks/useSongs";
 import { SongCard } from "@/components/library/SongCard";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type FilterTab = "all" | "favorites" | "recent" | "generating";
 
@@ -27,12 +37,12 @@ export default function Library() {
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
   const { songs, favorites, loading, toggleFavorite } = useSongs(user?.id);
   const { i18n } = useTranslation();
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const handleRetry = useCallback(async (songId: string) => {
     const song = songs.find(s => s.id === songId);
     if (!song || !user) return;
     try {
-      // Clear error and reset status
       await supabase.from("songs").update({ 
         status: "generating",
         generation_error: null,
@@ -40,17 +50,31 @@ export default function Library() {
         generation_error_at: null,
         audio_url: null,
         suno_task_id: null,
-      } as any).eq("id", songId);
-      // Retry will re-sanitize lyrics inside generate-music edge function
+      }).eq("id", songId);
       const { error } = await supabase.functions.invoke("generate-music", {
         body: { songId: song.id, lyrics: song.generated_lyrics || "", style: song.style, title: song.title, language: i18n.language },
       });
       if (error) throw error;
       toast.success(t("library.retry_started", "Generation restarted"));
-    } catch (err: any) {
-      toast.error(err.message || "Retry failed");
+    } catch (err: unknown) {
+      toast.error((err as Error).message || "Retry failed");
     }
   }, [songs, user, i18n.language, t]);
+
+  const handleDelete = useCallback(async () => {
+    if (!deleteId || !user) return;
+    try {
+      // Delete favorites first (foreign key)
+      await supabase.from("favorites").delete().eq("song_id", deleteId).eq("user_id", user.id);
+      const { error } = await supabase.from("songs").delete().eq("id", deleteId);
+      if (error) throw error;
+      toast.success(t("library.deleted", "Chanson supprimée"));
+    } catch (err: unknown) {
+      toast.error((err as Error).message || "Delete failed");
+    } finally {
+      setDeleteId(null);
+    }
+  }, [deleteId, user, t]);
 
   const tabs: { key: FilterTab; label: string; icon: typeof ListMusic; count: number }[] = useMemo(() => [
     { key: "all", label: t("library.tab_all", "All"), icon: ListMusic, count: songs.length },
@@ -62,14 +86,12 @@ export default function Library() {
   const filtered = useMemo(() => {
     let result = songs;
 
-    // Tab filter
     switch (activeTab) {
       case "favorites": result = result.filter(s => favorites.has(s.id)); break;
       case "recent": result = result.filter(s => Date.now() - new Date(s.created_at).getTime() < 7 * 86400000); break;
       case "generating": result = result.filter(s => s.status === "generating" || s.status === "pending"); break;
     }
 
-    // Search
     if (search) {
       const q = search.toLowerCase();
       result = result.filter(s => s.title.toLowerCase().includes(q) || s.subject?.toLowerCase().includes(q) || s.style.toLowerCase().includes(q));
@@ -226,12 +248,32 @@ export default function Library() {
                   isFavorite={favorites.has(song.id)}
                   onToggleFavorite={toggleFavorite}
                   onRetry={handleRetry}
+                  onDelete={(id) => setDeleteId(id)}
                 />
               ))}
             </motion.div>
           </AnimatePresence>
         )}
       </div>
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("library.delete_title", "Supprimer cette chanson ?")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("library.delete_description", "Cette action est irréversible. La chanson et ses données seront définitivement supprimées.")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("common.cancel", "Annuler")}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              <Trash2 className="w-4 h-4 mr-2" />
+              {t("library.delete_confirm", "Supprimer")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
