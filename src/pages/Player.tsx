@@ -116,19 +116,25 @@ export default function Player() {
   const lyricsLines = song?.generated_lyrics?.split("\n").filter(Boolean) || [];
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}>
-        <Loader2 className="w-8 h-8 text-primary" />
-      </motion.div>
+    <div className="min-h-screen flex flex-col bg-background">
+      <Navbar />
+      <div className="flex-1 flex items-center justify-center">
+        <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}>
+          <Loader2 className="w-8 h-8 text-primary" />
+        </motion.div>
+      </div>
     </div>
   );
 
   if (!song) return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center space-y-4">
-        <p className="text-muted-foreground">{t("player.not_found")}</p>
-        <Button onClick={() => navigate("/library")} className="rounded-xl">{t("common.back")}</Button>
-      </motion.div>
+    <div className="min-h-screen flex flex-col bg-background">
+      <Navbar />
+      <div className="flex-1 flex items-center justify-center">
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center space-y-4">
+          <p className="text-muted-foreground">{t("player.not_found")}</p>
+          <Button onClick={() => navigate("/library")} className="rounded-xl">{t("common.back")}</Button>
+        </motion.div>
+      </div>
     </div>
   );
 

@@ -139,6 +139,7 @@
     "paywall_description": "You've used your free song this month. Upgrade to Pro for unlimited songs!",
     "paywall_upgrade": "Upgrade to Pro — €14.90/mo",
     "paywall_dismiss": "Maybe later",
+    "pro_quality": "Pro Quality",
     "tab_text": "Text", "tab_pdf": "PDF", "tab_image": "Image / Photo",
     "file_too_large": "File too large (max 200 MB)",
     "extracted_from": "Text extracted from <strong>{{file}}</strong> — you can edit it below",
