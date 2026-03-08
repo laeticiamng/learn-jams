@@ -87,7 +87,7 @@ serve(async (req) => {
         updateData.generation_error = "Complete callback but no audio URL";
         updateData.generation_error_code = "NO_AUDIO_URL";
         updateData.generation_error_at = new Date().toISOString();
-        log("ERROR", "Complete but no audio_url", { songId });
+        log("error", "complete_no_audio", { song_id: songId });
       }
 
       await supabase.from("songs").update(updateData).eq("id", songId);
