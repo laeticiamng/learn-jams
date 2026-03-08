@@ -14,7 +14,7 @@ export interface Song {
   audio_url: string | null;
   duration: number | null;
   created_at: string;
-  is_final_quality?: boolean;
+  is_final_quality: boolean;
 }
 
 interface SongCardProps {

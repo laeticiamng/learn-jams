@@ -119,6 +119,7 @@ serve(async (req) => {
         duration: track.duration ? Math.round(track.duration) : null,
         cover_image_url: track.imageUrl || track.image_url || null,
         status: "ready",
+        is_final_quality: true,
       }).eq("id", songId);
 
       console.log(`[poll-suno] Song ${songId} updated to ready via polling`);
