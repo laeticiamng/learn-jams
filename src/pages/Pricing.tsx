@@ -168,7 +168,6 @@ export default function Pricing() {
                   </span>
                   <div className="flex items-baseline justify-center gap-1">
                     <span className="text-5xl font-display font-bold gradient-text">{formatPrice(lang)}</span>
-                    <span className="text-2xl font-display font-bold text-muted-foreground">€</span>
                     <span className="text-muted-foreground ml-1">/ {t("pricing.month")}</span>
                   </div>
                   <p className="text-muted-foreground mt-3 text-sm">
