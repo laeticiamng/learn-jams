@@ -60,7 +60,7 @@ export default function NotificationBell() {
               className="text-xs text-muted-foreground hover:text-foreground h-7 px-2 gap-1"
             >
               <CheckCheck className="w-3 h-3" />
-              Mark all read
+              {t("notifications.mark_all_read", "Tout marquer lu")}
             </Button>
           )}
         </div>
