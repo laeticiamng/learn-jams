@@ -23,7 +23,7 @@ serve(async (req) => {
     // Validate callback secret
     const expectedSecret = Deno.env.get("SUNO_CALLBACK_SECRET");
     if (expectedSecret && secret !== expectedSecret) {
-      log("AUTH", "Invalid callback secret", { songId });
+      log("error", "invalid_callback_secret", { song_id: songId });
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
