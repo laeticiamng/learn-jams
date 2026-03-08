@@ -32,9 +32,9 @@ export default function Library() {
     const song = songs.find(s => s.id === songId);
     if (!song || !user) return;
     try {
-      await supabase.from("songs").update({ status: "generating" } as any).eq("id", songId);
+      await supabase.from("songs").update({ status: "generating" }).eq("id", songId);
       const { error } = await supabase.functions.invoke("generate-music", {
-        body: { songId: song.id, lyrics: (song as any).generated_lyrics || "", style: song.style, title: song.title, language: i18n.language },
+        body: { songId: song.id, lyrics: song.generated_lyrics || "", style: song.style, title: song.title, language: i18n.language },
       });
       if (error) throw error;
       toast.success(t("library.retry_started", "Generation restarted"));

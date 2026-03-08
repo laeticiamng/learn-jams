@@ -57,17 +57,23 @@ export function useSongs(userId: string | undefined) {
     return () => clearInterval(interval);
   }, [realtimeConnected, userId, fetchData]);
 
-  // Poll generating songs via edge function
+  // Poll generating songs via edge function — use stable ref to avoid interval churn
+  const songsRef = useRef(songs);
+  songsRef.current = songs;
+
   useEffect(() => {
-    const generatingSongs = songs.filter((s) => s.status === "generating");
-    if (generatingSongs.length === 0) return;
+    const hasGenerating = songs.some((s) => s.status === "generating");
+    if (!hasGenerating) return;
     const interval = setInterval(async () => {
+      const generating = songsRef.current.filter((s) => s.status === "generating");
+      if (generating.length === 0) return;
       await Promise.allSettled(
-        generatingSongs.map((song) => supabase.functions.invoke("poll-suno-status", { body: { songId: song.id } }))
+        generating.map((song) => supabase.functions.invoke("poll-suno-status", { body: { songId: song.id } }))
       );
     }, 10000);
     return () => clearInterval(interval);
-  }, [songs]);
+    // Only re-create interval when generating state changes, not every song update
+  }, [songs.some((s) => s.status === "generating")]);
 
   const toggleFavorite = useCallback(
     async (songId: string) => {

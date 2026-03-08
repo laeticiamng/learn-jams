@@ -73,11 +73,13 @@ export function SongCard({ song, isFavorite, onToggleFavorite, onRetry }: SongCa
         {/* Album art mini */}
         <motion.div
           whileHover={isClickable ? { scale: 1.08 } : {}}
-          className={`w-14 h-14 rounded-xl flex items-center justify-center shrink-0 relative transition-all duration-500 bg-gradient-to-br ${
-            song.status === "generating" ? "from-muted/60 to-muted/40" : styleGradient
+          className={`w-14 h-14 rounded-xl flex items-center justify-center shrink-0 relative transition-all duration-500 overflow-hidden ${
+            song.cover_image_url ? "" : `bg-gradient-to-br ${song.status === "generating" ? "from-muted/60 to-muted/40" : styleGradient}`
           }`}
         >
-          {song.status === "generating" ? (
+          {song.cover_image_url ? (
+            <img src={song.cover_image_url} alt={song.title} className="w-full h-full object-cover" />
+          ) : song.status === "generating" ? (
             <Loader2 className="w-5 h-5 text-primary animate-spin" />
           ) : (
             <Play className="w-5 h-5 text-primary-foreground ml-0.5 drop-shadow-lg" />
