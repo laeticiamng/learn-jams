@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Play, Heart, Clock, Loader2, Brain } from "lucide-react";
+import { Play, Heart, Clock, Loader2, Brain, RotateCcw } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
