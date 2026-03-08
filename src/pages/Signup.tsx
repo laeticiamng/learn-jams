@@ -39,8 +39,9 @@ export default function Signup() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4 pt-20 relative overflow-hidden">
+    <div className="min-h-screen flex flex-col bg-background relative overflow-hidden">
       <Navbar />
+      <div className="flex-1 flex items-center justify-center px-4 pt-20">
       <ParallaxOrbs glow orbs={[
         { className: "fixed bottom-1/4 right-1/3 w-[400px] h-[400px] pointer-events-none ambient-orb", style: { background: "hsl(300, 70%, 50%)", opacity: 0.06 } },
       ]} />
