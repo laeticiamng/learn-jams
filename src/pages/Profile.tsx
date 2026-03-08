@@ -99,6 +99,14 @@ export default function Profile() {
       <Navbar />
       <div className="container mx-auto pt-28 pb-16 px-4 max-w-lg relative z-10">
         <motion.div
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+        >
+          <Button variant="ghost" size="sm" onClick={() => navigate("/library")} className="gap-2 mb-6 rounded-xl hover:bg-muted/30 text-muted-foreground">
+            <ArrowLeft className="w-4 h-4" /> {t("library.title", "Bibliothèque")}
+          </Button>
+        </motion.div>
+        <motion.div
           initial={{ opacity: 0, y: 24, filter: "blur(10px)" }}
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           transition={{ duration: 0.7, ease }}
