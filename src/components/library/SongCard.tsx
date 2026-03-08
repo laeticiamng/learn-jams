@@ -20,6 +20,9 @@ export interface Song {
   lyrics_metadata: string | null;
   original_text: string;
   suno_task_id: string | null;
+  generation_error: string | null;
+  generation_error_code: string | null;
+  generation_error_at: string | null;
 }
 
 interface SongCardProps {
