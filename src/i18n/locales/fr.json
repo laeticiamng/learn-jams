@@ -193,7 +193,15 @@
     "upload_pdf_hint": "Glisse ton PDF ici ou clique pour sélectionner (max 200 Mo)",
     "upload_image_hint": "Photo de notes, diapos, tableau... (max 200 Mo)",
     "char_count": "{{chars}} caractères · ~{{minutes}} min de lecture",
-    "default_title": "Ma chanson StudyBeats"
+    "default_title": "Ma chanson StudyBeats",
+    "quota_unlimited": "Chansons illimitées — Pro",
+    "quota_remaining": "{{remaining}}/{{limit}} chanson gratuite restante",
+    "quota_exhausted_title": "Quota épuisé",
+    "quota_exhausted_text": "Passe à Pro pour créer des chansons illimitées",
+    "paywall_title": "Quota atteint",
+    "paywall_description": "Tu as utilisé ta chanson gratuite ce mois-ci. Passe à Pro pour créer des chansons illimitées !",
+    "paywall_upgrade": "Passer à Pro — 14,90 €/mois",
+    "paywall_dismiss": "Plus tard"
   },
   "library": {
     "title": "Ma bibliothèque 🎵",

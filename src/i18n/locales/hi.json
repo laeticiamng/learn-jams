@@ -106,7 +106,15 @@
     "upload_pdf_hint": "PDF यहाँ खींचें या चुनने के लिए क्लिक करें (अधिकतम 200 MB)",
     "upload_image_hint": "नोट्स, स्लाइड, व्हाइटबोर्ड की फोटो... (अधिकतम 200 MB)",
     "char_count": "{{chars}} अक्षर · ~{{minutes}} मिनट पढ़ने का समय",
-    "default_title": "मेरा StudyBeats गाना"
+    "default_title": "मेरा StudyBeats गाना",
+    "quota_unlimited": "असीमित गाने — Pro",
+    "quota_remaining": "{{remaining}}/{{limit}} मुफ्त गाना शेष",
+    "quota_exhausted_title": "कोटा समाप्त",
+    "quota_exhausted_text": "असीमित गाने बनाने के लिए Pro में अपग्रेड करें",
+    "paywall_title": "कोटा पूरा हुआ",
+    "paywall_description": "आपने इस महीने का मुफ्त गाना उपयोग कर लिया है। असीमित गानों के लिए Pro में अपग्रेड करें!",
+    "paywall_upgrade": "Pro में अपग्रेड करें — €14.90/माह",
+    "paywall_dismiss": "बाद में"
   },
   "library": {
     "title": "मेरी लाइब्रेरी 🎵", "songs_count": "{{count}} गाना", "songs_count_plural": "{{count}} गाने",

@@ -106,7 +106,15 @@
     "upload_pdf_hint": "Arrastra tu PDF aquí o haz clic para seleccionar (máx. 200 MB)",
     "upload_image_hint": "Foto de apuntes, diapositivas, pizarra... (máx. 200 MB)",
     "char_count": "{{chars}} caracteres · ~{{minutes}} min de lectura",
-    "default_title": "Mi canción StudyBeats"
+    "default_title": "Mi canción StudyBeats",
+    "quota_unlimited": "Canciones ilimitadas — Pro",
+    "quota_remaining": "{{remaining}}/{{limit}} canción gratuita restante",
+    "quota_exhausted_title": "Cuota agotada",
+    "quota_exhausted_text": "Pasa a Pro para crear canciones ilimitadas",
+    "paywall_title": "Cuota alcanzada",
+    "paywall_description": "Has usado tu canción gratuita este mes. ¡Pasa a Pro para canciones ilimitadas!",
+    "paywall_upgrade": "Pasar a Pro — 14,90 €/mes",
+    "paywall_dismiss": "Más tarde"
   },
   "library": {
     "title": "Mi biblioteca 🎵", "songs_count": "{{count}} canción", "songs_count_plural": "{{count}} canciones",

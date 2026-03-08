@@ -114,7 +114,15 @@
     "upload_pdf_hint": "Ziehe dein PDF hierher oder klicke zum Auswählen (max. 200 MB)",
     "upload_image_hint": "Foto von Notizen, Folien, Tafel... (max. 200 MB)",
     "char_count": "{{chars}} Zeichen · ~{{minutes}} Min. Lesezeit",
-    "default_title": "Mein StudyBeats-Song"
+    "default_title": "Mein StudyBeats-Song",
+    "quota_unlimited": "Unbegrenzte Songs — Pro",
+    "quota_remaining": "{{remaining}}/{{limit}} kostenloser Song übrig",
+    "quota_exhausted_title": "Kontingent aufgebraucht",
+    "quota_exhausted_text": "Wechsle zu Pro für unbegrenzte Songs",
+    "paywall_title": "Kontingent erreicht",
+    "paywall_description": "Du hast deinen kostenlosen Song diesen Monat verbraucht. Wechsle zu Pro für unbegrenzte Songs!",
+    "paywall_upgrade": "Zu Pro wechseln — 14,90 €/Monat",
+    "paywall_dismiss": "Später"
   },
   "library": {
     "title": "Meine Bibliothek 🎵", "songs_count": "{{count}} Song", "songs_count_plural": "{{count}} Songs",

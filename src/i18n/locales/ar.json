@@ -106,7 +106,15 @@
     "upload_pdf_hint": "اسحب PDF هنا أو انقر للاختيار (الحد الأقصى 200 ميجابايت)",
     "upload_image_hint": "صورة ملاحظات، شرائح، سبورة... (الحد الأقصى 200 ميجابايت)",
     "char_count": "{{chars}} حرف · ~{{minutes}} دقيقة قراءة",
-    "default_title": "أغنيتي من StudyBeats"
+    "default_title": "أغنيتي من StudyBeats",
+    "quota_unlimited": "أغاني غير محدودة — Pro",
+    "quota_remaining": "{{remaining}}/{{limit}} أغنية مجانية متبقية",
+    "quota_exhausted_title": "الحصة مستنفدة",
+    "quota_exhausted_text": "انتقل إلى Pro لإنشاء أغاني غير محدودة",
+    "paywall_title": "تم بلوغ الحصة",
+    "paywall_description": "لقد استخدمت أغنيتك المجانية هذا الشهر. انتقل إلى Pro للأغاني غير المحدودة!",
+    "paywall_upgrade": "الانتقال إلى Pro — 14,90 €/شهر",
+    "paywall_dismiss": "لاحقاً"
   },
   "library": {
     "title": "مكتبتي 🎵", "songs_count": "{{count}} أغنية", "songs_count_plural": "{{count}} أغاني",
