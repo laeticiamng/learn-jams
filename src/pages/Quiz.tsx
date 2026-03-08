@@ -92,6 +92,7 @@ export default function Quiz() {
 
   if (finished) return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 relative overflow-hidden">
+      <Navbar />
       {ambientOrbs}
       <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="glass-card-elevated p-8 max-w-md w-full text-center space-y-6 relative z-10">
         <div className="text-6xl">{scoreEmoji}</div>
