@@ -168,7 +168,7 @@ export function StudyNotes({ metadata, t }: StudyNotesProps) {
                       return (
                         <div key={i} className="flex items-start gap-2.5 py-1.5">
                           <CheckCircle2 className="w-4 h-4 text-green-400 mt-0.5 shrink-0" />
-                          <span className="text-foreground/70 text-sm leading-relaxed">{concept}</span>
+                          <span className="text-foreground/85 text-sm leading-relaxed">{concept}</span>
                         </div>
                       );
                     }
