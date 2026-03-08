@@ -2,7 +2,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Music, Library, User, LogOut, Plus, Menu } from "lucide-react";
+import { Music, Library, User, LogOut, Plus, Menu, Search } from "lucide-react";
 import LanguageSelector from "@/components/LanguageSelector";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useState } from "react";
@@ -41,6 +41,16 @@ export default function Navbar() {
 
         {/* Desktop */}
         <div className="hidden md:flex items-center gap-1.5">
+          <button
+            onClick={() => document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }))}
+            className="flex items-center gap-2 px-3 h-9 rounded-xl border border-border/20 bg-muted/20 text-muted-foreground text-sm hover:bg-muted/40 hover:text-foreground transition-all duration-300 mr-1"
+          >
+            <Search className="w-3.5 h-3.5" />
+            <span className="hidden lg:inline text-xs">{t("command.search_placeholder", "Search…")}</span>
+            <kbd className="pointer-events-none hidden lg:inline-flex h-5 select-none items-center gap-0.5 rounded border border-border/30 bg-muted/30 px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+              ⌘K
+            </kbd>
+          </button>
           <LanguageSelector />
           {user ? (
             <>
