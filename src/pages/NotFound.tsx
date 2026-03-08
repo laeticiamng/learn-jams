@@ -16,7 +16,9 @@ const NotFound = () => {
   }, [location.pathname]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4" style={{ background: "var(--gradient-glow)" }}>
+    <div className="min-h-screen flex flex-col bg-background" style={{ background: "var(--gradient-glow)" }}>
+      <Navbar />
+      <div className="flex-1 flex items-center justify-center px-4">
       <div className="glass-card p-12 text-center max-w-md">
         <div className="w-16 h-16 rounded-2xl gradient-bg flex items-center justify-center mx-auto mb-6"><Music className="w-8 h-8 text-primary-foreground" /></div>
         <h1 className="font-display text-5xl font-bold gradient-text mb-4">404</h1>
