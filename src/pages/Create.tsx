@@ -235,7 +235,7 @@ export default function Create() {
           {step === 2 && (
             <motion.div key="step2" {...fadeSlide} className="text-center space-y-10">
               <div>
-                <h2 className="font-display text-4xl md:text-5xl font-bold mb-3 tracking-tight">
+                <h2 className="font-display text-4xl md:text-5xl font-bold mb-3 tracking-tight text-foreground drop-shadow-[0_2px_12px_rgba(0,0,0,0.5)]">
                   {t("create.generate_title")}
                 </h2>
               </div>
