@@ -212,7 +212,7 @@ serve(async (req) => {
         customMode: true,
         instrumental: false,
         model: "V4_5ALL",
-        callBackUrl: `${supabaseUrl}/functions/v1/suno-callback?songId=${songId}&secret=${Deno.env.get("SUNO_CALLBACK_SECRET") || ""}`,
+        callBackUrl: `${supabaseUrl}/functions/v1/suno-callback?songId=${songId}`,
       }),
     });
 
