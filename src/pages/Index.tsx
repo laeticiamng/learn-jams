@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { FileUp, Music, Headphones, BookOpen, Brain, Shield, Quote, Lock, ShieldCheck, CreditCard, ArrowRight, Play, Pause, Volume2, GraduationCap, Users, Trophy, Accessibility } from "lucide-react";
+import { FileUp, Music, Headphones, BookOpen, Brain, Quote, Lock, ShieldCheck, CreditCard, ArrowRight, Play, Pause, Volume2, GraduationCap, Users, Trophy, Accessibility } from "lucide-react";
 import testimonialMarie from "@/assets/testimonial-marie.jpg";
 import testimonialKarim from "@/assets/testimonial-karim.jpg";
 import testimonialChloe from "@/assets/testimonial-chloe.jpg";
@@ -168,7 +168,7 @@ const ParallaxOrbs = () => {
 
 const stepIcons = [FileUp, Music, Headphones];
 
-const featureIcons = [Brain, BookOpen, Shield];
+
 
 const testimonialAvatars = [
   testimonialMarie,
@@ -275,12 +275,16 @@ export default function Index() {
               </div>
             )}
 
-            {/* Social proof */}
-            <div className="flex flex-wrap items-center justify-center gap-5 sm:gap-10 mb-12 text-xs sm:text-sm text-muted-foreground px-2">
-              <span className="flex items-center gap-1.5">🎵 <strong className="text-foreground tabular-nums font-mono"><CountUp target={stats.total_songs} suffix="+" /></strong> {t("home.social_songs_label")}</span>
-              <span className="flex items-center gap-1.5">🎓 <strong className="text-foreground tabular-nums font-mono"><CountUp target={stats.total_users} suffix="+" /></strong> {t("home.social_students_label")}</span>
-              <span className="flex items-center gap-1.5">🎶 <strong className="text-foreground tabular-nums font-mono"><CountUp target={stats.total_styles} /></strong> {t("home.social_styles_label")}</span>
-            </div>
+            {/* Social proof — only show if meaningful data */}
+            {(stats.total_songs >= 10 || stats.total_users >= 10) ? (
+              <div className="flex flex-wrap items-center justify-center gap-5 sm:gap-10 mb-12 text-xs sm:text-sm text-muted-foreground px-2">
+                {stats.total_songs >= 10 && <span className="flex items-center gap-1.5">🎵 <strong className="text-foreground tabular-nums font-mono"><CountUp target={stats.total_songs} suffix="+" /></strong> {t("home.social_songs_label")}</span>}
+                {stats.total_users >= 10 && <span className="flex items-center gap-1.5">🎓 <strong className="text-foreground tabular-nums font-mono"><CountUp target={stats.total_users} suffix="+" /></strong> {t("home.social_students_label")}</span>}
+                <span className="flex items-center gap-1.5">🎶 <strong className="text-foreground tabular-nums font-mono"><CountUp target={stats.total_styles} /></strong> {t("home.social_styles_label")}</span>
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground mb-12">{t("home.early_adopter_hint", "Sois parmi les premiers à essayer · 30 styles musicaux disponibles")}</p>
+            )}
 
             <AudioWave />
             <DemoPlayer listenLabel={t("home.demo_listen")} titleLabel={t("home.demo_title")} />
@@ -403,7 +407,94 @@ export default function Index() {
 
       <SectionDivider />
 
-      {/* Testimonials — moved up for early social proof */}
+      {/* Science — Why it works */}
+      <section className="py-28 md:py-32 px-4">
+        <div className="container mx-auto max-w-5xl">
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-4"
+          >
+            {t("home.science_subtitle")}
+          </motion.p>
+          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+            className="font-display text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-20 tracking-tight">
+            {t("home.science_title")}
+          </motion.h2>
+          <div className="grid md:grid-cols-2 gap-8">
+            {[1, 2, 3, 4].map((n, i) => (
+              <motion.article key={n} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.6, ease }}
+                className="glass-card-elevated p-8 gradient-border">
+                <div className="w-12 h-12 rounded-xl gradient-bg-premium flex items-center justify-center mb-5 shadow-lg shadow-primary/20">
+                  <Brain className="w-6 h-6 text-primary-foreground" />
+                </div>
+                <h3 className="font-display text-lg font-semibold mb-3">{t(`home.science${n}_title`)}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{t(`home.science${n}_desc`)}</p>
+              </motion.article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <SectionDivider />
+
+      {/* Listen everywhere */}
+      <section className="py-28 md:py-32 px-4">
+        <div className="container mx-auto max-w-5xl">
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-4"
+          >
+            {t("home.listen_subtitle")}
+          </motion.p>
+          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+            className="font-display text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-20 tracking-tight">
+            {t("home.listen_title")}
+          </motion.h2>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[1, 2, 3, 4].map((n, i) => (
+              <motion.article key={n} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.6, ease }}
+                className="glass-card-elevated p-7 text-center gradient-border">
+                <span className="text-4xl mb-4 block">{t(`home.listen${n}_emoji`)}</span>
+                <h3 className="font-display text-base font-semibold mb-2">{t(`home.listen${n}_label`)}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{t(`home.listen${n}_desc`)}</p>
+              </motion.article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <SectionDivider />
+
+      {/* Target audience */}
+      <section className="py-28 md:py-32 px-4">
+        <div className="container mx-auto max-w-5xl">
+          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+            className="font-display text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-20 tracking-tight">
+            {t("home.target_title")}
+          </motion.h2>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[1, 2, 3, 4].map((n, i) => (
+              <motion.article key={n} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.6, ease }}
+                className="glass-card-elevated p-7 text-center gradient-border">
+                <span className="text-4xl mb-4 block">{t(`home.target${n}_emoji`)}</span>
+                <h3 className="font-display text-base font-semibold mb-2">{t(`home.target${n}_label`)}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{t(`home.target${n}_desc`)}</p>
+              </motion.article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <SectionDivider />
+
+      {/* Testimonials */}
       <section className="py-28 md:py-32 px-4">
         <div className="container mx-auto max-w-5xl">
           <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
@@ -494,38 +585,6 @@ export default function Index() {
 
       <SectionDivider />
 
-      {/* Features */}
-      <section className="py-28 md:py-32 px-4">
-        <div className="container mx-auto max-w-5xl">
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="font-display text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-20 tracking-tight"
-          >
-            {t("home.features_title")}
-          </motion.h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            {[1, 2, 3].map((n, i) => {
-              const Icon = featureIcons[i];
-              return (
-                <motion.article key={n} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-                  transition={{ delay: i * 0.1, duration: 0.6, ease }}
-                  className="glass-card-elevated p-9 text-center gradient-border">
-                  <div className="w-14 h-14 rounded-2xl gradient-bg-premium flex items-center justify-center mx-auto mb-6 shadow-lg shadow-primary/20">
-                    <Icon className="w-7 h-7 text-primary-foreground" />
-                  </div>
-                  <h3 className="font-display font-semibold mb-3 text-lg">{t(`home.feature${n}_title`)}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{t(`home.feature${n}_desc`)}</p>
-                </motion.article>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      <SectionDivider />
-
       {/* FAQ */}
       <section className="py-28 md:py-32 px-4">
         <div className="container mx-auto max-w-2xl">
@@ -567,8 +626,12 @@ export default function Index() {
           >
             {/* Decorative orb */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[200px] ambient-orb" style={{ background: "hsl(265, 90%, 60%)", opacity: 0.1 }} />
-            <h2 className="font-display text-3xl md:text-5xl font-bold mb-5 tracking-tight relative z-10">{t("home.cta_title")}</h2>
-            <p className="text-muted-foreground mb-12 text-lg relative z-10">{t("home.cta_text")}</p>
+            <h2 className="font-display text-3xl md:text-5xl font-bold mb-5 tracking-tight relative z-10">
+              {stats.total_users >= 10 ? t("home.cta_title") : t("home.cta_title_early", "Prêt à essayer ?")}
+            </h2>
+            <p className="text-muted-foreground mb-12 text-lg relative z-10">
+              {stats.total_users >= 10 ? t("home.cta_text") : t("home.cta_text_early", "Sois parmi les premiers étudiants à essayer StudyBeats. Crée ta première chanson en moins de 2 minutes.")}
+            </p>
             <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="relative z-10">
               <Button size="lg" className="gradient-bg-premium text-lg px-10 h-14 shimmer-btn rounded-2xl shadow-xl shadow-primary/25" onClick={() => navigate(user ? "/create" : "/signup")}>
                 {user ? t("home.cta_create", "Create a song") : t("home.cta_button")}
