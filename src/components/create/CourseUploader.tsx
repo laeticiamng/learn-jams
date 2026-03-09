@@ -32,6 +32,7 @@ export default function CourseUploader({ text, onTextChange }: Props) {
     try {
       const formData = new FormData();
       formData.append("file", file);
+      formData.append("language", i18n.language || "fr");
 
       const { data: { session } } = await supabase.auth.getSession();
       const response = await fetch(
