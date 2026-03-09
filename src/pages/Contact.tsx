@@ -29,6 +29,7 @@ export default function Contact() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !email.trim() || !message.trim()) { toast.error(t("contact.fill_all")); return; }
+    if (honeypot) return; // bot trap
     const now = Date.now();
     if (now - lastSubmit < 60000) { toast.error(t("contact.rate_limit", "Please wait before sending another message.")); return; }
     setSending(true);
