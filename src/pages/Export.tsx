@@ -70,7 +70,7 @@ function generateSCORMHtml(song: Song) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${song.title} — StudyBeats</title>
+  <title>${escapeHtml(song.title)} — StudyBeats</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0a0f; color: #f5f5f5; min-height: 100vh; padding: 2rem; }
