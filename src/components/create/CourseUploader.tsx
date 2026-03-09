@@ -13,7 +13,7 @@ interface Props {
 }
 
 export default function CourseUploader({ text, onTextChange }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [activeTab, setActiveTab] = useState<"text" | "pdf" | "image">("text");
   const [fileName, setFileName] = useState<string | null>(null);
   const [extracting, setExtracting] = useState(false);
