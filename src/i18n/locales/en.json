@@ -279,7 +279,7 @@
     "signup": "Create account", "login": "Sign in", "contact": "Contact & Support",
     "terms": "Terms of Service", "privacy": "Privacy Policy",
     "lyrics_gen": "AI lyrics generation", "styles_count": "30 music styles", "import": "PDF & photo import", "quiz": "Interactive quiz",
-    "rights": "© {{year}} StudyBeats. All rights reserved."
+    "rights": "© {{year}} EMOTIONSCARE SASU — StudyBeats. All rights reserved."
   },
   "common": { "back": "Back", "loading": "Loading...", "error": "Error", "return": "Back to home" },
   "notfound": { "title": "Page not found", "text": "This page doesn't exist or has been moved." },
