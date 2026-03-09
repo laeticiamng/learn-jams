@@ -100,7 +100,7 @@ export default function About() {
           className="glass-card-elevated p-9 mb-8"
         >
           <h2 className="font-display text-xl font-semibold text-foreground mb-6">{t("about.science_title")}</h2>
-          <div className="space-y-6 text-foreground/85 leading-relaxed">
+          <div className="space-y-6 text-foreground/90 leading-relaxed">
             {scienceItems.map(({ icon: Icon, key }, i) => (
               <motion.div
                 key={key}
