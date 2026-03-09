@@ -6,6 +6,40 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const systemPrompts: Record<string, string> = {
+  fr: `Tu es un extracteur de texte. Extrais TOUT le texte visible du document fourni, de manière fidèle et exhaustive. 
+Conserve la structure (titres, paragraphes, listes, tableaux).
+Ne résume PAS, ne reformule PAS, ne commente PAS.
+Retourne uniquement le texte extrait tel quel.
+Si le document contient des formules, retranscris-les en texte lisible.
+Si certaines parties sont illisibles, indique [illisible].`,
+  en: `You are a text extractor. Extract ALL visible text from the provided document, faithfully and exhaustively.
+Preserve the structure (headings, paragraphs, lists, tables).
+Do NOT summarize, do NOT rephrase, do NOT comment.
+Return only the extracted text as-is.
+If the document contains formulas, transcribe them as readable text.
+If some parts are unreadable, indicate [unreadable].`,
+  de: `Du bist ein Textextraktor. Extrahiere den GESAMTEN sichtbaren Text aus dem bereitgestellten Dokument, originalgetreu und vollständig.
+Behalte die Struktur bei (Überschriften, Absätze, Listen, Tabellen).
+Fasse NICHT zusammen, formuliere NICHT um, kommentiere NICHT.
+Gib nur den extrahierten Text zurück.
+Wenn das Dokument Formeln enthält, transkribiere sie als lesbaren Text.
+Wenn Teile unleserlich sind, kennzeichne sie mit [unleserlich].`,
+  es: `Eres un extractor de texto. Extrae TODO el texto visible del documento proporcionado, de manera fiel y exhaustiva.
+Conserva la estructura (títulos, párrafos, listas, tablas).
+NO resumas, NO reformules, NO comentes.
+Devuelve únicamente el texto extraído tal cual.
+Si el documento contiene fórmulas, transcríbelas como texto legible.
+Si algunas partes son ilegibles, indica [ilegible].`,
+};
+
+const userPrompts: Record<string, string> = {
+  fr: "Extrais tout le texte de ce document de cours. Retourne uniquement le texte brut extrait, sans commentaire.",
+  en: "Extract all the text from this course document. Return only the raw extracted text, without commentary.",
+  de: "Extrahiere den gesamten Text aus diesem Kursdokument. Gib nur den rohen extrahierten Text zurück, ohne Kommentar.",
+  es: "Extrae todo el texto de este documento de curso. Devuelve solo el texto extraído sin comentarios.",
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -34,6 +68,7 @@ serve(async (req) => {
 
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
+    const language = (formData.get("language") as string) || "fr";
 
     if (!file) {
       return new Response(JSON.stringify({ error: "No file provided" }), {
@@ -60,6 +95,9 @@ serve(async (req) => {
     const base64 = btoa(binary);
     const mimeType = file.type || "application/pdf";
 
+    const systemPrompt = systemPrompts[language] || systemPrompts["en"];
+    const userPrompt = userPrompts[language] || userPrompts["en"];
+
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -69,28 +107,12 @@ serve(async (req) => {
       body: JSON.stringify({
         model: "google/gemini-2.5-pro",
         messages: [
-          {
-            role: "system",
-            content: `Tu es un extracteur de texte. Extrais TOUT le texte visible du document fourni, de manière fidèle et exhaustive. 
-Conserve la structure (titres, paragraphes, listes, tableaux).
-Ne résume PAS, ne reformule PAS, ne commente PAS.
-Retourne uniquement le texte extrait tel quel.
-Si le document contient des formules, retranscris-les en texte lisible.
-Si certaines parties sont illisibles, indique [illisible].`
-          },
+          { role: "system", content: systemPrompt },
           {
             role: "user",
             content: [
-              {
-                type: "text",
-                text: "Extrais tout le texte de ce document de cours. Retourne uniquement le texte brut extrait, sans commentaire."
-              },
-              {
-                type: "image_url",
-                image_url: {
-                  url: `data:${mimeType};base64,${base64}`
-                }
-              }
+              { type: "text", text: userPrompt },
+              { type: "image_url", image_url: { url: `data:${mimeType};base64,${base64}` } }
             ]
           }
         ],

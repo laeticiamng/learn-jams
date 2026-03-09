@@ -16,7 +16,7 @@ serve(async (req) => {
   try {
     const url = new URL(req.url);
     const songId = url.searchParams.get("songId");
-    const secret = url.searchParams.get("secret");
+    const secret = req.headers.get("x-callback-secret") || url.searchParams.get("secret");
 
     if (!songId) throw new Error("Missing songId");
 
