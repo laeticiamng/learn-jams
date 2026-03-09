@@ -181,6 +181,7 @@ export default function Index() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const [showStickyCta, setShowStickyCta] = useState(false);
+  const [stats, setStats] = useState({ total_songs: 0, total_users: 0, total_styles: 30 });
   const heroRef = useRef<HTMLElement>(null);
   const ctaRef = useRef<HTMLElement>(null);
 
