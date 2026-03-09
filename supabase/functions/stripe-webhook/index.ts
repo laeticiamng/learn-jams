@@ -26,25 +26,21 @@ const supabase = createClient(
 async function findUserIdByEmail(email: string): Promise<string | null> {
   const normalizedEmail = email.trim().toLowerCase();
 
-  // Primary: lookup via profiles (public schema, no auth admin dependency)
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("user_id")
-    .ilike("display_name", normalizedEmail) // fallback field — won't match usually
-    .maybeSingle();
-
-  if (profile?.user_id) return profile.user_id;
-
-  // Fallback: auth admin listUsers
+  // Use auth admin listUsers with pagination to find by email
   try {
-    const { data: users } = await supabase.auth.admin.listUsers({
-      page: 1,
-      perPage: 50,
-    });
-    const match = users?.users?.find(
-      (u) => u.email?.toLowerCase() === normalizedEmail
-    );
-    if (match) return match.id;
+    let page = 1;
+    const perPage = 100;
+    while (true) {
+      const { data: users } = await supabase.auth.admin.listUsers({ page, perPage });
+      if (!users?.users?.length) break;
+      const match = users.users.find(
+        (u) => u.email?.toLowerCase() === normalizedEmail
+      );
+      if (match) return match.id;
+      if (users.users.length < perPage) break;
+      page++;
+      if (page > 10) break; // safety limit: 1000 users max
+    }
   } catch (e) {
     log("warn", "auth_admin_lookup_failed", { email: normalizedEmail, error: String(e) });
   }

@@ -22,12 +22,14 @@ export default function Contact() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
+  const [honeypot, setHoneypot] = useState("");
   const [sending, setSending] = useState(false);
   const [lastSubmit, setLastSubmit] = useState(0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !email.trim() || !message.trim()) { toast.error(t("contact.fill_all")); return; }
+    if (honeypot) return; // bot trap
     const now = Date.now();
     if (now - lastSubmit < 60000) { toast.error(t("contact.rate_limit", "Please wait before sending another message.")); return; }
     setSending(true);
@@ -130,6 +132,10 @@ export default function Contact() {
                 <Label htmlFor="message" className="text-sm font-medium">{t("contact.message_label")}</Label>
                 <Textarea id="message" placeholder={t("contact.message_placeholder")} value={message} onChange={e => setMessage(e.target.value)} required rows={5}
                   className="bg-muted/15 border-border/20 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all duration-300 resize-none" />
+              </div>
+              {/* Honeypot field - hidden from real users */}
+              <div className="absolute opacity-0 pointer-events-none" style={{ position: 'absolute', left: '-9999px' }} aria-hidden="true" tabIndex={-1}>
+                <input type="text" name="website" value={honeypot} onChange={e => setHoneypot(e.target.value)} autoComplete="off" tabIndex={-1} />
               </div>
               <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                 <Button type="submit" className="w-full gradient-bg-premium gap-2 h-12 rounded-xl shadow-lg shadow-primary/20 shimmer-btn" disabled={sending}>
