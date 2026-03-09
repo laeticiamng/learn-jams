@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { FileUp, Music, Headphones, BookOpen, Brain, Shield, Quote, Lock, ShieldCheck, CreditCard, ArrowRight, Play, Pause, Volume2 } from "lucide-react";
+import { FileUp, Music, Headphones, BookOpen, Brain, Shield, Quote, Lock, ShieldCheck, CreditCard, ArrowRight, Play, Pause, Volume2, GraduationCap, Users, Trophy, Accessibility } from "lucide-react";
 import testimonialMarie from "@/assets/testimonial-marie.jpg";
 import testimonialKarim from "@/assets/testimonial-karim.jpg";
 import testimonialChloe from "@/assets/testimonial-chloe.jpg";
@@ -426,6 +426,66 @@ export default function Index() {
                     <p className="text-xs text-muted-foreground">{t(`home.testimonial${n}_field`)}</p>
                   </div>
                 </div>
+              </motion.article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <SectionDivider />
+
+      {/* Platform — 5 key features */}
+      <section className="py-28 md:py-32 px-4">
+        <div className="container mx-auto max-w-6xl">
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-4"
+          >
+            {t("home.platform_subtitle")}
+          </motion.p>
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="font-display text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-20 tracking-tight"
+          >
+            {t("home.platform_title")}
+          </motion.h2>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {([
+              { icon: GraduationCap, key: 1, action: () => navigate("/signup") },
+              { icon: Users, key: 2, action: () => navigate(user ? "/studio" : "/signup") },
+              { icon: Trophy, key: 3, action: () => navigate(user ? "/league" : "/signup") },
+              { icon: Accessibility, key: 4, action: undefined },
+              { icon: BookOpen, key: 5, action: () => navigate(user ? "/export" : "/signup") },
+            ] as const).map(({ icon: Icon, key, action }, i) => (
+              <motion.article
+                key={key}
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.08, duration: 0.6, ease }}
+                className={`glass-card-elevated p-8 flex flex-col gradient-border group ${key <= 2 ? "lg:col-span-1 sm:col-span-1" : ""}`}
+              >
+                <motion.div
+                  whileHover={{ scale: 1.1, rotate: -3 }}
+                  className="w-14 h-14 rounded-2xl gradient-bg-premium flex items-center justify-center mb-6 shadow-lg shadow-primary/20"
+                >
+                  <Icon className="w-7 h-7 text-primary-foreground" />
+                </motion.div>
+                <h3 className="font-display text-lg font-semibold mb-2">{t(`home.platform${key}_title`)}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed flex-1 mb-5">{t(`home.platform${key}_desc`)}</p>
+                {action ? (
+                  <Button variant="ghost" size="sm" onClick={action} className="self-start gap-2 rounded-xl text-primary hover:text-primary hover:bg-primary/10 px-0">
+                    {t(`home.platform${key}_cta`)} <ArrowRight className="w-3.5 h-3.5" />
+                  </Button>
+                ) : (
+                  <p className="text-xs text-muted-foreground/70 flex items-center gap-1.5">
+                    <Accessibility className="w-3.5 h-3.5" /> {t(`home.platform${key}_cta`)}
+                  </p>
+                )}
               </motion.article>
             ))}
           </div>
