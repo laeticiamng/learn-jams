@@ -91,6 +91,8 @@ export default function Navbar() {
                 className={navButtonClass("/pricing")}>{t("nav.pricing")}</Button>
               <Button variant="ghost" size="sm" onClick={() => navigate("/about")}
                 className={navButtonClass("/about")}>{t("footer.about")}</Button>
+              <Button variant="ghost" size="sm" onClick={() => navigate("/contact")}
+                className={navButtonClass("/contact")}>{t("footer.contact")}</Button>
               <Button variant="ghost" size="sm" onClick={() => navigate("/login")}
                 className={navButtonClass("/login")}>{t("nav.login")}</Button>
               <Button size="sm" className="gradient-bg-premium rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
@@ -157,6 +159,7 @@ export default function Navbar() {
                   <>
                     <Button variant="ghost" className="justify-start rounded-xl h-12" onClick={() => go("/pricing")}>{t("nav.pricing")}</Button>
                     <Button variant="ghost" className="justify-start rounded-xl h-12 text-muted-foreground" onClick={() => go("/about")}>{t("footer.about")}</Button>
+                    <Button variant="ghost" className="justify-start rounded-xl h-12 text-muted-foreground" onClick={() => go("/contact")}>{t("footer.contact")}</Button>
                     <div className="h-px bg-border/20 my-2" />
                     <Button variant="ghost" className="justify-start rounded-xl h-12" onClick={() => go("/login")}>{t("nav.login")}</Button>
                     <Button className="gradient-bg-premium mt-3 rounded-xl h-12 shadow-lg shadow-primary/20" onClick={() => go("/signup")}>{t("nav.signup")}</Button>
