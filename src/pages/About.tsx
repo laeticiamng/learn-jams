@@ -128,7 +128,7 @@ export default function About() {
           className="glass-card-elevated p-9 mb-8"
         >
           <h2 className="font-display text-xl font-semibold text-foreground mb-4">{t("about.mission_title")}</h2>
-          <p className="text-foreground/85 leading-relaxed">{t("about.mission_text")}</p>
+          <p className="text-foreground/90 leading-relaxed">{t("about.mission_text")}</p>
         </motion.section>
 
         <motion.section
