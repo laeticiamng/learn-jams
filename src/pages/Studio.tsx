@@ -100,7 +100,14 @@ export default function Studio() {
 
   const loadParticipants = async (sessionId: string) => {
     const { data } = await supabase.from("session_participants").select("*").eq("session_id", sessionId);
-    setParticipants((data as Participant[]) || []);
+    const parts = (data as Participant[]) || [];
+    setParticipants(parts);
+    // Initialize my subtopic/verse from existing data
+    const mine = parts.find(p => p.user_id === user?.id);
+    if (mine) {
+      setMySubtopic(mine.subtopic || "");
+      setMyVerse(mine.verse_text || "");
+    }
   };
 
   const handleCreate = async () => {
