@@ -275,12 +275,16 @@ export default function Index() {
               </div>
             )}
 
-            {/* Social proof */}
-            <div className="flex flex-wrap items-center justify-center gap-5 sm:gap-10 mb-12 text-xs sm:text-sm text-muted-foreground px-2">
-              <span className="flex items-center gap-1.5">🎵 <strong className="text-foreground tabular-nums font-mono"><CountUp target={stats.total_songs} suffix="+" /></strong> {t("home.social_songs_label")}</span>
-              <span className="flex items-center gap-1.5">🎓 <strong className="text-foreground tabular-nums font-mono"><CountUp target={stats.total_users} suffix="+" /></strong> {t("home.social_students_label")}</span>
-              <span className="flex items-center gap-1.5">🎶 <strong className="text-foreground tabular-nums font-mono"><CountUp target={stats.total_styles} /></strong> {t("home.social_styles_label")}</span>
-            </div>
+            {/* Social proof — only show if meaningful data */}
+            {(stats.total_songs >= 10 || stats.total_users >= 10) ? (
+              <div className="flex flex-wrap items-center justify-center gap-5 sm:gap-10 mb-12 text-xs sm:text-sm text-muted-foreground px-2">
+                {stats.total_songs >= 10 && <span className="flex items-center gap-1.5">🎵 <strong className="text-foreground tabular-nums font-mono"><CountUp target={stats.total_songs} suffix="+" /></strong> {t("home.social_songs_label")}</span>}
+                {stats.total_users >= 10 && <span className="flex items-center gap-1.5">🎓 <strong className="text-foreground tabular-nums font-mono"><CountUp target={stats.total_users} suffix="+" /></strong> {t("home.social_students_label")}</span>}
+                <span className="flex items-center gap-1.5">🎶 <strong className="text-foreground tabular-nums font-mono"><CountUp target={stats.total_styles} /></strong> {t("home.social_styles_label")}</span>
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground mb-12">{t("home.early_adopter_hint", "Sois parmi les premiers à essayer · 30 styles musicaux disponibles")}</p>
+            )}
 
             <AudioWave />
             <DemoPlayer listenLabel={t("home.demo_listen")} titleLabel={t("home.demo_title")} />
