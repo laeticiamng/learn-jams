@@ -24,7 +24,16 @@ interface Song {
   subject: string | null;
 }
 
+function escapeXml(str: string): string {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
+}
+
+function escapeHtml(str: string): string {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
 function generateSCORMManifest(song: Song) {
+  const safeTitle = escapeXml(song.title);
   return `<?xml version="1.0" encoding="UTF-8"?>
 <manifest identifier="studybeats-${song.id}" version="1.0"
   xmlns="http://www.imsproject.org/xsd/imscp_rootv1p1p2"
@@ -38,9 +47,9 @@ function generateSCORMManifest(song: Song) {
   </metadata>
   <organizations default="studybeats_org">
     <organization identifier="studybeats_org">
-      <title>${song.title} — StudyBeats</title>
+      <title>${safeTitle} — StudyBeats</title>
       <item identifier="item_1" identifierref="resource_1">
-        <title>${song.title}</title>
+        <title>${safeTitle}</title>
       </item>
     </organization>
   </organizations>
