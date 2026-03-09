@@ -60,8 +60,15 @@ export default function Signup() {
     setLoading(true);
     const { error } = await signUp(email, password, displayName);
     setLoading(false);
-    if (error) toast.error(humanizeError(error.message));
-    else { toast.success(t("auth.success_signup")); navigate("/login"); }
+    if (error) { toast.error(humanizeError(error.message)); return; }
+    // Persist field_of_study in profile if selected
+    if (fieldOfStudy) {
+      const { data: { user: newUser } } = await supabase.auth.getUser();
+      if (newUser) {
+        await supabase.from("profiles").update({ field_of_study: fieldOfStudy }).eq("user_id", newUser.id);
+      }
+    }
+    toast.success(t("auth.success_signup")); navigate("/login");
   };
 
   return (
