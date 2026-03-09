@@ -626,8 +626,12 @@ export default function Index() {
           >
             {/* Decorative orb */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[200px] ambient-orb" style={{ background: "hsl(265, 90%, 60%)", opacity: 0.1 }} />
-            <h2 className="font-display text-3xl md:text-5xl font-bold mb-5 tracking-tight relative z-10">{t("home.cta_title")}</h2>
-            <p className="text-muted-foreground mb-12 text-lg relative z-10">{t("home.cta_text")}</p>
+            <h2 className="font-display text-3xl md:text-5xl font-bold mb-5 tracking-tight relative z-10">
+              {stats.total_users >= 10 ? t("home.cta_title") : t("home.cta_title_early", "Prêt à essayer ?")}
+            </h2>
+            <p className="text-muted-foreground mb-12 text-lg relative z-10">
+              {stats.total_users >= 10 ? t("home.cta_text") : t("home.cta_text_early", "Sois parmi les premiers étudiants à essayer StudyBeats. Crée ta première chanson en moins de 2 minutes.")}
+            </p>
             <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="relative z-10">
               <Button size="lg" className="gradient-bg-premium text-lg px-10 h-14 shimmer-btn rounded-2xl shadow-xl shadow-primary/25" onClick={() => navigate(user ? "/create" : "/signup")}>
                 {user ? t("home.cta_create", "Create a song") : t("home.cta_button")}
