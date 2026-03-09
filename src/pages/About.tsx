@@ -56,7 +56,7 @@ export default function About() {
           className="glass-card-elevated p-9 mb-8"
         >
           <h2 className="font-display text-xl font-semibold text-foreground mb-4">{t("about.summary_title")}</h2>
-          <p className="text-foreground/85 leading-relaxed" dangerouslySetInnerHTML={{ __html: sanitizeHtml(t("about.summary_text")) }} />
+          <p className="text-foreground/90 leading-relaxed" dangerouslySetInnerHTML={{ __html: sanitizeHtml(t("about.summary_text")) }} />
         </motion.section>
 
         {/* Qui sommes-nous / Team */}
@@ -100,7 +100,7 @@ export default function About() {
           className="glass-card-elevated p-9 mb-8"
         >
           <h2 className="font-display text-xl font-semibold text-foreground mb-6">{t("about.science_title")}</h2>
-          <div className="space-y-6 text-foreground/85 leading-relaxed">
+          <div className="space-y-6 text-foreground/90 leading-relaxed">
             {scienceItems.map(({ icon: Icon, key }, i) => (
               <motion.div
                 key={key}
@@ -128,7 +128,7 @@ export default function About() {
           className="glass-card-elevated p-9 mb-8"
         >
           <h2 className="font-display text-xl font-semibold text-foreground mb-4">{t("about.mission_title")}</h2>
-          <p className="text-foreground/85 leading-relaxed">{t("about.mission_text")}</p>
+          <p className="text-foreground/90 leading-relaxed">{t("about.mission_text")}</p>
         </motion.section>
 
         <motion.section
@@ -138,7 +138,7 @@ export default function About() {
           className="glass-card-elevated p-9 mb-8"
         >
           <h2 className="font-display text-xl font-semibold text-foreground mb-4">{t("about.how_title")}</h2>
-          <ol className="space-y-3 text-foreground/85 leading-relaxed list-decimal pl-6 text-sm">
+          <ol className="space-y-3 text-foreground/90 leading-relaxed list-decimal pl-6 text-sm">
             {[1, 2, 3, 4, 5].map(n => <li key={n} dangerouslySetInnerHTML={{ __html: sanitizeHtml(t(`about.how_step${n}`)) }} />)}
           </ol>
         </motion.section>

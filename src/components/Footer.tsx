@@ -61,8 +61,8 @@ export default function Footer() {
 
         <div className="border-t border-border/15 pt-7 flex flex-col items-center gap-2">
           <p className="text-xs text-muted-foreground">{t("footer.rights", { year })}</p>
-          <p className="text-[10px] text-muted-foreground/60">EMOTIONSCARE SASU — SIREN 944 505 445 — 80000 Amiens, France</p>
-          <a href="mailto:contact@emotionscare.com" className="text-[10px] text-muted-foreground/60 hover:text-muted-foreground transition-colors">contact@emotionscare.com</a>
+          <p className="text-[10px] text-muted-foreground/70">EMOTIONSCARE SASU — SIREN 944 505 445 — 80000 Amiens, France</p>
+          <a href="mailto:contact@emotionscare.com" className="text-[10px] text-muted-foreground/70 hover:text-muted-foreground transition-colors">contact@emotionscare.com</a>
         </div>
       </div>
     </footer>

@@ -507,7 +507,7 @@ export default function Index() {
                 viewport={{ once: true }} transition={{ delay: i * 0.15, duration: 0.6, ease }}
                 className="glass-card-elevated p-8 sm:p-9 flex flex-col gradient-border">
                 <Quote className="w-8 h-8 text-primary/40 mb-5" />
-                <p className="text-sm text-foreground/80 leading-relaxed flex-1 italic">
+                <p className="text-sm text-foreground/90 leading-relaxed flex-1 italic">
                   "{t(`home.testimonial${n}_quote`)}"
                 </p>
                 <div className="flex items-center gap-3 mt-7 pt-6 border-t border-border/20">
@@ -573,7 +573,7 @@ export default function Index() {
                     {t(`home.platform${key}_cta`)} <ArrowRight className="w-3.5 h-3.5" />
                   </Button>
                 ) : (
-                  <p className="text-xs text-muted-foreground/70 flex items-center gap-1.5">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1.5">
                     <Accessibility className="w-3.5 h-3.5" /> {t(`home.platform${key}_cta`)}
                   </p>
                 )}

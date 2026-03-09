@@ -166,7 +166,7 @@ export default function Create() {
                 )}
               </motion.div>
               <span className={`text-sm hidden sm:block font-medium transition-colors duration-500 ${
-                i <= step ? "text-foreground" : "text-muted-foreground/50"
+                i <= step ? "text-foreground" : "text-muted-foreground/70"
               }`}>
                 {label}
               </span>
@@ -192,7 +192,7 @@ export default function Create() {
                 <h2 className="font-display text-4xl md:text-5xl font-bold mb-4 tracking-tight text-foreground drop-shadow-[0_2px_12px_rgba(0,0,0,0.5)]">
                   {t("create.upload_title")}
                 </h2>
-                <p className="text-foreground/80 text-lg max-w-lg mx-auto leading-relaxed">{t("create.upload_subtitle")}</p>
+                <p className="text-muted-foreground text-lg max-w-lg mx-auto leading-relaxed">{t("create.upload_subtitle")}</p>
               </div>
               <CourseUploader text={courseText} onTextChange={setCourseText} />
               {courseText.length > 0 && courseText.trim().length <= 20 && (
@@ -208,7 +208,7 @@ export default function Create() {
                 <h2 className="font-display text-4xl md:text-5xl font-bold mb-4 tracking-tight text-foreground drop-shadow-[0_2px_12px_rgba(0,0,0,0.5)]">
                   {t("create.style_title")}
                 </h2>
-                <p className="text-foreground/80 text-lg max-w-lg mx-auto leading-relaxed">{t("create.style_subtitle")}</p>
+                <p className="text-muted-foreground text-lg max-w-lg mx-auto leading-relaxed">{t("create.style_subtitle")}</p>
               </div>
               <StylePicker selected={style} onSelect={setStyle} />
               <motion.div
