@@ -168,7 +168,7 @@ const ParallaxOrbs = () => {
 
 const stepIcons = [FileUp, Music, Headphones];
 
-const featureIcons = [Brain, BookOpen, Shield];
+
 
 const testimonialAvatars = [
   testimonialMarie,
