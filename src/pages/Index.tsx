@@ -573,7 +573,7 @@ export default function Index() {
                     {t(`home.platform${key}_cta`)} <ArrowRight className="w-3.5 h-3.5" />
                   </Button>
                 ) : (
-                  <p className="text-xs text-muted-foreground/70 flex items-center gap-1.5">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1.5">
                     <Accessibility className="w-3.5 h-3.5" /> {t(`home.platform${key}_cta`)}
                   </p>
                 )}
