@@ -12,6 +12,7 @@ import Footer from "@/components/Footer";
 import { usePageSEO } from "@/hooks/usePageSEO";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useMemo, useEffect, useState, useRef, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const ease = [0.25, 0.46, 0.45, 0.94] as [number, number, number, number];
 
