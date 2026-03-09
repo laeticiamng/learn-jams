@@ -211,6 +211,13 @@ export default function Index() {
     return () => { document.head.removeChild(script); };
   }, [faqJsonLd]);
 
+  // Fetch platform stats
+  useEffect(() => {
+    supabase.rpc("get_platform_stats").then(({ data }) => {
+      if (data) setStats(data as any);
+    });
+  }, []);
+
   const handleScroll = useCallback(() => {
     const heroBottom = heroRef.current?.getBoundingClientRect().bottom ?? 0;
     const ctaTop = ctaRef.current?.getBoundingClientRect().top ?? Infinity;
