@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { FileUp, Music, Headphones, BookOpen, Brain, Shield, Quote, Lock, ShieldCheck, CreditCard, ArrowRight, Play, Pause, Volume2 } from "lucide-react";
+import { FileUp, Music, Headphones, BookOpen, Brain, Shield, Quote, Lock, ShieldCheck, CreditCard, ArrowRight, Play, Pause, Volume2, GraduationCap, Users, Trophy, Accessibility } from "lucide-react";
 import testimonialMarie from "@/assets/testimonial-marie.jpg";
 import testimonialKarim from "@/assets/testimonial-karim.jpg";
 import testimonialChloe from "@/assets/testimonial-chloe.jpg";
