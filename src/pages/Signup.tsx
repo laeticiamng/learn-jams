@@ -59,16 +59,9 @@ export default function Signup() {
     if (!acceptedTerms) { toast.error(t("auth.error_accept_terms")); return; }
     if (password.length < 6) { toast.error(t("auth.error_password_min")); return; }
     setLoading(true);
-    const { error } = await signUp(email, password, displayName);
+    const { error } = await signUp(email, password, displayName, fieldOfStudy || undefined);
     setLoading(false);
     if (error) { toast.error(humanizeError(error.message)); return; }
-    // Persist field_of_study in profile if selected
-    if (fieldOfStudy) {
-      const { data: { user: newUser } } = await supabase.auth.getUser();
-      if (newUser) {
-        await supabase.from("profiles").update({ field_of_study: fieldOfStudy }).eq("user_id", newUser.id);
-      }
-    }
     toast.success(t("auth.success_signup")); navigate("/login");
   };
 
