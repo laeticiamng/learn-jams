@@ -12,6 +12,7 @@ import Footer from "@/components/Footer";
 import { usePageSEO } from "@/hooks/usePageSEO";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useMemo, useEffect, useState, useRef, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const ease = [0.25, 0.46, 0.45, 0.94] as [number, number, number, number];
 
@@ -180,6 +181,7 @@ export default function Index() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const [showStickyCta, setShowStickyCta] = useState(false);
+  const [stats, setStats] = useState({ total_songs: 0, total_users: 0, total_styles: 30 });
   const heroRef = useRef<HTMLElement>(null);
   const ctaRef = useRef<HTMLElement>(null);
 
@@ -208,6 +210,13 @@ export default function Index() {
     document.head.appendChild(script);
     return () => { document.head.removeChild(script); };
   }, [faqJsonLd]);
+
+  // Fetch platform stats
+  useEffect(() => {
+    supabase.rpc("get_platform_stats").then(({ data }) => {
+      if (data) setStats(data as any);
+    });
+  }, []);
 
   const handleScroll = useCallback(() => {
     const heroBottom = heroRef.current?.getBoundingClientRect().bottom ?? 0;
@@ -268,9 +277,9 @@ export default function Index() {
 
             {/* Social proof */}
             <div className="flex flex-wrap items-center justify-center gap-5 sm:gap-10 mb-12 text-xs sm:text-sm text-muted-foreground px-2">
-              <span className="flex items-center gap-1.5">🎵 <strong className="text-foreground tabular-nums font-mono"><CountUp target={1200} suffix="+" /></strong> {t("home.social_songs_label")}</span>
-              <span className="flex items-center gap-1.5">🎓 <strong className="text-foreground tabular-nums font-mono"><CountUp target={500} suffix="+" /></strong> {t("home.social_students_label")}</span>
-              <span className="flex items-center gap-1.5">🎶 <strong className="text-foreground tabular-nums font-mono"><CountUp target={30} /></strong> {t("home.social_styles_label")}</span>
+              <span className="flex items-center gap-1.5">🎵 <strong className="text-foreground tabular-nums font-mono"><CountUp target={stats.total_songs} suffix="+" /></strong> {t("home.social_songs_label")}</span>
+              <span className="flex items-center gap-1.5">🎓 <strong className="text-foreground tabular-nums font-mono"><CountUp target={stats.total_users} suffix="+" /></strong> {t("home.social_students_label")}</span>
+              <span className="flex items-center gap-1.5">🎶 <strong className="text-foreground tabular-nums font-mono"><CountUp target={stats.total_styles} /></strong> {t("home.social_styles_label")}</span>
             </div>
 
             <AudioWave />

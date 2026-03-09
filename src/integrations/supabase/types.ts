@@ -433,6 +433,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_platform_stats: { Args: never; Returns: Json }
       increment_quota_atomic: {
         Args: { p_limit: number; p_month: string; p_user_id: string }
         Returns: Json

@@ -171,7 +171,7 @@ export default function League() {
         <Tabs value={tab} onValueChange={setTab} className="space-y-6">
           <TabsList className="glass-card mx-auto flex w-fit">
             <TabsTrigger value="global" className="gap-2 rounded-xl"><Globe className="w-3.5 h-3.5" /> {t("league.tab_global", "Global")}</TabsTrigger>
-            <TabsTrigger value="university" className="gap-2 rounded-xl"><GraduationCap className="w-3.5 h-3.5" /> {t("league.tab_university", "University")}</TabsTrigger>
+            <TabsTrigger value="university" className="gap-2 rounded-xl"><GraduationCap className="w-3.5 h-3.5" /> {t("league.tab_university", "University")} <span className="text-[9px] ml-1 px-1.5 py-0.5 rounded-full bg-muted/40 text-muted-foreground">soon</span></TabsTrigger>
             <TabsTrigger value="hall" className="gap-2 rounded-xl"><Star className="w-3.5 h-3.5" /> {t("league.tab_hall", "Hall of Fame")}</TabsTrigger>
           </TabsList>
 

@@ -9,7 +9,7 @@ interface SEOProps {
   ogImage?: string;
 }
 
-const BASE_URL = "https://studybeats.app";
+const BASE_URL = "https://learn-jams.lovable.app";
 const SITE_NAME = "StudyBeats";
 const DEFAULT_OG_IMAGE = `${BASE_URL}/og-image.png`;
 
