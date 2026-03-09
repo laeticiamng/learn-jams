@@ -133,10 +133,10 @@ export default function League() {
           <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-400 via-amber-500 to-orange-600 flex items-center justify-center mx-auto mb-5 shadow-xl shadow-amber-500/20">
             <Trophy className="w-10 h-10 text-primary-foreground" />
           </div>
-          <h1 className="font-display text-4xl md:text-5xl font-bold tracking-tight mb-3">
+          <h1 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-3">
             {t("league.title", "European League")}
           </h1>
-          <p className="text-muted-foreground text-lg max-w-xl mx-auto">
+          <p className="text-muted-foreground text-base sm:text-lg max-w-xl mx-auto">
             {t("league.subtitle", "Earn points by creating and rating StudyBeats. Compete weekly with students across Europe.")}
           </p>
           <p className="text-xs text-muted-foreground/60 mt-2 font-mono">{t("league.week", "Week")} {currentWeek}</p>
@@ -144,23 +144,25 @@ export default function League() {
 
         {/* My stats card */}
         {user && (
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, ease }} className="glass-card-elevated p-6 mb-8 flex items-center gap-6 max-w-2xl mx-auto">
-            <div className="w-14 h-14 rounded-xl gradient-bg-premium flex items-center justify-center shrink-0 shadow-lg shadow-primary/20">
-              <Flame className="w-7 h-7 text-primary-foreground" />
-            </div>
-            <div className="flex-1">
-              <p className="text-sm text-muted-foreground">{t("league.your_stats", "Your stats this week")}</p>
-              <div className="flex items-baseline gap-4 mt-1">
-                <span className="font-display text-3xl font-bold gradient-text">{myPoints}</span>
-                <span className="text-sm text-muted-foreground">{t("league.points", "points")}</span>
-                {myRank && (
-                  <span className="text-sm text-primary font-medium">#{myRank} {t("league.rank", "rank")}</span>
-                )}
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, ease }} className="glass-card-elevated p-5 sm:p-6 mb-8 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 max-w-2xl mx-auto">
+            <div className="flex items-center gap-4 w-full sm:w-auto sm:contents">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl gradient-bg-premium flex items-center justify-center shrink-0 shadow-lg shadow-primary/20">
+                <Flame className="w-6 h-6 sm:w-7 sm:h-7 text-primary-foreground" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-muted-foreground">{t("league.your_stats", "Your stats this week")}</p>
+                <div className="flex items-baseline gap-3 sm:gap-4 mt-1 flex-wrap">
+                  <span className="font-display text-2xl sm:text-3xl font-bold gradient-text">{myPoints}</span>
+                  <span className="text-sm text-muted-foreground">{t("league.points", "points")}</span>
+                  {myRank && (
+                    <span className="text-sm text-primary font-medium">#{myRank} {t("league.rank", "rank")}</span>
+                  )}
+                </div>
               </div>
             </div>
-            <div className="text-right">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">{t("league.earn_points", "Earn points")}</p>
-              <div className="space-y-0.5 text-xs text-muted-foreground">
+            <div className="flex sm:flex-col items-center sm:items-end gap-3 sm:gap-0 w-full sm:w-auto sm:text-right sm:ml-auto border-t sm:border-t-0 border-border/15 pt-3 sm:pt-0">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider sm:mb-1">{t("league.earn_points", "Earn points")}</p>
+              <div className="flex sm:flex-col gap-3 sm:gap-0.5 text-xs text-muted-foreground">
                 <p>🎵 +10 {t("league.per_song", "per song")}</p>
                 <p>⭐ +2 {t("league.per_rating", "per rating")}</p>
               </div>
@@ -169,9 +171,9 @@ export default function League() {
         )}
 
         <Tabs value={tab} onValueChange={setTab} className="space-y-6">
-          <TabsList className="glass-card mx-auto flex w-fit">
-            <TabsTrigger value="global" className="gap-2 rounded-xl"><Globe className="w-3.5 h-3.5" /> {t("league.tab_global", "Global")}</TabsTrigger>
-            <TabsTrigger value="university" className="gap-2 rounded-xl"><GraduationCap className="w-3.5 h-3.5" /> {t("league.tab_university", "University")} <span className="text-[9px] ml-1 px-1.5 py-0.5 rounded-full bg-muted/40 text-muted-foreground">soon</span></TabsTrigger>
+          <TabsList className="glass-card mx-auto flex w-fit overflow-x-auto scrollbar-none max-w-full">
+            <TabsTrigger value="global" className="gap-1.5 sm:gap-2 rounded-xl text-xs sm:text-sm whitespace-nowrap"><Globe className="w-3.5 h-3.5" /> {t("league.tab_global", "Global")}</TabsTrigger>
+            <TabsTrigger value="university" className="gap-1.5 sm:gap-2 rounded-xl text-xs sm:text-sm whitespace-nowrap"><GraduationCap className="w-3.5 h-3.5" /> {t("league.tab_university", "University")} <span className="text-[9px] ml-1 px-1.5 py-0.5 rounded-full bg-muted/40 text-muted-foreground hidden sm:inline">soon</span></TabsTrigger>
             <TabsTrigger value="hall" className="gap-2 rounded-xl"><Star className="w-3.5 h-3.5" /> {t("league.tab_hall", "Hall of Fame")}</TabsTrigger>
           </TabsList>
 

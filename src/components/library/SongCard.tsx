@@ -199,9 +199,9 @@ export function SongCard({ song, isFavorite, onToggleFavorite, onRetry, onDelete
                     whileHover={{ scale: 1.15 }}
                     whileTap={{ scale: 0.9 }}
                     onClick={(e) => { e.stopPropagation(); onRetry(song.id); }}
-                    className="hover:text-primary transition-colors duration-300 p-1.5 rounded-lg hover:bg-primary/10"
+                    className="hover:text-primary transition-colors duration-300 p-2 sm:p-1.5 rounded-lg hover:bg-primary/10"
                   >
-                    <RotateCcw className="w-3.5 h-3.5" />
+                    <RotateCcw className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
                   </motion.button>
                 </TooltipTrigger>
                 <TooltipContent>{t("library.retry_tooltip", "Retry generation")}</TooltipContent>
@@ -214,9 +214,9 @@ export function SongCard({ song, isFavorite, onToggleFavorite, onRetry, onDelete
                     whileHover={{ scale: 1.15 }}
                     whileTap={{ scale: 0.9 }}
                     onClick={(e) => { e.stopPropagation(); navigate(`/quiz/${song.id}`); }}
-                    className="hover:text-primary transition-colors duration-300 p-1.5 rounded-lg hover:bg-primary/10"
+                    className="hover:text-primary transition-colors duration-300 p-2 sm:p-1.5 rounded-lg hover:bg-primary/10"
                   >
-                    <Brain className="w-3.5 h-3.5" />
+                    <Brain className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
                   </motion.button>
                 </TooltipTrigger>
                 <TooltipContent>{t("library.quiz_tooltip")}</TooltipContent>
@@ -229,9 +229,9 @@ export function SongCard({ song, isFavorite, onToggleFavorite, onRetry, onDelete
                     whileHover={{ scale: 1.15 }}
                     whileTap={{ scale: 0.9 }}
                     onClick={(e) => { e.stopPropagation(); onDelete(song.id); }}
-                    className="hover:text-destructive transition-colors duration-300 p-1.5 rounded-lg hover:bg-destructive/10 sm:opacity-0 sm:group-hover:opacity-100"
+                    className="hover:text-destructive transition-colors duration-300 p-2 sm:p-1.5 rounded-lg hover:bg-destructive/10 sm:opacity-0 sm:group-hover:opacity-100"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Trash2 className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
                   </motion.button>
                 </TooltipTrigger>
                 <TooltipContent>{t("library.delete_tooltip", "Supprimer")}</TooltipContent>

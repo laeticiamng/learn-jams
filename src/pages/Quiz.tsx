@@ -66,8 +66,8 @@ export default function Quiz() {
 
   const ambientOrbs = (
     <ParallaxOrbs orbs={[
-      { className: "fixed top-0 left-1/3 w-[600px] h-[400px] pointer-events-none ambient-orb", style: { background: "hsl(265, 90%, 60%)", opacity: 0.1 } },
-      { className: "fixed bottom-20 right-1/4 w-[400px] h-[300px] pointer-events-none ambient-orb", style: { background: "hsl(215, 80%, 55%)", animationDelay: "4s", opacity: 0.08 } },
+      { className: "fixed top-0 left-1/3 w-[300px] sm:w-[450px] md:w-[600px] h-[250px] sm:h-[350px] md:h-[400px] pointer-events-none ambient-orb", style: { background: "hsl(265, 90%, 60%)", opacity: 0.1 } },
+      { className: "fixed bottom-20 right-1/4 w-[200px] sm:w-[300px] md:w-[400px] h-[200px] sm:h-[250px] md:h-[300px] pointer-events-none ambient-orb", style: { background: "hsl(215, 80%, 55%)", animationDelay: "4s", opacity: 0.08 } },
     ]} />
   );
 
@@ -105,7 +105,7 @@ export default function Quiz() {
       <Navbar />
       {ambientOrbs}
       <div className="flex-1 flex items-center justify-center relative z-10">
-        <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="glass-card-elevated p-8 max-w-md w-full text-center space-y-6">
+        <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="glass-card-elevated p-6 sm:p-8 max-w-md w-full text-center space-y-5 sm:space-y-6">
           <div className="text-6xl">{scoreEmoji}</div>
           <h2 className="font-display text-2xl font-bold">{t("quiz.finished")}</h2>
           <div className="space-y-2">
@@ -134,12 +134,12 @@ export default function Quiz() {
       <Navbar />
       {ambientOrbs}
 
-      <div className="flex-1 max-w-2xl mx-auto w-full pt-28 pb-16 relative z-10">
+      <div className="flex-1 max-w-2xl mx-auto w-full pt-24 sm:pt-28 pb-16 relative z-10">
         <div className="flex items-center justify-between mb-6">
           <Button variant="ghost" size="sm" onClick={() => navigate(`/player/${id}`)} className="gap-2">
             <ArrowLeft className="w-4 h-4" /> {t("common.back")}
           </Button>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground"><Brain className="w-4 h-4" /><span>{songTitle}</span></div>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground min-w-0"><Brain className="w-4 h-4 shrink-0" /><span className="truncate">{songTitle}</span></div>
         </div>
 
         <div className="mb-8 space-y-2">

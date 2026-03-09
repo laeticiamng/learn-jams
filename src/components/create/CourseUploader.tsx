@@ -123,7 +123,7 @@ export default function CourseUploader({ text, onTextChange }: Props) {
         <motion.div
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="glass-card-elevated border-dashed border-2 border-border/30 p-14 text-center"
+          className="glass-card-elevated border-dashed border-2 border-border/30 p-8 sm:p-14 text-center"
         >
           {extracting ? (
             <div className="space-y-4">

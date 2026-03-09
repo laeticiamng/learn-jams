@@ -176,16 +176,16 @@ export default function Export() {
       <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,hsl(var(--primary)/0.08),transparent_70%)]" />
       <Navbar />
 
-      <div className="container mx-auto pt-28 pb-16 px-4 max-w-4xl relative z-10">
+      <div className="container mx-auto pt-24 sm:pt-28 pb-16 px-4 max-w-4xl relative z-10">
         <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="gap-2 mb-6 rounded-xl text-muted-foreground">
           <ArrowLeft className="w-4 h-4" /> {t("common.back", "Back")}
         </Button>
 
-        <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease }} className="text-center mb-12">
+        <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease }} className="text-center mb-8 sm:mb-12">
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center mx-auto mb-5 shadow-lg shadow-emerald-500/20">
             <BookOpen className="w-8 h-8 text-primary-foreground" />
           </div>
-          <h1 className="font-display text-4xl md:text-5xl font-bold tracking-tight mb-3">{t("export.title", "LMS Export")}</h1>
+          <h1 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-3">{t("export.title", "LMS Export")}</h1>
           <p className="text-muted-foreground text-lg max-w-xl mx-auto">{t("export.subtitle", "Generate SCORM packages from your StudyBeats for uploading to university learning platforms")}</p>
         </motion.div>
 

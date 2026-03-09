@@ -102,7 +102,7 @@ export default function Navbar() {
         </div>
 
         {/* Mobile */}
-        <div className="flex md:hidden items-center gap-2">
+        <div className="flex md:hidden items-center gap-1.5">
           {user && (
             <button
               onClick={() => document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }))}
@@ -112,8 +112,6 @@ export default function Navbar() {
               <Search className="w-4 h-4" />
             </button>
           )}
-          <LanguageSelector />
-          <AccessibilityPanel />
           {user && <NotificationBell />}
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
@@ -121,7 +119,7 @@ export default function Navbar() {
                 <Menu className="w-5 h-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-72 pt-12 bg-card/95 backdrop-blur-2xl border-border/20">
+            <SheetContent side="right" className="w-[min(20rem,85vw)] pt-12 bg-card/95 backdrop-blur-2xl border-border/20">
               <div className="flex flex-col gap-1">
                 {user ? (
                   <>
@@ -165,6 +163,12 @@ export default function Navbar() {
                     <Button className="gradient-bg-premium mt-3 rounded-xl h-12 shadow-lg shadow-primary/20" onClick={() => go("/signup")}>{t("nav.signup")}</Button>
                   </>
                 )}
+                {/* Settings in drawer on mobile */}
+                <div className="h-px bg-border/20 my-2" />
+                <div className="flex items-center gap-2 px-2">
+                  <LanguageSelector />
+                  <AccessibilityPanel />
+                </div>
               </div>
             </SheetContent>
           </Sheet>

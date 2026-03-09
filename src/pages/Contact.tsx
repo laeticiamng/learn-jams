@@ -58,7 +58,7 @@ export default function Contact() {
       ]} />
 
       <Navbar />
-      <div className="container mx-auto px-4 pt-28 pb-16 max-w-2xl relative z-10">
+      <div className="container mx-auto px-4 pt-24 sm:pt-28 pb-16 max-w-2xl relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 24, filter: "blur(10px)" }}
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
@@ -67,7 +67,7 @@ export default function Contact() {
           <Button variant="ghost" size="sm" asChild className="gap-2 mb-8 rounded-xl text-muted-foreground hover:text-foreground">
             <Link to="/"><ArrowLeft className="w-4 h-4" /> {t("common.back")}</Link>
           </Button>
-          <div className="flex items-center gap-4 mb-10">
+          <div className="flex items-center gap-4 mb-8 sm:mb-10">
             <motion.div
               whileHover={{ scale: 1.05, rotate: -3 }}
               className="w-12 h-12 rounded-xl gradient-bg-premium flex items-center justify-center shadow-lg shadow-primary/20"
@@ -86,7 +86,7 @@ export default function Contact() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1, duration: 0.5, ease }}
-            className="glass-card-elevated p-7"
+            className="glass-card-elevated p-5 sm:p-7"
           >
             <div className="grid sm:grid-cols-2 gap-6">
               <div className="flex items-start gap-3">
@@ -114,7 +114,7 @@ export default function Contact() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.5, ease }}
-            className="glass-card-elevated p-8"
+            className="glass-card-elevated p-5 sm:p-8"
           >
             <h2 className="font-display text-xl font-semibold mb-6">{t("contact.form_title")}</h2>
             <form onSubmit={handleSubmit} className="space-y-5">
@@ -149,7 +149,7 @@ export default function Contact() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.5, ease }}
-            className="glass-card-elevated p-8"
+            className="glass-card-elevated p-5 sm:p-8"
           >
             <h2 className="font-display text-xl font-semibold mb-6">{t("contact.faq_title")}</h2>
             <div className="space-y-5">

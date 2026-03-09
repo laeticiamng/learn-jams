@@ -279,6 +279,24 @@
   /* Scrollbar hide utility */
   .scrollbar-none::-webkit-scrollbar { display: none; }
   .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+
+  /* Safe area padding for fixed bottom elements (iPhone notch/home indicator) */
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* Mobile-optimized ambient orbs — reduce size on small screens */
+  @media (max-width: 640px) {
+    .ambient-orb {
+      filter: blur(80px);
+      opacity: 0.1;
+    }
+  }
+
+  /* Prevent horizontal overflow from ambient orbs */
+  .overflow-x-clip {
+    overflow-x: clip;
+  }
 }
 
 /* Accessibility modes */
@@ -324,4 +342,44 @@ html.a11y-highcontrast {
   --border: 0 0% 30%;
   --card: 240 15% 3%;
   --background: 0 0% 0%;
+}
+
+/* iOS Safari: prevent overscroll bounce on body */
+html {
+  overscroll-behavior: none;
+}
+
+/* iOS Safari: ensure viewport meta is respected */
+@supports (-webkit-touch-callout: none) {
+  /* Fix 100vh on iOS Safari */
+  .min-h-screen {
+    min-height: -webkit-fill-available;
+  }
+}
+
+/* Mobile touch improvements */
+@media (hover: none) and (pointer: coarse) {
+  /* Disable hover-dependent transforms on touch devices */
+  .card-hover:hover {
+    transform: none;
+  }
+
+  /* Ensure touch targets are at least 44px */
+  button, [role="button"], a {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Exception for small inline elements that don't need full touch targets */
+  .glass-nav button,
+  .glass-nav a,
+  nav button,
+  nav a,
+  [class*="text-[10px]"],
+  [class*="text-[11px]"],
+  span[class*="rounded-full"],
+  .p-1\.5 {
+    min-height: unset;
+    min-width: unset;
+  }
 }
