@@ -1,37 +1,42 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://studybeats.app/</loc>
+    <loc>https://learn-jams.lovable.app/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://studybeats.app/login</loc>
+    <loc>https://learn-jams.lovable.app/login</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://studybeats.app/signup</loc>
+    <loc>https://learn-jams.lovable.app/signup</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://studybeats.app/about</loc>
+    <loc>https://learn-jams.lovable.app/pricing</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://learn-jams.lovable.app/about</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://studybeats.app/contact</loc>
+    <loc>https://learn-jams.lovable.app/contact</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://studybeats.app/terms</loc>
+    <loc>https://learn-jams.lovable.app/terms</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://studybeats.app/privacy</loc>
+    <loc>https://learn-jams.lovable.app/privacy</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>

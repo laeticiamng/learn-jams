@@ -22,4 +22,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://studybeats.app/sitemap.xml
+Sitemap: https://learn-jams.lovable.app/sitemap.xml
