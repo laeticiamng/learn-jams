@@ -93,7 +93,7 @@ export default function Contact() {
                 </div>
                 <div>
                   <div className="font-semibold text-sm">{t("contact.email_label")}</div>
-                  <a href="mailto:support@studybeats.app" className="text-sm text-muted-foreground hover:text-foreground transition-colors underline-offset-2 hover:underline">support@studybeats.app</a>
+                  <a href="mailto:contact@emotionscare.com" className="text-sm text-muted-foreground hover:text-foreground transition-colors underline-offset-2 hover:underline">contact@emotionscare.com</a>
                 </div>
               </div>
               <div className="flex items-start gap-3">
