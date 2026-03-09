@@ -28,8 +28,8 @@ export default function Login() {
 
   // Redirect if already authenticated
   useEffect(() => {
-    if (user) navigate("/create", { replace: true });
-  }, [user, navigate]);
+    if (user) navigate(from, { replace: true });
+  }, [user, navigate, from]);
 
   const humanizeError = (message: string): string => {
     if (message.includes("Email not confirmed")) return t("auth.error_email_not_confirmed");

@@ -270,7 +270,6 @@ export default function Studio() {
                     placeholder={t("studio.verse_placeholder", "Write lyrics about your subtopic...")}
                     value={myVerse}
                     onChange={(e) => setMyVerse(e.target.value)}
-                    defaultValue={myParticipant.verse_text || ""}
                     className="bg-muted/15 border-border/20 rounded-xl min-h-[120px] resize-none"
                   />
                 </div>

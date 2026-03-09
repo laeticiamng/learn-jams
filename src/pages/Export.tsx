@@ -103,8 +103,8 @@ function generateSCORMHtml(song: Song) {
 </head>
 <body>
   <div class="container">
-    <h1>${song.title}</h1>
-    <span class="badge">${song.style}${song.subject ? ` · ${song.subject}` : ""}</span>
+    <h1>${escapeHtml(song.title)}</h1>
+    <span class="badge">${escapeHtml(song.style)}${song.subject ? ` · ${escapeHtml(song.subject)}` : ""}</span>
     
     <div class="section">
       <h2>📝 Original Notes</h2>

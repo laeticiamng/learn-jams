@@ -72,6 +72,9 @@ export default function Navbar() {
               <Button variant="ghost" size="sm" onClick={() => navigate("/league")} className={navButtonClass("/league")}>
                 <Trophy className="w-4 h-4" /> {t("nav.league", "League")}
               </Button>
+              <Button variant="ghost" size="sm" onClick={() => navigate("/export")} className={navButtonClass("/export")}>
+                <BookOpen className="w-4 h-4" /> {t("nav.export", "Export")}
+              </Button>
               <Button variant="ghost" size="sm" onClick={() => navigate("/profile")} className={navButtonClass("/profile")}>
                 <User className="w-4 h-4" />
               </Button>
