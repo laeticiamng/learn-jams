@@ -166,7 +166,7 @@ export default function Create() {
                 )}
               </motion.div>
               <span className={`text-sm hidden sm:block font-medium transition-colors duration-500 ${
-                i <= step ? "text-foreground" : "text-muted-foreground/50"
+                i <= step ? "text-foreground" : "text-muted-foreground/70"
               }`}>
                 {label}
               </span>
