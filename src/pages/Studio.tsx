@@ -261,7 +261,6 @@ export default function Studio() {
                     placeholder={t("studio.subtopic_placeholder", "E.g.: Cardiac valves")}
                     value={mySubtopic}
                     onChange={(e) => setMySubtopic(e.target.value)}
-                    defaultValue={myParticipant.subtopic || ""}
                     className="bg-muted/15 border-border/20 h-11 rounded-xl"
                   />
                 </div>
