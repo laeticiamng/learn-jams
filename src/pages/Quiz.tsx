@@ -38,7 +38,7 @@ export default function Quiz() {
     try {
       const { data: song } = await supabase.from("songs").select("title").eq("id", id).single();
       if (song) setSongTitle(song.title);
-      const { data, error } = await supabase.functions.invoke("generate-quiz", { body: { songId: id } });
+      const { data, error } = await supabase.functions.invoke("generate-quiz", { body: { songId: id, lang: i18next.language } });
       if (error) throw error;
       if (data?.questions) setQuestions(data.questions);
       else throw new Error("Invalid quiz format");
