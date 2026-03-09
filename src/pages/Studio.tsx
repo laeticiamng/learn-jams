@@ -197,18 +197,18 @@ export default function Studio() {
           </Button>
 
           <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease }}>
-            <div className="flex items-start justify-between gap-4 mb-8">
+            <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-4 mb-8">
               <div>
-                <h1 className="font-display text-3xl md:text-4xl font-bold tracking-tight">{activeSession.title}</h1>
-                <p className="text-muted-foreground mt-2">{activeSession.topic}</p>
-                <div className="flex items-center gap-3 mt-3">
+                <h1 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight">{activeSession.title}</h1>
+                <p className="text-muted-foreground mt-2 text-sm sm:text-base">{activeSession.topic}</p>
+                <div className="flex items-center gap-2 sm:gap-3 mt-3 flex-wrap">
                   <span className="text-xs px-3 py-1 rounded-full bg-primary/10 text-primary font-medium capitalize">{activeSession.style}</span>
                   <span className={`text-xs px-3 py-1 rounded-full font-medium ${activeSession.status === "open" ? "bg-green-500/10 text-green-500" : "bg-muted/40 text-muted-foreground"}`}>
                     {activeSession.status === "open" ? t("studio.status_open", "Open") : t("studio.status_closed", "Closed")}
                   </span>
                 </div>
               </div>
-              <button onClick={copyInvite} className="flex items-center gap-2 px-4 py-2.5 rounded-xl glass-card text-sm font-medium hover:bg-muted/20 transition-all">
+              <button onClick={copyInvite} className="flex items-center gap-2 px-4 py-2.5 rounded-xl glass-card text-sm font-medium hover:bg-muted/20 transition-all shrink-0">
                 {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
                 <span className="font-mono text-xs">{activeSession.invite_code}</span>
               </button>

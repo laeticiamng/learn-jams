@@ -9,10 +9,10 @@ export default function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="border-t border-border/15 py-14 px-4 relative">
+    <footer className="border-t border-border/15 py-10 sm:py-14 px-4 relative pb-[calc(2.5rem+env(safe-area-inset-bottom,0px))] md:pb-14">
       <div className="container mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-10">
-          <div className="md:col-span-1">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 sm:gap-10 mb-10">
+          <div className="col-span-2 md:col-span-1">
             <Link to="/" className="flex items-center gap-2.5 mb-4">
               <div className="w-8 h-8 rounded-lg gradient-bg-premium flex items-center justify-center shadow-lg shadow-primary/15">
                 <Music className="w-5 h-5 text-primary-foreground" />

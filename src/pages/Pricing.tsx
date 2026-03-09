@@ -95,16 +95,16 @@ export default function Pricing() {
       ]} />
 
       <Navbar />
-      <main className="pt-28 pb-20 relative z-10">
+      <main className="pt-24 sm:pt-28 pb-20 relative z-10">
         <div className="container mx-auto px-4 max-w-5xl">
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: 24, filter: "blur(10px)" }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             transition={{ duration: 0.7, ease }}
-            className="text-center mb-16"
+            className="text-center mb-10 sm:mb-16"
           >
-            <h1 className="text-4xl md:text-6xl font-display font-bold mb-5 tracking-tight">
+            <h1 className="text-3xl sm:text-4xl md:text-6xl font-display font-bold mb-4 sm:mb-5 tracking-tight">
               {t("pricing.title")}
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
@@ -119,7 +119,7 @@ export default function Pricing() {
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1, duration: 0.6, ease }}
-              className="glass-card-elevated p-9 relative gradient-border"
+              className="glass-card-elevated p-6 sm:p-9 relative gradient-border"
             >
               <div className="text-center mb-8">
                 <span className="inline-block px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-widest bg-muted/50 text-muted-foreground mb-5">
@@ -156,7 +156,7 @@ export default function Pricing() {
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2, duration: 0.6, ease }}
-              className="glass-card-elevated p-9 relative overflow-hidden glow-intense"
+              className="glass-card-elevated p-6 sm:p-9 relative overflow-hidden glow-intense"
             >
               {/* Premium glow overlay */}
               <div className="absolute inset-0 bg-gradient-to-br from-primary/8 to-secondary/8 pointer-events-none" />
@@ -254,7 +254,7 @@ export default function Pricing() {
       {/* Sticky mobile CTA — hidden when footer is visible */}
       {!isActive && (
         <motion.div
-          className="fixed bottom-0 left-0 right-0 z-40 p-4 bg-background/80 backdrop-blur-xl border-t border-border/20 md:hidden"
+          className="fixed bottom-0 left-0 right-0 z-40 p-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] bg-background/80 backdrop-blur-xl border-t border-border/20 md:hidden"
           initial={false}
           animate={{ y: footerInView ? 80 : 0, opacity: footerInView ? 0 : 1 }}
           transition={{ duration: 0.25 }}

@@ -151,15 +151,15 @@ const ParallaxOrbs = () => {
   return (
     <>
       <motion.div
-        className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] pointer-events-none"
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-[min(900px,100vw)] h-[300px] sm:h-[400px] md:h-[500px] pointer-events-none"
         style={{ background: "var(--gradient-glow)", y: y1, opacity }}
       />
       <motion.div
-        className="absolute top-20 left-1/4 w-[400px] h-[400px] pointer-events-none ambient-orb"
+        className="absolute top-20 left-1/4 w-[200px] sm:w-[300px] md:w-[400px] h-[200px] sm:h-[300px] md:h-[400px] pointer-events-none ambient-orb"
         style={{ background: "hsl(265, 90%, 60%)", y: y1, scale: scale1, opacity }}
       />
       <motion.div
-        className="absolute top-40 right-1/4 w-[300px] h-[300px] pointer-events-none ambient-orb"
+        className="absolute top-40 right-1/4 w-[150px] sm:w-[200px] md:w-[300px] h-[150px] sm:h-[200px] md:h-[300px] pointer-events-none ambient-orb"
         style={{ background: "hsl(300, 70%, 50%)", animationDelay: "3s", y: y2, scale: scale2, opacity }}
       />
     </>
@@ -235,7 +235,7 @@ export default function Index() {
       <Navbar />
 
       {/* Hero */}
-      <header ref={heroRef} className="relative pt-40 pb-28 px-4">
+      <header ref={heroRef} className="relative pt-24 sm:pt-32 md:pt-40 pb-16 sm:pb-20 md:pb-28 px-4">
         <ParallaxOrbs />
 
         <div className="container mx-auto text-center relative z-10">
@@ -244,15 +244,15 @@ export default function Index() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2, duration: 0.5 }}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-foreground/20 bg-foreground/5 mb-12 text-sm text-foreground/90 font-medium backdrop-blur-sm"
+              className="inline-flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border border-foreground/20 bg-foreground/5 mb-8 sm:mb-12 text-xs sm:text-sm text-foreground/90 font-medium backdrop-blur-sm"
             >
               {t("home.badge")}
             </motion.p>
-            <h1 className="font-display text-5xl sm:text-7xl md:text-[5.5rem] font-bold mb-8 leading-[1.02] px-2 tracking-tight">
+            <h1 className="font-display text-4xl sm:text-5xl md:text-7xl lg:text-[5.5rem] font-bold mb-6 sm:mb-8 leading-[1.05] sm:leading-[1.02] tracking-tight">
               {t("home.title1")}<br />
               <span className="gradient-text glow-text">{t("home.title2")}</span>
             </h1>
-            <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-14 px-2 leading-relaxed">
+            <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 sm:mb-14 leading-relaxed">
               {t("home.subtitle")}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-5 px-4">
@@ -318,7 +318,7 @@ export default function Index() {
       <SectionDivider />
 
       {/* Steps */}
-      <section className="py-28 md:py-32 px-4">
+      <section className="py-16 sm:py-20 md:py-28 lg:py-32 px-4">
         <div className="container mx-auto">
           <motion.p
             initial={{ opacity: 0, y: 10 }}
@@ -329,10 +329,10 @@ export default function Index() {
             {t("home.how_subtitle")}
           </motion.p>
           <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-            className="font-display text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-20 tracking-tight">
+            className="font-display text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-10 sm:mb-16 md:mb-20 tracking-tight">
             {t("home.how_title")}
           </motion.h2>
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto relative">
+          <div className="grid md:grid-cols-3 gap-5 sm:gap-8 max-w-5xl mx-auto relative">
             <div className="hidden md:block absolute top-24 left-[33%] w-[34%] h-px bg-gradient-to-r from-primary/20 to-secondary/20" />
             <div className="hidden md:block absolute top-24 left-[66%] w-[34%] h-px bg-gradient-to-r from-secondary/20 to-primary/20" />
             {[1, 2, 3].map((n, i) => {
@@ -340,7 +340,7 @@ export default function Index() {
               return (
                 <motion.article key={n} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }} transition={{ delay: i * 0.15, duration: 0.6, ease }}
-                  className="glass-card-elevated p-10 text-center group gradient-border">
+                  className="glass-card-elevated p-6 sm:p-8 md:p-10 text-center group gradient-border">
                   <motion.div
                     whileHover={{ scale: 1.1, rotate: -3 }}
                     className="w-16 h-16 rounded-2xl gradient-bg-premium flex items-center justify-center mx-auto mb-7 shadow-lg shadow-primary/20"
@@ -360,7 +360,7 @@ export default function Index() {
       <SectionDivider />
 
       {/* Before → After */}
-      <section className="py-28 md:py-32 px-4">
+      <section className="py-16 sm:py-20 md:py-28 lg:py-32 px-4">
         <div className="container mx-auto max-w-5xl">
           <motion.p
             initial={{ opacity: 0, y: 10 }}
@@ -408,7 +408,7 @@ export default function Index() {
       <SectionDivider />
 
       {/* Science — Why it works */}
-      <section className="py-28 md:py-32 px-4">
+      <section className="py-16 sm:py-20 md:py-28 lg:py-32 px-4">
         <div className="container mx-auto max-w-5xl">
           <motion.p
             initial={{ opacity: 0, y: 10 }}
@@ -419,7 +419,7 @@ export default function Index() {
             {t("home.science_subtitle")}
           </motion.p>
           <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-            className="font-display text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-20 tracking-tight">
+            className="font-display text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-10 sm:mb-16 md:mb-20 tracking-tight">
             {t("home.science_title")}
           </motion.h2>
           <div className="grid md:grid-cols-2 gap-8">
@@ -441,7 +441,7 @@ export default function Index() {
       <SectionDivider />
 
       {/* Listen everywhere */}
-      <section className="py-28 md:py-32 px-4">
+      <section className="py-16 sm:py-20 md:py-28 lg:py-32 px-4">
         <div className="container mx-auto max-w-5xl">
           <motion.p
             initial={{ opacity: 0, y: 10 }}
@@ -452,7 +452,7 @@ export default function Index() {
             {t("home.listen_subtitle")}
           </motion.p>
           <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-            className="font-display text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-20 tracking-tight">
+            className="font-display text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-10 sm:mb-16 md:mb-20 tracking-tight">
             {t("home.listen_title")}
           </motion.h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -472,10 +472,10 @@ export default function Index() {
       <SectionDivider />
 
       {/* Target audience */}
-      <section className="py-28 md:py-32 px-4">
+      <section className="py-16 sm:py-20 md:py-28 lg:py-32 px-4">
         <div className="container mx-auto max-w-5xl">
           <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-            className="font-display text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-20 tracking-tight">
+            className="font-display text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-10 sm:mb-16 md:mb-20 tracking-tight">
             {t("home.target_title")}
           </motion.h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -495,10 +495,10 @@ export default function Index() {
       <SectionDivider />
 
       {/* Testimonials */}
-      <section className="py-28 md:py-32 px-4">
+      <section className="py-16 sm:py-20 md:py-28 lg:py-32 px-4">
         <div className="container mx-auto max-w-5xl">
           <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-            className="font-display text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-20 tracking-tight">
+            className="font-display text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-10 sm:mb-16 md:mb-20 tracking-tight">
             {t("home.testimonials_title")}
           </motion.h2>
           <div className="grid md:grid-cols-3 gap-8">
@@ -526,7 +526,7 @@ export default function Index() {
       <SectionDivider />
 
       {/* Platform — 5 key features */}
-      <section className="py-28 md:py-32 px-4">
+      <section className="py-16 sm:py-20 md:py-28 lg:py-32 px-4">
         <div className="container mx-auto max-w-6xl">
           <motion.p
             initial={{ opacity: 0, y: 10 }}
@@ -586,7 +586,7 @@ export default function Index() {
       <SectionDivider />
 
       {/* FAQ */}
-      <section className="py-28 md:py-32 px-4">
+      <section className="py-16 sm:py-20 md:py-28 lg:py-32 px-4">
         <div className="container mx-auto max-w-2xl">
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
@@ -622,7 +622,7 @@ export default function Index() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.7, ease }}
-            className="glass-card-elevated p-16 text-center glow-intense relative overflow-hidden"
+            className="glass-card-elevated p-8 sm:p-12 md:p-16 text-center glow-intense relative overflow-hidden"
           >
             {/* Decorative orb */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[200px] ambient-orb" style={{ background: "hsl(265, 90%, 60%)", opacity: 0.1 }} />
@@ -649,7 +649,7 @@ export default function Index() {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="fixed bottom-0 left-0 right-0 z-40 md:hidden p-3 bg-background/85 backdrop-blur-2xl border-t border-border/20"
+            className="fixed bottom-0 left-0 right-0 z-40 md:hidden p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] bg-background/85 backdrop-blur-2xl border-t border-border/20"
           >
             <Button className="w-full gradient-bg-premium h-12 text-base font-semibold shimmer-btn rounded-xl shadow-lg shadow-primary/20" onClick={() => navigate(user ? "/create" : "/signup")}>
               {user ? t("home.cta_create", "Create a song") : t("home.sticky_cta")} <ArrowRight className="w-4 h-4 ml-2" />

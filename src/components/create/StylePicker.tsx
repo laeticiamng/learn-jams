@@ -79,7 +79,7 @@ export default function StylePicker({ selected, onSelect }: Props) {
           <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-[0.15em] mb-3">
             {t(`style_categories.${cat.category}`)}
           </h3>
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 sm:gap-3">
             {cat.styles.map((style, i) => (
               <motion.button
                 key={style.id}
@@ -89,7 +89,7 @@ export default function StylePicker({ selected, onSelect }: Props) {
                 whileHover={{ scale: 1.05, y: -2 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => onSelect(style.id)}
-                className={`glass-card p-3.5 text-center transition-all duration-300 cursor-pointer ${
+                className={`glass-card p-2.5 sm:p-3.5 text-center transition-all duration-300 cursor-pointer ${
                   selected === style.id
                     ? "border-primary/40 glow-intense"
                     : "hover:border-border/50 gradient-border"

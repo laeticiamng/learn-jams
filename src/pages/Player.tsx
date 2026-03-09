@@ -152,9 +152,9 @@ export default function Player() {
 
       {hasAudio && <audio ref={audioRef} src={song.audio_url!} preload="metadata" crossOrigin="anonymous" />}
 
-      <div className="container mx-auto pt-28 pb-20 px-4 max-w-2xl relative z-10">
+      <div className="container mx-auto pt-24 sm:pt-28 pb-20 px-4 max-w-2xl relative z-10">
         <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}>
-          <Button variant="ghost" size="sm" onClick={() => navigate("/library")} className="gap-2 mb-10 rounded-xl hover:bg-muted/30 text-muted-foreground">
+          <Button variant="ghost" size="sm" onClick={() => navigate("/library")} className="gap-2 mb-6 sm:mb-10 rounded-xl hover:bg-muted/30 text-muted-foreground">
             <ArrowLeft className="w-4 h-4" /> {t("player.back")}
           </Button>
         </motion.div>
@@ -164,7 +164,7 @@ export default function Player() {
           initial={{ scale: 0.8, opacity: 0, filter: "blur(20px)" }}
           animate={{ scale: 1, opacity: 1, filter: "blur(0px)" }}
           transition={{ duration: 1, ease }}
-          className="relative mx-auto mb-12 w-64 h-64 md:w-80 md:h-80"
+          className="relative mx-auto mb-8 sm:mb-12 w-48 h-48 sm:w-64 sm:h-64 md:w-80 md:h-80"
         >
           {/* Outer vinyl ring */}
           <motion.div
@@ -245,7 +245,7 @@ export default function Player() {
             </div>
 
             {/* Controls */}
-            <div className="flex items-center justify-center gap-8 mb-10">
+            <div className="flex items-center justify-center gap-5 sm:gap-8 mb-8 sm:mb-10">
               <motion.button
                 whileHover={{ scale: 1.15 }}
                 whileTap={{ scale: 0.9 }}
@@ -332,7 +332,7 @@ export default function Player() {
             initial={{ opacity: 0, y: 24, filter: "blur(8px)" }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             transition={{ delay: 0.6, duration: 0.7, ease }}
-            className="glass-card-elevated p-8 md:p-10 space-y-3"
+            className="glass-card-elevated p-5 sm:p-8 md:p-10 space-y-3"
           >
             <h3 className="font-display font-semibold text-lg mb-6 gradient-text">{t("player.lyrics")}</h3>
             {lyricsLines.map((line, i) => (

@@ -141,15 +141,15 @@ export default function Create() {
 
       <Navbar />
 
-      <div className="container mx-auto pt-28 pb-16 px-4 max-w-3xl relative z-10">
+      <div className="container mx-auto pt-24 sm:pt-28 pb-16 px-4 max-w-3xl relative z-10">
         {/* Stepper */}
-        <div className="flex items-center gap-2 mb-16 max-w-md mx-auto">
+        <div className="flex items-center gap-2 mb-10 sm:mb-16 max-w-md mx-auto">
           {stepLabels.map((label, i) => (
-            <div key={i} className="flex items-center gap-3 flex-1">
+            <div key={i} className="flex items-center gap-2 sm:gap-3 flex-1">
               <motion.div
                 layout
                 transition={spring}
-                className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-500 shrink-0 ${
+                className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-500 shrink-0 ${
                   i < step
                     ? "gradient-bg-premium text-primary-foreground shadow-lg shadow-primary/25"
                     : i === step
@@ -189,7 +189,7 @@ export default function Create() {
           {step === 0 && (
             <motion.div key="step0" {...fadeSlide}>
               <div className="text-center mb-12">
-                <h2 className="font-display text-4xl md:text-5xl font-bold mb-4 tracking-tight text-foreground drop-shadow-[0_2px_12px_rgba(0,0,0,0.5)]">
+                <h2 className="font-display text-2xl sm:text-3xl md:text-5xl font-bold mb-3 sm:mb-4 tracking-tight text-foreground drop-shadow-[0_2px_12px_rgba(0,0,0,0.5)]">
                   {t("create.upload_title")}
                 </h2>
                 <p className="text-muted-foreground text-lg max-w-lg mx-auto leading-relaxed">{t("create.upload_subtitle")}</p>
@@ -205,7 +205,7 @@ export default function Create() {
           {step === 1 && (
             <motion.div key="step1" {...fadeSlide}>
               <div className="text-center mb-12">
-                <h2 className="font-display text-4xl md:text-5xl font-bold mb-4 tracking-tight text-foreground drop-shadow-[0_2px_12px_rgba(0,0,0,0.5)]">
+                <h2 className="font-display text-2xl sm:text-3xl md:text-5xl font-bold mb-3 sm:mb-4 tracking-tight text-foreground drop-shadow-[0_2px_12px_rgba(0,0,0,0.5)]">
                   {t("create.style_title")}
                 </h2>
                 <p className="text-muted-foreground text-lg max-w-lg mx-auto leading-relaxed">{t("create.style_subtitle")}</p>

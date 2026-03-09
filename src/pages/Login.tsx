@@ -50,7 +50,7 @@ export default function Login() {
   return (
     <div className="min-h-screen flex flex-col bg-background relative overflow-hidden">
       <Navbar />
-      <div className="flex-1 flex items-center justify-center px-4 pt-20">
+      <div className="flex-1 flex items-center justify-center px-4 pt-20 pb-6">
       <ParallaxOrbs glow orbs={[
         { className: "fixed top-1/4 left-1/3 w-[400px] h-[400px] pointer-events-none ambient-orb", style: { background: "hsl(265, 90%, 60%)", opacity: 0.08 } },
       ]} />
@@ -59,9 +59,9 @@ export default function Login() {
         initial={{ opacity: 0, y: 24, scale: 0.97, filter: "blur(10px)" }}
         animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
         transition={{ duration: 0.7, ease }}
-        className="glass-card-elevated p-9 w-full max-w-md glow-intense relative z-10"
+        className="glass-card-elevated p-6 sm:p-9 w-full max-w-md glow-intense relative z-10"
       >
-        <div className="text-center mb-9">
+        <div className="text-center mb-6 sm:mb-9">
           <Link to="/" className="inline-block mb-5">
             <motion.div
               whileHover={{ scale: 1.05, rotate: -3 }}

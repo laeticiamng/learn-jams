@@ -44,9 +44,9 @@ export default function ForgotPassword() {
         initial={{ opacity: 0, y: 24, scale: 0.97, filter: "blur(10px)" }}
         animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
         transition={{ duration: 0.7, ease }}
-        className="glass-card-elevated p-9 w-full max-w-md relative z-10"
+        className="glass-card-elevated p-6 sm:p-9 w-full max-w-md relative z-10"
       >
-        <div className="text-center mb-9">
+        <div className="text-center mb-6 sm:mb-9">
           <motion.div
             whileHover={{ scale: 1.05, rotate: -3 }}
             className="w-12 h-12 rounded-xl gradient-bg-premium flex items-center justify-center mx-auto mb-5 shadow-lg shadow-primary/25"

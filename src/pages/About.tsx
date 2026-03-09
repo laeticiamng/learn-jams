@@ -30,12 +30,12 @@ export default function About() {
       ]} />
 
       <Navbar />
-      <main className="container mx-auto px-4 pt-28 pb-16 max-w-3xl relative z-10">
+      <main className="container mx-auto px-4 pt-24 sm:pt-28 pb-16 max-w-3xl relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 24, filter: "blur(10px)" }}
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           transition={{ duration: 0.7, ease }}
-          className="flex items-center gap-4 mb-12"
+          className="flex items-center gap-4 mb-8 sm:mb-12"
         >
           <motion.div
             whileHover={{ scale: 1.05, rotate: -3 }}
@@ -53,7 +53,7 @@ export default function About() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1, duration: 0.6, ease }}
-          className="glass-card-elevated p-9 mb-8"
+          className="glass-card-elevated p-5 sm:p-9 mb-6 sm:mb-8"
         >
           <h2 className="font-display text-xl font-semibold text-foreground mb-4">{t("about.summary_title")}</h2>
           <p className="text-foreground/90 leading-relaxed" dangerouslySetInnerHTML={{ __html: sanitizeHtml(t("about.summary_text")) }} />
@@ -64,7 +64,7 @@ export default function About() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15, duration: 0.6, ease }}
-          className="glass-card-elevated p-9 mb-8"
+          className="glass-card-elevated p-5 sm:p-9 mb-6 sm:mb-8"
         >
           <h2 className="font-display text-xl font-semibold text-foreground mb-6">{t("about.team_title")}</h2>
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
@@ -97,7 +97,7 @@ export default function About() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.6, ease }}
-          className="glass-card-elevated p-9 mb-8"
+          className="glass-card-elevated p-5 sm:p-9 mb-6 sm:mb-8"
         >
           <h2 className="font-display text-xl font-semibold text-foreground mb-6">{t("about.science_title")}</h2>
           <div className="space-y-6 text-foreground/90 leading-relaxed">
@@ -125,7 +125,7 @@ export default function About() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.6, ease }}
-          className="glass-card-elevated p-9 mb-8"
+          className="glass-card-elevated p-5 sm:p-9 mb-6 sm:mb-8"
         >
           <h2 className="font-display text-xl font-semibold text-foreground mb-4">{t("about.mission_title")}</h2>
           <p className="text-foreground/90 leading-relaxed">{t("about.mission_text")}</p>
@@ -135,7 +135,7 @@ export default function About() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4, duration: 0.6, ease }}
-          className="glass-card-elevated p-9 mb-8"
+          className="glass-card-elevated p-5 sm:p-9 mb-6 sm:mb-8"
         >
           <h2 className="font-display text-xl font-semibold text-foreground mb-4">{t("about.how_title")}</h2>
           <ol className="space-y-3 text-foreground/90 leading-relaxed list-decimal pl-6 text-sm">
@@ -157,7 +157,7 @@ export default function About() {
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.55 + i * 0.08, ease }}
-                className="glass-card-elevated p-7 gradient-border"
+                className="glass-card-elevated p-5 sm:p-7 gradient-border"
               >
                 <div className="w-10 h-10 rounded-xl gradient-bg-premium flex items-center justify-center mb-4 shadow-lg shadow-primary/15">
                   <Icon className="w-5 h-5 text-primary-foreground" />
@@ -173,7 +173,7 @@ export default function About() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7, duration: 0.6, ease }}
-          className="glass-card-elevated p-10 text-center mb-8 glow-intense"
+          className="glass-card-elevated p-6 sm:p-10 text-center mb-6 sm:mb-8 glow-intense"
         >
           <h2 className="font-display text-xl font-semibold text-foreground mb-4">{t("about.contact_title")}</h2>
           <p className="text-muted-foreground mb-6">{t("about.contact_text")}</p>
