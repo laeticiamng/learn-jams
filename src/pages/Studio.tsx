@@ -100,7 +100,14 @@ export default function Studio() {
 
   const loadParticipants = async (sessionId: string) => {
     const { data } = await supabase.from("session_participants").select("*").eq("session_id", sessionId);
-    setParticipants((data as Participant[]) || []);
+    const parts = (data as Participant[]) || [];
+    setParticipants(parts);
+    // Initialize my subtopic/verse from existing data
+    const mine = parts.find(p => p.user_id === user?.id);
+    if (mine) {
+      setMySubtopic(mine.subtopic || "");
+      setMyVerse(mine.verse_text || "");
+    }
   };
 
   const handleCreate = async () => {
@@ -261,7 +268,6 @@ export default function Studio() {
                     placeholder={t("studio.subtopic_placeholder", "E.g.: Cardiac valves")}
                     value={mySubtopic}
                     onChange={(e) => setMySubtopic(e.target.value)}
-                    defaultValue={myParticipant.subtopic || ""}
                     className="bg-muted/15 border-border/20 h-11 rounded-xl"
                   />
                 </div>
@@ -271,7 +277,6 @@ export default function Studio() {
                     placeholder={t("studio.verse_placeholder", "Write lyrics about your subtopic...")}
                     value={myVerse}
                     onChange={(e) => setMyVerse(e.target.value)}
-                    defaultValue={myParticipant.verse_text || ""}
                     className="bg-muted/15 border-border/20 rounded-xl min-h-[120px] resize-none"
                   />
                 </div>

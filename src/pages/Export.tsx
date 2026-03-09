@@ -24,7 +24,16 @@ interface Song {
   subject: string | null;
 }
 
+function escapeXml(str: string): string {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
+}
+
+function escapeHtml(str: string): string {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
 function generateSCORMManifest(song: Song) {
+  const safeTitle = escapeXml(song.title);
   return `<?xml version="1.0" encoding="UTF-8"?>
 <manifest identifier="studybeats-${song.id}" version="1.0"
   xmlns="http://www.imsproject.org/xsd/imscp_rootv1p1p2"
@@ -38,9 +47,9 @@ function generateSCORMManifest(song: Song) {
   </metadata>
   <organizations default="studybeats_org">
     <organization identifier="studybeats_org">
-      <title>${song.title} — StudyBeats</title>
+      <title>${safeTitle} — StudyBeats</title>
       <item identifier="item_1" identifierref="resource_1">
-        <title>${song.title}</title>
+        <title>${safeTitle}</title>
       </item>
     </organization>
   </organizations>
@@ -61,7 +70,7 @@ function generateSCORMHtml(song: Song) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${song.title} — StudyBeats</title>
+  <title>${escapeHtml(song.title)} — StudyBeats</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0a0f; color: #f5f5f5; min-height: 100vh; padding: 2rem; }
@@ -94,8 +103,8 @@ function generateSCORMHtml(song: Song) {
 </head>
 <body>
   <div class="container">
-    <h1>${song.title}</h1>
-    <span class="badge">${song.style}${song.subject ? ` · ${song.subject}` : ""}</span>
+    <h1>${escapeHtml(song.title)}</h1>
+    <span class="badge">${escapeHtml(song.style)}${song.subject ? ` · ${escapeHtml(song.subject)}` : ""}</span>
     
     <div class="section">
       <h2>📝 Original Notes</h2>

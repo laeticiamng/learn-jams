@@ -108,7 +108,7 @@ export default function CourseUploader({ text, onTextChange }: Props) {
           {extracted && fileName && (
             <div className="flex items-center gap-2 text-sm text-primary">
               <CheckCircle className="w-4 h-4" />
-              <span dangerouslySetInnerHTML={{ __html: t("create.extracted_from", { file: fileName }) }} />
+              <span>{t("create.extracted_from", { file: fileName })}</span>
             </div>
           )}
           <Textarea

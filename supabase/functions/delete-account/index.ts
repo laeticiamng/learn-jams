@@ -38,6 +38,10 @@ serve(async (req) => {
     );
 
     // Delete all user data in order (respecting foreign keys)
+    await supabaseAdmin.from("session_participants").delete().eq("user_id", user.id);
+    await supabaseAdmin.from("collaborative_sessions").delete().eq("creator_id", user.id);
+    await supabaseAdmin.from("league_points").delete().eq("user_id", user.id);
+    await supabaseAdmin.from("song_ratings").delete().eq("user_id", user.id);
     await supabaseAdmin.from("notifications").delete().eq("user_id", user.id);
     await supabaseAdmin.from("favorites").delete().eq("user_id", user.id);
     await supabaseAdmin.from("songs").delete().eq("user_id", user.id);

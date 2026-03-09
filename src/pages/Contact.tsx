@@ -29,7 +29,7 @@ export default function Contact() {
     e.preventDefault();
     if (!name.trim() || !email.trim() || !message.trim()) { toast.error(t("contact.fill_all")); return; }
     const now = Date.now();
-    if (now - lastSubmit < 60000) { toast.error("Veuillez patienter avant de renvoyer un message."); return; }
+    if (now - lastSubmit < 60000) { toast.error(t("contact.rate_limit", "Please wait before sending another message.")); return; }
     setSending(true);
     try {
       const { error } = await supabase.from("contact_messages").insert({
