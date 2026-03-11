@@ -75,13 +75,15 @@ export default function Navbar() {
               <Button variant="ghost" size="sm" onClick={() => navigate("/export")} className={navButtonClass("/export")}>
                 <BookOpen className="w-4 h-4" /> {t("nav.export", "Export")}
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => navigate("/profile")} className={navButtonClass("/profile")}>
+              <Button variant="ghost" size="sm" onClick={() => navigate("/profile")} className={navButtonClass("/profile")}
+                aria-label={t("profile.title")}>
                 <User className="w-4 h-4" />
               </Button>
               <NotificationBell />
               <div className="w-px h-5 bg-border/30 mx-1" />
               <Button variant="ghost" size="sm" onClick={() => { signOut(); navigate("/"); }}
-                className="text-muted-foreground hover:text-foreground rounded-xl">
+                className="text-muted-foreground hover:text-foreground rounded-xl"
+                aria-label={t("nav.logout")}>
                 <LogOut className="w-4 h-4" />
               </Button>
             </>

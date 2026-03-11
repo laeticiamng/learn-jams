@@ -1,34 +1,36 @@
 project_id = "pywdwanqlynoatyesegb"
 
 [functions.generate-lyrics]
-verify_jwt = false
+verify_jwt = true
 
 [functions.generate-music]
-verify_jwt = false
+verify_jwt = true
 
 [functions.suno-callback]
+# Callback from external Suno API — no JWT possible
 verify_jwt = false
 
 [functions.extract-document]
-verify_jwt = false
+verify_jwt = true
 
 [functions.generate-quiz]
-verify_jwt = false
+verify_jwt = true
 
 [functions.create-checkout]
-verify_jwt = false
+verify_jwt = true
 
 [functions.stripe-webhook]
+# Webhook from Stripe — uses signature verification instead
 verify_jwt = false
 
 [functions.check-subscription]
-verify_jwt = false
+verify_jwt = true
 
 [functions.customer-portal]
-verify_jwt = false
+verify_jwt = true
 
 [functions.delete-account]
-verify_jwt = false
+verify_jwt = true
 
 [functions.poll-suno-status]
-verify_jwt = false
+verify_jwt = true
