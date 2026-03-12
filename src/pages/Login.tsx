@@ -24,7 +24,9 @@ export default function Login() {
   const { signIn, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const from = (location.state as { from?: string })?.from || "/create";
+  const rawFrom = (location.state as { from?: string })?.from;
+  // Only allow relative paths to prevent open-redirect via crafted location state
+  const from = rawFrom && rawFrom.startsWith("/") && !rawFrom.startsWith("//") ? rawFrom : "/create";
 
   // Redirect if already authenticated
   useEffect(() => {

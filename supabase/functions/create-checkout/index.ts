@@ -2,8 +2,10 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
+const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") || "https://learn-jams.lovable.app";
+
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
@@ -62,6 +64,20 @@ serve(async (req) => {
 
     const { returnUrl } = await req.json();
 
+    // Validate returnUrl to prevent open redirect attacks
+    const safeBaseUrl = ALLOWED_ORIGIN;
+    let baseUrl = safeBaseUrl;
+    if (returnUrl) {
+      try {
+        const parsed = new URL(returnUrl);
+        if (parsed.origin === safeBaseUrl) {
+          baseUrl = parsed.origin;
+        }
+      } catch {
+        // Invalid URL — use default
+      }
+    }
+
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       line_items: [
@@ -71,8 +87,8 @@ serve(async (req) => {
         },
       ],
       mode: "subscription",
-      success_url: `${returnUrl || req.headers.get("origin")}/library?checkout=success`,
-      cancel_url: `${returnUrl || req.headers.get("origin")}/pricing?checkout=cancelled`,
+      success_url: `${baseUrl}/library?checkout=success`,
+      cancel_url: `${baseUrl}/pricing?checkout=cancelled`,
     });
 
     return new Response(

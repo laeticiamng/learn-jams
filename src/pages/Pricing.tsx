@@ -69,7 +69,16 @@ export default function Pricing() {
       });
       if (error) throw error;
       if (data?.error === "already_subscribed") { toast.info(t("pricing.already_subscribed")); return; }
-      if (data?.url) { window.location.href = data.url; }
+      if (data?.url) {
+        // Validate the checkout URL is a legitimate Stripe domain
+        try {
+          const checkoutUrl = new URL(data.url);
+          if (!checkoutUrl.hostname.endsWith("stripe.com")) throw new Error("Invalid checkout URL");
+          window.location.href = data.url;
+        } catch {
+          toast.error(t("pricing.error"));
+        }
+      }
     } catch (err: any) {
       console.error(err);
       toast.error(t("pricing.error"));

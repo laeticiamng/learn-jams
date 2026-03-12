@@ -1,8 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") || "https://learn-jams.lovable.app";
+
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
@@ -16,7 +18,8 @@ serve(async (req) => {
   try {
     const url = new URL(req.url);
     const songId = url.searchParams.get("songId");
-    const secret = req.headers.get("x-callback-secret") || url.searchParams.get("secret");
+    // Only accept secret via header to prevent logging in URLs/proxies
+    const secret = req.headers.get("x-callback-secret");
 
     if (!songId) throw new Error("Missing songId");
 

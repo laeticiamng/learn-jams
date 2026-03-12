@@ -10,13 +10,20 @@ export function useSongs(userId: string | undefined) {
 
   const fetchData = useCallback(async () => {
     if (!userId) return;
-    const [songsRes, favsRes] = await Promise.all([
-      supabase.from("songs").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
-      supabase.from("favorites").select("song_id").eq("user_id", userId),
-    ]);
-    if (songsRes.data) setSongs(songsRes.data as Song[]);
-    if (favsRes.data) setFavorites(new Set(favsRes.data.map((f) => f.song_id)));
-    setLoading(false);
+    try {
+      const [songsRes, favsRes] = await Promise.all([
+        supabase.from("songs").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
+        supabase.from("favorites").select("song_id").eq("user_id", userId),
+      ]);
+      if (songsRes.error) console.error("Failed to fetch songs:", songsRes.error.message);
+      if (favsRes.error) console.error("Failed to fetch favorites:", favsRes.error.message);
+      if (songsRes.data) setSongs(songsRes.data as Song[]);
+      if (favsRes.data) setFavorites(new Set(favsRes.data.map((f) => f.song_id)));
+    } catch (err) {
+      console.error("useSongs fetch error:", err);
+    } finally {
+      setLoading(false);
+    }
   }, [userId]);
 
   // Initial fetch
@@ -42,8 +49,9 @@ export function useSongs(userId: string | undefined) {
           }
         }
       )
-      .subscribe((status) => {
+      .subscribe((status, err) => {
         setRealtimeConnected(status === "SUBSCRIBED");
+        if (err) console.error("Realtime subscription error:", err.message);
       });
     return () => {
       supabase.removeChannel(channel);
