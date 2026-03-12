@@ -183,7 +183,7 @@ export default function Profile() {
         >
           <div className="space-y-2">
             <Label className="text-sm font-medium">{t("profile.name")}</Label>
-            <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)}
+            <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} maxLength={100}
               className="bg-muted/15 border-border/20 h-11 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all duration-300" />
           </div>
 
@@ -220,6 +220,7 @@ export default function Profile() {
               placeholder={t("profile.university_placeholder", "E.g.: Sorbonne, TUM, Oxford...")}
               value={university}
               onChange={(e) => setUniversity(e.target.value)}
+              maxLength={150}
               className="bg-muted/15 border-border/20 h-11 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all duration-300"
             />
           </div>
@@ -234,6 +235,7 @@ export default function Profile() {
               placeholder={t("profile.country_placeholder", "E.g.: France, Germany, UK...")}
               value={country}
               onChange={(e) => setCountry(e.target.value)}
+              maxLength={100}
               className="bg-muted/15 border-border/20 h-11 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all duration-300"
             />
           </div>

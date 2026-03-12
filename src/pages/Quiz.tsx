@@ -36,7 +36,7 @@ export default function Quiz() {
     if (!id || !user) return;
     setLoading(true); setCurrent(0); setSelected(null); setAnswered(false); setScore(0); setFinished(false); setQuestions([]);
     try {
-      const { data: song } = await supabase.from("songs").select("title").eq("id", id).single();
+      const { data: song } = await supabase.from("songs").select("title").eq("id", id).eq("user_id", user.id).single();
       if (song) setSongTitle(song.title);
       const { data, error } = await supabase.functions.invoke("generate-quiz", { body: { songId: id, lang: i18next.language } });
       if (error) throw error;

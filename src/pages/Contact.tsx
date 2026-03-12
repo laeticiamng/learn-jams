@@ -120,17 +120,17 @@ export default function Contact() {
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-2">
                 <Label htmlFor="name" className="text-sm font-medium">{t("contact.name_label")}</Label>
-                <Input id="name" placeholder={t("contact.name_placeholder")} value={name} onChange={e => setName(e.target.value)} required
+                <Input id="name" placeholder={t("contact.name_placeholder")} value={name} onChange={e => setName(e.target.value)} required maxLength={100}
                   className="bg-muted/15 border-border/20 h-11 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all duration-300" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-sm font-medium">{t("contact.email_label")}</Label>
-                <Input id="email" type="email" placeholder={t("contact.email_placeholder")} value={email} onChange={e => setEmail(e.target.value)} required
+                <Input id="email" type="email" placeholder={t("contact.email_placeholder")} value={email} onChange={e => setEmail(e.target.value)} required maxLength={254}
                   className="bg-muted/15 border-border/20 h-11 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all duration-300" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="message" className="text-sm font-medium">{t("contact.message_label")}</Label>
-                <Textarea id="message" placeholder={t("contact.message_placeholder")} value={message} onChange={e => setMessage(e.target.value)} required rows={5}
+                <Textarea id="message" placeholder={t("contact.message_placeholder")} value={message} onChange={e => setMessage(e.target.value)} required rows={5} maxLength={5000}
                   className="bg-muted/15 border-border/20 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all duration-300 resize-none" />
               </div>
               {/* Honeypot field - hidden from real users */}
