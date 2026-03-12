@@ -100,7 +100,16 @@ export default function Profile() {
     try {
       const { data, error } = await supabase.functions.invoke("customer-portal");
       if (error) throw error;
-      if (data?.url) window.open(data.url, "_blank");
+      if (data?.url) {
+        // Validate the portal URL is a legitimate Stripe domain
+        try {
+          const portalUrl = new URL(data.url);
+          if (!portalUrl.hostname.endsWith("stripe.com")) throw new Error("Invalid portal URL");
+          window.open(data.url, "_blank", "noopener,noreferrer");
+        } catch {
+          toast.error(t("common.error"));
+        }
+      }
     } catch (err: any) {
       toast.error(err.message || t("common.error"));
     } finally {

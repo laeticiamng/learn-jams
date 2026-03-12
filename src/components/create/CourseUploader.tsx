@@ -35,12 +35,15 @@ export default function CourseUploader({ text, onTextChange }: Props) {
       formData.append("language", i18n.language || "fr");
 
       const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error(t("auth.login_required", "Please log in to continue."));
+      }
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/extract-document`,
         {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            Authorization: `Bearer ${session.access_token}`,
             apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
           },
           body: formData,
