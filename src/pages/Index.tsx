@@ -3,7 +3,11 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { FileUp, Music, Headphones, BookOpen, Brain, Quote, Lock, ShieldCheck, CreditCard, ArrowRight, Play, Pause, Volume2, GraduationCap, Users, Trophy, Accessibility } from "lucide-react";
+import {
+  FileUp, Brain, BookOpen, ArrowRight, ShieldCheck, Lock,
+  Zap, Target, RefreshCw, BarChart3, GraduationCap,
+  Accessibility, AlertTriangle, Quote, Eye,
+} from "lucide-react";
 import testimonialMarie from "@/assets/testimonial-marie.jpg";
 import testimonialKarim from "@/assets/testimonial-karim.jpg";
 import testimonialChloe from "@/assets/testimonial-chloe.jpg";
@@ -12,11 +16,10 @@ import Footer from "@/components/Footer";
 import { usePageSEO } from "@/hooks/usePageSEO";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useMemo, useEffect, useState, useRef, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
 
 const ease = [0.25, 0.46, 0.45, 0.94] as [number, number, number, number];
 
-const AudioWave = () => {
+const BrainWave = () => {
   const heights = useMemo(() => Array.from({ length: 24 }, () => 24 + Math.random() * 40), []);
   return (
     <div className="flex items-end gap-[3px] h-16 justify-center" aria-hidden="true">
@@ -29,107 +32,6 @@ const AudioWave = () => {
           style={{ opacity: 0.5 + (i / heights.length) * 0.5 }}
         />
       ))}
-    </div>
-  );
-};
-
-const CountUp = ({ target, suffix = "", duration = 2000 }: { target: number; suffix?: string; duration?: number }) => {
-  const [count, setCount] = useState(0);
-  const [hasAnimated, setHasAnimated] = useState(false);
-  const ref = useRef<HTMLSpanElement>(null);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !hasAnimated) {
-          setHasAnimated(true);
-          const startTime = performance.now();
-          const animate = (now: number) => {
-            const elapsed = now - startTime;
-            const progress = Math.min(elapsed / duration, 1);
-            const eased = 1 - Math.pow(1 - progress, 3);
-            setCount(Math.round(eased * target));
-            if (progress < 1) requestAnimationFrame(animate);
-          };
-          requestAnimationFrame(animate);
-        }
-      },
-      { threshold: 0.5 }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [target, duration, hasAnimated]);
-
-  return <span ref={ref}>{count.toLocaleString()}{suffix}</span>;
-};
-
-const DemoPlayer = ({ listenLabel, titleLabel }: { listenLabel: string; titleLabel: string }) => {
-  const [playing, setPlaying] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const audioRef = useRef<HTMLAudioElement>(null);
-
-  const togglePlay = useCallback(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    if (playing) { audio.pause(); } else { audio.play().catch(() => {}); }
-    setPlaying(!playing);
-  }, [playing]);
-
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    const update = () => { if (audio.duration) setProgress((audio.currentTime / audio.duration) * 100); };
-    const onEnd = () => { setPlaying(false); setProgress(0); };
-    audio.addEventListener("timeupdate", update);
-    audio.addEventListener("ended", onEnd);
-    return () => { audio.removeEventListener("timeupdate", update); audio.removeEventListener("ended", onEnd); };
-  }, []);
-
-  return (
-    <div className="mt-10 max-w-sm mx-auto">
-      <audio ref={audioRef} src="/demo.mp3" preload="none" />
-      <motion.div
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-        onClick={togglePlay}
-        className="w-full glass-card-elevated p-4 flex items-center gap-4 group cursor-pointer"
-        role="button"
-        aria-label={playing ? "Pause" : "Play"}
-        tabIndex={0}
-        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); togglePlay(); } }}
-      >
-        <div className="w-12 h-12 rounded-xl gradient-bg-premium flex items-center justify-center shrink-0 shadow-lg shadow-primary/20">
-          {playing ? <Pause className="w-5 h-5 text-primary-foreground" /> : <Play className="w-5 h-5 text-primary-foreground ml-0.5" />}
-        </div>
-        <div className="flex-1 text-left min-w-0">
-          <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">{listenLabel}</p>
-          <p className="text-sm font-semibold truncate">{titleLabel}</p>
-          <div
-            className="mt-2 h-1 rounded-full bg-muted/30 overflow-hidden cursor-pointer"
-            role="slider"
-            aria-label="Progress"
-            aria-valuenow={Math.round(progress)}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            tabIndex={0}
-            onClick={(e) => {
-              e.stopPropagation();
-              const audio = audioRef.current;
-              if (!audio || !audio.duration) return;
-              const rect = e.currentTarget.getBoundingClientRect();
-              const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-              audio.currentTime = ratio * audio.duration;
-              setProgress(ratio * 100);
-              if (!playing) { audio.play().catch(() => {}); setPlaying(true); }
-            }}
-          >
-            <div className="h-full gradient-bg-premium rounded-full transition-all duration-300" style={{ width: `${progress}%` }} />
-          </div>
-        </div>
-        <Volume2 className="w-4 h-4 text-muted-foreground shrink-0 group-hover:text-primary transition-colors" />
-      </motion.div>
     </div>
   );
 };
@@ -150,30 +52,48 @@ const ParallaxOrbs = () => {
 
   return (
     <>
-      <motion.div
-        className="absolute top-0 left-1/2 -translate-x-1/2 w-[min(900px,100vw)] h-[300px] sm:h-[400px] md:h-[500px] pointer-events-none"
-        style={{ background: "var(--gradient-glow)", y: y1, opacity }}
-      />
-      <motion.div
-        className="absolute top-20 left-1/4 w-[200px] sm:w-[300px] md:w-[400px] h-[200px] sm:h-[300px] md:h-[400px] pointer-events-none ambient-orb"
-        style={{ background: "hsl(265, 90%, 60%)", y: y1, scale: scale1, opacity }}
-      />
-      <motion.div
-        className="absolute top-40 right-1/4 w-[150px] sm:w-[200px] md:w-[300px] h-[150px] sm:h-[200px] md:h-[300px] pointer-events-none ambient-orb"
-        style={{ background: "hsl(300, 70%, 50%)", animationDelay: "3s", y: y2, scale: scale2, opacity }}
-      />
+      <motion.div className="absolute top-0 left-1/2 -translate-x-1/2 w-[min(900px,100vw)] h-[300px] sm:h-[400px] md:h-[500px] pointer-events-none" style={{ background: "var(--gradient-glow)", y: y1, opacity }} />
+      <motion.div className="absolute top-20 left-1/4 w-[200px] sm:w-[300px] md:w-[400px] h-[200px] sm:h-[300px] md:h-[400px] pointer-events-none ambient-orb" style={{ background: "hsl(265, 90%, 60%)", y: y1, scale: scale1, opacity }} />
+      <motion.div className="absolute top-40 right-1/4 w-[150px] sm:w-[200px] md:w-[300px] h-[150px] sm:h-[200px] md:h-[300px] pointer-events-none ambient-orb" style={{ background: "hsl(300, 70%, 50%)", animationDelay: "3s", y: y2, scale: scale2, opacity }} />
     </>
   );
 };
 
-const stepIcons = [FileUp, Music, Headphones];
+const STEPS = [
+  { icon: FileUp, title: "Importez votre cours", desc: "PDF, DOCX ou texte. L'analyse commence instantanément." },
+  { icon: Brain, title: "L'IA analyse et structure", desc: "Concepts, hiérarchie, pièges, plan mémoire — tout est détecté." },
+  { icon: Target, title: "Jouez votre mission", desc: "Une expérience interactive adaptée à votre contenu." },
+  { icon: RefreshCw, title: "Révisez et retenez", desc: "Débrief, rappel actif J+1, J+7. Mémoire durable." },
+];
 
+const SCIENCE = [
+  { icon: Zap, title: "Rappel actif", desc: "Chaque mission intègre des tests inline pour ancrer les connaissances en profondeur." },
+  { icon: Target, title: "Répétition espacée", desc: "Re-tests J+1 et J+7 pour combattre l'oubli naturel." },
+  { icon: Brain, title: "Calibration confiance", desc: "Détection des zones de surconfiance pour éviter l'illusion de maîtrise." },
+  { icon: Eye, title: "Fidélité source absolue", desc: "Aucun concept inventé. Chaque notion est tracée jusqu'à votre document." },
+];
 
+const PLATFORM_FEATURES = [
+  { icon: BarChart3, title: "Score composite", desc: "Précision, calibration confiance, couverture Bloom, détection de pièges." },
+  { icon: AlertTriangle, title: "Fallback transparent", desc: "Si le contenu est limité, vous savez pourquoi et ce qui a été adapté." },
+  { icon: BookOpen, title: "Mémoire longitudinale", desc: "Suivez vos concepts maîtrisés, fragiles et vieillissants dans le temps." },
+  { icon: GraduationCap, title: "Débrief actionnable", desc: "Arbre d'erreurs, plan de révision, zones de surconfiance identifiées." },
+  { icon: Accessibility, title: "Accessible", desc: "Navigation clavier, contraste, mode sans timer." },
+];
 
-const testimonialAvatars = [
-  testimonialMarie,
-  testimonialKarim,
-  testimonialChloe,
+const FAQ = [
+  { q: "Comment fonctionne l'analyse ?", a: "Votre document est parsé, segmenté et analysé par IA. Les concepts sont extraits, hiérarchisés par criticité et liés à leur source. Aucune notion n'est inventée." },
+  { q: "Quels formats sont supportés ?", a: "PDF texte, DOCX et texte brut (copier-coller). Les fichiers scannés (image) ne sont pas encore supportés." },
+  { q: "L'IA invente-t-elle du contenu ?", a: "Non. C'est le principe fondamental de COGNITIO : chaque concept est tracé jusqu'à votre document source. Le système de QA bloque toute hallucination conceptuelle." },
+  { q: "Que se passe-t-il si mon document est de mauvaise qualité ?", a: "Le système détecte la qualité et adapte automatiquement : mission réduite, simplifiée ou synthèse uniquement. Vous êtes toujours informé du pourquoi." },
+  { q: "Mes documents sont-ils sécurisés ?", a: "Vos données sont isolées par utilisateur (RLS Supabase). Les fichiers bruts peuvent être supprimés. Aucun partage croisé." },
+];
+
+const testimonialAvatars = [testimonialMarie, testimonialKarim, testimonialChloe];
+const TESTIMONIALS = [
+  { name: "Marie L.", field: "Médecine 4e année", quote: "J'ai révisé ma cardio en mode mission. Le débrief m'a montré exactement où j'étais trop confiante." },
+  { name: "Karim B.", field: "Droit des affaires", quote: "Enfin un outil qui ne me résume pas mon cours mais qui me force à le comprendre activement." },
+  { name: "Chloé D.", field: "Sciences infirmières", quote: "Les re-tests J+7 ont changé ma rétention. Je retiens vraiment sur le long terme maintenant." },
 ];
 
 export default function Index() {
@@ -181,27 +101,24 @@ export default function Index() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const [showStickyCta, setShowStickyCta] = useState(false);
-  const [stats, setStats] = useState({ total_songs: 0, total_users: 0, total_styles: 30 });
   const heroRef = useRef<HTMLElement>(null);
   const ctaRef = useRef<HTMLElement>(null);
 
   usePageSEO({
-    title: "StudyBeats — " + t("home.title1") + " " + t("home.title2"),
-    description: t("home.subtitle"),
+    title: "COGNITIO — Transformez n'importe quel cours en mission d'apprentissage",
+    description: "Importez votre cours, jouez une mission pédagogique intelligente, retenez durablement. Pas un résumé IA, un moteur de rétention.",
     canonical: "/",
   });
-
-  const faqKeys = [1, 2, 3, 4, 5];
 
   const faqJsonLd = useMemo(() => ({
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    "mainEntity": faqKeys.map(n => ({
+    mainEntity: FAQ.map(f => ({
       "@type": "Question",
-      "name": t(`home.faq${n}_q`),
-      "acceptedAnswer": { "@type": "Answer", "text": t(`home.faq${n}_a`) },
+      name: f.q,
+      acceptedAnswer: { "@type": "Answer", text: f.a },
     })),
-  }), [t]);
+  }), []);
 
   useEffect(() => {
     const script = document.createElement("script");
@@ -211,18 +128,10 @@ export default function Index() {
     return () => { document.head.removeChild(script); };
   }, [faqJsonLd]);
 
-  // Fetch platform stats
-  useEffect(() => {
-    supabase.rpc("get_platform_stats").then(({ data }) => {
-      if (data) setStats(data as any);
-    });
-  }, []);
-
   const handleScroll = useCallback(() => {
     const heroBottom = heroRef.current?.getBoundingClientRect().bottom ?? 0;
     const ctaTop = ctaRef.current?.getBoundingClientRect().top ?? Infinity;
-    const windowHeight = window.innerHeight;
-    setShowStickyCta(heroBottom < 0 && ctaTop > windowHeight);
+    setShowStickyCta(heroBottom < 0 && ctaTop > window.innerHeight);
   }, []);
 
   useEffect(() => {
@@ -237,7 +146,6 @@ export default function Index() {
       {/* Hero */}
       <header ref={heroRef} className="relative pt-24 sm:pt-32 md:pt-40 pb-16 sm:pb-20 md:pb-28 px-4">
         <ParallaxOrbs />
-
         <div className="container mx-auto text-center relative z-10">
           <motion.div initial={{ opacity: 0, y: 40, filter: "blur(12px)" }} animate={{ opacity: 1, y: 0, filter: "blur(0px)" }} transition={{ duration: 0.9, ease }}>
             <motion.p
@@ -246,70 +154,52 @@ export default function Index() {
               transition={{ delay: 0.2, duration: 0.5 }}
               className="inline-flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border border-foreground/20 bg-foreground/5 mb-8 sm:mb-12 text-xs sm:text-sm text-foreground/90 font-medium backdrop-blur-sm"
             >
-              {t("home.badge")}
+              Moteur de rétention pédagogique
             </motion.p>
             <h1 className="font-display text-4xl sm:text-5xl md:text-7xl lg:text-[5.5rem] font-bold mb-6 sm:mb-8 leading-[1.05] sm:leading-[1.02] tracking-tight">
-              {t("home.title1")}<br />
-              <span className="gradient-text glow-text">{t("home.title2")}</span>
+              N'importe quel cours<br />
+              <span className="gradient-text glow-text">devient une mission</span>
             </h1>
             <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 sm:mb-14 leading-relaxed">
-              {t("home.subtitle")}
+              Importez votre contenu. L'IA l'analyse, le structure et le transforme en expérience interactive. Vous ne résumez pas — vous retenez.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-5 px-4">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8 px-4">
               <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-                <Button size="lg" className="gradient-bg-premium text-base sm:text-lg px-8 sm:px-10 h-13 sm:h-14 w-full sm:w-auto shimmer-btn rounded-2xl shadow-xl shadow-primary/25"
-                  onClick={() => navigate(user ? "/create" : "/signup")}>
-                  {user ? t("home.cta_create", "Create a song") : t("home.cta_signup")}
+                <Button
+                  size="lg"
+                  className="gradient-bg-premium text-base sm:text-lg px-8 sm:px-10 h-13 sm:h-14 w-full sm:w-auto shimmer-btn rounded-2xl shadow-xl shadow-primary/25"
+                  onClick={() => navigate(user ? "/create" : "/signup")}
+                >
+                  {user ? "Importer un cours" : "Commencer gratuitement"}
                 </Button>
               </motion.div>
             </div>
             {!user && (
               <div className="flex flex-col items-center gap-2 mb-12">
-                <p className="text-xs text-muted-foreground">{t("home.free_hint")}</p>
                 <button
                   onClick={() => navigate("/login")}
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors underline-offset-4 hover:underline inline-block"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors underline-offset-4 hover:underline"
                 >
-                  {t("home.cta_login")}
+                  J'ai déjà un compte
                 </button>
               </div>
             )}
-
-            {/* Social proof — only show if meaningful data */}
-            {(stats.total_songs >= 10 || stats.total_users >= 10) ? (
-              <div className="flex flex-wrap items-center justify-center gap-5 sm:gap-10 mb-12 text-xs sm:text-sm text-muted-foreground px-2">
-                {stats.total_songs >= 10 && <span className="flex items-center gap-1.5">🎵 <strong className="text-foreground tabular-nums font-mono"><CountUp target={stats.total_songs} suffix="+" /></strong> {t("home.social_songs_label")}</span>}
-                {stats.total_users >= 10 && <span className="flex items-center gap-1.5">🎓 <strong className="text-foreground tabular-nums font-mono"><CountUp target={stats.total_users} suffix="+" /></strong> {t("home.social_students_label")}</span>}
-                <span className="flex items-center gap-1.5">🎶 <strong className="text-foreground tabular-nums font-mono"><CountUp target={stats.total_styles} /></strong> {t("home.social_styles_label")}</span>
-              </div>
-            ) : (
-              <p className="text-xs text-muted-foreground mb-12">{t("home.early_adopter_hint", "Sois parmi les premiers à essayer · 30 styles musicaux disponibles")}</p>
-            )}
-
-            <AudioWave />
-            <DemoPlayer listenLabel={t("home.demo_listen")} titleLabel={t("home.demo_title")} />
+            <BrainWave />
           </motion.div>
         </div>
       </header>
 
-      {/* Trust badges */}
+      {/* Trust */}
       <section className="py-10 px-4">
         <div className="container mx-auto flex flex-wrap items-center justify-center gap-8 sm:gap-12">
           {[
-            { icon: ShieldCheck, key: "trust_gdpr" },
-            { icon: Lock, key: "trust_encrypted" },
-            { icon: CreditCard, key: "trust_cancel" },
-          ].map(({ icon: Icon, key }, i) => (
-            <motion.div
-              key={key}
-              initial={{ opacity: 0, y: 10 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
-              className="flex items-center gap-2 text-muted-foreground text-sm"
-            >
+            { icon: ShieldCheck, label: "Fidélité source garantie" },
+            { icon: Lock, label: "Données isolées (RLS)" },
+            { icon: Brain, label: "Zéro hallucination" },
+          ].map(({ icon: Icon, label }, i) => (
+            <motion.div key={label} initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }} className="flex items-center gap-2 text-muted-foreground text-sm">
               <Icon className="w-4 h-4 text-primary" />
-              <span>{t(`home.${key}`)}</span>
+              <span>{label}</span>
             </motion.div>
           ))}
         </div>
@@ -317,88 +207,63 @@ export default function Index() {
 
       <SectionDivider />
 
-      {/* Steps */}
+      {/* How it works — 4 steps */}
       <section className="py-16 sm:py-20 md:py-28 lg:py-32 px-4">
         <div className="container mx-auto">
-          <motion.p
-            initial={{ opacity: 0, y: 10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-4"
-          >
-            {t("home.how_subtitle")}
+          <motion.p initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-4">
+            Comment ça marche
           </motion.p>
-          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-            className="font-display text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-10 sm:mb-16 md:mb-20 tracking-tight">
-            {t("home.how_title")}
+          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="font-display text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-10 sm:mb-16 md:mb-20 tracking-tight">
+            Import &rarr; Analyse &rarr; Mission &rarr; Rétention
           </motion.h2>
-          <div className="grid md:grid-cols-3 gap-5 sm:gap-8 max-w-5xl mx-auto relative">
-            <div className="hidden md:block absolute top-24 left-[33%] w-[34%] h-px bg-gradient-to-r from-primary/20 to-secondary/20" />
-            <div className="hidden md:block absolute top-24 left-[66%] w-[34%] h-px bg-gradient-to-r from-secondary/20 to-primary/20" />
-            {[1, 2, 3].map((n, i) => {
-              const Icon = stepIcons[i];
-              return (
-                <motion.article key={n} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }} transition={{ delay: i * 0.15, duration: 0.6, ease }}
-                  className="glass-card-elevated p-6 sm:p-8 md:p-10 text-center group gradient-border">
-                  <motion.div
-                    whileHover={{ scale: 1.1, rotate: -3 }}
-                    className="w-16 h-16 rounded-2xl gradient-bg-premium flex items-center justify-center mx-auto mb-7 shadow-lg shadow-primary/20"
-                  >
-                    <Icon className="w-8 h-8 text-primary-foreground" />
-                  </motion.div>
-                  <div className="text-xs text-muted-foreground mb-3 uppercase tracking-widest font-medium">{t("home.step_label", { n })}</div>
-                  <h3 className="font-display text-xl font-semibold mb-4">{t(`home.step${n}_title`)}</h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">{t(`home.step${n}_desc`)}</p>
-                </motion.article>
-              );
-            })}
+          <div className="grid md:grid-cols-4 gap-5 sm:gap-6 max-w-6xl mx-auto">
+            {STEPS.map(({ icon: Icon, title, desc }, i) => (
+              <motion.article key={i} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.12, duration: 0.6, ease }} className="glass-card-elevated p-6 sm:p-8 text-center group gradient-border">
+                <motion.div whileHover={{ scale: 1.1, rotate: -3 }} className="w-14 h-14 rounded-2xl gradient-bg-premium flex items-center justify-center mx-auto mb-6 shadow-lg shadow-primary/20">
+                  <Icon className="w-7 h-7 text-primary-foreground" />
+                </motion.div>
+                <div className="text-xs text-muted-foreground mb-3 uppercase tracking-widest font-medium">Étape {i + 1}</div>
+                <h3 className="font-display text-lg font-semibold mb-3">{title}</h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">{desc}</p>
+              </motion.article>
+            ))}
           </div>
         </div>
       </section>
 
       <SectionDivider />
 
-      {/* Before → After */}
+      {/* Before/After */}
       <section className="py-16 sm:py-20 md:py-28 lg:py-32 px-4">
         <div className="container mx-auto max-w-5xl">
-          <motion.p
-            initial={{ opacity: 0, y: 10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-4"
-          >
-            {t("home.before_after_subtitle")}
-          </motion.p>
-          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-            className="font-display text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-16 tracking-tight">
-            {t("home.before_after_title")}
+          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="font-display text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-16 tracking-tight">
+            Avant / Après COGNITIO
           </motion.h2>
-          <div className="grid md:grid-cols-2 gap-8 items-stretch relative">
-            <motion.div initial={{ opacity: 0, x: -24 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
-              transition={{ duration: 0.6, ease }}
-              className="glass-card p-8 sm:p-10 relative">
-              <div className="absolute top-5 left-5 sm:top-6 sm:left-6 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground bg-muted/60 px-3 py-1 rounded-full">
-                {t("home.before_label")}
-              </div>
-              <div className="pt-10 text-sm sm:text-base text-muted-foreground leading-relaxed font-mono">
-                {t("home.before_text")}
+          <div className="grid md:grid-cols-2 gap-8 items-stretch">
+            <motion.div initial={{ opacity: 0, x: -24 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, ease }} className="glass-card p-8 sm:p-10 relative">
+              <div className="absolute top-5 left-5 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground bg-muted/60 px-3 py-1 rounded-full">Avant</div>
+              <div className="pt-10 text-sm text-muted-foreground leading-relaxed font-mono">
+                Relire ses notes 3 fois.<br />
+                Surligner en jaune.<br />
+                Faire un résumé IA.<br />
+                Oublier 80% en 48h.<br />
+                Se croire prêt pour l'exam.
               </div>
             </motion.div>
-            {/* Arrow between cards on mobile */}
             <div className="flex justify-center md:hidden -my-1 relative z-10">
               <div className="w-10 h-10 rounded-full gradient-bg-premium flex items-center justify-center shadow-lg shadow-primary/20">
                 <ArrowRight className="w-5 h-5 text-primary-foreground rotate-90" />
               </div>
             </div>
-            <motion.div initial={{ opacity: 0, x: 24 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
-              transition={{ delay: 0.15, duration: 0.6, ease }}
-              className="glass-card-elevated p-8 sm:p-10 relative glow-intense">
-              <div className="absolute top-5 left-5 sm:top-6 sm:left-6 text-[11px] font-semibold uppercase tracking-widest text-foreground/90 bg-foreground/5 border border-foreground/10 px-3 py-1 rounded-full">
-                {t("home.after_label")}
-              </div>
-              <div className="pt-10 text-sm sm:text-base text-foreground leading-relaxed whitespace-pre-line">
-                {t("home.after_text")}
+            <motion.div initial={{ opacity: 0, x: 24 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: 0.15, duration: 0.6, ease }} className="glass-card-elevated p-8 sm:p-10 relative glow-intense">
+              <div className="absolute top-5 left-5 text-[11px] font-semibold uppercase tracking-widest text-foreground/90 bg-foreground/5 border border-foreground/10 px-3 py-1 rounded-full">Avec COGNITIO</div>
+              <div className="pt-10 text-sm text-foreground leading-relaxed whitespace-pre-line">
+                Importer son cours (2 clics).{"\n"}
+                L'IA extrait les concepts clés.{"\n"}
+                Jouer une mission interactive.{"\n"}
+                Débrief avec arbre d'erreurs.{"\n"}
+                Re-test J+1 et J+7 automatiques.{"\n"}
+                Rétention mesurable et durable.
               </div>
             </motion.div>
           </div>
@@ -407,85 +272,23 @@ export default function Index() {
 
       <SectionDivider />
 
-      {/* Science — Why it works */}
+      {/* Science */}
       <section className="py-16 sm:py-20 md:py-28 lg:py-32 px-4">
         <div className="container mx-auto max-w-5xl">
-          <motion.p
-            initial={{ opacity: 0, y: 10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-4"
-          >
-            {t("home.science_subtitle")}
+          <motion.p initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-4">
+            Fondations scientifiques
           </motion.p>
-          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-            className="font-display text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-10 sm:mb-16 md:mb-20 tracking-tight">
-            {t("home.science_title")}
+          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="font-display text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-10 sm:mb-16 md:mb-20 tracking-tight">
+            Pourquoi ça fonctionne
           </motion.h2>
           <div className="grid md:grid-cols-2 gap-8">
-            {[1, 2, 3, 4].map((n, i) => (
-              <motion.article key={n} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.6, ease }}
-                className="glass-card-elevated p-8 gradient-border">
+            {SCIENCE.map(({ icon: Icon, title, desc }, i) => (
+              <motion.article key={i} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.6, ease }} className="glass-card-elevated p-8 gradient-border">
                 <div className="w-12 h-12 rounded-xl gradient-bg-premium flex items-center justify-center mb-5 shadow-lg shadow-primary/20">
-                  <Brain className="w-6 h-6 text-primary-foreground" />
+                  <Icon className="w-6 h-6 text-primary-foreground" />
                 </div>
-                <h3 className="font-display text-lg font-semibold mb-3">{t(`home.science${n}_title`)}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{t(`home.science${n}_desc`)}</p>
-              </motion.article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <SectionDivider />
-
-      {/* Listen everywhere */}
-      <section className="py-16 sm:py-20 md:py-28 lg:py-32 px-4">
-        <div className="container mx-auto max-w-5xl">
-          <motion.p
-            initial={{ opacity: 0, y: 10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-4"
-          >
-            {t("home.listen_subtitle")}
-          </motion.p>
-          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-            className="font-display text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-10 sm:mb-16 md:mb-20 tracking-tight">
-            {t("home.listen_title")}
-          </motion.h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[1, 2, 3, 4].map((n, i) => (
-              <motion.article key={n} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.6, ease }}
-                className="glass-card-elevated p-7 text-center gradient-border">
-                <span className="text-4xl mb-4 block">{t(`home.listen${n}_emoji`)}</span>
-                <h3 className="font-display text-base font-semibold mb-2">{t(`home.listen${n}_label`)}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{t(`home.listen${n}_desc`)}</p>
-              </motion.article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <SectionDivider />
-
-      {/* Target audience */}
-      <section className="py-16 sm:py-20 md:py-28 lg:py-32 px-4">
-        <div className="container mx-auto max-w-5xl">
-          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-            className="font-display text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-10 sm:mb-16 md:mb-20 tracking-tight">
-            {t("home.target_title")}
-          </motion.h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[1, 2, 3, 4].map((n, i) => (
-              <motion.article key={n} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.6, ease }}
-                className="glass-card-elevated p-7 text-center gradient-border">
-                <span className="text-4xl mb-4 block">{t(`home.target${n}_emoji`)}</span>
-                <h3 className="font-display text-base font-semibold mb-2">{t(`home.target${n}_label`)}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{t(`home.target${n}_desc`)}</p>
+                <h3 className="font-display text-lg font-semibold mb-3">{title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{desc}</p>
               </motion.article>
             ))}
           </div>
@@ -497,24 +300,19 @@ export default function Index() {
       {/* Testimonials */}
       <section className="py-16 sm:py-20 md:py-28 lg:py-32 px-4">
         <div className="container mx-auto max-w-5xl">
-          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-            className="font-display text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-10 sm:mb-16 md:mb-20 tracking-tight">
-            {t("home.testimonials_title")}
+          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="font-display text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-10 sm:mb-16 md:mb-20 tracking-tight">
+            Ce qu'ils en disent
           </motion.h2>
           <div className="grid md:grid-cols-3 gap-8">
-            {[1, 2, 3].map((n, i) => (
-              <motion.article key={n} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }} transition={{ delay: i * 0.15, duration: 0.6, ease }}
-                className="glass-card-elevated p-8 sm:p-9 flex flex-col gradient-border">
+            {TESTIMONIALS.map((t, i) => (
+              <motion.article key={i} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.15, duration: 0.6, ease }} className="glass-card-elevated p-8 sm:p-9 flex flex-col gradient-border">
                 <Quote className="w-8 h-8 text-primary/40 mb-5" />
-                <p className="text-sm text-foreground/90 leading-relaxed flex-1 italic">
-                  "{t(`home.testimonial${n}_quote`)}"
-                </p>
+                <p className="text-sm text-foreground/90 leading-relaxed flex-1 italic">"{t.quote}"</p>
                 <div className="flex items-center gap-3 mt-7 pt-6 border-t border-border/20">
-                  <img src={testimonialAvatars[i]} alt={t(`home.testimonial${n}_name`)} className="w-10 h-10 rounded-full object-cover bg-muted ring-2 ring-border/20" loading="lazy" />
+                  <img src={testimonialAvatars[i]} alt={t.name} className="w-10 h-10 rounded-full object-cover bg-muted ring-2 ring-border/20" loading="lazy" />
                   <div>
-                    <p className="text-sm font-semibold">{t(`home.testimonial${n}_name`)}</p>
-                    <p className="text-xs text-muted-foreground">{t(`home.testimonial${n}_field`)}</p>
+                    <p className="text-sm font-semibold">{t.name}</p>
+                    <p className="text-xs text-muted-foreground">{t.field}</p>
                   </div>
                 </div>
               </motion.article>
@@ -525,58 +323,23 @@ export default function Index() {
 
       <SectionDivider />
 
-      {/* Platform — 5 key features */}
+      {/* Platform features */}
       <section className="py-16 sm:py-20 md:py-28 lg:py-32 px-4">
         <div className="container mx-auto max-w-6xl">
-          <motion.p
-            initial={{ opacity: 0, y: 10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-4"
-          >
-            {t("home.platform_subtitle")}
+          <motion.p initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-4">
+            Plateforme
           </motion.p>
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="font-display text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-20 tracking-tight"
-          >
-            {t("home.platform_title")}
+          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="font-display text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-20 tracking-tight">
+            Conçu pour la rétention, pas le spectacle
           </motion.h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {([
-              { icon: GraduationCap, key: 1, action: () => navigate("/signup") },
-              { icon: Users, key: 2, action: () => navigate(user ? "/studio" : "/signup") },
-              { icon: Trophy, key: 3, action: () => navigate(user ? "/league" : "/signup") },
-              { icon: Accessibility, key: 4, action: undefined },
-              { icon: BookOpen, key: 5, action: () => navigate(user ? "/export" : "/signup") },
-            ] as const).map(({ icon: Icon, key, action }, i) => (
-              <motion.article
-                key={key}
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.08, duration: 0.6, ease }}
-                className={`glass-card-elevated p-8 flex flex-col gradient-border group ${key <= 2 ? "lg:col-span-1 sm:col-span-1" : ""}`}
-              >
-                <motion.div
-                  whileHover={{ scale: 1.1, rotate: -3 }}
-                  className="w-14 h-14 rounded-2xl gradient-bg-premium flex items-center justify-center mb-6 shadow-lg shadow-primary/20"
-                >
+            {PLATFORM_FEATURES.map(({ icon: Icon, title, desc }, i) => (
+              <motion.article key={i} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.08, duration: 0.6, ease }} className="glass-card-elevated p-8 flex flex-col gradient-border">
+                <motion.div whileHover={{ scale: 1.1, rotate: -3 }} className="w-14 h-14 rounded-2xl gradient-bg-premium flex items-center justify-center mb-6 shadow-lg shadow-primary/20">
                   <Icon className="w-7 h-7 text-primary-foreground" />
                 </motion.div>
-                <h3 className="font-display text-lg font-semibold mb-2">{t(`home.platform${key}_title`)}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed flex-1 mb-5">{t(`home.platform${key}_desc`)}</p>
-                {action ? (
-                  <Button variant="ghost" size="sm" onClick={action} className="self-start gap-2 rounded-xl text-primary hover:text-primary hover:bg-primary/10 px-0">
-                    {t(`home.platform${key}_cta`)} <ArrowRight className="w-3.5 h-3.5" />
-                  </Button>
-                ) : (
-                  <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                    <Accessibility className="w-3.5 h-3.5" /> {t(`home.platform${key}_cta`)}
-                  </p>
-                )}
+                <h3 className="font-display text-lg font-semibold mb-2">{title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed flex-1">{desc}</p>
               </motion.article>
             ))}
           </div>
@@ -588,24 +351,15 @@ export default function Index() {
       {/* FAQ */}
       <section className="py-16 sm:py-20 md:py-28 lg:py-32 px-4">
         <div className="container mx-auto max-w-2xl">
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="font-display text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-5 tracking-tight"
-          >
-            {t("home.faq_title")}
+          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="font-display text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-5 tracking-tight">
+            Questions fréquentes
           </motion.h2>
-          <p className="text-center text-muted-foreground mb-16 text-lg">{t("home.faq_subtitle")}</p>
+          <p className="text-center text-muted-foreground mb-16 text-lg">Tout ce que vous devez savoir</p>
           <Accordion type="single" collapsible className="space-y-3">
-            {faqKeys.map(n => (
-              <AccordionItem key={n} value={`faq-${n}`} className="glass-card-elevated px-6 border-none">
-                <AccordionTrigger className="text-left font-medium hover:no-underline py-5 text-[15px]">
-                  {t(`home.faq${n}_q`)}
-                </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground pb-5 leading-relaxed text-sm">
-                  {t(`home.faq${n}_a`)}
-                </AccordionContent>
+            {FAQ.map((faq, i) => (
+              <AccordionItem key={i} value={`faq-${i}`} className="glass-card-elevated px-6 border-none">
+                <AccordionTrigger className="text-left font-medium hover:no-underline py-5 text-[15px]">{faq.q}</AccordionTrigger>
+                <AccordionContent className="text-muted-foreground pb-5 leading-relaxed text-sm">{faq.a}</AccordionContent>
               </AccordionItem>
             ))}
           </Accordion>
@@ -617,24 +371,17 @@ export default function Index() {
       {/* CTA */}
       <section ref={ctaRef} className="py-28 md:py-32 px-4">
         <div className="container mx-auto max-w-2xl">
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7, ease }}
-            className="glass-card-elevated p-8 sm:p-12 md:p-16 text-center glow-intense relative overflow-hidden"
-          >
-            {/* Decorative orb */}
+          <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.7, ease }} className="glass-card-elevated p-8 sm:p-12 md:p-16 text-center glow-intense relative overflow-hidden">
             <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[200px] ambient-orb" style={{ background: "hsl(265, 90%, 60%)", opacity: 0.1 }} />
             <h2 className="font-display text-3xl md:text-5xl font-bold mb-5 tracking-tight relative z-10">
-              {stats.total_users >= 10 ? t("home.cta_title") : t("home.cta_title_early", "Prêt à essayer ?")}
+              Prêt à transformer vos cours ?
             </h2>
             <p className="text-muted-foreground mb-12 text-lg relative z-10">
-              {stats.total_users >= 10 ? t("home.cta_text") : t("home.cta_text_early", "Sois parmi les premiers étudiants à essayer StudyBeats. Crée ta première chanson en moins de 2 minutes.")}
+              Importez votre premier cours et découvrez la puissance du rappel actif. Gratuit pour commencer.
             </p>
             <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="relative z-10">
               <Button size="lg" className="gradient-bg-premium text-lg px-10 h-14 shimmer-btn rounded-2xl shadow-xl shadow-primary/25" onClick={() => navigate(user ? "/create" : "/signup")}>
-                {user ? t("home.cta_create", "Create a song") : t("home.cta_button")}
+                {user ? "Importer un cours" : "Commencer gratuitement"}
               </Button>
             </motion.div>
           </motion.div>
@@ -644,19 +391,21 @@ export default function Index() {
       {/* Sticky CTA mobile */}
       <AnimatePresence>
         {showStickyCta && (
-          <motion.div
-            initial={{ y: 100, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 100, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="fixed bottom-0 left-0 right-0 z-40 md:hidden p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] bg-background/85 backdrop-blur-2xl border-t border-border/20"
-          >
+          <motion.div initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 100, opacity: 0 }} transition={{ type: "spring", stiffness: 300, damping: 30 }} className="fixed bottom-0 left-0 right-0 z-40 md:hidden p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] bg-background/85 backdrop-blur-2xl border-t border-border/20">
             <Button className="w-full gradient-bg-premium h-12 text-base font-semibold shimmer-btn rounded-xl shadow-lg shadow-primary/20" onClick={() => navigate(user ? "/create" : "/signup")}>
-              {user ? t("home.cta_create", "Create a song") : t("home.sticky_cta")} <ArrowRight className="w-4 h-4 ml-2" />
+              {user ? "Importer un cours" : "Commencer"} <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Disclaimer */}
+      <div className="container mx-auto px-4 pb-4">
+        <p className="text-[10px] text-muted-foreground/50 text-center">
+          Usage strictement pédagogique. COGNITIO ne fournit aucun conseil médical, juridique ou professionnel.
+          Les contenus générés respectent la fidélité au document source.
+        </p>
+      </div>
 
       <Footer />
     </div>

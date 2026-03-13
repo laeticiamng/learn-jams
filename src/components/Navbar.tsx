@@ -2,7 +2,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Music, Library, User, LogOut, Plus, Menu, Search, Users, Trophy, BookOpen } from "lucide-react";
+import { Brain, Library, User, LogOut, Plus, Menu, Search, ClipboardCheck, BookOpen } from "lucide-react";
 import LanguageSelector from "@/components/LanguageSelector";
 import NotificationBell from "@/components/NotificationBell";
 import AccessibilityPanel from "@/components/AccessibilityPanel";
@@ -19,7 +19,7 @@ export default function Navbar() {
   const isMac = useMemo(() => typeof navigator !== "undefined" && /Mac|iPod|iPhone|iPad/.test(navigator.userAgent), []);
 
   const go = (path: string) => { navigate(path); setOpen(false); };
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + "/");
 
   const navButtonClass = (path: string) =>
     `gap-2 rounded-xl transition-all duration-300 ${
@@ -37,9 +37,9 @@ export default function Navbar() {
             whileTap={{ scale: 0.95 }}
             className="w-9 h-9 rounded-xl gradient-bg-premium flex items-center justify-center shadow-lg shadow-primary/20"
           >
-            <Music className="w-5 h-5 text-primary-foreground" />
+            <Brain className="w-5 h-5 text-primary-foreground" />
           </motion.div>
-          <span className="font-display text-xl font-bold gradient-text">StudyBeats</span>
+          <span className="font-display text-xl font-bold gradient-text">COGNITIO</span>
         </Link>
 
         {/* Desktop */}
@@ -50,7 +50,7 @@ export default function Navbar() {
               className="flex items-center gap-2 px-3 h-9 rounded-xl border border-border/20 bg-muted/20 text-muted-foreground text-sm hover:bg-muted/40 hover:text-foreground transition-all duration-300 mr-1"
             >
               <Search className="w-3.5 h-3.5" />
-              <span className="hidden lg:inline text-xs">{t("command.search_placeholder", "Search…")}</span>
+              <span className="hidden lg:inline text-xs">{t("command.search_placeholder", "Rechercher...")}</span>
               <kbd className="pointer-events-none hidden lg:inline-flex h-5 select-none items-center gap-0.5 rounded border border-border/30 bg-muted/30 px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
                 {isMac ? "⌘K" : "Ctrl+K"}
               </kbd>
@@ -61,23 +61,17 @@ export default function Navbar() {
           {user ? (
             <>
               <Button variant="ghost" size="sm" onClick={() => navigate("/create")} className={navButtonClass("/create")}>
-                <Plus className="w-4 h-4" /> {t("nav.create")}
+                <Plus className="w-4 h-4" /> Importer
               </Button>
               <Button variant="ghost" size="sm" onClick={() => navigate("/library")} className={navButtonClass("/library")}>
-                <Library className="w-4 h-4" /> {t("nav.library")}
+                <Library className="w-4 h-4" /> Missions
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => navigate("/studio")} className={navButtonClass("/studio")}>
-                <Users className="w-4 h-4" /> {t("nav.studio", "Studio")}
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => navigate("/league")} className={navButtonClass("/league")}>
-                <Trophy className="w-4 h-4" /> {t("nav.league", "League")}
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => navigate("/export")} className={navButtonClass("/export")}>
-                <BookOpen className="w-4 h-4" /> {t("nav.export", "Export")}
+              <Button variant="ghost" size="sm" onClick={() => navigate("/quiz")} className={navButtonClass("/quiz")}>
+                <ClipboardCheck className="w-4 h-4" /> Révision
               </Button>
               <Button variant="ghost" size="sm" onClick={() => navigate("/profile")} className={navButtonClass("/profile")}
-                aria-label={t("profile.title")}>
-                <User className="w-4 h-4" />
+                aria-label="Profil mémoire">
+                <User className="w-4 h-4" /> Profil
               </Button>
               <NotificationBell />
               <div className="w-px h-5 bg-border/30 mx-1" />
@@ -109,7 +103,7 @@ export default function Navbar() {
             <button
               onClick={() => document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }))}
               className="flex items-center justify-center w-9 h-9 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-all"
-              aria-label={t("command.search_placeholder", "Search…")}
+              aria-label="Rechercher"
             >
               <Search className="w-4 h-4" />
             </button>
@@ -126,22 +120,16 @@ export default function Navbar() {
                 {user ? (
                   <>
                     <Button variant="ghost" className="justify-start gap-3 rounded-xl h-12" onClick={() => go("/create")}>
-                      <Plus className="w-4 h-4" /> {t("nav.create")}
+                      <Plus className="w-4 h-4" /> Importer un cours
                     </Button>
                     <Button variant="ghost" className="justify-start gap-3 rounded-xl h-12" onClick={() => go("/library")}>
-                      <Library className="w-4 h-4" /> {t("nav.library")}
+                      <Library className="w-4 h-4" /> Mes missions
                     </Button>
-                    <Button variant="ghost" className="justify-start gap-3 rounded-xl h-12" onClick={() => go("/studio")}>
-                      <Users className="w-4 h-4" /> {t("nav.studio", "Studio")}
-                    </Button>
-                    <Button variant="ghost" className="justify-start gap-3 rounded-xl h-12" onClick={() => go("/league")}>
-                      <Trophy className="w-4 h-4" /> {t("nav.league", "League")}
-                    </Button>
-                    <Button variant="ghost" className="justify-start gap-3 rounded-xl h-12" onClick={() => go("/export")}>
-                      <BookOpen className="w-4 h-4" /> {t("nav.export", "LMS Export")}
+                    <Button variant="ghost" className="justify-start gap-3 rounded-xl h-12" onClick={() => go("/quiz")}>
+                      <ClipboardCheck className="w-4 h-4" /> Révision
                     </Button>
                     <Button variant="ghost" className="justify-start gap-3 rounded-xl h-12" onClick={() => go("/profile")}>
-                      <User className="w-4 h-4" /> {t("profile.title")}
+                      <User className="w-4 h-4" /> Profil mémoire
                     </Button>
                     <div className="h-px bg-border/20 my-2" />
                     <Button variant="ghost" className="justify-start gap-3 rounded-xl h-12 text-muted-foreground" onClick={() => go("/pricing")}>
@@ -165,7 +153,6 @@ export default function Navbar() {
                     <Button className="gradient-bg-premium mt-3 rounded-xl h-12 shadow-lg shadow-primary/20" onClick={() => go("/signup")}>{t("nav.signup")}</Button>
                   </>
                 )}
-                {/* Settings in drawer on mobile */}
                 <div className="h-px bg-border/20 my-2" />
                 <div className="flex items-center gap-2 px-2">
                   <LanguageSelector />
