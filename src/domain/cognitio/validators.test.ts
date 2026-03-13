@@ -3,6 +3,8 @@ import {
   getQualityBand,
   getFallbackMode,
   getRoomCount,
+  validateConceptTraceability,
+  validateIngestionResult,
   shouldIncludeBoss,
   validateQAScore,
   validateCognitiveBudget,
@@ -276,5 +278,74 @@ describe("validateWordCount", () => {
     const result = validateWordCount(99);
     expect(result.valid).toBe(false);
     expect(result.action).toBe("fallback_micro");
+  });
+});
+
+// ---------- Concept Traceability ----------
+
+describe("validateConceptTraceability", () => {
+  const sourceText = "La photosynthèse est le processus par lequel les plantes convertissent la lumière en énergie. La respiration cellulaire est un processus métabolique.";
+
+  it("validates traceable concepts", () => {
+    const concepts = [
+      { stable_key: "photosynthese", source_confidence: 0.9, source_trace: [{ excerpt: "La photosynthèse est le processus" }] },
+    ];
+    const result = validateConceptTraceability(concepts, sourceText);
+    expect(result.valid).toBe(true);
+    expect(result.untraceable).toEqual([]);
+  });
+
+  it("detects untraceable concepts", () => {
+    const concepts = [
+      { stable_key: "invented_concept", source_confidence: 0.8, source_trace: [] },
+    ];
+    const result = validateConceptTraceability(concepts, sourceText);
+    expect(result.valid).toBe(false);
+    expect(result.untraceable).toContain("invented_concept");
+  });
+
+  it("marks low-confidence concepts as uncertain", () => {
+    const concepts = [
+      { stable_key: "respiration", source_confidence: 0.3, source_trace: [{ excerpt: "La respiration cellulaire est" }] },
+    ];
+    const result = validateConceptTraceability(concepts, sourceText);
+    expect(result.uncertain).toContain("respiration");
+  });
+
+  it("handles empty concepts array", () => {
+    const result = validateConceptTraceability([], sourceText);
+    expect(result.valid).toBe(true);
+  });
+});
+
+// ---------- Ingestion Result Validation ----------
+
+describe("validateIngestionResult", () => {
+  it("returns no issues for valid document", () => {
+    const result = validateIngestionResult(500, 0.8, "fr");
+    expect(result.issues).toEqual([]);
+  });
+
+  it("returns blocking for empty document", () => {
+    const result = validateIngestionResult(0, 0, "fr");
+    expect(result.issues.some(i => i.code === "EMPTY_DOCUMENT")).toBe(true);
+    expect(result.issues.some(i => i.severity === "blocking")).toBe(true);
+  });
+
+  it("returns warning for short document", () => {
+    const result = validateIngestionResult(50, 0.5, "fr");
+    expect(result.issues.some(i => i.code === "DOCUMENT_TOO_SHORT")).toBe(true);
+  });
+
+  it("returns info for long document", () => {
+    const result = validateIngestionResult(20000, 0.8, "fr");
+    expect(result.issues.some(i => i.code === "DOCUMENT_TOO_LONG")).toBe(true);
+    expect(result.issues.find(i => i.code === "DOCUMENT_TOO_LONG")?.severity).toBe("info");
+  });
+
+  it("returns blocking for low confidence", () => {
+    const result = validateIngestionResult(500, 0.2, "fr");
+    expect(result.issues.some(i => i.code === "LOW_CONFIDENCE_BLOCKING")).toBe(true);
+    expect(result.issues.find(i => i.code === "LOW_CONFIDENCE_BLOCKING")?.severity).toBe("blocking");
   });
 });

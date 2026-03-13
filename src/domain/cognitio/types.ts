@@ -22,6 +22,30 @@ export type SourceType =
   | "pasted_text"
   | "unknown";
 
+// Detailed source typing for M1 analysis
+export type DetailedSourceType =
+  | "institutional"
+  | "polycopie"
+  | "slides"
+  | "personal_notes"
+  | "unknown";
+
+// Detected structure from document parsing
+export type DetectedStructureType =
+  | "prose"
+  | "bullets"
+  | "table"
+  | "mixed"
+  | "minimal";
+
+// Reasoning / knowledge type (M2 analysis)
+export type ReasoningType =
+  | "declaratif"
+  | "procedural"
+  | "conditionnel"
+  | "causal"
+  | "metacognitif";
+
 export type ContentType = "application/pdf" | "application/vnd.openxmlformats-officedocument.wordprocessingml.document" | "text/plain";
 
 export type Criticality = 1 | 2 | 3 | 4; // 1=critical, 2=major, 3=secondary, 4=accessory

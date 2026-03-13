@@ -1,201 +1,249 @@
+// ============================================================
+// Create Page — Import & Transform (M1 + M2 Pipeline)
+// ============================================================
+
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight, Play, Eye } from "lucide-react";
+import { ArrowLeft, ArrowRight, Brain, FileText, AlertTriangle, RotateCcw, Eye } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ImportDropzone from "@/components/cognitio/ImportDropzone";
 import IngestionStatus from "@/components/cognitio/IngestionStatus";
-import FallbackNotice from "@/components/cognitio/FallbackNotice";
-import { useAuth } from "@/hooks/useAuth";
-import { useMissionGeneration } from "@/hooks/useMissionGeneration";
-import { usePageSEO } from "@/hooks/usePageSEO";
-import { getQualityBand, getFallbackMode } from "@/domain/cognitio/validators";
-import { getFallbackModeLabel, formatDuration } from "@/lib/cognitio-ui";
-import type { ContentType, LearningObjective } from "@/domain/cognitio/types";
+import { DocumentQualityPanel } from "@/components/cognitio/DocumentQualityPanel";
+import { ConceptList } from "@/components/cognitio/ConceptList";
+import { ConfusionPairsCard } from "@/components/cognitio/ConfusionPairsCard";
+import { AmbiguityWarning } from "@/components/cognitio/AmbiguityWarning";
+import { useDocumentIngestion } from "@/hooks/useDocumentIngestion";
+import { useCourseAnalysis } from "@/hooks/useCourseAnalysis";
+import type { IngestInput } from "@/domain/cognitio/contracts";
+import type { AmbiguousZone } from "@/domain/cognitio/types";
 
-const ease = [0.25, 0.46, 0.45, 0.94] as [number, number, number, number];
+type Phase = "import" | "ingesting" | "analyzing" | "result";
 
 export default function Create() {
-  usePageSEO({
-    title: "Importer & Transformer — COGNITIO",
-    description: "Importez un cours et transformez-le en mission pédagogique interactive.",
-    noindex: true,
-  });
+  const [phase, setPhase] = useState<Phase>("import");
+  const [objective, setObjective] = useState<string>("discovery");
 
-  const navigate = useNavigate();
-  const { user } = useAuth();
-  const { steps, isRunning, error, result, qaResult, generate, reset } = useMissionGeneration();
+  const ingestion = useDocumentIngestion();
+  const analysis = useCourseAnalysis();
 
-  const [hasStarted, setHasStarted] = useState(false);
+  const handleImport = async (input: IngestInput) => {
+    setObjective(input.objective);
+    setPhase("ingesting");
 
-  const handleImport = (data: {
-    file?: File;
-    pasted_text?: string;
-    content_type: ContentType;
-    objective: LearningObjective;
-  }) => {
-    setHasStarted(true);
-    generate(data);
+    await ingestion.ingest(input);
+
+    if (ingestion.error) return; // Stay on ingesting phase with error shown
   };
 
-  const isComplete = result !== null;
-  const qualityBand = result ? getQualityBand(result.quality_band === "excellent" ? 0.9 : result.quality_band === "good" ? 0.75 : result.quality_band === "medium" ? 0.6 : result.quality_band === "poor" ? 0.45 : 0.3) : null;
-  const fallbackMode = result?.fallback_mode ?? null;
+  // When ingestion completes, start analysis
+  const handleIngestionComplete = async () => {
+    if (!ingestion.result) return;
+
+    const hasBlocking = ingestion.result.issues.some((i) => i.severity === "blocking");
+    if (hasBlocking) {
+      setPhase("result"); // Show result with blocking issues
+      return;
+    }
+
+    setPhase("analyzing");
+    await analysis.analyze(ingestion.result, objective);
+    setPhase("result");
+  };
+
+  // Auto-trigger analysis when ingestion completes
+  if (phase === "ingesting" && !ingestion.isRunning && ingestion.result && !ingestion.error) {
+    handleIngestionComplete();
+  }
+
+  const handleReset = () => {
+    ingestion.reset();
+    analysis.reset();
+    setPhase("import");
+  };
+
+  const allSteps = [
+    ...ingestion.steps,
+    ...(phase === "analyzing" || phase === "result" ? analysis.steps : []),
+  ];
+
+  const hasBlocking = ingestion.result?.issues.some((i) => i.severity === "blocking") ?? false;
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
-      <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,hsl(var(--primary)/0.08),transparent_70%)]" />
-
+    <div className="min-h-screen bg-background">
       <Navbar />
 
-      <div className="container mx-auto pt-24 sm:pt-28 pb-16 px-4 max-w-3xl relative z-10">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease }}
-        >
-          <div className="text-center mb-10">
-            <h1 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold mb-3 tracking-tight">
-              Importer & Transformer
-            </h1>
-            <p className="text-muted-foreground text-lg max-w-lg mx-auto leading-relaxed">
-              Importez votre cours et laissez COGNITIO le transformer en mission d'apprentissage interactive.
-            </p>
+      <main className="max-w-4xl mx-auto px-4 py-8 pt-24">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-2">
+            <Brain className="h-6 w-6 text-primary" />
+            <h1 className="text-2xl font-bold">Importer & Analyser</h1>
           </div>
-        </motion.div>
+          <p className="text-muted-foreground text-sm">
+            Importez votre cours, le moteur COGNITIO l'analyse et vous montre ce qu'il a compris.
+          </p>
+        </div>
 
         <AnimatePresence mode="wait">
-          {!hasStarted && (
+          {/* Phase 1: Import */}
+          {phase === "import" && (
             <motion.div
               key="import"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.5, ease }}
             >
-              <ImportDropzone onImport={handleImport} disabled={isRunning} />
-
-              {/* Pedagogical disclaimer */}
-              <p className="text-xs text-muted-foreground text-center mt-8">
-                Usage strictement pédagogique. Les contenus générés ne constituent pas un avis médical, juridique ou professionnel.
-                Vos documents sont sécurisés et isolés.
-              </p>
+              <ImportDropzone onImport={handleImport} />
             </motion.div>
           )}
 
-          {hasStarted && !isComplete && (
+          {/* Phase 2-3: Ingestion + Analysis progress */}
+          {(phase === "ingesting" || phase === "analyzing") && (
             <motion.div
-              key="processing"
+              key="progress"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.5, ease }}
               className="space-y-6"
             >
-              <IngestionStatus steps={steps} />
+              <IngestionStatus
+                steps={allSteps}
+                title={phase === "ingesting" ? "Import en cours" : "Analyse pédagogique"}
+              />
 
-              {error && (
-                <div className="glass-card p-4 rounded-xl border-l-4 border-red-500/50 bg-red-500/5">
-                  <p className="text-sm text-red-600 dark:text-red-400 font-medium">Erreur</p>
-                  <p className="text-xs text-muted-foreground mt-1">{error}</p>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => { reset(); setHasStarted(false); }}
-                    className="mt-3 text-muted-foreground"
-                  >
-                    Recommencer
+              {/* Show error if any */}
+              {(ingestion.error || analysis.error) && (
+                <div className="border border-red-200 bg-red-50 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-red-800">Erreur</p>
+                      <p className="text-sm text-red-600">{ingestion.error || analysis.error}</p>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm" className="mt-3" onClick={handleReset}>
+                    <RotateCcw className="h-4 w-4 mr-2" /> Recommencer
                   </Button>
                 </div>
               )}
             </motion.div>
           )}
 
-          {isComplete && result && (
+          {/* Phase 4: Result */}
+          {phase === "result" && (
             <motion.div
               key="result"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, ease }}
               className="space-y-6"
             >
-              {/* Success card */}
-              <div className="glass-card-elevated p-8 rounded-xl text-center space-y-4">
-                <div className="w-16 h-16 rounded-2xl gradient-bg-premium flex items-center justify-center mx-auto shadow-lg shadow-primary/20">
-                  <Play className="w-8 h-8 text-primary-foreground" />
-                </div>
-                <h2 className="font-display text-2xl font-bold">Mission générée !</h2>
-                <p className="text-muted-foreground">
-                  {result.room_count} salle{result.room_count > 1 ? "s" : ""}
-                  {result.includes_boss ? " + Boss final" : ""}
+              {/* Header message */}
+              <div className="border rounded-lg p-4 bg-muted/30">
+                <p className="text-sm font-medium mb-1">
+                  {hasBlocking
+                    ? "Le document ne peut pas être analysé en l'état"
+                    : analysis.result
+                      ? "Voilà ce que le moteur a compris"
+                      : "Analyse terminée"}
                 </p>
-
-                {/* QA score */}
-                {qaResult && (
-                  <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${
-                    qaResult.publish_blocked
-                      ? "bg-red-500/10 text-red-500 border border-red-500/20"
-                      : "bg-green-500/10 text-green-500 border border-green-500/20"
-                  }`}>
-                    QA: {qaResult.qa_score}/100
-                    {qaResult.publish_blocked && " — Publication bloquée"}
-                  </div>
-                )}
+                <p className="text-xs text-muted-foreground">
+                  {hasBlocking
+                    ? "Des problèmes bloquants ont été détectés. Consultez les détails ci-dessous."
+                    : "Les résultats ci-dessous montrent les concepts extraits, leur fiabilité, et les zones d'incertitude."}
+                </p>
               </div>
 
-              {/* Fallback notice */}
-              {fallbackMode && fallbackMode !== "full" && qualityBand && (
-                <FallbackNotice
-                  fallbackMode={fallbackMode}
-                  qualityBand={qualityBand}
-                  qualityScore={qualityBand === "excellent" ? 0.9 : qualityBand === "good" ? 0.75 : qualityBand === "medium" ? 0.6 : qualityBand === "poor" ? 0.45 : 0.3}
-                />
+              {/* Document quality panel */}
+              {ingestion.result && (
+                <div className="border rounded-lg p-4">
+                  <DocumentQualityPanel
+                    m1Output={ingestion.result}
+                    m2Output={analysis.result}
+                  />
+                </div>
               )}
 
-              {/* QA warnings */}
-              {qaResult && qaResult.violations.length > 0 && (
-                <div className="glass-card p-4 rounded-xl space-y-2">
-                  <p className="text-sm font-semibold">Alertes QA</p>
-                  {qaResult.violations.map((v, i) => (
-                    <p key={i} className={`text-xs ${v.severity === "blocking" ? "text-red-500" : "text-yellow-500"}`}>
-                      [{v.violation_type}] {v.message}
-                    </p>
-                  ))}
+              {/* Concepts */}
+              {analysis.result && analysis.result.key_concepts.length > 0 && (
+                <div className="border rounded-lg p-4">
+                  <ConceptList concepts={analysis.result.key_concepts} maxDisplay={10} />
+                </div>
+              )}
+
+              {/* Confusions & Traps */}
+              {analysis.result && (analysis.result.confusion_pairs.length > 0 || analysis.result.traps.length > 0) && (
+                <div className="border rounded-lg p-4">
+                  <ConfusionPairsCard
+                    confusionPairs={analysis.result.confusion_pairs}
+                    traps={analysis.result.traps}
+                  />
+                </div>
+              )}
+
+              {/* Ambiguity warnings */}
+              {analysis.result?.confidence.ambiguous_zones && analysis.result.confidence.ambiguous_zones.length > 0 && (
+                <AmbiguityWarning zones={analysis.result.confidence.ambiguous_zones as AmbiguousZone[]} />
+              )}
+
+              {/* Uncertain concepts warning */}
+              {analysis.result && analysis.result.key_concepts.some((c) => c.uncertain) && (
+                <div className="border border-yellow-200 bg-yellow-50 rounded-lg p-4">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-yellow-800">Concepts incertains</p>
+                      <p className="text-xs text-yellow-600">
+                        {analysis.result.key_concepts.filter((c) => c.uncertain).length} concept(s) n'ont pas pu
+                        être pleinement tracé(s) dans le texte source. Ils sont marqués comme incertains et ne
+                        seront pas promus comme fiables.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Learning objectives */}
+              {analysis.result?.learning_objectives && analysis.result.learning_objectives.length > 0 && (
+                <div className="border rounded-lg p-4">
+                  <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                    <FileText className="h-4 w-4" /> Objectifs d'apprentissage détectés
+                  </h3>
+                  <ul className="space-y-1">
+                    {analysis.result.learning_objectives.map((obj, i) => (
+                      <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
+                        <span className="text-primary mt-1">-</span>
+                        {obj}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               )}
 
               {/* Actions */}
-              <div className="flex flex-wrap gap-3 justify-center">
-                {!qaResult?.publish_blocked && result.fallback_mode !== "synthesis_only" && (
-                  <Button
-                    onClick={() => navigate(`/player/${result.mission_id}`)}
-                    className="gap-2 gradient-bg-premium rounded-xl shadow-lg shadow-primary/20"
-                    size="lg"
-                  >
-                    <Play className="w-4 h-4" /> Jouer la mission
+              <div className="flex flex-wrap gap-3">
+                <Button variant="outline" onClick={handleReset}>
+                  <RotateCcw className="h-4 w-4 mr-2" /> Importer un autre document
+                </Button>
+
+                {!hasBlocking && analysis.result && (
+                  <Button disabled className="opacity-50 cursor-not-allowed">
+                    <ArrowRight className="h-4 w-4 mr-2" /> Continuer vers la génération
+                    <span className="ml-2 text-xs">(prochain ticket)</span>
                   </Button>
                 )}
-                <Button
-                  variant="outline"
-                  onClick={() => navigate("/library")}
-                  className="gap-2 rounded-xl"
-                >
-                  <Eye className="w-4 h-4" /> Voir dans la bibliothèque
-                </Button>
-                <Button
-                  variant="ghost"
-                  onClick={() => { reset(); setHasStarted(false); }}
-                  className="gap-2 rounded-xl text-muted-foreground"
-                >
-                  Importer un autre cours
-                </Button>
               </div>
+
+              {/* Disclaimer */}
+              <p className="text-xs text-muted-foreground text-center mt-8 max-w-lg mx-auto">
+                L'analyse est basée sur le contenu fourni. Le moteur ne prétend pas avoir compris ce qu'il ne comprend pas.
+                Les zones d'incertitude sont signalées explicitement.
+              </p>
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
+      </main>
 
       <Footer />
     </div>

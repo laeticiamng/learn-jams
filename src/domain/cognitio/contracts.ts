@@ -21,77 +21,149 @@ import type {
   CognitiveSegment,
   RepetitionPlan,
   RecallQuestion,
-  CompositeScore,
-  DebriefData,
   IngestionWarning,
   DocumentSegment,
+  DetailedSourceType,
+  DetectedStructureType,
+  ReasoningType,
 } from "./types";
+
+// ---------- Shared sub-types ----------
+
+export type { DetailedSourceType, DetectedStructureType, ReasoningType };
+
+export interface AnalysisConfidence {
+  concepts: number;  // 0-1
+  logic: number;     // 0-1
+  traps: number;     // 0-1
+  structure: number; // 0-1
+  ambiguous_zones: AmbiguousZone[];
+}
 
 // ---------- M1: Ingestion ----------
 
-export interface IngestInput {
+export interface M1_Input {
+  raw_content: File | string;
+  content_type: ContentType | "paste";
+  user_objective?: LearningObjective;
+  user_language?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface M1_Output {
+  document_id: string;
+  clean_text: string;
+  word_count: number;
+  language: string;
+  source_type: DetailedSourceType;
+  confidence_level: number;
+  detected_structure: DetectedStructureType;
+  issues: SourceIssue[];
+  segments: SegmentOutput[];
+}
+
+export interface SourceIssue {
+  code: string;
+  message: string;
+  severity: "info" | "warning" | "blocking";
+  action_required?: boolean;
+  page_ref?: number;
+}
+
+export interface SegmentOutput {
+  segment_index: number;
+  title: string | null;
+  content: string;
+  hierarchy_level: number;
+  confidence_score: number;
+  page_ref: string | null;
+}
+
+// Keep backward compat aliases
+export type IngestInput = {
   file?: File;
   pasted_text?: string;
   content_type: ContentType;
   objective: LearningObjective;
   language?: string;
-}
+};
 
-export interface IngestOutput {
-  document_id: string;
-  clean_text: string;
-  source_type: SourceType;
-  confidence_level: number;
-  detected_structure: {
-    has_headings: boolean;
-    has_lists: boolean;
-    has_tables: boolean;
-    estimated_word_count: number;
-  };
-  issues: IngestionWarning[];
-  segments: Omit<DocumentSegment, "id" | "document_id" | "created_at">[];
-}
+export type IngestOutput = M1_Output;
 
 // ---------- M2: Analysis ----------
 
-export interface AnalyzeInput {
+export interface M2_Input {
   document_id: string;
-  segments: Omit<DocumentSegment, "id" | "document_id" | "created_at">[];
   clean_text: string;
-  objective: LearningObjective;
+  segments: SegmentOutput[];
+  user_objective?: LearningObjective;
+  source_type: DetailedSourceType;
+  confidence_level: number;
 }
 
-export interface AnalyzeOutput {
+export interface M2_Output {
   course_profile_id: string;
-  concepts: AnalyzedConcept[];
+  main_topic: string;
+  learning_objectives: string[];
+  key_concepts: AnalyzedConcept[];
+  traps: AnalyzedTrap[];
   confusion_pairs: AnalyzedConfusionPair[];
-  knowledge_type: KnowledgeType;
-  structure_type: "linear" | "hierarchical" | "network";
-  source_issues: IngestionWarning[];
+  reasoning_type: ReasoningType;
+  density: "low" | "medium" | "high";
+  recommended_template: ChosenFormat;
+  confidence: AnalysisConfidence;
+  prerequis: string[];
+  structure_type: DetectedStructureType;
+  source_issues: SourceIssue[];
+  // Computed summaries
   total_concepts: number;
   critical_count: number;
   estimated_complexity: number; // 1-10
-  ambiguous_zones: AmbiguousZone[];
 }
 
 export interface AnalyzedConcept {
   stable_key: string;
   label: string;
   definition: string;
+  type: string; // category/domain
   criticality: Criticality;
+  criticality_score: number; // 0-1 fine-grained
   bloom_target: BloomLevel;
-  category: string;
+  relations: ConceptRelation[];
   prerequisites: string[];
   source_confidence: number;
   source_trace: SourceTrace[];
+  uncertain: boolean; // true if source_confidence < 0.5
+}
+
+export interface ConceptRelation {
+  target_key: string;
+  relation_type: "prerequisite" | "related" | "part_of" | "contrasts_with";
+}
+
+export interface AnalyzedTrap {
+  concept_key: string;
+  trap_type: "false_friend" | "common_error" | "ambiguity" | "partial_truth";
+  description: string;
+  source_trace?: SourceTrace;
 }
 
 export interface AnalyzedConfusionPair {
   concept_a_key: string;
   concept_b_key: string;
   distinction_key: string;
-  frequency: number;
+  frequency: number; // 1-5
 }
+
+// Keep backward compat
+export type AnalyzeInput = {
+  document_id: string;
+  segments: Omit<DocumentSegment, "id" | "document_id" | "created_at">[];
+  clean_text: string;
+  objective: LearningObjective;
+};
+
+export type AnalyzeOutput = M2_Output;
 
 // ---------- M3: Memory Architect ----------
 

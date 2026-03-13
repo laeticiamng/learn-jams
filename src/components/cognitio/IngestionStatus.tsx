@@ -1,17 +1,25 @@
 import { motion } from "framer-motion";
 import { Check, Loader2, AlertCircle, Circle } from "lucide-react";
-import type { PipelineStep } from "@/domain/cognitio/types";
-import { getPipelineStepLabel } from "@/lib/cognitio-ui";
+import type { PipelineStepStatus } from "@/domain/cognitio/types";
 
-interface IngestionStatusProps {
-  steps: PipelineStep[];
+interface StepInfo {
+  name: string;
+  label: string;
+  status: PipelineStepStatus;
+  message?: string;
+  progress?: number;
 }
 
-export default function IngestionStatus({ steps }: IngestionStatusProps) {
+interface IngestionStatusProps {
+  steps: StepInfo[];
+  title?: string;
+}
+
+export default function IngestionStatus({ steps, title = "Progression" }: IngestionStatusProps) {
   return (
     <div className="space-y-3">
       <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">
-        Progression de l'analyse
+        {title}
       </h3>
       {steps.map((step, i) => (
         <motion.div
@@ -34,7 +42,7 @@ export default function IngestionStatus({ steps }: IngestionStatusProps) {
             <p className={`text-sm font-medium ${
               step.status === "pending" ? "text-muted-foreground" : ""
             }`}>
-              {getPipelineStepLabel(step.name)}
+              {step.label}
             </p>
             {step.message && (
               <p className={`text-xs mt-0.5 ${
@@ -55,7 +63,7 @@ export default function IngestionStatus({ steps }: IngestionStatusProps) {
   );
 }
 
-function StepIcon({ status }: { status: PipelineStep["status"] }) {
+function StepIcon({ status }: { status: PipelineStepStatus }) {
   switch (status) {
     case "completed":
       return (
