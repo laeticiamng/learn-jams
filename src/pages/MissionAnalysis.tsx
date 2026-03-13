@@ -13,9 +13,21 @@ import { DocumentQualityPanel } from "@/components/cognitio/DocumentQualityPanel
 import { ConceptList } from "@/components/cognitio/ConceptList";
 import { ConfusionPairsCard } from "@/components/cognitio/ConfusionPairsCard";
 import { AmbiguityWarning } from "@/components/cognitio/AmbiguityWarning";
+import { MemoryPlanCard } from "@/components/cognitio/MemoryPlanCard";
+import { MemorySegmentsList } from "@/components/cognitio/MemorySegmentsList";
+import { RepetitionPlanCard } from "@/components/cognitio/RepetitionPlanCard";
+import { MnemonicsCard } from "@/components/cognitio/MnemonicsCard";
+import { VisualAnchorsCard } from "@/components/cognitio/VisualAnchorsCard";
+import { CognitiveBudgetCard } from "@/components/cognitio/CognitiveBudgetCard";
+import { FormatDecisionCard } from "@/components/cognitio/FormatDecisionCard";
+import { PedagogicalContractCard } from "@/components/cognitio/PedagogicalContractCard";
 import { supabase } from "@/integrations/supabase/client";
 import type { M1_Output, M2_Output, AnalyzedConcept, AnalyzedConfusionPair, AnalyzedTrap, AnalysisConfidence, SegmentOutput } from "@/domain/cognitio/contracts";
+import type { M3_Output } from "@/domain/cognitio/memory.contracts";
+import type { M4_Output } from "@/domain/cognitio/format.contracts";
 import type { AmbiguousZone } from "@/domain/cognitio/types";
+import type { FormatOverride, FormatDecisionModule, CostLevel } from "@/domain/cognitio/format.types";
+import type { ChosenFormat } from "@/domain/cognitio/types";
 
 export default function MissionAnalysis() {
   const { id } = useParams<{ id: string }>();
@@ -23,6 +35,8 @@ export default function MissionAnalysis() {
   const [loading, setLoading] = useState(true);
   const [m1Output, setM1Output] = useState<M1_Output | null>(null);
   const [m2Output, setM2Output] = useState<M2_Output | null>(null);
+  const [m3Output, setM3Output] = useState<M3_Output | null>(null);
+  const [m4Output, setM4Output] = useState<M4_Output | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -53,7 +67,7 @@ export default function MissionAnalysis() {
         // Build M1 output from stored data
         const m1: M1_Output = {
           document_id: doc.id,
-          clean_text: "", // Not stored directly, but not needed for display
+          clean_text: "",
           word_count: doc.word_count ?? 0,
           language: doc.detected_language ?? doc.source_language ?? "unknown",
           source_type: doc.detailed_source_type ?? "unknown",
@@ -149,6 +163,63 @@ export default function MissionAnalysis() {
           };
 
           setM2Output(m2);
+
+          // Load memory architecture (M3)
+          const { data: arch } = await supabase
+            .from("memory_architectures")
+            .select("*")
+            .eq("document_id", id)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .single();
+
+          if (arch) {
+            const m3: M3_Output = {
+              architecture_id: arch.id,
+              document_id: arch.document_id,
+              course_profile_id: arch.course_profile_id,
+              segments: arch.segments_json as M3_Output["segments"],
+              concept_order: arch.concept_order_json as string[],
+              repetition_plan: arch.repetition_plan_json as M3_Output["repetition_plan"],
+              mnemonics: arch.mnemonics_json as M3_Output["mnemonics"],
+              visual_anchors: arch.visual_anchors_json as M3_Output["visual_anchors"],
+              cognitive_budget: arch.cognitive_budget_json as M3_Output["cognitive_budget"],
+              pedagogical_contract: arch.pedagogical_contract_json as M3_Output["pedagogical_contract"],
+              total_duration_sec: arch.total_duration_sec,
+              needs_splitting: arch.needs_splitting,
+              split_modules: arch.split_modules_json as M3_Output["split_modules"],
+              reasoning_type: arch.reasoning_type as M3_Output["reasoning_type"],
+              objective: arch.objective as M3_Output["objective"],
+            };
+            setM3Output(m3);
+
+            // Load format decision (M4)
+            const { data: decision } = await supabase
+              .from("format_decisions")
+              .select("*")
+              .eq("architecture_id", arch.id)
+              .order("created_at", { ascending: false })
+              .limit(1)
+              .single();
+
+            if (decision) {
+              const m4: M4_Output = {
+                decision_id: decision.id,
+                architecture_id: decision.architecture_id,
+                chosen_format: decision.chosen_format as ChosenFormat,
+                justification: decision.justification,
+                matrix_reasoning: decision.matrix_reasoning,
+                estimated_duration_sec: decision.estimated_duration_sec,
+                needs_split: decision.needs_split,
+                split_count: decision.split_count ?? undefined,
+                modules: decision.modules_json as FormatDecisionModule[] | undefined,
+                overrides_applied: decision.overrides_applied_json as FormatOverride[],
+                cost_level: decision.cost_level as CostLevel,
+                decision_trace: decision.decision_trace_json as M4_Output["decision_trace"],
+              };
+              setM4Output(m4);
+            }
+          }
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Erreur lors du chargement");
@@ -215,6 +286,52 @@ export default function MissionAnalysis() {
           <div className="border rounded-lg p-4">
             <DocumentQualityPanel m1Output={m1Output} m2Output={m2Output} />
           </div>
+
+          {/* Memory Architecture (M3) */}
+          {m3Output && (
+            <>
+              <div className="border rounded-lg p-4">
+                <MemoryPlanCard output={m3Output} />
+              </div>
+
+              <div className="border rounded-lg p-4">
+                <PedagogicalContractCard contract={m3Output.pedagogical_contract} />
+              </div>
+
+              <div className="border rounded-lg p-4">
+                <CognitiveBudgetCard budget={m3Output.cognitive_budget} />
+              </div>
+
+              <div className="border rounded-lg p-4">
+                <MemorySegmentsList segments={m3Output.segments} />
+              </div>
+
+              {m3Output.repetition_plan.length > 0 && (
+                <div className="border rounded-lg p-4">
+                  <RepetitionPlanCard plan={m3Output.repetition_plan} />
+                </div>
+              )}
+
+              {m3Output.mnemonics.length > 0 && (
+                <div className="border rounded-lg p-4">
+                  <MnemonicsCard mnemonics={m3Output.mnemonics} />
+                </div>
+              )}
+
+              {m3Output.visual_anchors.length > 0 && (
+                <div className="border rounded-lg p-4">
+                  <VisualAnchorsCard anchors={m3Output.visual_anchors} />
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Format Decision (M4) */}
+          {m4Output && (
+            <div className="border rounded-lg p-4">
+              <FormatDecisionCard decision={m4Output} />
+            </div>
+          )}
 
           {/* Concepts */}
           {m2Output && m2Output.key_concepts.length > 0 && (

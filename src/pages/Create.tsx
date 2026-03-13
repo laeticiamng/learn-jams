@@ -1,5 +1,5 @@
 // ============================================================
-// Create Page — Import & Transform (M1 + M2 Pipeline)
+// Create Page — Import & Transform (M1 + M2 + M3 + M4 Pipeline)
 // ============================================================
 
 import { useState } from "react";
@@ -14,19 +14,31 @@ import { DocumentQualityPanel } from "@/components/cognitio/DocumentQualityPanel
 import { ConceptList } from "@/components/cognitio/ConceptList";
 import { ConfusionPairsCard } from "@/components/cognitio/ConfusionPairsCard";
 import { AmbiguityWarning } from "@/components/cognitio/AmbiguityWarning";
+import { MemoryPlanCard } from "@/components/cognitio/MemoryPlanCard";
+import { MemorySegmentsList } from "@/components/cognitio/MemorySegmentsList";
+import { RepetitionPlanCard } from "@/components/cognitio/RepetitionPlanCard";
+import { MnemonicsCard } from "@/components/cognitio/MnemonicsCard";
+import { VisualAnchorsCard } from "@/components/cognitio/VisualAnchorsCard";
+import { CognitiveBudgetCard } from "@/components/cognitio/CognitiveBudgetCard";
+import { FormatDecisionCard } from "@/components/cognitio/FormatDecisionCard";
+import { PedagogicalContractCard } from "@/components/cognitio/PedagogicalContractCard";
 import { useDocumentIngestion } from "@/hooks/useDocumentIngestion";
 import { useCourseAnalysis } from "@/hooks/useCourseAnalysis";
+import { useMemoryArchitecture } from "@/hooks/useMemoryArchitecture";
+import { useFormatDecision } from "@/hooks/useFormatDecision";
 import type { IngestInput } from "@/domain/cognitio/contracts";
-import type { AmbiguousZone } from "@/domain/cognitio/types";
+import type { AmbiguousZone, LearningObjective } from "@/domain/cognitio/types";
 
-type Phase = "import" | "ingesting" | "analyzing" | "result";
+type Phase = "import" | "ingesting" | "analyzing" | "architecting" | "formatting" | "result";
 
 export default function Create() {
   const [phase, setPhase] = useState<Phase>("import");
-  const [objective, setObjective] = useState<string>("discovery");
+  const [objective, setObjective] = useState<LearningObjective>("discovery");
 
   const ingestion = useDocumentIngestion();
   const analysis = useCourseAnalysis();
+  const memory = useMemoryArchitecture();
+  const format = useFormatDecision();
 
   const handleImport = async (input: IngestInput) => {
     setObjective(input.objective);
@@ -34,7 +46,7 @@ export default function Create() {
 
     await ingestion.ingest(input);
 
-    if (ingestion.error) return; // Stay on ingesting phase with error shown
+    if (ingestion.error) return;
   };
 
   // When ingestion completes, start analysis
@@ -43,12 +55,37 @@ export default function Create() {
 
     const hasBlocking = ingestion.result.issues.some((i) => i.severity === "blocking");
     if (hasBlocking) {
-      setPhase("result"); // Show result with blocking issues
+      setPhase("result");
       return;
     }
 
     setPhase("analyzing");
     await analysis.analyze(ingestion.result, objective);
+
+    if (analysis.error || !analysis.result) {
+      setPhase("result");
+      return;
+    }
+
+    // M3: Memory Architecture
+    setPhase("architecting");
+    await memory.build(analysis.result, ingestion.result.document_id, objective);
+
+    if (memory.error || !memory.result) {
+      setPhase("result");
+      return;
+    }
+
+    // M4: Format Selection
+    setPhase("formatting");
+    await format.decide(
+      memory.result,
+      analysis.result,
+      ingestion.result.document_id,
+      ingestion.result.confidence_level,
+      objective
+    );
+
     setPhase("result");
   };
 
@@ -60,15 +97,27 @@ export default function Create() {
   const handleReset = () => {
     ingestion.reset();
     analysis.reset();
+    memory.reset();
+    format.reset();
     setPhase("import");
   };
 
   const allSteps = [
     ...ingestion.steps,
-    ...(phase === "analyzing" || phase === "result" ? analysis.steps : []),
+    ...(["analyzing", "architecting", "formatting", "result"].includes(phase) ? analysis.steps : []),
+    ...(["architecting", "formatting", "result"].includes(phase) ? memory.steps : []),
+    ...(["formatting", "result"].includes(phase) ? format.steps : []),
   ];
 
+  const phaseTitle = {
+    ingesting: "Import en cours",
+    analyzing: "Analyse pédagogique",
+    architecting: "Architecture mémoire",
+    formatting: "Sélection du format",
+  }[phase as string] ?? "Progression";
+
   const hasBlocking = ingestion.result?.issues.some((i) => i.severity === "blocking") ?? false;
+  const anyError = ingestion.error || analysis.error || memory.error || format.error;
 
   return (
     <div className="min-h-screen bg-background">
@@ -82,7 +131,7 @@ export default function Create() {
             <h1 className="text-2xl font-bold">Importer & Analyser</h1>
           </div>
           <p className="text-muted-foreground text-sm">
-            Importez votre cours, le moteur COGNITIO l'analyse et vous montre ce qu'il a compris.
+            Importez votre cours, le moteur COGNITIO l'analyse et construit votre plan d'apprentissage.
           </p>
         </div>
 
@@ -99,8 +148,8 @@ export default function Create() {
             </motion.div>
           )}
 
-          {/* Phase 2-3: Ingestion + Analysis progress */}
-          {(phase === "ingesting" || phase === "analyzing") && (
+          {/* Phase 2-5: Progress */}
+          {(phase === "ingesting" || phase === "analyzing" || phase === "architecting" || phase === "formatting") && (
             <motion.div
               key="progress"
               initial={{ opacity: 0, y: 20 }}
@@ -110,17 +159,17 @@ export default function Create() {
             >
               <IngestionStatus
                 steps={allSteps}
-                title={phase === "ingesting" ? "Import en cours" : "Analyse pédagogique"}
+                title={phaseTitle}
               />
 
               {/* Show error if any */}
-              {(ingestion.error || analysis.error) && (
+              {anyError && (
                 <div className="border border-red-200 bg-red-50 rounded-lg p-4">
                   <div className="flex items-start gap-3">
                     <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5" />
                     <div>
                       <p className="text-sm font-medium text-red-800">Erreur</p>
-                      <p className="text-sm text-red-600">{ingestion.error || analysis.error}</p>
+                      <p className="text-sm text-red-600">{anyError}</p>
                     </div>
                   </div>
                   <Button variant="outline" size="sm" className="mt-3" onClick={handleReset}>
@@ -131,7 +180,7 @@ export default function Create() {
             </motion.div>
           )}
 
-          {/* Phase 4: Result */}
+          {/* Phase 6: Result */}
           {phase === "result" && (
             <motion.div
               key="result"
@@ -144,14 +193,16 @@ export default function Create() {
                 <p className="text-sm font-medium mb-1">
                   {hasBlocking
                     ? "Le document ne peut pas être analysé en l'état"
-                    : analysis.result
-                      ? "Voilà ce que le moteur a compris"
-                      : "Analyse terminée"}
+                    : format.result
+                      ? "Architecture mémoire et format sélectionnés"
+                      : analysis.result
+                        ? "Voilà ce que le moteur a compris"
+                        : "Analyse terminée"}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {hasBlocking
                     ? "Des problèmes bloquants ont été détectés. Consultez les détails ci-dessous."
-                    : "Les résultats ci-dessous montrent les concepts extraits, leur fiabilité, et les zones d'incertitude."}
+                    : "Les résultats ci-dessous montrent l'analyse, l'architecture mémoire et le format choisi."}
                 </p>
               </div>
 
@@ -162,6 +213,52 @@ export default function Create() {
                     m1Output={ingestion.result}
                     m2Output={analysis.result}
                   />
+                </div>
+              )}
+
+              {/* Memory Architecture */}
+              {memory.result && (
+                <>
+                  <div className="border rounded-lg p-4">
+                    <MemoryPlanCard output={memory.result} />
+                  </div>
+
+                  <div className="border rounded-lg p-4">
+                    <PedagogicalContractCard contract={memory.result.pedagogical_contract} />
+                  </div>
+
+                  <div className="border rounded-lg p-4">
+                    <CognitiveBudgetCard budget={memory.result.cognitive_budget} />
+                  </div>
+
+                  <div className="border rounded-lg p-4">
+                    <MemorySegmentsList segments={memory.result.segments} />
+                  </div>
+
+                  {memory.result.repetition_plan.length > 0 && (
+                    <div className="border rounded-lg p-4">
+                      <RepetitionPlanCard plan={memory.result.repetition_plan} />
+                    </div>
+                  )}
+
+                  {memory.result.mnemonics.length > 0 && (
+                    <div className="border rounded-lg p-4">
+                      <MnemonicsCard mnemonics={memory.result.mnemonics} />
+                    </div>
+                  )}
+
+                  {memory.result.visual_anchors.length > 0 && (
+                    <div className="border rounded-lg p-4">
+                      <VisualAnchorsCard anchors={memory.result.visual_anchors} />
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Format Decision */}
+              {format.result && (
+                <div className="border rounded-lg p-4">
+                  <FormatDecisionCard decision={format.result} />
                 </div>
               )}
 
@@ -227,7 +324,7 @@ export default function Create() {
                   <RotateCcw className="h-4 w-4 mr-2" /> Importer un autre document
                 </Button>
 
-                {!hasBlocking && analysis.result && (
+                {!hasBlocking && format.result && (
                   <Button disabled className="opacity-50 cursor-not-allowed">
                     <ArrowRight className="h-4 w-4 mr-2" /> Continuer vers la génération
                     <span className="ml-2 text-xs">(prochain ticket)</span>
