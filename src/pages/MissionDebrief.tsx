@@ -140,7 +140,7 @@ export default function MissionDebrief() {
         {/* Actions */}
         <div className="flex flex-wrap gap-3">
           <Button
-            onClick={() => navigate(`/player/${run.mission_id}`)}
+            onClick={() => navigate(`/mission/${run.mission_id}/play`)}
             variant="outline"
             className="gap-2 rounded-xl"
           >
