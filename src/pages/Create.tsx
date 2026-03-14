@@ -30,10 +30,16 @@ import { useMemoryArchitecture } from "@/hooks/useMemoryArchitecture";
 import { useFormatDecision } from "@/hooks/useFormatDecision";
 import { useDynamicSheetGeneration } from "@/hooks/useDynamicSheetGeneration";
 import { useAnimatedStoryGeneration } from "@/hooks/useAnimatedStoryGeneration";
+import { useQAStatus } from "@/hooks/useQAStatus";
 import { StoryboardLayout } from "@/components/cognitio/StoryboardLayout";
+import { QAChecklistPanel } from "@/components/cognitio/recall/QAChecklistPanel";
+import { PublishStatusBanner } from "@/components/cognitio/recall/PublishStatusBanner";
+import { QABadge } from "@/components/cognitio/recall/QABadge";
+import { generateRecallSuiteLocally } from "@/services/cognitio/recall-generator.service";
 import type { IngestInput } from "@/domain/cognitio/contracts";
 import type { AmbiguousZone, LearningObjective } from "@/domain/cognitio/types";
 import type { LearnerAudienceProfile } from "@/domain/cognitio/learner-profile.types";
+import type { M7_Input } from "@/domain/cognitio/qa.contracts";
 
 type Phase = "import" | "ingesting" | "analyzing" | "architecting" | "formatting" | "generating" | "result";
 
@@ -49,6 +55,7 @@ export default function Create() {
   const format = useFormatDecision();
   const generation = useDynamicSheetGeneration();
   const storyGeneration = useAnimatedStoryGeneration();
+  const qa = useQAStatus();
 
   const handleImport = async (input: IngestInput) => {
     setObjective(input.objective);
@@ -133,6 +140,44 @@ export default function Create() {
       );
     }
 
+    // M6: Generate recall tests + M7: QA
+    if (analysis.result && memory.result && format.result) {
+      const m5Output = generation.result;
+      const m5bOutput = storyGeneration.result;
+
+      if (m5Output || m5bOutput) {
+        try {
+          // Generate recall suite
+          const recallSuite = generateRecallSuiteLocally({
+            concepts: analysis.result.key_concepts,
+            confusion_pairs: analysis.result.confusion_pairs,
+            critical_concept_keys: analysis.result.key_concepts
+              .filter((c) => c.criticality <= 2)
+              .map((c) => c.stable_key),
+            learner_profile: learnerProfile,
+          });
+
+          // Run QA
+          const qaInput: M7_Input = {
+            transformation_id: m5Output?.transformation_id ?? m5bOutput!.transformation_id,
+            format: format.result.chosen_format as "fiche_dynamique" | "histoire_animee",
+            m5_output: m5Output ?? undefined,
+            m5b_output: m5bOutput ?? undefined,
+            m2_output: analysis.result,
+            m3_output: memory.result,
+            m4_output: format.result,
+            recall_tests: [recallSuite.final_test],
+            source_confidence: ingestion.result!.confidence_level,
+            word_count: ingestion.result!.word_count,
+          };
+
+          await qa.runQA(qaInput);
+        } catch {
+          // QA is non-blocking for the pipeline
+        }
+      }
+    }
+
     setPhase("result");
   };
 
@@ -148,6 +193,7 @@ export default function Create() {
     format.reset();
     generation.reset();
     storyGeneration.reset();
+    qa.reset();
     setPhase("import");
   };
 
@@ -169,7 +215,7 @@ export default function Create() {
   }[phase as string] ?? "Progression";
 
   const hasBlocking = ingestion.result?.issues.some((i) => i.severity === "blocking") ?? false;
-  const anyError = ingestion.error || analysis.error || memory.error || format.error || generation.error || storyGeneration.error;
+  const anyError = ingestion.error || analysis.error || memory.error || format.error || generation.error || storyGeneration.error || qa.error;
 
   return (
     <div className="min-h-screen bg-background">
@@ -293,6 +339,15 @@ export default function Create() {
                 <div className="border rounded-lg p-4">
                   <DynamicSheetLayout output={generation.result} />
                 </div>
+              )}
+
+              {/* QA Status */}
+              {qa.publishDecision && (
+                <PublishStatusBanner decision={qa.publishDecision} />
+              )}
+
+              {qa.qaReport && (
+                <QAChecklistPanel report={qa.qaReport} />
               )}
 
               {/* Document quality panel */}
