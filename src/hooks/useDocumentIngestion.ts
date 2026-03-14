@@ -89,11 +89,35 @@ export function useDocumentIngestion() {
       setResult(m1Output);
       return m1Output;
     } catch (err) {
-      const message = isCognitioError(err)
-        ? (err as CognitioError).user_message
-        : err instanceof Error
-          ? err.message
-          : "Erreur inattendue lors de l'import";
+      let message: string;
+      let technicalDetail = "";
+
+      if (isCognitioError(err)) {
+        const cogErr = err as CognitioError;
+        message = cogErr.user_message;
+        technicalDetail = `[${cogErr.code}] ${cogErr.technical_message}`;
+      } else if (err instanceof Error) {
+        // Map common error patterns to user-friendly messages
+        const raw = err.message;
+        if (raw.includes("storage") || raw.includes("bucket") || raw.includes("upload")) {
+          message = "Le fichier n'a pas pu être envoyé au serveur. Vérifiez votre connexion et réessayez.";
+        } else if (raw.includes("source_documents") || raw.includes("insert") || raw.includes("row-level security")) {
+          message = "Erreur lors de l'enregistrement du document. Veuillez réessayer.";
+        } else if (raw.includes("auth") || raw.includes("JWT") || raw.includes("token")) {
+          message = "Votre session a expiré. Veuillez vous reconnecter.";
+        } else if (raw.includes("network") || raw.includes("fetch") || raw.includes("Failed to fetch")) {
+          message = "Le service d'analyse est temporairement indisponible. Veuillez réessayer dans quelques instants.";
+        } else {
+          message = "Le document n'a pas pu être importé. Veuillez réessayer ou coller le texte directement.";
+        }
+        technicalDetail = raw;
+      } else {
+        message = "Erreur inattendue lors de l'import. Veuillez réessayer.";
+      }
+
+      if (technicalDetail) {
+        console.error("[COGNITIO Ingestion Error]", technicalDetail);
+      }
 
       setError(message);
 

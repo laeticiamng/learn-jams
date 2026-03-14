@@ -245,7 +245,22 @@ serve(async (req) => {
     return jsonResponse(result);
   } catch (error) {
     console.error("Ingestion error:", error);
-    return errorResponse(500, error.message || "Internal error");
+    const message = error instanceof Error ? error.message : String(error);
+    // Include error source hints for client-side diagnostics
+    let errorSource = "unknown";
+    if (message.includes("storage") || message.includes("bucket") || message.includes("download")) {
+      errorSource = "storage";
+    } else if (message.includes("source_documents") || message.includes("document_segments") || message.includes("insert") || message.includes("update")) {
+      errorSource = "database";
+    } else if (message.includes("parse") || message.includes("extract") || message.includes("text")) {
+      errorSource = "parsing";
+    } else if (message.includes("auth") || message.includes("JWT") || message.includes("token") || message.includes("permission")) {
+      errorSource = "auth";
+    }
+    return new Response(JSON.stringify({ error: message, error_source: errorSource }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
 

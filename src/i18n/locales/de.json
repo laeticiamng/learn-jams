@@ -791,6 +791,18 @@
     "view_sheet": "Blatt ansehen",
     "view_story": "Geschichte ansehen",
     "format_unsupported": "Format wird nicht für die Generierung unterstützt",
+    "error_source_ingestion": "Dokumentimport",
+    "error_source_analysis": "Pädagogische Analyse",
+    "error_source_memory": "Gedächtnisarchitektur",
+    "error_source_format": "Formatauswahl",
+    "error_source_generation": "Generierung",
+    "error_source_qa": "Qualitätskontrolle",
+    "error_source_default": "Verarbeitung",
+    "error_phase_hint": "Betroffener Schritt: {{phase}}",
+    "retry": "Erneut versuchen",
+    "paste_text_instead": "Text direkt einfügen",
+    "import_other_doc": "Ein anderes Dokument importieren",
+    "show_debug": "Technische Details",
     "disclaimer": "Die Analyse basiert auf dem bereitgestellten Inhalt. Die Engine gibt nicht vor, verstanden zu haben, was sie nicht versteht. Unsicherheitszonen werden explizit gekennzeichnet."
   },
   "mission_debrief": {

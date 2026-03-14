@@ -75,9 +75,20 @@ export function useCreatePipeline() {
       setPhase("ingesting");
       track({ event_name: "upload_started" });
 
-      const m1Result = await ingestion.ingest(input);
+      let m1Result;
+      try {
+        m1Result = await ingestion.ingest(input);
+      } catch (ingestErr) {
+        const errMsg = ingestErr instanceof Error ? ingestErr.message : String(ingestErr);
+        setPipelineError({ source: "ingestion", message: errMsg, phase: "ingesting" });
+        setPhase("result");
+        return;
+      }
       if (!m1Result) {
-        setPipelineError({ source: "ingestion", message: ingestion.error ?? "Ingestion failed", phase: "ingesting" });
+        // ingestion.error may not be flushed in React state yet; extract from last known step
+        const failedStep = ingestion.steps.find((s) => s.status === "error");
+        const errMsg = failedStep?.message || ingestion.error || "Le document n'a pas pu être importé. Veuillez réessayer ou coller le texte directement.";
+        setPipelineError({ source: "ingestion", message: errMsg, phase: "ingesting" });
         setPhase("result");
         return;
       }

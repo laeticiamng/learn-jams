@@ -791,6 +791,18 @@
     "view_sheet": "查看卡片",
     "view_story": "查看故事",
     "format_unsupported": "该格式不支持生成",
+    "error_source_ingestion": "文档导入",
+    "error_source_analysis": "教学分析",
+    "error_source_memory": "记忆架构",
+    "error_source_format": "格式选择",
+    "error_source_generation": "内容生成",
+    "error_source_qa": "质量控制",
+    "error_source_default": "处理中",
+    "error_phase_hint": "相关步骤：{{phase}}",
+    "retry": "重试",
+    "paste_text_instead": "直接粘贴文本",
+    "import_other_doc": "导入其他文档",
+    "show_debug": "技术详情",
     "disclaimer": "分析基于提供的内容。引擎不声称理解了它未理解的内容。不确定区域已明确标记。"
   },
   "mission_debrief": {

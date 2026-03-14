@@ -791,6 +791,18 @@
     "view_sheet": "Ver ficha",
     "view_story": "Ver historia",
     "format_unsupported": "Formato no soportado para la generación",
+    "error_source_ingestion": "Importación del documento",
+    "error_source_analysis": "Análisis pedagógico",
+    "error_source_memory": "Arquitectura de memoria",
+    "error_source_format": "Selección de formato",
+    "error_source_generation": "Generación",
+    "error_source_qa": "Control de calidad",
+    "error_source_default": "Procesamiento",
+    "error_phase_hint": "Paso afectado: {{phase}}",
+    "retry": "Reintentar",
+    "paste_text_instead": "Pegar texto directamente",
+    "import_other_doc": "Importar otro documento",
+    "show_debug": "Detalles técnicos",
     "disclaimer": "El análisis se basa en el contenido proporcionado. El motor no pretende haber comprendido lo que no comprende. Las zonas de incertidumbre se señalan explícitamente."
   },
   "mission_debrief": {

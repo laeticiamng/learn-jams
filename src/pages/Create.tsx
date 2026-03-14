@@ -10,7 +10,7 @@ import { FORMAT_CONFIGS } from "@/lib/create-format-config";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Brain, FileText, AlertTriangle, RotateCcw, Eye } from "lucide-react";
+import { ArrowRight, Brain, FileText, AlertTriangle, RotateCcw, Eye, ClipboardPaste, Upload, Bug } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ImportDropzone from "@/components/cognitio/ImportDropzone";
@@ -156,17 +156,30 @@ export default function Create() {
                     <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5" />
                     <div>
                       <p className="text-sm font-medium text-red-800">
-                        {t("create_page.error_label")} — {t(`create_page.error_source_${pipeline.pipelineError.source}`, pipeline.pipelineError.source)}
+                        {t("create_page.error_label")} — {t(`create_page.error_source_${pipeline.pipelineError.source}`, { defaultValue: t("create_page.error_source_default") })}
                       </p>
                       <p className="text-sm text-red-600">{pipeline.pipelineError.message}</p>
                       <p className="text-xs text-red-400 mt-1">
-                        Phase: {pipeline.pipelineError.phase}
+                        {t("create_page.error_phase_hint", { phase: t(PHASE_KEYS[pipeline.pipelineError.phase] ?? "create_page.phase_default") })}
                       </p>
                     </div>
                   </div>
-                  <Button variant="outline" size="sm" className="mt-3" onClick={pipeline.reset}>
-                    <RotateCcw className="h-4 w-4 mr-2" /> {t("create_page.restart")}
-                  </Button>
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    <Button variant="outline" size="sm" onClick={pipeline.reset}>
+                      <RotateCcw className="h-4 w-4 mr-2" /> {t("create_page.retry")}
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => { pipeline.reset(); }}>
+                      <ClipboardPaste className="h-4 w-4 mr-2" /> {t("create_page.paste_text_instead")}
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={pipeline.reset}>
+                      <Upload className="h-4 w-4 mr-2" /> {t("create_page.import_other_doc")}
+                    </Button>
+                    {import.meta.env.DEV && (
+                      <Button variant="ghost" size="sm" onClick={() => console.error("[COGNITIO DEBUG]", pipeline.pipelineError)}>
+                        <Bug className="h-4 w-4 mr-2" /> {t("create_page.show_debug")}
+                      </Button>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -203,17 +216,30 @@ export default function Create() {
                     <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5" />
                     <div>
                       <p className="text-sm font-medium text-red-800">
-                        {t("create_page.error_label")} — {pipeline.pipelineError.source}
+                        {t("create_page.error_label")} — {t(`create_page.error_source_${pipeline.pipelineError.source}`, { defaultValue: t("create_page.error_source_default") })}
                       </p>
                       <p className="text-sm text-red-600">{pipeline.pipelineError.message}</p>
                       <p className="text-xs text-red-400 mt-1">
-                        {t("create_page.error_phase_hint", { phase: pipeline.pipelineError.phase })}
+                        {t("create_page.error_phase_hint", { phase: t(PHASE_KEYS[pipeline.pipelineError.phase] ?? "create_page.phase_default") })}
                       </p>
                     </div>
                   </div>
-                  <Button variant="outline" size="sm" className="mt-3" onClick={pipeline.reset}>
-                    <RotateCcw className="h-4 w-4 mr-2" /> {t("create_page.restart")}
-                  </Button>
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    <Button variant="outline" size="sm" onClick={pipeline.reset}>
+                      <RotateCcw className="h-4 w-4 mr-2" /> {t("create_page.retry")}
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => { pipeline.reset(); }}>
+                      <ClipboardPaste className="h-4 w-4 mr-2" /> {t("create_page.paste_text_instead")}
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={pipeline.reset}>
+                      <Upload className="h-4 w-4 mr-2" /> {t("create_page.import_other_doc")}
+                    </Button>
+                    {import.meta.env.DEV && (
+                      <Button variant="ghost" size="sm" onClick={() => console.error("[COGNITIO DEBUG]", pipeline.pipelineError)}>
+                        <Bug className="h-4 w-4 mr-2" /> {t("create_page.show_debug")}
+                      </Button>
+                    )}
+                  </div>
                 </div>
               )}
 
