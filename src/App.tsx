@@ -30,6 +30,13 @@ const Contact = lazy(() => import("./pages/Contact"));
 const About = lazy(() => import("./pages/About"));
 const Pricing = lazy(() => import("./pages/Pricing"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+// COGNITIO pages
+const MissionDebrief = lazy(() => import("./pages/MissionDebrief"));
+const MissionAnalysis = lazy(() => import("./pages/MissionAnalysis"));
+const TransformationView = lazy(() => import("./pages/TransformationView"));
+const CognitioLibrary = lazy(() => import("./pages/CognitioLibrary"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const GuardianSettings = lazy(() => import("./pages/GuardianSettings"));
 
 const queryClient = new QueryClient();
 
@@ -62,6 +69,12 @@ const App = () => (
               <Route path="/studio" element={<ProtectedRoute><Studio /></ProtectedRoute>} />
               <Route path="/league" element={<ProtectedRoute><League /></ProtectedRoute>} />
               <Route path="/export" element={<ProtectedRoute><Export /></ProtectedRoute>} />
+              <Route path="/mission/:id/debrief" element={<ProtectedRoute><MissionDebrief /></ProtectedRoute>} />
+              <Route path="/mission/:id/analysis" element={<ProtectedRoute><MissionAnalysis /></ProtectedRoute>} />
+              <Route path="/transformation/:id" element={<ProtectedRoute><TransformationView /></ProtectedRoute>} />
+              <Route path="/cognitio-library" element={<ProtectedRoute><CognitioLibrary /></ProtectedRoute>} />
+              <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+              <Route path="/guardian-settings" element={<ProtectedRoute><GuardianSettings /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>

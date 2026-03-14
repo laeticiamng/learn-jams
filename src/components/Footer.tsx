@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Music } from "lucide-react";
+import { Brain } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function Footer() {
@@ -15,9 +15,9 @@ export default function Footer() {
           <div className="col-span-2 md:col-span-1">
             <Link to="/" className="flex items-center gap-2.5 mb-4">
               <div className="w-8 h-8 rounded-lg gradient-bg-premium flex items-center justify-center shadow-lg shadow-primary/15">
-                <Music className="w-5 h-5 text-primary-foreground" />
+                <Brain className="w-5 h-5 text-primary-foreground" />
               </div>
-              <span className="font-display font-bold gradient-text">StudyBeats</span>
+              <span className="font-display font-bold gradient-text">COGNITIO</span>
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed">{t("footer.description")}</p>
           </div>
@@ -53,8 +53,8 @@ export default function Footer() {
           <div>
             <h3 className="font-display font-semibold text-xs mb-4 text-foreground uppercase tracking-widest">{t("footer.features")}</h3>
             <ul className="space-y-2.5 text-sm text-muted-foreground">
-              <li><Link to={user ? "/create" : "/signup"} className="hover:text-foreground transition-colors duration-300">{t("footer.lyrics_gen")}</Link></li>
-              <li><Link to={user ? "/create" : "/signup"} className="hover:text-foreground transition-colors duration-300">{t("footer.styles_count")}</Link></li>
+              <li><Link to={user ? "/create" : "/signup"} className="hover:text-foreground transition-colors duration-300">{t("footer.import")}</Link></li>
+              <li><Link to={user ? "/create" : "/signup"} className="hover:text-foreground transition-colors duration-300">{t("footer.quiz")}</Link></li>
             </ul>
           </div>
         </div>

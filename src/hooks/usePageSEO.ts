@@ -10,7 +10,7 @@ interface SEOProps {
 }
 
 const BASE_URL = "https://learn-jams.lovable.app";
-const SITE_NAME = "StudyBeats";
+const SITE_NAME = "COGNITIO";
 const DEFAULT_OG_IMAGE = `${BASE_URL}/og-image.png`;
 
 export function usePageSEO({
@@ -79,7 +79,7 @@ export function usePageSEO({
 
     return () => {
       // Cleanup on unmount — restore defaults
-      document.title = `${SITE_NAME} — Transforme tes cours en musique`;
+      document.title = `${SITE_NAME} — Plateforme d'apprentissage multimodale`;
     };
   }, [title, description, canonical, noindex, ogType, ogImage]);
 }
