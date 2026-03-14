@@ -12,7 +12,7 @@ import Footer from "@/components/Footer";
 import { DocumentQualityPanel } from "@/components/cognitio/DocumentQualityPanel";
 import { ConceptList } from "@/components/cognitio/ConceptList";
 import { ConfusionPairsCard } from "@/components/cognitio/ConfusionPairsCard";
-import { AmbiguityWarning } from "@/components/cognitio/AmbiguityWarning";
+import AmbiguityWarning from "@/components/cognitio/AmbiguityWarning";
 import { MemoryPlanCard } from "@/components/cognitio/MemoryPlanCard";
 import { MemorySegmentsList } from "@/components/cognitio/MemorySegmentsList";
 import { RepetitionPlanCard } from "@/components/cognitio/RepetitionPlanCard";

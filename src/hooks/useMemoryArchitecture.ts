@@ -4,7 +4,7 @@
 // ============================================================
 
 import { useState, useCallback } from "react";
-import { useAuth } from "@/components/AuthProvider";
+import { useAuth } from "@/hooks/useAuth";
 import type { M3_Output } from "@/domain/cognitio/memory.contracts";
 import type { M2_Output } from "@/domain/cognitio/contracts";
 import type { PipelineStepStatus, LearningObjective } from "@/domain/cognitio/types";
@@ -101,6 +101,7 @@ export function useMemoryArchitecture() {
       }
 
       setResult(output);
+      return output;
     } catch (err) {
       const message = err instanceof Error ? err.message : "Erreur lors de la construction mémoire";
       setError(message);
@@ -109,6 +110,7 @@ export function useMemoryArchitecture() {
       setSteps((prev) =>
         prev.map((s) => (s.status === "running" ? { ...s, status: "error" as const, message } : s))
       );
+      return null;
     } finally {
       setIsRunning(false);
     }

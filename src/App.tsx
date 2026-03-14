@@ -9,6 +9,8 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import CommandPalette from "@/components/CommandPalette";
 import CookieConsent from "./components/CookieConsent";
+import PageLoadingFallback from "@/components/PageLoadingFallback";
+import { DevDiagnosticsPanel } from "@/components/DevDiagnosticsPanel";
 import Index from "./pages/Index";
 
 // Lazy-loaded routes for code splitting
@@ -49,7 +51,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <CommandPalette />
-          <Suspense fallback={<div className="min-h-screen bg-background" />}>
+          <Suspense fallback={<PageLoadingFallback />}>
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<Login />} />
@@ -79,6 +81,7 @@ const App = () => (
             </Routes>
           </Suspense>
           <CookieConsent />
+          {import.meta.env.DEV && <DevDiagnosticsPanel />}
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

@@ -4,7 +4,7 @@
 // ============================================================
 
 import { useState, useCallback } from "react";
-import { useAuth } from "@/components/AuthProvider";
+import { useAuth } from "@/hooks/useAuth";
 import type { M5_Input, M5_Output } from "@/domain/cognitio/generation.contracts";
 import type { M2_Output } from "@/domain/cognitio/contracts";
 import type { M3_Output } from "@/domain/cognitio/memory.contracts";
@@ -115,12 +115,14 @@ export function useDynamicSheetGeneration() {
       }
 
       setResult(output);
+      return output;
     } catch (err) {
       const message = err instanceof Error ? err.message : "Erreur lors de la génération";
       setError(message);
       setSteps((prev) =>
         prev.map((s) => (s.status === "running" ? { ...s, status: "error" as const, message } : s))
       );
+      return null;
     } finally {
       setIsRunning(false);
     }
