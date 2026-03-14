@@ -25,7 +25,7 @@ export const ENV_REQUIREMENTS: EnvRequirement[] = [
 
   // Client-safe keys (public, expected in front)
   { key: "VITE_SUPABASE_URL", required: true, context: "client", description: "Supabase project URL" },
-  { key: "VITE_SUPABASE_ANON_KEY", required: true, context: "client", description: "Supabase anonymous key" },
+  { key: "VITE_SUPABASE_PUBLISHABLE_KEY", required: true, context: "client", description: "Supabase publishable/anon key" },
 ];
 
 // Keys that must NEVER appear in client-side code

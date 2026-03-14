@@ -4,7 +4,7 @@
 // ============================================================
 
 import { useState, useCallback } from "react";
-import { useAuth } from "@/components/AuthProvider";
+import { useAuth } from "@/hooks/useAuth";
 import type { M5B_Input, M5B_Output } from "@/domain/cognitio/story.contracts";
 import type { M2_Output } from "@/domain/cognitio/contracts";
 import type { M3_Output } from "@/domain/cognitio/memory.contracts";
@@ -146,6 +146,7 @@ export function useAnimatedStoryGeneration() {
         }
 
         setResult(output);
+        return output;
       } catch (err) {
         const message =
           err instanceof Error ? err.message : "Erreur lors de la génération de l'histoire";
@@ -155,6 +156,7 @@ export function useAnimatedStoryGeneration() {
             s.status === "running" ? { ...s, status: "error" as const, message } : s,
           ),
         );
+        return null;
       } finally {
         setIsRunning(false);
       }

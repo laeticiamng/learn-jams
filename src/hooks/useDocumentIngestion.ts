@@ -4,7 +4,7 @@
 // ============================================================
 
 import { useState, useCallback } from "react";
-import { useAuth } from "@/components/AuthProvider";
+import { useAuth } from "@/hooks/useAuth";
 import type { IngestInput, M1_Output, SourceIssue } from "@/domain/cognitio/contracts";
 import type { PipelineStep, PipelineStepStatus } from "@/domain/cognitio/types";
 import { uploadDocument, runIngestion } from "@/services/cognitio/ingestion.service";
@@ -87,6 +87,7 @@ export function useDocumentIngestion() {
       updateStep("saving", "completed", "Données persistées");
 
       setResult(m1Output);
+      return m1Output;
     } catch (err) {
       const message = isCognitioError(err)
         ? (err as CognitioError).user_message
@@ -100,6 +101,7 @@ export function useDocumentIngestion() {
       setSteps((prev) =>
         prev.map((s) => (s.status === "running" ? { ...s, status: "error" as const, message } : s))
       );
+      return null;
     } finally {
       setIsRunning(false);
     }

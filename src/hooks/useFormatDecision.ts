@@ -4,7 +4,7 @@
 // ============================================================
 
 import { useState, useCallback } from "react";
-import { useAuth } from "@/components/AuthProvider";
+import { useAuth } from "@/hooks/useAuth";
 import type { M4_Output } from "@/domain/cognitio/format.contracts";
 import type { M4_Input } from "@/domain/cognitio/format.contracts";
 import type { M3_Output } from "@/domain/cognitio/memory.contracts";
@@ -117,6 +117,7 @@ export function useFormatDecision() {
       }
 
       setResult(output);
+      return output;
     } catch (err) {
       const message = err instanceof Error ? err.message : "Erreur lors de la sélection de format";
       setError(message);
@@ -124,6 +125,7 @@ export function useFormatDecision() {
       setSteps((prev) =>
         prev.map((s) => (s.status === "running" ? { ...s, status: "error" as const, message } : s))
       );
+      return null;
     } finally {
       setIsRunning(false);
     }

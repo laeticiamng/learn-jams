@@ -1,12 +1,13 @@
 // ============================================================
-// Create Page — Import & Transform (M1 + M2 + M3 + M4 + M5 Pipeline)
+// Create Page — Import & Transform (M1 → M7 Pipeline)
+// Lightweight orchestrator page — all pipeline logic is in useCreatePipeline
 // ============================================================
 
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight, Brain, FileText, AlertTriangle, RotateCcw, Eye } from "lucide-react";
+import { ArrowRight, Brain, FileText, AlertTriangle, RotateCcw, Eye } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ImportDropzone from "@/components/cognitio/ImportDropzone";
@@ -14,7 +15,7 @@ import IngestionStatus from "@/components/cognitio/IngestionStatus";
 import { DocumentQualityPanel } from "@/components/cognitio/DocumentQualityPanel";
 import { ConceptList } from "@/components/cognitio/ConceptList";
 import { ConfusionPairsCard } from "@/components/cognitio/ConfusionPairsCard";
-import { AmbiguityWarning } from "@/components/cognitio/AmbiguityWarning";
+import AmbiguityWarning from "@/components/cognitio/AmbiguityWarning";
 import { MemoryPlanCard } from "@/components/cognitio/MemoryPlanCard";
 import { MemorySegmentsList } from "@/components/cognitio/MemorySegmentsList";
 import { RepetitionPlanCard } from "@/components/cognitio/RepetitionPlanCard";
@@ -24,206 +25,41 @@ import { CognitiveBudgetCard } from "@/components/cognitio/CognitiveBudgetCard";
 import { FormatDecisionCard } from "@/components/cognitio/FormatDecisionCard";
 import { PedagogicalContractCard } from "@/components/cognitio/PedagogicalContractCard";
 import { DynamicSheetLayout } from "@/components/cognitio/DynamicSheetLayout";
-import { useDocumentIngestion } from "@/hooks/useDocumentIngestion";
-import { useCourseAnalysis } from "@/hooks/useCourseAnalysis";
-import { useMemoryArchitecture } from "@/hooks/useMemoryArchitecture";
-import { useFormatDecision } from "@/hooks/useFormatDecision";
-import { useDynamicSheetGeneration } from "@/hooks/useDynamicSheetGeneration";
-import { useAnimatedStoryGeneration } from "@/hooks/useAnimatedStoryGeneration";
-import { useQAStatus } from "@/hooks/useQAStatus";
 import { StoryboardLayout } from "@/components/cognitio/StoryboardLayout";
 import { QAChecklistPanel } from "@/components/cognitio/recall/QAChecklistPanel";
 import { PublishStatusBanner } from "@/components/cognitio/recall/PublishStatusBanner";
-import { QABadge } from "@/components/cognitio/recall/QABadge";
-import { generateRecallSuiteLocally } from "@/services/cognitio/recall-generator.service";
-import type { IngestInput } from "@/domain/cognitio/contracts";
-import type { AmbiguousZone, LearningObjective } from "@/domain/cognitio/types";
-import type { LearnerAudienceProfile } from "@/domain/cognitio/learner-profile.types";
-import type { M7_Input } from "@/domain/cognitio/qa.contracts";
-import { useProductTracking } from "@/hooks/useProductTracking";
+import { useCreatePipeline } from "@/hooks/useCreatePipeline";
 import { useSeedLibrary } from "@/hooks/useSeedLibrary";
 import { SeedLibraryGrid } from "@/components/product/SeedLibraryGrid";
 import { FeatureFlagGuard } from "@/components/product/FeatureFlagGuard";
+import { useProductTracking } from "@/hooks/useProductTracking";
 import { useTranslation } from "react-i18next";
-
-type Phase = "import" | "ingesting" | "analyzing" | "architecting" | "formatting" | "generating" | "result";
+import type { IngestInput } from "@/domain/cognitio/contracts";
+import type { AmbiguousZone } from "@/domain/cognitio/types";
 
 export default function Create() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [phase, setPhase] = useState<Phase>("import");
-  const [objective, setObjective] = useState<LearningObjective>("discovery");
-  const [learnerProfile, setLearnerProfile] = useState<LearnerAudienceProfile | undefined>();
-
-  const ingestion = useDocumentIngestion();
-  const analysis = useCourseAnalysis();
-  const memory = useMemoryArchitecture();
-  const format = useFormatDecision();
-  const generation = useDynamicSheetGeneration();
-  const storyGeneration = useAnimatedStoryGeneration();
-  const qa = useQAStatus();
   const { track } = useProductTracking();
-  const { seeds, loading: seedsLoading, getById: getSeedById } = useSeedLibrary();
+
+  const pipeline = useCreatePipeline();
+  const { seeds, loading: seedsLoading } = useSeedLibrary();
   const [activeSeedId, setActiveSeedId] = useState<string | null>(null);
 
   // Handle seed parameter from URL
   useEffect(() => {
     const seedId = searchParams.get("seed");
-    if (seedId && phase === "import") {
+    if (seedId && pipeline.phase === "import") {
       setActiveSeedId(seedId);
     }
-  }, [searchParams, phase]);
+  }, [searchParams, pipeline.phase]);
 
-  const handleImport = async (input: IngestInput) => {
-    setObjective(input.objective);
-    setLearnerProfile(input.learner_profile);
-    setPhase("ingesting");
-    track({ event_name: "upload_started" });
-
-    await ingestion.ingest(input);
-
-    if (ingestion.error) return;
+  const handleImport = (input: IngestInput) => {
+    pipeline.runPipeline(input);
   };
 
-  // When ingestion completes, start analysis
-  const handleIngestionComplete = async () => {
-    if (!ingestion.result) return;
-
-    const hasBlocking = ingestion.result.issues.some((i) => i.severity === "blocking");
-    if (hasBlocking) {
-      setPhase("result");
-      return;
-    }
-
-    setPhase("analyzing");
-    await analysis.analyze(ingestion.result, objective, learnerProfile);
-
-    if (analysis.error || !analysis.result) {
-      setPhase("result");
-      return;
-    }
-
-    // M3: Memory Architecture
-    setPhase("architecting");
-    await memory.build(analysis.result, ingestion.result.document_id, objective, learnerProfile);
-
-    if (memory.error || !memory.result) {
-      setPhase("result");
-      return;
-    }
-
-    // M4: Format Selection
-    setPhase("formatting");
-    await format.decide(
-      memory.result,
-      analysis.result,
-      ingestion.result.document_id,
-      ingestion.result.confidence_level,
-      objective
-    );
-
-    if (format.error || !format.result) {
-      setPhase("result");
-      return;
-    }
-
-    // M5: Generate based on chosen format
-    if (format.result.chosen_format === "fiche_dynamique") {
-      setPhase("generating");
-      await generation.generate(
-        analysis.result,
-        memory.result,
-        format.result,
-        ingestion.result.document_id,
-        ingestion.result.word_count,
-        ingestion.result.source_type,
-        ingestion.result.confidence_level,
-        ingestion.result.issues.map((i) => i.message),
-        objective,
-        learnerProfile
-      );
-    } else if (format.result.chosen_format === "histoire_animee") {
-      setPhase("generating");
-      await storyGeneration.generate(
-        analysis.result,
-        memory.result,
-        format.result,
-        ingestion.result.document_id,
-        ingestion.result.word_count,
-        ingestion.result.source_type,
-        ingestion.result.confidence_level,
-        ingestion.result.issues.map((i) => i.message),
-        objective,
-        learnerProfile
-      );
-    }
-
-    // M6: Generate recall tests + M7: QA
-    if (analysis.result && memory.result && format.result) {
-      const m5Output = generation.result;
-      const m5bOutput = storyGeneration.result;
-
-      if (m5Output || m5bOutput) {
-        try {
-          // Generate recall suite
-          const recallSuite = generateRecallSuiteLocally({
-            concepts: analysis.result.key_concepts,
-            confusion_pairs: analysis.result.confusion_pairs,
-            critical_concept_keys: analysis.result.key_concepts
-              .filter((c) => c.criticality <= 2)
-              .map((c) => c.stable_key),
-            learner_profile: learnerProfile,
-          });
-
-          // Run QA
-          const qaInput: M7_Input = {
-            transformation_id: m5Output?.transformation_id ?? m5bOutput!.transformation_id,
-            format: format.result.chosen_format as "fiche_dynamique" | "histoire_animee",
-            m5_output: m5Output ?? undefined,
-            m5b_output: m5bOutput ?? undefined,
-            m2_output: analysis.result,
-            m3_output: memory.result,
-            m4_output: format.result,
-            recall_tests: [recallSuite.final_test],
-            source_confidence: ingestion.result!.confidence_level,
-            word_count: ingestion.result!.word_count,
-          };
-
-          await qa.runQA(qaInput);
-        } catch {
-          // QA is non-blocking for the pipeline
-        }
-      }
-    }
-
-    setPhase("result");
-  };
-
-  // Auto-trigger analysis when ingestion completes
-  if (phase === "ingesting" && !ingestion.isRunning && ingestion.result && !ingestion.error) {
-    handleIngestionComplete();
-  }
-
-  const handleReset = () => {
-    ingestion.reset();
-    analysis.reset();
-    memory.reset();
-    format.reset();
-    generation.reset();
-    storyGeneration.reset();
-    qa.reset();
-    setPhase("import");
-  };
-
-  const allSteps = [
-    ...ingestion.steps,
-    ...(["analyzing", "architecting", "formatting", "generating", "result"].includes(phase) ? analysis.steps : []),
-    ...(["architecting", "formatting", "generating", "result"].includes(phase) ? memory.steps : []),
-    ...(["formatting", "generating", "result"].includes(phase) ? format.steps : []),
-    ...(["generating", "result"].includes(phase) ? generation.steps : []),
-    ...(["generating", "result"].includes(phase) ? storyGeneration.steps : []),
-  ];
+  const { phase, ingestion, analysis, memory, format, generation, storyGeneration, qa } = pipeline;
 
   const PHASE_KEYS: Record<string, string> = {
     ingesting: "create_page.phase_ingesting",
@@ -233,9 +69,6 @@ export default function Create() {
     generating: "create_page.phase_generating",
   };
   const phaseTitle = t(PHASE_KEYS[phase] ?? "create_page.phase_default");
-
-  const hasBlocking = ingestion.result?.issues.some((i) => i.severity === "blocking") ?? false;
-  const anyError = ingestion.error || analysis.error || memory.error || format.error || generation.error || storyGeneration.error || qa.error;
 
   return (
     <div className="min-h-screen bg-background">
@@ -290,21 +123,42 @@ export default function Create() {
               className="space-y-6"
             >
               <IngestionStatus
-                steps={allSteps}
+                steps={pipeline.allSteps}
                 title={phaseTitle}
               />
 
-              {/* Show error if any */}
-              {anyError && (
+              {/* Pipeline error with source info */}
+              {pipeline.pipelineError && (
+                <div className="border border-red-200 bg-red-50 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-red-800">
+                        {t("create_page.error_label")} — {t(`create_page.error_source_${pipeline.pipelineError.source}`, pipeline.pipelineError.source)}
+                      </p>
+                      <p className="text-sm text-red-600">{pipeline.pipelineError.message}</p>
+                      <p className="text-xs text-red-400 mt-1">
+                        Phase: {pipeline.pipelineError.phase}
+                      </p>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm" className="mt-3" onClick={pipeline.reset}>
+                    <RotateCcw className="h-4 w-4 mr-2" /> {t("create_page.restart")}
+                  </Button>
+                </div>
+              )}
+
+              {/* Generic error fallback */}
+              {!pipeline.pipelineError && pipeline.anyError && (
                 <div className="border border-red-200 bg-red-50 rounded-lg p-4">
                   <div className="flex items-start gap-3">
                     <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5" />
                     <div>
                       <p className="text-sm font-medium text-red-800">{t("create_page.error_label")}</p>
-                      <p className="text-sm text-red-600">{anyError}</p>
+                      <p className="text-sm text-red-600">{pipeline.anyError}</p>
                     </div>
                   </div>
-                  <Button variant="outline" size="sm" className="mt-3" onClick={handleReset}>
+                  <Button variant="outline" size="sm" className="mt-3" onClick={pipeline.reset}>
                     <RotateCcw className="h-4 w-4 mr-2" /> {t("create_page.restart")}
                   </Button>
                 </div>
@@ -320,31 +174,54 @@ export default function Create() {
               animate={{ opacity: 1, y: 0 }}
               className="space-y-6"
             >
+              {/* Error in result phase */}
+              {pipeline.pipelineError && (
+                <div className="border border-red-200 bg-red-50 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-red-800">
+                        {t("create_page.error_label")} — {pipeline.pipelineError.source}
+                      </p>
+                      <p className="text-sm text-red-600">{pipeline.pipelineError.message}</p>
+                      <p className="text-xs text-red-400 mt-1">
+                        {t("create_page.error_phase_hint", { phase: pipeline.pipelineError.phase })}
+                      </p>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm" className="mt-3" onClick={pipeline.reset}>
+                    <RotateCcw className="h-4 w-4 mr-2" /> {t("create_page.restart")}
+                  </Button>
+                </div>
+              )}
+
               {/* Header message */}
-              <div className="border rounded-lg p-4 bg-muted/30">
-                <p className="text-sm font-medium mb-1">
-                  {hasBlocking
-                    ? t("create_page.result_blocking")
-                    : storyGeneration.result
-                      ? t("create_page.result_story_success")
-                      : generation.result
-                        ? t("create_page.result_sheet_success")
-                        : format.result
-                          ? t("create_page.result_format_selected")
-                          : analysis.result
-                            ? t("create_page.result_analysis_done")
-                            : t("create_page.result_complete")}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {hasBlocking
-                    ? t("create_page.result_blocking_detail")
-                    : storyGeneration.result
-                      ? t("create_page.result_story_detail")
-                      : generation.result
-                        ? t("create_page.result_sheet_detail")
-                        : t("create_page.result_default_detail")}
-                </p>
-              </div>
+              {!pipeline.pipelineError && (
+                <div className="border rounded-lg p-4 bg-muted/30">
+                  <p className="text-sm font-medium mb-1">
+                    {pipeline.hasBlocking
+                      ? t("create_page.result_blocking")
+                      : storyGeneration.result
+                        ? t("create_page.result_story_success")
+                        : generation.result
+                          ? t("create_page.result_sheet_success")
+                          : format.result
+                            ? t("create_page.result_format_selected")
+                            : analysis.result
+                              ? t("create_page.result_analysis_done")
+                              : t("create_page.result_complete")}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {pipeline.hasBlocking
+                      ? t("create_page.result_blocking_detail")
+                      : storyGeneration.result
+                        ? t("create_page.result_story_detail")
+                        : generation.result
+                          ? t("create_page.result_sheet_detail")
+                          : t("create_page.result_default_detail")}
+                  </p>
+                </div>
+              )}
 
               {/* Audience mismatch warning */}
               {analysis.result?.audience_mismatch_risk != null && analysis.result.audience_mismatch_risk >= 0.3 && (
@@ -496,7 +373,7 @@ export default function Create() {
 
               {/* Actions */}
               <div className="flex flex-wrap gap-3">
-                <Button variant="outline" onClick={handleReset}>
+                <Button variant="outline" onClick={pipeline.reset}>
                   <RotateCcw className="h-4 w-4 mr-2" /> {t("create_page.import_another")}
                 </Button>
 
@@ -512,7 +389,7 @@ export default function Create() {
                   </Button>
                 )}
 
-                {!hasBlocking && format.result && !generation.result && !storyGeneration.result && (
+                {!pipeline.hasBlocking && format.result && !generation.result && !storyGeneration.result && (
                   <Button disabled className="opacity-50 cursor-not-allowed">
                     <ArrowRight className="h-4 w-4 mr-2" /> {t("create_page.format_unsupported")}
                   </Button>

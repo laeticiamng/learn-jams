@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Brain, FileText, Plus, Clock, Loader2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { useAuth } from "@/components/AuthProvider";
+import { useAuth } from "@/hooks/useAuth";
 import { getUserTransformations } from "@/services/cognitio/dynamic-sheet.service";
 import { useTranslation } from "react-i18next";
 

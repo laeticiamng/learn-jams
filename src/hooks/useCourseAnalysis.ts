@@ -4,7 +4,7 @@
 // ============================================================
 
 import { useState, useCallback } from "react";
-import { useAuth } from "@/components/AuthProvider";
+import { useAuth } from "@/hooks/useAuth";
 import type { M1_Output, M2_Input, M2_Output } from "@/domain/cognitio/contracts";
 import type { PipelineStepStatus } from "@/domain/cognitio/types";
 import { analyzeAndPersist } from "@/services/cognitio/analysis.service";
@@ -96,12 +96,14 @@ export function useCourseAnalysis() {
       updateStep("saving", "completed", "Profil sauvegardé");
 
       setResult(m2Output);
+      return m2Output;
     } catch (err) {
       const message = err instanceof Error ? err.message : "Erreur lors de l'analyse";
       setError(message);
       setSteps((prev) =>
         prev.map((s) => (s.status === "running" ? { ...s, status: "error" as const, message } : s))
       );
+      return null;
     } finally {
       setIsRunning(false);
     }
