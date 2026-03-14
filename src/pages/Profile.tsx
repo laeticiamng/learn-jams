@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Save, Loader2, Trash2, CreditCard, ArrowLeft, GraduationCap, Globe, BookOpen, Brain } from "lucide-react";
+import { Save, Loader2, Trash2, CreditCard, ArrowLeft, GraduationCap, Globe, BookOpen, Brain, Shield } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
@@ -335,6 +335,30 @@ export default function Profile() {
             <CalibrationTrendCard snapshots={progressSnapshots.snapshots} />
           </motion.div>
         )}
+
+        {/* ── Guardian / Minor Mode ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.32, duration: 0.5, ease }}
+          className="glass-card-elevated p-7 mt-6"
+        >
+          <h3 className="font-display font-semibold mb-2 flex items-center gap-2">
+            <Shield className="w-5 h-5 text-blue-600" /> Mode protégé & Tuteurs
+          </h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            Configure le mode mineur, invite un tuteur et gère le consentement parental.
+          </p>
+          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+            <Button
+              onClick={() => navigate("/guardian-settings")}
+              className="w-full gap-2 rounded-xl h-11"
+              variant="outline"
+            >
+              <Shield className="w-4 h-4" /> Gérer le mode protégé
+            </Button>
+          </motion.div>
+        </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 16 }}
