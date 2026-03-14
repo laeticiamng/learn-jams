@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Save, Loader2, Trash2, CreditCard, ArrowLeft, GraduationCap, Globe, BookOpen } from "lucide-react";
+import { Save, Loader2, Trash2, CreditCard, ArrowLeft, GraduationCap, Globe, BookOpen, Brain } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
@@ -14,6 +14,17 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { usePageSEO } from "@/hooks/usePageSEO";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { useLearnerProfile } from "@/hooks/useLearnerProfile";
+import { useReviewQueue } from "@/hooks/useReviewQueue";
+import { useProgressSnapshots } from "@/hooks/useProgressSnapshots";
+import { ProfileStatusCard } from "@/components/cognitio/progress/ProfileStatusCard";
+import { MasteryOverviewCard } from "@/components/cognitio/progress/MasteryOverviewCard";
+import { FragileConceptsCard } from "@/components/cognitio/progress/FragileConceptsCard";
+import { AgingConceptsCard } from "@/components/cognitio/progress/AgingConceptsCard";
+import { ReviewQueueCard } from "@/components/cognitio/progress/ReviewQueueCard";
+import { BestFormatCard } from "@/components/cognitio/progress/BestFormatCard";
+import { ProgressTimelineCard } from "@/components/cognitio/progress/ProgressTimelineCard";
+import { CalibrationTrendCard } from "@/components/cognitio/progress/CalibrationTrendCard";
 
 const ease = [0.25, 0.46, 0.45, 0.94] as [number, number, number, number];
 
@@ -44,6 +55,9 @@ export default function Profile() {
   const [saving, setSaving] = useState(false);
   const [isPro, setIsPro] = useState(false);
   const [managingSubscription, setManagingSubscription] = useState(false);
+  const learner = useLearnerProfile();
+  const reviewQueue = useReviewQueue();
+  const progressSnapshots = useProgressSnapshots();
 
   useEffect(() => {
     if (!user) return;
@@ -264,10 +278,45 @@ export default function Profile() {
           </motion.div>
         )}
 
+        {/* ── Learning Dashboard ── */}
+        {learner.profile && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.5, ease }}
+            className="glass-card-elevated p-7 mt-6 space-y-4"
+          >
+            <h2 className="font-display text-lg font-bold flex items-center gap-2">
+              <Brain className="w-5 h-5 text-primary" /> Tableau de bord cognitif
+            </h2>
+
+            <ProfileStatusCard
+              profile={learner.profile}
+              bestFormat={(learner.profile as any).best_format ?? null}
+              guidanceNeed={(learner.profile as any).guidance_need ?? null}
+              calibrationQuality={(learner.profile as any).confidence_calibration_quality ?? null}
+            />
+
+            <MasteryOverviewCard stats={learner.stats} />
+
+            <FragileConceptsCard concepts={learner.fragileConcepts} />
+
+            <AgingConceptsCard concepts={learner.knowledgeGraph} />
+
+            <ReviewQueueCard queue={reviewQueue.queue} />
+
+            <BestFormatCard records={learner.formatRecords} />
+
+            <ProgressTimelineCard snapshots={progressSnapshots.snapshots} />
+
+            <CalibrationTrendCard snapshots={progressSnapshots.snapshots} />
+          </motion.div>
+        )}
+
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.5, ease }}
+          transition={{ delay: 0.35, duration: 0.5, ease }}
           className="glass-card-elevated p-7 mt-6 border-destructive/20"
         >
           <h3 className="font-display font-semibold text-destructive mb-2">{t("profile.danger_zone")}</h3>

@@ -93,8 +93,11 @@ export type LearnerProfileStatus = "estimated" | "calibrated" | "stable";
 
 export type MasteryStatus =
   | "unknown"
+  | "emerging"
   | "fragile"
   | "learning"
+  | "stable"
+  | "strong"
   | "mastered"
   | "aging";
 

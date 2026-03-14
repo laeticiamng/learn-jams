@@ -10,6 +10,9 @@ import type { DebriefReport } from "@/domain/cognitio/recall.types";
 import type { AnalyzedConcept, AnalyzedConfusionPair } from "@/domain/cognitio/contracts";
 import { gradeRecallLocally, persistRecallAttempt } from "@/services/cognitio/recall-grading.service";
 import { generateDebriefLocally, persistDebrief } from "@/services/cognitio/debrief.service";
+import { updateMemoryAfterTest } from "@/services/cognitio/memory-update.service";
+import type { M8_UpdateMemoryInput, ConceptTestResult } from "@/domain/cognitio/longitudinal.contracts";
+import type { LearningObjective } from "@/domain/cognitio/types";
 
 export type RecallSessionPhase = "answering" | "grading" | "debrief" | "completed";
 
@@ -43,6 +46,8 @@ export function useRecallSession() {
   const [traps, setTraps] = useState<string[]>([]);
   const [testId, setTestId] = useState<string>("");
   const [transformationId, setTransformationId] = useState<string>("");
+  const [formatUsed, setFormatUsed] = useState<string>("fiche_dynamique");
+  const [objective, setObjective] = useState<LearningObjective>("discovery");
 
   const startSession = useCallback((
     testItems: RecallItem[],
@@ -52,6 +57,8 @@ export function useRecallSession() {
     confusionPairsVal: AnalyzedConfusionPair[],
     criticalKeysVal: string[],
     trapsVal: string[],
+    formatUsedVal?: string,
+    objectiveVal?: LearningObjective,
   ) => {
     setItems(testItems);
     setTestId(testIdVal);
@@ -60,6 +67,8 @@ export function useRecallSession() {
     setConfusionPairs(confusionPairsVal);
     setCriticalKeys(criticalKeysVal);
     setTraps(trapsVal);
+    if (formatUsedVal) setFormatUsed(formatUsedVal);
+    if (objectiveVal) setObjective(objectiveVal);
     setCurrentIndex(0);
     setAnswers([]);
     setGradeOutput(null);
@@ -141,13 +150,41 @@ export function useRecallSession() {
         }
       }
 
+      // M8: Update longitudinal memory
+      if (user) {
+        try {
+          const conceptResults: ConceptTestResult[] = grade.fragility_map.map((f) => ({
+            concept_key: f.concept_key,
+            is_correct: f.correct_count > 0 && f.correct_count >= f.total_count / 2,
+            confidence: f.avg_confidence,
+            calibration_gap: f.calibration_gap,
+          }));
+
+          const memoryInput: M8_UpdateMemoryInput = {
+            user_id: user.id,
+            recall_attempt_id: grade.attempt_id,
+            transformation_id: transformationId,
+            concepts_tested: conceptResults,
+            raw_score: grade.raw_score,
+            calibration_gap: grade.calibration_gap,
+            confusion_map: grade.confusion_map,
+            format_used: formatUsed,
+            objective,
+          };
+
+          await updateMemoryAfterTest(memoryInput);
+        } catch {
+          // Memory update is non-blocking
+        }
+      }
+
       setPhase("completed");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur lors de la correction");
     } finally {
       setIsSubmitting(false);
     }
-  }, [concepts, criticalKeys, confusionPairs, traps, testId, transformationId, user]);
+  }, [concepts, criticalKeys, confusionPairs, traps, testId, transformationId, user, formatUsed, objective]);
 
   const currentItem = items[currentIndex] ?? null;
   const progress = items.length > 0 ? Math.round(((currentIndex) / items.length) * 100) : 0;
