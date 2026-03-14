@@ -1,8 +1,9 @@
 // ============================================================
-// Create Page — Import & Transform (M1 + M2 + M3 + M4 Pipeline)
+// Create Page — Import & Transform (M1 + M2 + M3 + M4 + M5 Pipeline)
 // ============================================================
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Brain, FileText, AlertTriangle, RotateCcw, Eye } from "lucide-react";
@@ -22,16 +23,19 @@ import { VisualAnchorsCard } from "@/components/cognitio/VisualAnchorsCard";
 import { CognitiveBudgetCard } from "@/components/cognitio/CognitiveBudgetCard";
 import { FormatDecisionCard } from "@/components/cognitio/FormatDecisionCard";
 import { PedagogicalContractCard } from "@/components/cognitio/PedagogicalContractCard";
+import { DynamicSheetLayout } from "@/components/cognitio/DynamicSheetLayout";
 import { useDocumentIngestion } from "@/hooks/useDocumentIngestion";
 import { useCourseAnalysis } from "@/hooks/useCourseAnalysis";
 import { useMemoryArchitecture } from "@/hooks/useMemoryArchitecture";
 import { useFormatDecision } from "@/hooks/useFormatDecision";
+import { useDynamicSheetGeneration } from "@/hooks/useDynamicSheetGeneration";
 import type { IngestInput } from "@/domain/cognitio/contracts";
 import type { AmbiguousZone, LearningObjective } from "@/domain/cognitio/types";
 
-type Phase = "import" | "ingesting" | "analyzing" | "architecting" | "formatting" | "result";
+type Phase = "import" | "ingesting" | "analyzing" | "architecting" | "formatting" | "generating" | "result";
 
 export default function Create() {
+  const navigate = useNavigate();
   const [phase, setPhase] = useState<Phase>("import");
   const [objective, setObjective] = useState<LearningObjective>("discovery");
 
@@ -39,6 +43,7 @@ export default function Create() {
   const analysis = useCourseAnalysis();
   const memory = useMemoryArchitecture();
   const format = useFormatDecision();
+  const generation = useDynamicSheetGeneration();
 
   const handleImport = async (input: IngestInput) => {
     setObjective(input.objective);
@@ -86,6 +91,27 @@ export default function Create() {
       objective
     );
 
+    if (format.error || !format.result) {
+      setPhase("result");
+      return;
+    }
+
+    // M5: Generate dynamic sheet if format is fiche_dynamique
+    if (format.result.chosen_format === "fiche_dynamique") {
+      setPhase("generating");
+      await generation.generate(
+        analysis.result,
+        memory.result,
+        format.result,
+        ingestion.result.document_id,
+        ingestion.result.word_count,
+        ingestion.result.source_type,
+        ingestion.result.confidence_level,
+        ingestion.result.issues.map((i) => i.message),
+        objective
+      );
+    }
+
     setPhase("result");
   };
 
@@ -99,14 +125,16 @@ export default function Create() {
     analysis.reset();
     memory.reset();
     format.reset();
+    generation.reset();
     setPhase("import");
   };
 
   const allSteps = [
     ...ingestion.steps,
-    ...(["analyzing", "architecting", "formatting", "result"].includes(phase) ? analysis.steps : []),
-    ...(["architecting", "formatting", "result"].includes(phase) ? memory.steps : []),
-    ...(["formatting", "result"].includes(phase) ? format.steps : []),
+    ...(["analyzing", "architecting", "formatting", "generating", "result"].includes(phase) ? analysis.steps : []),
+    ...(["architecting", "formatting", "generating", "result"].includes(phase) ? memory.steps : []),
+    ...(["formatting", "generating", "result"].includes(phase) ? format.steps : []),
+    ...(["generating", "result"].includes(phase) ? generation.steps : []),
   ];
 
   const phaseTitle = {
@@ -114,10 +142,11 @@ export default function Create() {
     analyzing: "Analyse pédagogique",
     architecting: "Architecture mémoire",
     formatting: "Sélection du format",
+    generating: "Génération de la fiche",
   }[phase as string] ?? "Progression";
 
   const hasBlocking = ingestion.result?.issues.some((i) => i.severity === "blocking") ?? false;
-  const anyError = ingestion.error || analysis.error || memory.error || format.error;
+  const anyError = ingestion.error || analysis.error || memory.error || format.error || generation.error;
 
   return (
     <div className="min-h-screen bg-background">
@@ -149,7 +178,7 @@ export default function Create() {
           )}
 
           {/* Phase 2-5: Progress */}
-          {(phase === "ingesting" || phase === "analyzing" || phase === "architecting" || phase === "formatting") && (
+          {(phase === "ingesting" || phase === "analyzing" || phase === "architecting" || phase === "formatting" || phase === "generating") && (
             <motion.div
               key="progress"
               initial={{ opacity: 0, y: 20 }}
@@ -193,18 +222,29 @@ export default function Create() {
                 <p className="text-sm font-medium mb-1">
                   {hasBlocking
                     ? "Le document ne peut pas être analysé en l'état"
-                    : format.result
-                      ? "Architecture mémoire et format sélectionnés"
-                      : analysis.result
-                        ? "Voilà ce que le moteur a compris"
-                        : "Analyse terminée"}
+                    : generation.result
+                      ? "Fiche dynamique générée avec succès"
+                      : format.result
+                        ? "Architecture mémoire et format sélectionnés"
+                        : analysis.result
+                          ? "Voilà ce que le moteur a compris"
+                          : "Analyse terminée"}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {hasBlocking
                     ? "Des problèmes bloquants ont été détectés. Consultez les détails ci-dessous."
-                    : "Les résultats ci-dessous montrent l'analyse, l'architecture mémoire et le format choisi."}
+                    : generation.result
+                      ? "Votre fiche pédagogique est prête. Consultez-la ci-dessous ou accédez-y depuis votre bibliothèque."
+                      : "Les résultats ci-dessous montrent l'analyse, l'architecture mémoire et le format choisi."}
                 </p>
               </div>
+
+              {/* Generated Dynamic Sheet */}
+              {generation.result && (
+                <div className="border rounded-lg p-4">
+                  <DynamicSheetLayout output={generation.result} />
+                </div>
+              )}
 
               {/* Document quality panel */}
               {ingestion.result && (
@@ -324,10 +364,15 @@ export default function Create() {
                   <RotateCcw className="h-4 w-4 mr-2" /> Importer un autre document
                 </Button>
 
-                {!hasBlocking && format.result && (
+                {generation.result && (
+                  <Button onClick={() => navigate(`/transformation/${generation.result!.transformation_id}`)}>
+                    <Eye className="h-4 w-4 mr-2" /> Voir la fiche
+                  </Button>
+                )}
+
+                {!hasBlocking && format.result && !generation.result && (
                   <Button disabled className="opacity-50 cursor-not-allowed">
-                    <ArrowRight className="h-4 w-4 mr-2" /> Continuer vers la génération
-                    <span className="ml-2 text-xs">(prochain ticket)</span>
+                    <ArrowRight className="h-4 w-4 mr-2" /> Format non supporté pour la génération
                   </Button>
                 )}
               </div>

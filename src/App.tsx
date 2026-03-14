@@ -33,6 +33,8 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 // COGNITIO pages
 const MissionDebrief = lazy(() => import("./pages/MissionDebrief"));
 const MissionAnalysis = lazy(() => import("./pages/MissionAnalysis"));
+const TransformationView = lazy(() => import("./pages/TransformationView"));
+const CognitioLibrary = lazy(() => import("./pages/CognitioLibrary"));
 
 const queryClient = new QueryClient();
 
@@ -67,6 +69,8 @@ const App = () => (
               <Route path="/export" element={<ProtectedRoute><Export /></ProtectedRoute>} />
               <Route path="/mission/:id/debrief" element={<ProtectedRoute><MissionDebrief /></ProtectedRoute>} />
               <Route path="/mission/:id/analysis" element={<ProtectedRoute><MissionAnalysis /></ProtectedRoute>} />
+              <Route path="/transformation/:id" element={<ProtectedRoute><TransformationView /></ProtectedRoute>} />
+              <Route path="/cognitio-library" element={<ProtectedRoute><CognitioLibrary /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
