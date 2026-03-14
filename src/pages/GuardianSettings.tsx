@@ -10,6 +10,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/hooks/useAuth";
 import { useMinorProfile } from "@/hooks/useMinorProfile";
+import { useTranslation } from "react-i18next";
 import { MinorStatusStep } from "@/components/guardian/MinorStatusStep";
 import { GuardianInviteForm } from "@/components/guardian/GuardianInviteForm";
 import { GuardianDashboard } from "@/components/guardian/GuardianDashboard";
@@ -23,6 +24,7 @@ export default function GuardianSettings() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { profile, updateProfile } = useMinorProfile(user?.id ?? null);
+  const { t } = useTranslation();
 
   const handleMinorUpdate = async (updates: Parameters<typeof updateProfile>[0]) => {
     if (!user) return;
@@ -49,7 +51,7 @@ export default function GuardianSettings() {
             onClick={() => navigate("/profile")}
             className="gap-2 mb-6 rounded-xl hover:bg-muted/30 text-muted-foreground"
           >
-            <ArrowLeft className="w-4 h-4" /> Retour au profil
+            <ArrowLeft className="w-4 h-4" /> {t("guardian.back_to_profile")}
           </Button>
         </motion.div>
 
@@ -62,9 +64,9 @@ export default function GuardianSettings() {
           <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-4">
             <Shield className="w-8 h-8 text-blue-600" />
           </div>
-          <h1 className="font-display text-2xl font-bold tracking-tight">Mode protégé</h1>
+          <h1 className="font-display text-2xl font-bold tracking-tight">{t("guardian.protected_mode")}</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Gestion du mode mineur, tuteurs et consentement
+            {t("guardian.subtitle")}
           </p>
         </motion.div>
 

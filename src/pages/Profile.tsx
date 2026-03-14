@@ -310,7 +310,7 @@ export default function Profile() {
             className="glass-card-elevated p-7 mt-6 space-y-4"
           >
             <h2 className="font-display text-lg font-bold flex items-center gap-2">
-              <Brain className="w-5 h-5 text-primary" /> Tableau de bord cognitif
+              <Brain className="w-5 h-5 text-primary" /> {t("product.cognitive_dashboard")}
             </h2>
 
             <ProfileStatusCard
@@ -344,10 +344,10 @@ export default function Profile() {
           className="glass-card-elevated p-7 mt-6"
         >
           <h3 className="font-display font-semibold mb-2 flex items-center gap-2">
-            <Shield className="w-5 h-5 text-blue-600" /> Mode protégé & Tuteurs
+            <Shield className="w-5 h-5 text-blue-600" /> {t("guardian.profile_section_title")}
           </h3>
           <p className="text-sm text-muted-foreground mb-4">
-            Configure le mode mineur, invite un tuteur et gère le consentement parental.
+            {t("guardian.profile_manage_desc")}
           </p>
           <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
             <Button
@@ -355,7 +355,7 @@ export default function Profile() {
               className="w-full gap-2 rounded-xl h-11"
               variant="outline"
             >
-              <Shield className="w-4 h-4" /> Gérer le mode protégé
+              <Shield className="w-4 h-4" /> {t("guardian.profile_manage_link")}
             </Button>
           </motion.div>
         </motion.div>

@@ -5,6 +5,7 @@
 import { motion } from "framer-motion";
 import { BookOpen, Play, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "react-i18next";
 import type { SeedTransformationSummary } from "@/domain/product/seed.types";
 
 interface SeedTransformationCardProps {
@@ -12,17 +13,17 @@ interface SeedTransformationCardProps {
   onStart: (id: string) => void;
 }
 
-const FORMAT_LABELS: Record<string, string> = {
-  fiche_dynamique: "Fiche dynamique",
-  histoire_animee: "Histoire interactive",
-  music: "Musique",
+const FORMAT_KEYS: Record<string, string> = {
+  fiche_dynamique: "product.format_fiche",
+  histoire_animee: "product.format_histoire",
+  music: "product.format_music",
 };
 
-const LEVEL_LABELS: Record<string, string> = {
-  college: "College",
-  lycee: "Lycee",
-  universite: "Universite",
-  professionnel: "Professionnel",
+const LEVEL_KEYS: Record<string, string> = {
+  college: "product.level_college",
+  lycee: "product.level_lycee",
+  universite: "product.level_universite",
+  professionnel: "product.level_professionnel",
 };
 
 const LEVEL_COLORS: Record<string, string> = {
@@ -33,6 +34,8 @@ const LEVEL_COLORS: Record<string, string> = {
 };
 
 export function SeedTransformationCard({ seed, onStart }: SeedTransformationCardProps) {
+  const { t } = useTranslation();
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -55,10 +58,10 @@ export function SeedTransformationCard({ seed, onStart }: SeedTransformationCard
       <div className="flex items-center gap-2">
         <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${LEVEL_COLORS[seed.audience_level] ?? "bg-gray-100 text-gray-700"}`}>
           <GraduationCap className="w-3 h-3 inline mr-0.5" />
-          {LEVEL_LABELS[seed.audience_level] ?? seed.audience_level}
+          {t(LEVEL_KEYS[seed.audience_level] ?? seed.audience_level)}
         </span>
         <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-          {FORMAT_LABELS[seed.format] ?? seed.format}
+          {t(FORMAT_KEYS[seed.format] ?? seed.format)}
         </span>
       </div>
 
@@ -67,7 +70,7 @@ export function SeedTransformationCard({ seed, onStart }: SeedTransformationCard
         className="w-full gap-2 h-8 text-xs"
         onClick={() => onStart(seed.id)}
       >
-        <Play className="w-3 h-3" /> Essayer cette mission
+        <Play className="w-3 h-3" /> {t("product.try_mission")}
       </Button>
     </motion.div>
   );

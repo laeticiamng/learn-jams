@@ -5,6 +5,7 @@
 import { motion } from "framer-motion";
 import { Sparkles, Loader2 } from "lucide-react";
 import { SeedTransformationCard } from "./SeedTransformationCard";
+import { useTranslation } from "react-i18next";
 import type { SeedTransformationSummary } from "@/domain/product/seed.types";
 
 interface SeedLibraryGridProps {
@@ -14,6 +15,8 @@ interface SeedLibraryGridProps {
 }
 
 export function SeedLibraryGrid({ seeds, loading, onStartSeed }: SeedLibraryGridProps) {
+  const { t } = useTranslation();
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -26,7 +29,7 @@ export function SeedLibraryGrid({ seeds, loading, onStartSeed }: SeedLibraryGrid
     return (
       <div className="text-center py-12">
         <p className="text-sm text-muted-foreground">
-          Aucune mission de demonstration disponible pour le moment.
+          {t("product.no_demo_missions")}
         </p>
       </div>
     );
@@ -40,8 +43,8 @@ export function SeedLibraryGrid({ seeds, loading, onStartSeed }: SeedLibraryGrid
     >
       <div className="flex items-center gap-2">
         <Sparkles className="w-4 h-4 text-primary" />
-        <h2 className="text-sm font-semibold">Missions de demonstration</h2>
-        <span className="text-xs text-muted-foreground">Testez sans importer de document</span>
+        <h2 className="text-sm font-semibold">{t("product.demo_missions_title")}</h2>
+        <span className="text-xs text-muted-foreground">{t("product.demo_missions_desc")}</span>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

@@ -5,6 +5,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ScrollText, Shield, UserPlus, UserMinus, FileText, Trash2, Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type { ConsentEvent } from "@/domain/guardian/consent.types";
 import { getConsentHistory } from "@/services/guardian/consentLog.service";
 
@@ -12,17 +13,17 @@ interface ConsentTimelineProps {
   userId: string;
 }
 
-const EVENT_LABELS: Record<string, string> = {
-  minor_declared: "Statut mineur déclaré",
-  guardian_invited: "Tuteur invité",
-  guardian_accepted: "Tuteur accepté",
-  guardian_revoked: "Tuteur révoqué",
-  consent_granted: "Consentement accordé",
-  consent_withdrawn: "Consentement retiré",
-  data_export_requested: "Export données demandé",
-  data_deletion_requested: "Suppression données demandée",
-  minor_mode_enabled: "Mode protégé activé",
-  minor_mode_disabled: "Mode protégé désactivé",
+const EVENT_LABEL_KEYS: Record<string, string> = {
+  minor_declared: "guardian.event_minor_declared",
+  guardian_invited: "guardian.event_guardian_invited",
+  guardian_accepted: "guardian.event_guardian_accepted",
+  guardian_revoked: "guardian.event_guardian_revoked",
+  consent_granted: "guardian.event_consent_granted",
+  consent_withdrawn: "guardian.event_consent_withdrawn",
+  data_export_requested: "guardian.event_data_export",
+  data_deletion_requested: "guardian.event_data_deletion",
+  minor_mode_enabled: "guardian.event_mode_enabled",
+  minor_mode_disabled: "guardian.event_mode_disabled",
 };
 
 const EVENT_ICONS: Record<string, typeof Shield> = {
@@ -54,6 +55,7 @@ const EVENT_COLORS: Record<string, string> = {
 export function ConsentTimeline({ userId }: ConsentTimelineProps) {
   const [events, setEvents] = useState<ConsentEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const { t, i18n } = useTranslation();
 
   useEffect(() => {
     async function load() {
@@ -84,16 +86,16 @@ export function ConsentTimeline({ userId }: ConsentTimelineProps) {
           <ScrollText className="w-5 h-5 text-slate-600" />
         </div>
         <div>
-          <h3 className="font-semibold">Journal de consentement</h3>
+          <h3 className="font-semibold">{t("guardian.consent_timeline")}</h3>
           <p className="text-sm text-muted-foreground">
-            Traçabilité RGPD — {events.length} événement(s)
+            {t("guardian.consent_rgpd", { count: events.length })}
           </p>
         </div>
       </div>
 
       {events.length === 0 ? (
         <p className="text-sm text-muted-foreground text-center py-4">
-          Aucun événement de consentement enregistré
+          {t("guardian.consent_empty")}
         </p>
       ) : (
         <div className="relative space-y-0">
@@ -116,10 +118,10 @@ export function ConsentTimeline({ userId }: ConsentTimelineProps) {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium">
-                    {EVENT_LABELS[event.event_type] ?? event.event_type}
+                    {t(EVENT_LABEL_KEYS[event.event_type] ?? event.event_type)}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {new Date(event.created_at).toLocaleString("fr-FR", {
+                    {new Date(event.created_at).toLocaleString(i18n.language, {
                       dateStyle: "medium",
                       timeStyle: "short",
                     })}

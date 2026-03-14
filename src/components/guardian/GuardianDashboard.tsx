@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { Shield, Users, Bell, Clock, BookOpen, CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import type { GuardianWithLink } from "@/domain/guardian/guardian.types";
 import type { GuardianNotification } from "@/domain/guardian/notification.types";
 import { getGuardiansForUser, revokeGuardianLink } from "@/services/guardian/guardianManagement.service";
@@ -16,11 +17,11 @@ interface GuardianDashboardProps {
   userId: string;
 }
 
-const RELATIONSHIP_LABELS: Record<string, string> = {
-  parent: "Parent",
-  legal_guardian: "Tuteur légal",
-  teacher: "Enseignant",
-  institution_admin: "Admin institution",
+const RELATIONSHIP_KEYS: Record<string, string> = {
+  parent: "guardian.relation_parent",
+  legal_guardian: "guardian.relation_legal_guardian",
+  teacher: "guardian.relation_teacher",
+  institution_admin: "guardian.relation_institution_admin",
 };
 
 const STATUS_ICONS: Record<string, typeof CheckCircle> = {
@@ -39,6 +40,7 @@ export function GuardianDashboard({ userId }: GuardianDashboardProps) {
   const [guardians, setGuardians] = useState<GuardianWithLink[]>([]);
   const [notifications, setNotifications] = useState<GuardianNotification[]>([]);
   const [loading, setLoading] = useState(true);
+  const { t, i18n } = useTranslation();
 
   useEffect(() => {
     async function load() {
@@ -65,9 +67,9 @@ export function GuardianDashboard({ userId }: GuardianDashboardProps) {
       setGuardians(prev => prev.map(g =>
         g.id === guardianId ? { ...g, link: { ...g.link, status: "revoked" } } : g
       ));
-      toast.success("Accès révoqué");
+      toast.success(t("guardian.revoke_success"));
     } catch {
-      toast.error("Erreur lors de la révocation");
+      toast.error(t("guardian.revoke_error"));
     }
   };
 
@@ -92,9 +94,9 @@ export function GuardianDashboard({ userId }: GuardianDashboardProps) {
             <Users className="w-5 h-5 text-purple-600" />
           </div>
           <div>
-            <h3 className="font-semibold">Tuteurs associés</h3>
+            <h3 className="font-semibold">{t("guardian.guardians_title")}</h3>
             <p className="text-sm text-muted-foreground">
-              {guardians.length === 0 ? "Aucun tuteur associé" : `${guardians.length} tuteur(s)`}
+              {guardians.length === 0 ? t("guardian.no_guardians") : t("guardian.guardian_count", { count: guardians.length })}
             </p>
           </div>
         </div>
@@ -113,7 +115,7 @@ export function GuardianDashboard({ userId }: GuardianDashboardProps) {
                 <div>
                   <p className="text-sm font-medium">{g.display_name ?? g.email}</p>
                   <p className="text-xs text-muted-foreground">
-                    {RELATIONSHIP_LABELS[g.link.relationship] ?? g.link.relationship}
+                    {t(RELATIONSHIP_KEYS[g.link.relationship] ?? g.link.relationship)}
                   </p>
                 </div>
               </div>
@@ -127,7 +129,7 @@ export function GuardianDashboard({ userId }: GuardianDashboardProps) {
                     className="text-xs text-red-500 hover:text-red-700"
                     onClick={() => handleRevoke(g.id)}
                   >
-                    Révoquer
+                    {t("guardian.revoke")}
                   </Button>
                 )}
               </div>
@@ -148,7 +150,7 @@ export function GuardianDashboard({ userId }: GuardianDashboardProps) {
             <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
               <Bell className="w-5 h-5 text-amber-600" />
             </div>
-            <h3 className="font-semibold">Notifications récentes</h3>
+            <h3 className="font-semibold">{t("guardian.notifications_recent")}</h3>
           </div>
 
           <div className="space-y-2 max-h-60 overflow-y-auto">
@@ -158,7 +160,7 @@ export function GuardianDashboard({ userId }: GuardianDashboardProps) {
                 <div>
                   <p className="font-medium text-xs">{n.subject ?? n.notification_type}</p>
                   <p className="text-xs text-muted-foreground">
-                    {n.status} — {new Date(n.created_at).toLocaleDateString("fr-FR")}
+                    {n.status} — {new Date(n.created_at).toLocaleDateString(i18n.language)}
                   </p>
                 </div>
               </div>

@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { validateGuardianInvite } from "@/domain/guardian/guardian.validators";
+import { useTranslation } from "react-i18next";
 import type { GuardianRelationship } from "@/domain/guardian/guardian.types";
 import { inviteGuardian } from "@/services/guardian/guardianManagement.service";
 
@@ -24,6 +25,7 @@ export function GuardianInviteForm({ minorUserId, onInviteSent }: GuardianInvite
   const [name, setName] = useState("");
   const [relationship, setRelationship] = useState<GuardianRelationship>("parent");
   const [loading, setLoading] = useState(false);
+  const { t } = useTranslation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,12 +50,12 @@ export function GuardianInviteForm({ minorUserId, onInviteSent }: GuardianInvite
         relationship,
         minor_user_id: minorUserId,
       });
-      toast.success("Invitation envoyée !");
+      toast.success(t("guardian.invite_sent"));
       setEmail("");
       setName("");
       onInviteSent?.();
     } catch (err) {
-      toast.error("Erreur lors de l'envoi de l'invitation");
+      toast.error(t("guardian.invite_error"));
     } finally {
       setLoading(false);
     }
@@ -70,9 +72,9 @@ export function GuardianInviteForm({ minorUserId, onInviteSent }: GuardianInvite
           <UserPlus className="w-5 h-5 text-green-600" />
         </div>
         <div>
-          <h3 className="font-semibold">Inviter un tuteur</h3>
+          <h3 className="font-semibold">{t("guardian.invite_guardian")}</h3>
           <p className="text-sm text-muted-foreground">
-            Le tuteur recevra un lien d'activation par email
+            {t("guardian.invite_desc")}
           </p>
         </div>
       </div>
@@ -80,11 +82,11 @@ export function GuardianInviteForm({ minorUserId, onInviteSent }: GuardianInvite
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
           <Label className="flex items-center gap-2">
-            <Mail className="w-4 h-4" /> Email du tuteur
+            <Mail className="w-4 h-4" /> {t("guardian.invite_email")}
           </Label>
           <Input
             type="email"
-            placeholder="parent@example.com"
+            placeholder={t("guardian.invite_email_placeholder")}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -92,9 +94,9 @@ export function GuardianInviteForm({ minorUserId, onInviteSent }: GuardianInvite
         </div>
 
         <div className="space-y-2">
-          <Label>Nom (optionnel)</Label>
+          <Label>{t("guardian.invite_name")}</Label>
           <Input
-            placeholder="Prénom Nom"
+            placeholder={t("guardian.invite_name_placeholder")}
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
@@ -102,17 +104,17 @@ export function GuardianInviteForm({ minorUserId, onInviteSent }: GuardianInvite
 
         <div className="space-y-2">
           <Label className="flex items-center gap-2">
-            <Shield className="w-4 h-4" /> Relation
+            <Shield className="w-4 h-4" /> {t("guardian.invite_relation")}
           </Label>
           <Select value={relationship} onValueChange={(v) => setRelationship(v as GuardianRelationship)}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="parent">Parent</SelectItem>
-              <SelectItem value="legal_guardian">Tuteur légal</SelectItem>
-              <SelectItem value="teacher">Enseignant</SelectItem>
-              <SelectItem value="institution_admin">Admin institution</SelectItem>
+              <SelectItem value="parent">{t("guardian.relation_parent")}</SelectItem>
+              <SelectItem value="legal_guardian">{t("guardian.relation_legal_guardian")}</SelectItem>
+              <SelectItem value="teacher">{t("guardian.relation_teacher")}</SelectItem>
+              <SelectItem value="institution_admin">{t("guardian.relation_institution_admin")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -120,11 +122,11 @@ export function GuardianInviteForm({ minorUserId, onInviteSent }: GuardianInvite
         <Button type="submit" className="w-full gap-2" disabled={loading}>
           {loading ? (
             <>
-              <Loader2 className="w-4 h-4 animate-spin" /> Envoi en cours...
+              <Loader2 className="w-4 h-4 animate-spin" /> {t("guardian.invite_sending")}
             </>
           ) : (
             <>
-              <UserPlus className="w-4 h-4" /> Envoyer l'invitation
+              <UserPlus className="w-4 h-4" /> {t("guardian.invite_send")}
             </>
           )}
         </Button>

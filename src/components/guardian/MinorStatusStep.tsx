@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { computeMinorStatus } from "@/domain/guardian/guardian.validators";
+import { useTranslation } from "react-i18next";
 import type { ContentFilterLevel } from "@/domain/guardian/minorProfile.types";
 
 interface MinorStatusStepProps {
@@ -43,6 +44,7 @@ export function MinorStatusStep({
 }: MinorStatusStepProps) {
   const [localBirthYear, setLocalBirthYear] = useState(birthYear?.toString() ?? "");
   const status = computeMinorStatus(birthYear);
+  const { t } = useTranslation();
 
   const handleBirthYearChange = (value: string) => {
     setLocalBirthYear(value);
@@ -63,9 +65,9 @@ export function MinorStatusStep({
           <ShieldCheck className="w-5 h-5 text-blue-600" />
         </div>
         <div>
-          <h3 className="font-semibold">Statut mineur</h3>
+          <h3 className="font-semibold">{t("guardian.minor_status")}</h3>
           <p className="text-sm text-muted-foreground">
-            Déclaration d'âge et mode protégé
+            {t("guardian.minor_status_desc")}
           </p>
         </div>
       </div>
@@ -73,11 +75,11 @@ export function MinorStatusStep({
       {/* Birth year */}
       <div className="space-y-2">
         <Label className="flex items-center gap-2">
-          <Calendar className="w-4 h-4" /> Année de naissance
+          <Calendar className="w-4 h-4" /> {t("guardian.birth_year")}
         </Label>
         <Input
           type="number"
-          placeholder="ex: 2010"
+          placeholder={t("guardian.birth_year_placeholder")}
           value={localBirthYear}
           onChange={(e) => handleBirthYearChange(e.target.value)}
           min={1900}
@@ -87,8 +89,8 @@ export function MinorStatusStep({
           <div className="flex items-center gap-2 text-sm">
             <Baby className="w-4 h-4 text-muted-foreground" />
             <span>
-              {status.age} ans — {status.isMinor ? "Mineur" : "Majeur"}
-              {status.requiresConsent && " — Consentement parental requis"}
+              {t("guardian.age_label", { age: status.age })} — {status.isMinor ? t("guardian.minor_detected") : t("guardian.adult_detected")}
+              {status.requiresConsent && ` — ${t("guardian.consent_required")}`}
             </span>
           </div>
         )}
@@ -97,8 +99,8 @@ export function MinorStatusStep({
       {/* Minor mode toggle */}
       <div className="flex items-center justify-between">
         <div>
-          <Label>Mode protégé</Label>
-          <p className="text-xs text-muted-foreground">Active le filtrage renforcé et les limites d'usage</p>
+          <Label>{t("guardian.protected_mode")}</Label>
+          <p className="text-xs text-muted-foreground">{t("guardian.protected_mode_desc")}</p>
         </div>
         <Switch
           checked={minorModeEnabled}
@@ -114,7 +116,7 @@ export function MinorStatusStep({
         >
           {/* Content filter level */}
           <div className="space-y-2">
-            <Label>Niveau de filtrage</Label>
+            <Label>{t("guardian.content_filter")}</Label>
             <Select
               value={contentFilterLevel}
               onValueChange={(v) => onUpdate({ content_filter_level: v as ContentFilterLevel })}
@@ -123,9 +125,9 @@ export function MinorStatusStep({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="standard">Standard</SelectItem>
-                <SelectItem value="strict">Strict</SelectItem>
-                <SelectItem value="institution">Institution</SelectItem>
+                <SelectItem value="standard">{t("guardian.filter_standard")}</SelectItem>
+                <SelectItem value="strict">{t("guardian.filter_strict")}</SelectItem>
+                <SelectItem value="institution">{t("guardian.filter_institution")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -133,7 +135,7 @@ export function MinorStatusStep({
           {/* Daily limit */}
           <div className="space-y-2">
             <Label className="flex items-center gap-2">
-              <Clock className="w-4 h-4" /> Limite quotidienne (minutes)
+              <Clock className="w-4 h-4" /> {t("guardian.daily_limit")}
             </Label>
             <Input
               type="number"
@@ -147,7 +149,7 @@ export function MinorStatusStep({
           {/* Allowed hours */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <Label className="text-xs">Heure début</Label>
+              <Label className="text-xs">{t("guardian.hour_start")}</Label>
               <Input
                 type="number"
                 value={allowedHoursStart}
@@ -157,7 +159,7 @@ export function MinorStatusStep({
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">Heure fin</Label>
+              <Label className="text-xs">{t("guardian.hour_end")}</Label>
               <Input
                 type="number"
                 value={allowedHoursEnd}
@@ -172,7 +174,7 @@ export function MinorStatusStep({
 
       {onNext && (
         <Button onClick={onNext} className="w-full">
-          Continuer
+          {t("guardian.continue")}
         </Button>
       )}
     </motion.div>

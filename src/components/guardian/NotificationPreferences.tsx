@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import type { GuardianNotificationPreferences as Prefs, NotificationChannel } from "@/domain/guardian/notification.types";
 import { upsertNotificationPreferences } from "@/services/guardian/notificationService";
 
@@ -31,14 +32,15 @@ export function NotificationPreferences({ guardianId, initialPreferences }: Noti
     quiet_hours_end: initialPreferences?.quiet_hours_end ?? 7,
   });
   const [saving, setSaving] = useState(false);
+  const { t } = useTranslation();
 
   const handleSave = async () => {
     setSaving(true);
     try {
       await upsertNotificationPreferences(guardianId, prefs);
-      toast.success("Préférences enregistrées");
+      toast.success(t("guardian.prefs_saved"));
     } catch {
-      toast.error("Erreur lors de l'enregistrement");
+      toast.error(t("guardian.prefs_error"));
     } finally {
       setSaving(false);
     }
@@ -59,24 +61,24 @@ export function NotificationPreferences({ guardianId, initialPreferences }: Noti
           <Bell className="w-5 h-5 text-amber-600" />
         </div>
         <div>
-          <h3 className="font-semibold">Préférences de notification</h3>
-          <p className="text-sm text-muted-foreground">Configurez quand et comment recevoir les alertes</p>
+          <h3 className="font-semibold">{t("guardian.notification_prefs")}</h3>
+          <p className="text-sm text-muted-foreground">{t("guardian.notification_prefs_desc")}</p>
         </div>
       </div>
 
       {/* Channel */}
       <div className="space-y-2">
         <Label className="flex items-center gap-2">
-          <Mail className="w-4 h-4" /> Canal de notification
+          <Mail className="w-4 h-4" /> {t("guardian.notification_channel")}
         </Label>
         <Select value={prefs.preferred_channel} onValueChange={(v) => update("preferred_channel", v as NotificationChannel)}>
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="email">Email</SelectItem>
-            <SelectItem value="sms">SMS</SelectItem>
-            <SelectItem value="push">Push</SelectItem>
+            <SelectItem value="email">{t("guardian.channel_email")}</SelectItem>
+            <SelectItem value="sms">{t("guardian.channel_sms")}</SelectItem>
+            <SelectItem value="push">{t("guardian.channel_push")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -84,19 +86,19 @@ export function NotificationPreferences({ guardianId, initialPreferences }: Noti
       {/* Toggles */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <Label className="text-sm">Résumé hebdomadaire</Label>
+          <Label className="text-sm">{t("guardian.weekly_summary")}</Label>
           <Switch checked={prefs.weekly_summary_enabled} onCheckedChange={(v) => update("weekly_summary_enabled", v)} />
         </div>
         <div className="flex items-center justify-between">
-          <Label className="text-sm">Alerte contenu signalé</Label>
+          <Label className="text-sm">{t("guardian.alert_content_flag")}</Label>
           <Switch checked={prefs.alert_on_content_flag} onCheckedChange={(v) => update("alert_on_content_flag", v)} />
         </div>
         <div className="flex items-center justify-between">
-          <Label className="text-sm">Alerte pic d'utilisation</Label>
+          <Label className="text-sm">{t("guardian.alert_usage_spike")}</Label>
           <Switch checked={prefs.alert_on_usage_spike} onCheckedChange={(v) => update("alert_on_usage_spike", v)} />
         </div>
         <div className="flex items-center justify-between">
-          <Label className="text-sm">Alerte nouveau sujet</Label>
+          <Label className="text-sm">{t("guardian.alert_new_subject")}</Label>
           <Switch checked={prefs.alert_on_new_subject} onCheckedChange={(v) => update("alert_on_new_subject", v)} />
         </div>
       </div>
@@ -104,11 +106,11 @@ export function NotificationPreferences({ guardianId, initialPreferences }: Noti
       {/* Quiet hours */}
       <div className="space-y-2">
         <Label className="flex items-center gap-2">
-          <MessageSquare className="w-4 h-4" /> Heures silencieuses
+          <MessageSquare className="w-4 h-4" /> {t("guardian.quiet_hours")}
         </Label>
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
-            <Label className="text-xs">Début</Label>
+            <Label className="text-xs">{t("guardian.quiet_start")}</Label>
             <Input
               type="number"
               value={prefs.quiet_hours_start}
@@ -118,7 +120,7 @@ export function NotificationPreferences({ guardianId, initialPreferences }: Noti
             />
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">Fin</Label>
+            <Label className="text-xs">{t("guardian.quiet_end")}</Label>
             <Input
               type="number"
               value={prefs.quiet_hours_end}
@@ -132,7 +134,7 @@ export function NotificationPreferences({ guardianId, initialPreferences }: Noti
 
       <Button onClick={handleSave} className="w-full gap-2" disabled={saving}>
         {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-        Enregistrer
+        {t("guardian.save")}
       </Button>
     </motion.div>
   );

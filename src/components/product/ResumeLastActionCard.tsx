@@ -5,6 +5,7 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, BookOpen, ListChecks, Brain } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export type ResumeAction =
   | { type: "transformation"; id: string; title: string; format: string }
@@ -17,7 +18,8 @@ interface ResumeLastActionCardProps {
 }
 
 export function ResumeLastActionCard({ action, onResume }: ResumeLastActionCardProps) {
-  const config = getConfig(action);
+  const { t } = useTranslation();
+  const config = getConfig(action, t);
 
   return (
     <motion.div
@@ -35,31 +37,31 @@ export function ResumeLastActionCard({ action, onResume }: ResumeLastActionCardP
       </div>
 
       <Button size="sm" className="gap-1 shrink-0" onClick={onResume}>
-        Reprendre <ArrowRight className="w-3 h-3" />
+        {t("product.resume")} <ArrowRight className="w-3 h-3" />
       </Button>
     </motion.div>
   );
 }
 
-function getConfig(action: ResumeAction) {
+function getConfig(action: ResumeAction, t: (key: string, opts?: Record<string, unknown>) => string) {
   switch (action.type) {
     case "transformation":
       return {
         icon: BookOpen,
         title: action.title,
-        subtitle: `Continuer votre ${action.format === "histoire_animee" ? "histoire" : "fiche"}`,
+        subtitle: action.format === "histoire_animee" ? t("product.continue_story") : t("product.continue_sheet"),
       };
     case "review_queue":
       return {
         icon: ListChecks,
-        title: `${action.count} concept(s) a revoir`,
-        subtitle: "Votre file de revision vous attend",
+        title: t("product.concepts_to_review", { count: action.count }),
+        subtitle: t("product.review_queue_waiting"),
       };
     case "pending_test":
       return {
         icon: Brain,
         title: action.title,
-        subtitle: "Test en attente",
+        subtitle: t("product.pending_test"),
       };
   }
 }
