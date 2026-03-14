@@ -12,12 +12,12 @@ interface LearnerLevelPickerProps {
 }
 
 const LEVELS: { id: EducationStage; label: string; icon: typeof GraduationCap; gradient: string }[] = [
-  { id: "middle_school", label: "College", icon: School, gradient: "from-green-400 to-emerald-500" },
-  { id: "high_school", label: "Lycee", icon: BookOpen, gradient: "from-blue-400 to-cyan-500" },
+  { id: "middle_school", label: "Collège", icon: School, gradient: "from-green-400 to-emerald-500" },
+  { id: "high_school", label: "Lycée", icon: BookOpen, gradient: "from-blue-400 to-cyan-500" },
   { id: "undergrad", label: "Licence", icon: GraduationCap, gradient: "from-purple-400 to-violet-500" },
   { id: "graduate", label: "Master", icon: Building, gradient: "from-orange-400 to-amber-500" },
   { id: "professional", label: "Professionnel", icon: Briefcase, gradient: "from-red-400 to-rose-500" },
-  { id: "adult_reskilling", label: "Reprise d'etudes", icon: RotateCcw, gradient: "from-teal-400 to-cyan-500" },
+  { id: "adult_reskilling", label: "Reprise d'études", icon: RotateCcw, gradient: "from-teal-400 to-cyan-500" },
 ];
 
 export default function LearnerLevelPicker({ selected, onSelect }: LearnerLevelPickerProps) {
