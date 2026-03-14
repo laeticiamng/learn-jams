@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { ContentType, LearningObjective } from "@/domain/cognitio/types";
+import type { LearnerAudienceProfile, EducationStage, ExplanationStyle } from "@/domain/cognitio/learner-profile.types";
+import { DEFAULT_LEARNER_PROFILE } from "@/domain/cognitio/learner-profile.types";
 
 interface ImportDropzoneProps {
   onImport: (data: {
@@ -11,6 +13,7 @@ interface ImportDropzoneProps {
     pasted_text?: string;
     content_type: ContentType;
     objective: LearningObjective;
+    learner_profile?: LearnerAudienceProfile;
   }) => void;
   disabled?: boolean;
 }
@@ -20,6 +23,23 @@ const OBJECTIVES: { value: LearningObjective; label: string; desc: string }[] = 
   { value: "revision", label: "Révision", desc: "Revoir un sujet déjà vu" },
   { value: "exam", label: "Examen", desc: "Préparation d'un examen" },
   { value: "consolidation", label: "Consolidation", desc: "Renforcer des acquis" },
+];
+
+const EDUCATION_STAGES: { value: EducationStage; label: string }[] = [
+  { value: "middle_school", label: "Collège" },
+  { value: "high_school", label: "Lycée" },
+  { value: "undergrad", label: "Licence" },
+  { value: "graduate", label: "Master" },
+  { value: "professional", label: "Professionnel" },
+  { value: "adult_reskilling", label: "Reprise d'études" },
+  { value: "unknown", label: "Auto (prudent)" },
+];
+
+const EXPLANATION_STYLES: { value: ExplanationStyle; label: string }[] = [
+  { value: "guided", label: "Très guidée" },
+  { value: "balanced", label: "Équilibrée" },
+  { value: "academic", label: "Académique" },
+  { value: "professional", label: "Professionnelle" },
 ];
 
 const ACCEPTED_TYPES: Record<string, ContentType> = {
@@ -34,6 +54,8 @@ export default function ImportDropzone({ onImport, disabled }: ImportDropzonePro
   const [file, setFile] = useState<File | null>(null);
   const [pastedText, setPastedText] = useState("");
   const [objective, setObjective] = useState<LearningObjective>("revision");
+  const [educationStage, setEducationStage] = useState<EducationStage>("unknown");
+  const [explanationStyle, setExplanationStyle] = useState<ExplanationStyle>("balanced");
   const [dragActive, setDragActive] = useState(false);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
@@ -53,13 +75,19 @@ export default function ImportDropzone({ onImport, disabled }: ImportDropzonePro
   }, []);
 
   const handleSubmit = useCallback(() => {
+    const learner_profile: LearnerAudienceProfile = {
+      ...DEFAULT_LEARNER_PROFILE,
+      education_stage: educationStage,
+      explanation_style: explanationStyle,
+    };
+
     if (tab === "upload" && file) {
       const contentType = ACCEPTED_TYPES[file.type] ?? "text/plain";
-      onImport({ file, content_type: contentType, objective });
+      onImport({ file, content_type: contentType, objective, learner_profile });
     } else if (tab === "paste" && pastedText.trim()) {
-      onImport({ pasted_text: pastedText.trim(), content_type: "text/plain", objective });
+      onImport({ pasted_text: pastedText.trim(), content_type: "text/plain", objective, learner_profile });
     }
-  }, [tab, file, pastedText, objective, onImport]);
+  }, [tab, file, pastedText, objective, educationStage, explanationStyle, onImport]);
 
   const canSubmit =
     !disabled &&
@@ -85,6 +113,47 @@ export default function ImportDropzone({ onImport, disabled }: ImportDropzonePro
               <p className="text-xs text-muted-foreground mt-0.5">{obj.desc}</p>
             </button>
           ))}
+        </div>
+      </div>
+
+      {/* Learner profile selector */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label className="text-sm font-medium mb-2 block">Pour quel niveau ?</label>
+          <div className="grid grid-cols-2 gap-1.5">
+            {EDUCATION_STAGES.map((s) => (
+              <button
+                key={s.value}
+                onClick={() => setEducationStage(s.value)}
+                className={`px-3 py-2 rounded-lg border text-xs font-medium transition-all ${
+                  educationStage === s.value
+                    ? "border-primary bg-primary/5 ring-1 ring-primary/20 text-primary"
+                    : "border-border/30 hover:border-border/50 bg-card/50 text-muted-foreground"
+                }`}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label className="text-sm font-medium mb-2 block">Style d'explication</label>
+          <div className="grid grid-cols-2 gap-1.5">
+            {EXPLANATION_STYLES.map((s) => (
+              <button
+                key={s.value}
+                onClick={() => setExplanationStyle(s.value)}
+                className={`px-3 py-2 rounded-lg border text-xs font-medium transition-all ${
+                  explanationStyle === s.value
+                    ? "border-primary bg-primary/5 ring-1 ring-primary/20 text-primary"
+                    : "border-border/30 hover:border-border/50 bg-card/50 text-muted-foreground"
+                }`}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

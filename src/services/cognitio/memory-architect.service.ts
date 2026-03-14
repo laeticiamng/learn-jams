@@ -16,6 +16,8 @@ import type {
 import type { AnalyzedConcept } from "@/domain/cognitio/contracts";
 import { MAX_NEW_ITEMS_PER_SEGMENT, MIN_CRITICAL_APPEARANCES, MAX_CONCEPTS_STANDARD } from "@/domain/cognitio/validators";
 import { MAX_DURATION_BEFORE_SPLIT, validateM3Output } from "@/domain/cognitio/memory.validators";
+import { computeAdaptation, DEFAULT_LEARNER_PROFILE } from "@/domain/cognitio/learner-profile.types";
+import type { AudienceAdaptation } from "@/domain/cognitio/learner-profile.types";
 
 // ---------- Edge Function Call ----------
 
@@ -37,6 +39,10 @@ export async function runMemoryArchitect(input: M3_Input): Promise<M3_Output> {
 export function buildLocalMemoryArchitect(input: M3_Input): M3_Output {
   const { concepts, confusion_pairs, traps, reasoning_type, objective, density, estimated_complexity } = input;
 
+  // Compute audience adaptation
+  const profile = input.learner_profile ?? DEFAULT_LEARNER_PROFILE;
+  const adaptation = computeAdaptation(profile);
+
   // Cap concepts at MAX_CONCEPTS_STANDARD
   const capped = concepts.slice(0, MAX_CONCEPTS_STANDARD);
 
@@ -49,8 +55,9 @@ export function buildLocalMemoryArchitect(input: M3_Input): M3_Output {
   // Build concept order
   const conceptOrder = sorted.map(c => c.stable_key);
 
-  // Build cognitive segments
-  const segments = buildSegments(sorted, confusion_pairs.map(p => [p.concept_a_key, p.concept_b_key]));
+  // Build cognitive segments (use profile-adapted max elements per block)
+  const maxPerSegment = Math.min(MAX_NEW_ITEMS_PER_SEGMENT, adaptation.max_new_elements_per_block);
+  const segments = buildSegments(sorted, confusion_pairs.map(p => [p.concept_a_key, p.concept_b_key]), maxPerSegment);
 
   // Build repetition plan
   const repetitionPlan = buildRepetitionPlan(sorted, segments);
@@ -70,7 +77,7 @@ export function buildLocalMemoryArchitect(input: M3_Input): M3_Output {
   const splitModules = needsSplitting ? buildSplitModules(segments, sorted) : undefined;
 
   // Build cognitive budget
-  const cognitiveBudget = buildCognitiveBudget(sorted, segments);
+  const cognitiveBudget = buildCognitiveBudget(sorted, segments, maxPerSegment);
 
   // Build pedagogical contract
   const contract = buildPedagogicalContract(sorted, segments, repetitionPlan, cognitiveBudget, totalDuration);
@@ -100,14 +107,15 @@ export function buildLocalMemoryArchitect(input: M3_Input): M3_Output {
 
 function buildSegments(
   sorted: AnalyzedConcept[],
-  confusionPairs: [string, string][]
+  confusionPairs: [string, string][],
+  maxPerSegment: number = MAX_NEW_ITEMS_PER_SEGMENT
 ): M3_Segment[] {
   const segments: M3_Segment[] = [];
   let currentKeys: string[] = [];
   const criticalKeys = new Set(sorted.filter(c => c.criticality === 1).map(c => c.stable_key));
 
   for (const concept of sorted) {
-    if (currentKeys.length >= MAX_NEW_ITEMS_PER_SEGMENT) {
+    if (currentKeys.length >= maxPerSegment) {
       segments.push(createSegment(segments.length, currentKeys, criticalKeys, sorted, confusionPairs));
       currentKeys = [];
     }
@@ -318,14 +326,14 @@ function buildSplitModules(segments: M3_Segment[], sorted: AnalyzedConcept[]): S
 
 // ---------- Cognitive Budget Builder ----------
 
-function buildCognitiveBudget(sorted: AnalyzedConcept[], segments: M3_Segment[]): CognitiveBudget {
+function buildCognitiveBudget(sorted: AnalyzedConcept[], segments: M3_Segment[], maxPerSegment: number = MAX_NEW_ITEMS_PER_SEGMENT): CognitiveBudget {
   const totalNew = segments.reduce((sum, s) => sum + s.new_element_count, 0);
   const totalReinforcements = segments.reduce((sum, s) => sum + s.reinforcement_keys.length, 0);
-  const maxCapacity = segments.length * MAX_NEW_ITEMS_PER_SEGMENT;
+  const maxCapacity = segments.length * maxPerSegment;
 
   return {
     total_concepts: sorted.length,
-    max_per_segment: MAX_NEW_ITEMS_PER_SEGMENT,
+    max_per_segment: maxPerSegment,
     segment_count: segments.length,
     total_new_introductions: totalNew,
     total_reinforcements: totalReinforcements,

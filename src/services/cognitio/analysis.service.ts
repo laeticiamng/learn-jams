@@ -17,6 +17,8 @@ import type {
 import type { CourseProfile, Concept, ConfusionPair, SourceTrace } from "@/domain/cognitio/types";
 import { createCognitioError } from "@/lib/cognitio-errors";
 import { toCourseProfile, toConcept, toConfusionPair, conceptToAnalyzed, m2OutputToCourseProfileRow, analyzedConceptToRow, analyzedConfusionPairToRow } from "@/domain/cognitio/mappers";
+import { detectAudienceMismatch } from "@/domain/cognitio/learner-profile.types";
+import type { LearnerAudienceProfile } from "@/domain/cognitio/learner-profile.types";
 
 // ---------- Run Analysis (Edge Function) ----------
 
@@ -88,6 +90,18 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
       : [],
   };
 
+  const estimatedComplexity = Math.min(10, Math.max(1, Math.ceil(concepts.length / 2)));
+
+  // Audience mismatch detection
+  const mismatch = input.learner_profile
+    ? detectAudienceMismatch(estimatedComplexity, density, input.learner_profile)
+    : undefined;
+
+  const docDifficulty = estimatedComplexity <= 3 ? "easy"
+    : estimatedComplexity <= 5 ? "intermediate"
+    : estimatedComplexity <= 7 ? "advanced"
+    : "expert";
+
   return {
     course_profile_id: "",
     main_topic: mainTopic,
@@ -104,7 +118,11 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
     source_issues: [{ code: "FALLBACK_ANALYSIS", message: "Analyse locale heuristique (LLM non disponible)", severity: "warning" }],
     total_concepts: concepts.length,
     critical_count: concepts.filter((c) => c.criticality === 1).length,
-    estimated_complexity: Math.min(10, Math.max(1, Math.ceil(concepts.length / 2))),
+    estimated_complexity: estimatedComplexity,
+    document_difficulty_level: docDifficulty as "easy" | "intermediate" | "advanced" | "expert",
+    estimated_audience_level: mismatch?.profile_level,
+    audience_mismatch_risk: mismatch?.risk_level ?? 0,
+    audience_mismatch_message: mismatch?.message,
   };
 }
 

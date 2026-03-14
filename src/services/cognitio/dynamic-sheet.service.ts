@@ -19,6 +19,16 @@ import type { AnalyzedConcept, AnalyzedConfusionPair } from "@/domain/cognitio/c
 import type { M3_Segment } from "@/domain/cognitio/memory.types";
 import { computeCoverage, findMissingCritical } from "@/lib/cognitio-coverage";
 import { validateM5Input, validateM5Output } from "@/domain/cognitio/generation.validators";
+import {
+  computeAdaptation,
+  DEFAULT_LEARNER_PROFILE,
+  getContractPhrasing,
+  getHookPhrasing,
+  getSegmentTransition,
+  getRecallPromptStyle,
+  getDefinitionIntro,
+} from "@/domain/cognitio/learner-profile.types";
+import type { AudienceAdaptation } from "@/domain/cognitio/learner-profile.types";
 
 // ---------- Edge Function Call ----------
 
@@ -46,6 +56,10 @@ export function generateDynamicSheetLocally(input: M5_Input): M5_Output {
   const { m2_output, m3_output, m4_output, source_document, user_objective } = input;
   const transformationId = crypto.randomUUID();
 
+  // Compute audience adaptation
+  const profile = input.learner_profile ?? DEFAULT_LEARNER_PROFILE;
+  const adaptation = computeAdaptation(profile);
+
   const concepts = m2_output.key_concepts;
   const criticalConcepts = concepts.filter(c => c.criticality === 1);
   const majorConcepts = concepts.filter(c => c.criticality === 2);
@@ -57,10 +71,10 @@ export function generateDynamicSheetLocally(input: M5_Input): M5_Output {
   let position = 0;
 
   // 1. CONTRACT
-  blocks.push(buildContractBlock(m3_output, m4_output, concepts, position++));
+  blocks.push(buildContractBlock(m3_output, m4_output, concepts, position++, adaptation));
 
   // 2. HOOK
-  blocks.push(buildHookBlock(m2_output.main_topic, criticalConcepts, user_objective, position++));
+  blocks.push(buildHookBlock(m2_output.main_topic, criticalConcepts, user_objective, position++, adaptation));
 
   // 3. ANCHOR MAP
   blocks.push(buildAnchorMapBlock(segments, concepts, position++));
@@ -73,18 +87,18 @@ export function generateDynamicSheetLocally(input: M5_Input): M5_Output {
       p => seg.concept_keys.includes(p.concept_a_key) || seg.concept_keys.includes(p.concept_b_key)
     );
 
-    blocks.push(buildPedagogicalBlock(seg, segConcepts, segConfusions, m3_output, i, position++));
+    blocks.push(buildPedagogicalBlock(seg, segConcepts, segConfusions, m3_output, i, position++, adaptation));
 
     // 5. REACTIVATION after every pedagogical block (if concepts warrant it)
     if (segConcepts.length > 0 && i < segments.length - 1) {
-      blocks.push(buildReactivationBlock(segConcepts, i, position++));
+      blocks.push(buildReactivationBlock(segConcepts, i, position++, adaptation));
     }
   }
 
   // Ensure at least one reactivation exists
   const hasReactivation = blocks.some(b => b.type === "reactivation");
   if (!hasReactivation && concepts.length > 0) {
-    blocks.push(buildReactivationBlock(concepts.slice(0, 3), 0, position++));
+    blocks.push(buildReactivationBlock(concepts.slice(0, 3), 0, position++, adaptation));
   }
 
   // 6. CLARITY PEAK
@@ -94,7 +108,7 @@ export function generateDynamicSheetLocally(input: M5_Input): M5_Output {
   blocks.push(buildConsolidationBlock(criticalConcepts, confusionPairs, m3_output, position++));
 
   // 8. FINAL TEST (block marker)
-  const finalTestItems = buildFinalTest(concepts, confusionPairs);
+  const finalTestItems = buildFinalTest(concepts, confusionPairs, adaptation);
   blocks.push({
     block_id: crypto.randomUUID(),
     type: "final_test",
@@ -214,15 +228,17 @@ function buildContractBlock(
   m3: M5_Input["m3_output"],
   m4: M5_Input["m4_output"],
   concepts: AnalyzedConcept[],
-  position: number
+  position: number,
+  adaptation: AudienceAdaptation = { tone: "neutral_clear" } as AudienceAdaptation
 ): ContentBlock {
   const critical = concepts.filter(c => c.criticality === 1);
   const contract = m3.pedagogical_contract;
+  const phrasing = getContractPhrasing(adaptation);
 
   const content = [
-    `Objectif : maîtriser ${contract.total_concepts} concept(s) dont ${critical.length} critique(s).`,
-    `Structure : ${contract.segment_count} bloc(s) pédagogiques, durée estimée ~${Math.ceil(contract.estimated_duration_sec / 60)} min.`,
-    `Plan de rappel : test final + rappels J+1 et J+7.`,
+    phrasing.objective(contract.total_concepts, critical.length),
+    phrasing.structure(contract.segment_count, Math.ceil(contract.estimated_duration_sec / 60)),
+    phrasing.recall(),
   ].join("\n");
 
   return {
@@ -243,7 +259,8 @@ function buildHookBlock(
   mainTopic: string,
   criticalConcepts: AnalyzedConcept[],
   objective: string,
-  position: number
+  position: number,
+  adaptation: AudienceAdaptation = { tone: "neutral_clear" } as AudienceAdaptation
 ): ContentBlock {
   const objectiveLabel: Record<string, string> = {
     discovery: "découvrir",
@@ -252,9 +269,12 @@ function buildHookBlock(
     consolidation: "consolider",
   };
 
-  const hook = criticalConcepts.length > 0
-    ? `Pourquoi est-il important de comprendre "${criticalConcepts[0].label}" ? Parce que sans cette notion, le reste du cours perd son ancrage.`
-    : `Vous allez ${objectiveLabel[objective] ?? "explorer"} : ${mainTopic}.`;
+  const hook = getHookPhrasing(
+    adaptation,
+    mainTopic,
+    criticalConcepts.length > 0 ? criticalConcepts[0].label : undefined,
+    objectiveLabel[objective]
+  );
 
   return {
     block_id: crypto.randomUUID(),
@@ -308,17 +328,20 @@ function buildPedagogicalBlock(
   segConfusions: AnalyzedConfusionPair[],
   m3: M5_Input["m3_output"],
   segIndex: number,
-  position: number
+  position: number,
+  adaptation: AudienceAdaptation = { tone: "neutral_clear", vocabulary_level: "intermediate" } as AudienceAdaptation
 ): ContentBlock {
   // Build explanation from concept definitions
   const explanationLines: string[] = [];
 
-  if (segIndex > 0) {
-    explanationLines.push(`Après le bloc précédent, nous abordons maintenant :`);
+  const transition = getSegmentTransition(adaptation, segIndex);
+  if (transition) {
+    explanationLines.push(transition);
   }
 
-  for (const c of segConcepts.slice(0, 5)) {
-    explanationLines.push(`**${c.label}** : ${c.definition}`);
+  const defIntro = getDefinitionIntro(adaptation);
+  for (const c of segConcepts.slice(0, adaptation.max_new_elements_per_block)) {
+    explanationLines.push(`**${c.label}** : ${defIntro} ${c.definition}`);
   }
 
   // Find visual anchor for first critical concept in segment
@@ -365,22 +388,28 @@ function buildPedagogicalBlock(
 function buildReactivationBlock(
   segConcepts: AnalyzedConcept[],
   segIndex: number,
-  position: number
+  position: number,
+  adaptation: AudienceAdaptation = { test_question_style: "standard" } as AudienceAdaptation
 ): ContentBlock {
   const target = segConcepts[0];
+  const prompts = getRecallPromptStyle(adaptation);
+
   if (!target) {
+    const fallbackPrompt = adaptation.test_question_style === "guided"
+      ? "Redis en une phrase ce que tu viens d'apprendre."
+      : "Reformulez en une phrase ce que vous venez d'apprendre.";
     return {
       block_id: crypto.randomUUID(),
       type: "reactivation",
       title: "Rappel actif",
-      content: "Reformulez en une phrase ce que vous venez d'apprendre.",
+      content: fallbackPrompt,
       concepts_covered: [],
       visual_anchor: null,
       contrast_box: null,
       mnemonic: null,
       recall_event: {
         type: "reformulation",
-        prompt: "Reformulez en une phrase ce que vous venez d'apprendre.",
+        prompt: fallbackPrompt,
         expected_concepts: [],
         bloom_level: 2,
       },
@@ -388,12 +417,12 @@ function buildReactivationBlock(
     };
   }
 
-  // Alternate recall types
+  // Alternate recall types using adapted prompts
   const recallTypes: Array<{ type: "question" | "completion" | "distinction" | "reformulation" | "prediction"; promptFn: (c: AnalyzedConcept) => string; bloom: BloomNumeric }> = [
-    { type: "question", promptFn: c => `Qu'est-ce que "${c.label}" ? Donnez sa définition en une phrase.`, bloom: 1 },
-    { type: "completion", promptFn: c => `Complétez : "${c.label}" se définit comme ___`, bloom: 2 },
-    { type: "reformulation", promptFn: c => `Expliquez "${c.label}" avec vos propres mots.`, bloom: 2 },
-    { type: "prediction", promptFn: c => `Que se passerait-il si "${c.label}" était absent du cours ?`, bloom: 4 },
+    { type: "question", promptFn: c => prompts.question(c.label), bloom: 1 },
+    { type: "completion", promptFn: c => prompts.completion(c.label), bloom: 2 },
+    { type: "reformulation", promptFn: c => prompts.reformulation(c.label), bloom: 2 },
+    { type: "prediction", promptFn: c => prompts.prediction(c.label), bloom: 4 },
   ];
 
   const chosen = recallTypes[segIndex % recallTypes.length];
@@ -513,7 +542,8 @@ function buildDisclaimerText(disclaimer: SourceDisclaimer): string {
 
 function buildFinalTest(
   concepts: AnalyzedConcept[],
-  confusions: AnalyzedConfusionPair[]
+  confusions: AnalyzedConfusionPair[],
+  adaptation: AudienceAdaptation = { test_bloom_floor: 1, test_bloom_ceiling: 6, test_question_style: "standard" } as AudienceAdaptation
 ): FinalTestItem[] {
   const items: FinalTestItem[] = [];
   const critical = concepts.filter(c => c.criticality === 1);
@@ -578,12 +608,14 @@ function buildFinalTest(
     });
   }
 
-  // Bloom 5 — Evaluate: ordering
-  if (critical.length >= 2) {
+  // Bloom 5 — Evaluate: ordering (only if profile ceiling allows)
+  if (critical.length >= 2 && adaptation.test_bloom_ceiling >= 5) {
     items.push({
       id: crypto.randomUUID(),
       type: "ordering",
-      prompt: "Classez ces concepts par ordre d'importance dans le cours :",
+      prompt: adaptation.test_question_style === "guided"
+        ? "Range ces notions de la plus importante à la moins importante :"
+        : "Classez ces concepts par ordre d'importance dans le cours :",
       choices: critical.slice(0, 4).map(c => c.label),
       expected_answer: critical.slice(0, 4).map(c => c.label),
       concepts_tested: critical.slice(0, 4).map(c => c.stable_key),
@@ -591,12 +623,16 @@ function buildFinalTest(
     });
   }
 
-  // Bloom 6 — Create (if enough concepts)
-  if (concepts.length >= 3) {
+  // Bloom 6 — Create (if enough concepts and profile ceiling allows)
+  if (concepts.length >= 3 && adaptation.test_bloom_ceiling >= 6) {
     items.push({
       id: crypto.randomUUID(),
       type: "short_answer",
-      prompt: "Proposez une synthèse personnelle reliant les concepts clés de ce cours.",
+      prompt: adaptation.test_question_style === "guided"
+        ? "Fais un petit résumé qui relie les notions principales entre elles."
+        : adaptation.test_question_style === "challenging"
+          ? "Proposez une synthèse critique reliant les concepts clés et leurs implications."
+          : "Proposez une synthèse personnelle reliant les concepts clés de ce cours.",
       choices: null,
       expected_answer: "Synthèse cohérente reliant les concepts",
       concepts_tested: critical.map(c => c.stable_key),

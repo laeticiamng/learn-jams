@@ -11,6 +11,7 @@ import type { M3_Output } from "@/domain/cognitio/memory.contracts";
 import type { M4_Output } from "@/domain/cognitio/format.contracts";
 import type { PipelineStepStatus, LearningObjective } from "@/domain/cognitio/types";
 import { generateDynamicSheetLocally, persistTransformation } from "@/services/cognitio/dynamic-sheet.service";
+import type { LearnerAudienceProfile } from "@/domain/cognitio/learner-profile.types";
 
 export type GenerationStepName = "preparing" | "building_blocks" | "building_test" | "validating" | "saving";
 
@@ -51,7 +52,8 @@ export function useDynamicSheetGeneration() {
     sourceType: string,
     confidenceLevel: number,
     sourceIssues: string[],
-    objective: LearningObjective
+    objective: LearningObjective,
+    learnerProfile?: LearnerAudienceProfile
   ) => {
     if (!session?.user?.id) {
       setError("Vous devez être connecté.");
@@ -79,6 +81,7 @@ export function useDynamicSheetGeneration() {
           source_issues: sourceIssues,
         },
         user_objective: objective,
+        learner_profile: learnerProfile,
       };
 
       updateStep("preparing", "completed");

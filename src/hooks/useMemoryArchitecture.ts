@@ -10,6 +10,7 @@ import type { M2_Output } from "@/domain/cognitio/contracts";
 import type { PipelineStepStatus, LearningObjective } from "@/domain/cognitio/types";
 import { buildLocalMemoryArchitect, persistMemoryArchitecture } from "@/services/cognitio/memory-architect.service";
 import type { M3_Input } from "@/domain/cognitio/memory.contracts";
+import type { LearnerAudienceProfile } from "@/domain/cognitio/learner-profile.types";
 
 export type MemoryStepName = "ordering" | "segmenting" | "repetition" | "mnemonics" | "saving";
 
@@ -41,7 +42,7 @@ export function useMemoryArchitecture() {
     );
   }, []);
 
-  const build = useCallback(async (m2Output: M2_Output, documentId: string, objective: LearningObjective) => {
+  const build = useCallback(async (m2Output: M2_Output, documentId: string, objective: LearningObjective, learnerProfile?: LearnerAudienceProfile) => {
     if (!session?.user?.id) {
       setError("Vous devez être connecté.");
       return;
@@ -66,6 +67,7 @@ export function useMemoryArchitecture() {
         objective,
         density: m2Output.density,
         estimated_complexity: m2Output.estimated_complexity,
+        learner_profile: learnerProfile,
       };
 
       updateStep("ordering", "completed", `${m2Output.key_concepts.length} concepts ordonnés`);

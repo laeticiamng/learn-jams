@@ -31,6 +31,7 @@ import { useFormatDecision } from "@/hooks/useFormatDecision";
 import { useDynamicSheetGeneration } from "@/hooks/useDynamicSheetGeneration";
 import type { IngestInput } from "@/domain/cognitio/contracts";
 import type { AmbiguousZone, LearningObjective } from "@/domain/cognitio/types";
+import type { LearnerAudienceProfile } from "@/domain/cognitio/learner-profile.types";
 
 type Phase = "import" | "ingesting" | "analyzing" | "architecting" | "formatting" | "generating" | "result";
 
@@ -38,6 +39,7 @@ export default function Create() {
   const navigate = useNavigate();
   const [phase, setPhase] = useState<Phase>("import");
   const [objective, setObjective] = useState<LearningObjective>("discovery");
+  const [learnerProfile, setLearnerProfile] = useState<LearnerAudienceProfile | undefined>();
 
   const ingestion = useDocumentIngestion();
   const analysis = useCourseAnalysis();
@@ -47,6 +49,7 @@ export default function Create() {
 
   const handleImport = async (input: IngestInput) => {
     setObjective(input.objective);
+    setLearnerProfile(input.learner_profile);
     setPhase("ingesting");
 
     await ingestion.ingest(input);
@@ -65,7 +68,7 @@ export default function Create() {
     }
 
     setPhase("analyzing");
-    await analysis.analyze(ingestion.result, objective);
+    await analysis.analyze(ingestion.result, objective, learnerProfile);
 
     if (analysis.error || !analysis.result) {
       setPhase("result");
@@ -74,7 +77,7 @@ export default function Create() {
 
     // M3: Memory Architecture
     setPhase("architecting");
-    await memory.build(analysis.result, ingestion.result.document_id, objective);
+    await memory.build(analysis.result, ingestion.result.document_id, objective, learnerProfile);
 
     if (memory.error || !memory.result) {
       setPhase("result");
@@ -108,7 +111,8 @@ export default function Create() {
         ingestion.result.source_type,
         ingestion.result.confidence_level,
         ingestion.result.issues.map((i) => i.message),
-        objective
+        objective,
+        learnerProfile
       );
     }
 
@@ -238,6 +242,21 @@ export default function Create() {
                       : "Les résultats ci-dessous montrent l'analyse, l'architecture mémoire et le format choisi."}
                 </p>
               </div>
+
+              {/* Audience mismatch warning */}
+              {analysis.result?.audience_mismatch_risk != null && analysis.result.audience_mismatch_risk >= 0.3 && (
+                <div className="border border-orange-200 bg-orange-50 rounded-lg p-4">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="h-4 w-4 text-orange-600 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-orange-800">Écart de niveau détecté</p>
+                      <p className="text-xs text-orange-600">
+                        {analysis.result.audience_mismatch_message ?? "Le niveau du document ne correspond pas exactement au profil apprenant sélectionné. Le contenu a été adapté."}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Generated Dynamic Sheet */}
               {generation.result && (

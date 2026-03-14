@@ -8,6 +8,7 @@ import { useAuth } from "@/components/AuthProvider";
 import type { M1_Output, M2_Input, M2_Output } from "@/domain/cognitio/contracts";
 import type { PipelineStepStatus } from "@/domain/cognitio/types";
 import { analyzeAndPersist } from "@/services/cognitio/analysis.service";
+import type { LearnerAudienceProfile } from "@/domain/cognitio/learner-profile.types";
 
 export type AnalysisStepName = "understanding" | "concepts" | "traps" | "verification" | "saving";
 
@@ -39,7 +40,7 @@ export function useCourseAnalysis() {
     );
   }, []);
 
-  const analyze = useCallback(async (m1Output: M1_Output, objective: string = "discovery") => {
+  const analyze = useCallback(async (m1Output: M1_Output, objective: string = "discovery", learnerProfile?: LearnerAudienceProfile) => {
     setIsRunning(true);
     setError(null);
     setResult(null);
@@ -54,6 +55,7 @@ export function useCourseAnalysis() {
         source_type: m1Output.source_type,
         confidence_level: m1Output.confidence_level,
         user_objective: objective as M2_Input["user_objective"],
+        learner_profile: learnerProfile,
       };
 
       // Step 1: Understanding

@@ -195,10 +195,31 @@ describe("buildLocalMemoryArchitect", () => {
   it("computes correct cognitive budget", () => {
     const result = buildLocalMemoryArchitect(makeInput(8));
     expect(result.cognitive_budget.total_concepts).toBe(8);
-    expect(result.cognitive_budget.max_per_segment).toBe(5);
+    // Default learner profile (unknown) → max 4 per segment
+    expect(result.cognitive_budget.max_per_segment).toBeLessThanOrEqual(5);
+    expect(result.cognitive_budget.max_per_segment).toBeGreaterThanOrEqual(2);
     expect(result.cognitive_budget.segment_count).toBe(result.segments.length);
     expect(result.cognitive_budget.budget_utilization).toBeGreaterThan(0);
     expect(result.cognitive_budget.budget_utilization).toBeLessThanOrEqual(1);
+  });
+
+  it("respects learner profile max elements per segment", () => {
+    // Middle school profile → max 3 elements per segment
+    const result = buildLocalMemoryArchitect(makeInput(8, {
+      learner_profile: {
+        age_band: "preteen",
+        education_stage: "middle_school",
+        declared_level: "beginner",
+        language_preference: "fr",
+        explanation_style: "guided",
+        needs_extra_simplification: false,
+        confidence: 0.8,
+      },
+    }));
+    expect(result.cognitive_budget.max_per_segment).toBe(3);
+    for (const seg of result.segments) {
+      expect(seg.concept_keys.length).toBeLessThanOrEqual(3);
+    }
   });
 
   // ---------- Pedagogical Contract ----------

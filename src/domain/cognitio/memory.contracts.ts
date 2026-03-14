@@ -4,6 +4,7 @@
 
 import type { LearningObjective, ReasoningType, ChosenFormat } from "./types";
 import type { AnalyzedConcept, AnalyzedConfusionPair, AnalyzedTrap } from "./contracts";
+import type { LearnerAudienceProfile } from "./learner-profile.types";
 import type {
   M3_Segment,
   RepetitionPlanItem,
@@ -26,6 +27,7 @@ export interface M3_Input {
   density: "low" | "medium" | "high";
   estimated_complexity: number;       // 1-10
   total_duration_budget_sec?: number; // optional max duration
+  learner_profile?: LearnerAudienceProfile;
 }
 
 // ---------- M3 Output ----------

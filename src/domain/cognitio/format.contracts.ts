@@ -5,6 +5,7 @@
 import type { ChosenFormat, ReasoningType, LearningObjective, DetectedStructureType } from "./types";
 import type { M3_Output, SplitModule } from "./memory.contracts";
 import type { FormatOverride, FormatDecisionModule, CostLevel } from "./format.types";
+import type { LearnerAudienceProfile } from "./learner-profile.types";
 
 // ---------- M4 Input ----------
 
@@ -30,6 +31,7 @@ export interface M4_Input {
   // Context
   quality_score: number;              // 0-1
   objective: LearningObjective;
+  learner_profile?: LearnerAudienceProfile;
 }
 
 // ---------- M4 Output ----------

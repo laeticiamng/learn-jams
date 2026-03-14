@@ -27,6 +27,7 @@ import type {
   DetectedStructureType,
   ReasoningType,
 } from "./types";
+import type { LearnerAudienceProfile } from "./learner-profile.types";
 
 // ---------- Shared sub-types ----------
 
@@ -47,6 +48,7 @@ export interface M1_Input {
   content_type: ContentType | "paste";
   user_objective?: LearningObjective;
   user_language?: string;
+  learner_profile?: LearnerAudienceProfile;
   metadata?: Record<string, unknown>;
 }
 
@@ -60,6 +62,7 @@ export interface M1_Output {
   detected_structure: DetectedStructureType;
   issues: SourceIssue[];
   segments: SegmentOutput[];
+  learner_profile?: LearnerAudienceProfile;
 }
 
 export interface SourceIssue {
@@ -86,6 +89,7 @@ export type IngestInput = {
   content_type: ContentType;
   objective: LearningObjective;
   language?: string;
+  learner_profile?: LearnerAudienceProfile;
 };
 
 export type IngestOutput = M1_Output;
@@ -99,6 +103,7 @@ export interface M2_Input {
   user_objective?: LearningObjective;
   source_type: DetailedSourceType;
   confidence_level: number;
+  learner_profile?: LearnerAudienceProfile;
 }
 
 export interface M2_Output {
@@ -119,6 +124,11 @@ export interface M2_Output {
   total_concepts: number;
   critical_count: number;
   estimated_complexity: number; // 1-10
+  // Audience adaptation (M2 computed)
+  document_difficulty_level?: "easy" | "intermediate" | "advanced" | "expert";
+  estimated_audience_level?: string;
+  audience_mismatch_risk?: number; // 0-1
+  audience_mismatch_message?: string;
 }
 
 export interface AnalyzedConcept {
