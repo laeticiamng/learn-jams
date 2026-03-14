@@ -51,7 +51,7 @@ export default function Library() {
   // Handle checkout=success parameter
   useEffect(() => {
     if (searchParams.get("checkout") === "success") {
-      toast.success(t("library.checkout_success", "Bienvenue dans StudyBeats Pro ! 🎉"));
+      toast.success(t("library.checkout_success"));
       searchParams.delete("checkout");
       setSearchParams(searchParams, { replace: true });
     }
@@ -73,9 +73,9 @@ export default function Library() {
         body: { songId: song.id, lyrics: song.generated_lyrics || "", style: song.style, title: song.title, language: i18n.language },
       });
       if (error) throw error;
-      toast.success(t("library.retry_started", "Generation restarted"));
+      toast.success(t("library.retry_started"));
     } catch (err: unknown) {
-      toast.error((err as Error).message || "Retry failed");
+      toast.error((err as Error).message || t("common.error"));
     }
   }, [songs, user, i18n.language, t]);
 
@@ -86,19 +86,19 @@ export default function Library() {
       await supabase.from("favorites").delete().eq("song_id", deleteId).eq("user_id", user.id);
       const { error } = await supabase.from("songs").delete().eq("id", deleteId);
       if (error) throw error;
-      toast.success(t("library.deleted", "Chanson supprimée"));
+      toast.success(t("library.deleted"));
     } catch (err: unknown) {
-      toast.error((err as Error).message || "Delete failed");
+      toast.error((err as Error).message || t("common.error"));
     } finally {
       setDeleteId(null);
     }
   }, [deleteId, user, t]);
 
   const tabs: { key: FilterTab; label: string; icon: typeof ListMusic; count: number }[] = useMemo(() => [
-    { key: "all", label: t("library.tab_all", "All"), icon: ListMusic, count: songs.length },
-    { key: "favorites", label: t("library.tab_favorites", "Favorites"), icon: Heart, count: songs.filter(s => favorites.has(s.id)).length },
-    { key: "recent", label: t("library.tab_recent", "Recent"), icon: Clock, count: songs.filter(s => Date.now() - new Date(s.created_at).getTime() < 7 * 86400000).length },
-    { key: "generating", label: t("library.tab_generating", "In Progress"), icon: Loader2, count: songs.filter(s => s.status === "generating" || s.status === "pending").length },
+    { key: "all", label: t("library.tab_all"), icon: ListMusic, count: songs.length },
+    { key: "favorites", label: t("library.tab_favorites"), icon: Heart, count: songs.filter(s => favorites.has(s.id)).length },
+    { key: "recent", label: t("library.tab_recent"), icon: Clock, count: songs.filter(s => Date.now() - new Date(s.created_at).getTime() < 7 * 86400000).length },
+    { key: "generating", label: t("library.tab_generating"), icon: Loader2, count: songs.filter(s => s.status === "generating" || s.status === "pending").length },
   ], [songs, favorites, t]);
 
   const filtered = useMemo(() => {
@@ -246,18 +246,18 @@ export default function Library() {
             <div>
               <h3 className="font-display text-2xl font-semibold mb-2">
                 {activeTab === "favorites"
-                  ? t("library.no_favorites_title", "No favorites yet")
+                  ? t("library.no_favorites_title")
                   : activeTab === "generating"
-                  ? t("library.no_generating_title", "No songs in progress")
+                  ? t("library.no_generating_title")
                   : t("library.no_songs_title")}
               </h3>
               <p className="text-muted-foreground text-lg">
                 {activeTab === "favorites"
-                  ? t("library.no_favorites_text", "Heart a song to add it here")
+                  ? t("library.no_favorites_text")
                   : activeTab === "generating"
-                  ? t("library.no_generating_text", "Create a new song to get started")
+                  ? t("library.no_generating_text")
                   : search
-                  ? t("library.no_results_text", "Try a different search")
+                  ? t("library.no_results_text")
                   : t("library.no_songs_text")}
               </p>
             </div>
@@ -298,16 +298,16 @@ export default function Library() {
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent className="glass-card-elevated border-border/20">
           <AlertDialogHeader>
-            <AlertDialogTitle>{t("library.delete_title", "Supprimer cette chanson ?")}</AlertDialogTitle>
+            <AlertDialogTitle>{t("library.delete_title")}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t("library.delete_description", "Cette action est irréversible. La chanson et ses données seront définitivement supprimées.")}
+              {t("library.delete_description")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{t("common.cancel", "Annuler")}</AlertDialogCancel>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               <Trash2 className="w-4 h-4 mr-2" />
-              {t("library.delete_confirm", "Supprimer")}
+              {t("library.delete_confirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

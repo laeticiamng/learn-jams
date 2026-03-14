@@ -44,10 +44,12 @@ import { useProductTracking } from "@/hooks/useProductTracking";
 import { useSeedLibrary } from "@/hooks/useSeedLibrary";
 import { SeedLibraryGrid } from "@/components/product/SeedLibraryGrid";
 import { FeatureFlagGuard } from "@/components/product/FeatureFlagGuard";
+import { useTranslation } from "react-i18next";
 
 type Phase = "import" | "ingesting" | "analyzing" | "architecting" | "formatting" | "generating" | "result";
 
 export default function Create() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [phase, setPhase] = useState<Phase>("import");
@@ -223,13 +225,14 @@ export default function Create() {
     ...(["generating", "result"].includes(phase) ? storyGeneration.steps : []),
   ];
 
-  const phaseTitle = {
-    ingesting: "Import en cours",
-    analyzing: "Analyse pédagogique",
-    architecting: "Architecture mémoire",
-    formatting: "Sélection du format",
-    generating: "Génération de la fiche",
-  }[phase as string] ?? "Progression";
+  const PHASE_KEYS: Record<string, string> = {
+    ingesting: "create_page.phase_ingesting",
+    analyzing: "create_page.phase_analyzing",
+    architecting: "create_page.phase_architecting",
+    formatting: "create_page.phase_formatting",
+    generating: "create_page.phase_generating",
+  };
+  const phaseTitle = t(PHASE_KEYS[phase] ?? "create_page.phase_default");
 
   const hasBlocking = ingestion.result?.issues.some((i) => i.severity === "blocking") ?? false;
   const anyError = ingestion.error || analysis.error || memory.error || format.error || generation.error || storyGeneration.error || qa.error;
@@ -243,10 +246,10 @@ export default function Create() {
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
             <Brain className="h-6 w-6 text-primary" />
-            <h1 className="text-2xl font-bold">Importer & Analyser</h1>
+            <h1 className="text-2xl font-bold">{t("create_page.title")}</h1>
           </div>
           <p className="text-muted-foreground text-sm">
-            Importez votre cours, le moteur COGNITIO l'analyse et construit votre plan d'apprentissage.
+            {t("create_page.subtitle")}
           </p>
         </div>
 
@@ -297,12 +300,12 @@ export default function Create() {
                   <div className="flex items-start gap-3">
                     <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5" />
                     <div>
-                      <p className="text-sm font-medium text-red-800">Erreur</p>
+                      <p className="text-sm font-medium text-red-800">{t("create_page.error_label")}</p>
                       <p className="text-sm text-red-600">{anyError}</p>
                     </div>
                   </div>
                   <Button variant="outline" size="sm" className="mt-3" onClick={handleReset}>
-                    <RotateCcw className="h-4 w-4 mr-2" /> Recommencer
+                    <RotateCcw className="h-4 w-4 mr-2" /> {t("create_page.restart")}
                   </Button>
                 </div>
               )}
@@ -321,25 +324,25 @@ export default function Create() {
               <div className="border rounded-lg p-4 bg-muted/30">
                 <p className="text-sm font-medium mb-1">
                   {hasBlocking
-                    ? "Le document ne peut pas être analysé en l'état"
+                    ? t("create_page.result_blocking")
                     : storyGeneration.result
-                      ? "Histoire interactive générée avec succès"
+                      ? t("create_page.result_story_success")
                       : generation.result
-                        ? "Fiche dynamique générée avec succès"
+                        ? t("create_page.result_sheet_success")
                         : format.result
-                          ? "Architecture mémoire et format sélectionnés"
+                          ? t("create_page.result_format_selected")
                           : analysis.result
-                            ? "Voilà ce que le moteur a compris"
-                            : "Analyse terminée"}
+                            ? t("create_page.result_analysis_done")
+                            : t("create_page.result_complete")}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {hasBlocking
-                    ? "Des problèmes bloquants ont été détectés. Consultez les détails ci-dessous."
+                    ? t("create_page.result_blocking_detail")
                     : storyGeneration.result
-                      ? "Votre histoire interactive est prête. Naviguez entre les scènes ci-dessous."
+                      ? t("create_page.result_story_detail")
                       : generation.result
-                        ? "Votre fiche pédagogique est prête. Consultez-la ci-dessous ou accédez-y depuis votre bibliothèque."
-                        : "Les résultats ci-dessous montrent l'analyse, l'architecture mémoire et le format choisi."}
+                        ? t("create_page.result_sheet_detail")
+                        : t("create_page.result_default_detail")}
                 </p>
               </div>
 
@@ -349,9 +352,9 @@ export default function Create() {
                   <div className="flex items-start gap-2">
                     <AlertTriangle className="h-4 w-4 text-orange-600 mt-0.5" />
                     <div>
-                      <p className="text-sm font-medium text-orange-800">Écart de niveau détecté</p>
+                      <p className="text-sm font-medium text-orange-800">{t("create_page.audience_mismatch")}</p>
                       <p className="text-xs text-orange-600">
-                        {analysis.result.audience_mismatch_message ?? "Le niveau du document ne correspond pas exactement au profil apprenant sélectionné. Le contenu a été adapté."}
+                        {analysis.result.audience_mismatch_message ?? t("create_page.audience_mismatch_default")}
                       </p>
                     </div>
                   </div>
@@ -465,11 +468,9 @@ export default function Create() {
                   <div className="flex items-start gap-2">
                     <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5" />
                     <div>
-                      <p className="text-sm font-medium text-yellow-800">Concepts incertains</p>
+                      <p className="text-sm font-medium text-yellow-800">{t("create_page.uncertain_concepts")}</p>
                       <p className="text-xs text-yellow-600">
-                        {analysis.result.key_concepts.filter((c) => c.uncertain).length} concept(s) n'ont pas pu
-                        être pleinement tracé(s) dans le texte source. Ils sont marqués comme incertains et ne
-                        seront pas promus comme fiables.
+                        {t("create_page.uncertain_concepts_detail", { count: analysis.result.key_concepts.filter((c) => c.uncertain).length })}
                       </p>
                     </div>
                   </div>
@@ -480,7 +481,7 @@ export default function Create() {
               {analysis.result?.learning_objectives && analysis.result.learning_objectives.length > 0 && (
                 <div className="border rounded-lg p-4">
                   <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
-                    <FileText className="h-4 w-4" /> Objectifs d'apprentissage détectés
+                    <FileText className="h-4 w-4" /> {t("create_page.learning_objectives")}
                   </h3>
                   <ul className="space-y-1">
                     {analysis.result.learning_objectives.map((obj, i) => (
@@ -496,32 +497,31 @@ export default function Create() {
               {/* Actions */}
               <div className="flex flex-wrap gap-3">
                 <Button variant="outline" onClick={handleReset}>
-                  <RotateCcw className="h-4 w-4 mr-2" /> Importer un autre document
+                  <RotateCcw className="h-4 w-4 mr-2" /> {t("create_page.import_another")}
                 </Button>
 
                 {generation.result && (
                   <Button onClick={() => navigate(`/transformation/${generation.result!.transformation_id}`)}>
-                    <Eye className="h-4 w-4 mr-2" /> Voir la fiche
+                    <Eye className="h-4 w-4 mr-2" /> {t("create_page.view_sheet")}
                   </Button>
                 )}
 
                 {storyGeneration.result && (
                   <Button onClick={() => navigate(`/transformation/${storyGeneration.result!.transformation_id}`)}>
-                    <Eye className="h-4 w-4 mr-2" /> Voir l'histoire
+                    <Eye className="h-4 w-4 mr-2" /> {t("create_page.view_story")}
                   </Button>
                 )}
 
                 {!hasBlocking && format.result && !generation.result && !storyGeneration.result && (
                   <Button disabled className="opacity-50 cursor-not-allowed">
-                    <ArrowRight className="h-4 w-4 mr-2" /> Format non supporté pour la génération
+                    <ArrowRight className="h-4 w-4 mr-2" /> {t("create_page.format_unsupported")}
                   </Button>
                 )}
               </div>
 
               {/* Disclaimer */}
               <p className="text-xs text-muted-foreground text-center mt-8 max-w-lg mx-auto">
-                L'analyse est basée sur le contenu fourni. Le moteur ne prétend pas avoir compris ce qu'il ne comprend pas.
-                Les zones d'incertitude sont signalées explicitement.
+                {t("create_page.disclaimer")}
               </p>
             </motion.div>
           )}

@@ -12,6 +12,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/components/AuthProvider";
 import { getUserTransformations } from "@/services/cognitio/dynamic-sheet.service";
+import { useTranslation } from "react-i18next";
 
 interface TransformationSummary {
   id: string;
@@ -25,6 +26,7 @@ interface TransformationSummary {
 export default function CognitioLibrary() {
   const { session } = useAuth();
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<TransformationSummary[]>([]);
 
@@ -44,6 +46,12 @@ export default function CognitioLibrary() {
     load();
   }, [session]);
 
+  const STATUS_KEYS: Record<string, string> = {
+    draft: "cognitio_library.status_draft",
+    published: "cognitio_library.status_published",
+    archived: "cognitio_library.status_archived",
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -53,14 +61,14 @@ export default function CognitioLibrary() {
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
               <Brain className="h-6 w-6 text-primary" />
-              Fiches COGNITIO
+              {t("cognitio_library.title")}
             </h1>
             <p className="text-sm text-muted-foreground">
-              Vos fiches pédagogiques générées.
+              {t("cognitio_library.subtitle")}
             </p>
           </div>
           <Button onClick={() => navigate("/create")}>
-            <Plus className="h-4 w-4 mr-2" /> Nouvelle fiche
+            <Plus className="h-4 w-4 mr-2" /> {t("cognitio_library.new_sheet")}
           </Button>
         </div>
 
@@ -74,10 +82,10 @@ export default function CognitioLibrary() {
           <div className="text-center py-12 border rounded-lg bg-muted/10">
             <FileText className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
             <p className="text-sm text-muted-foreground mb-4">
-              Aucune fiche générée pour le moment.
+              {t("cognitio_library.empty")}
             </p>
             <Button variant="outline" onClick={() => navigate("/create")}>
-              <Plus className="h-4 w-4 mr-2" /> Créer votre première fiche
+              <Plus className="h-4 w-4 mr-2" /> {t("cognitio_library.create_first")}
             </Button>
           </div>
         )}
@@ -99,10 +107,10 @@ export default function CognitioLibrary() {
                     <FileText className="h-5 w-5 text-primary shrink-0" />
                     <div>
                       <p className="text-sm font-medium">
-                        {item.format === "fiche_dynamique" ? "Fiche dynamique" : item.format}
+                        {item.format === "fiche_dynamique" ? t("cognitio_library.format_fiche_dynamique") : item.format}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {new Date(item.created_at).toLocaleDateString("fr-FR", {
+                        {new Date(item.created_at).toLocaleDateString(i18n.language, {
                           day: "numeric",
                           month: "long",
                           year: "numeric",
@@ -114,7 +122,7 @@ export default function CognitioLibrary() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant={item.published_status === "published" ? "default" : "secondary"} className="text-xs">
-                      {item.published_status === "draft" ? "Brouillon" : item.published_status === "published" ? "Publiée" : "Archivée"}
+                      {t(STATUS_KEYS[item.published_status] ?? item.published_status)}
                     </Badge>
                     <span className="text-xs text-muted-foreground flex items-center gap-1">
                       <Clock className="h-3 w-3" />

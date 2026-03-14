@@ -143,8 +143,8 @@ export function SongCard({ song, isFavorite, onToggleFavorite, onRetry, onDelete
             </div>
             <p className="text-[10px] text-white/70 mt-1.5 font-medium">
               {genProgress < 50
-                ? t("create.analyzing", "Analyse en cours…")
-                : t("create.generating_music", "Génération de la musique…")}
+                ? t("create.analyzing")
+                : t("create.generating_music")}
             </p>
           </div>
         )}
@@ -168,14 +168,14 @@ export function SongCard({ song, isFavorite, onToggleFavorite, onRetry, onDelete
             <TooltipTrigger asChild>
               <span className="text-[10px] text-destructive/70 cursor-help truncate block">
                 {song.generation_error_code === "SENSITIVE_WORD_ERROR"
-                  ? t("library.error_sensitive", "Mot sensible détecté")
+                  ? t("library.error_sensitive")
                   : song.generation_error_code === "TIMEOUT"
-                  ? t("library.error_timeout", "Timeout")
+                  ? t("library.error_timeout")
                   : song.generation_error_code}
               </span>
             </TooltipTrigger>
             <TooltipContent className="max-w-[300px]">
-              <p className="text-xs">{song.generation_error || t("library.error_unknown", "Erreur inconnue")}</p>
+              <p className="text-xs">{song.generation_error || t("library.error_unknown")}</p>
             </TooltipContent>
           </Tooltip>
         )}
@@ -204,7 +204,7 @@ export function SongCard({ song, isFavorite, onToggleFavorite, onRetry, onDelete
                     <RotateCcw className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
                   </motion.button>
                 </TooltipTrigger>
-                <TooltipContent>{t("library.retry_tooltip", "Retry generation")}</TooltipContent>
+                <TooltipContent>{t("library.retry_tooltip")}</TooltipContent>
               </Tooltip>
             )}
             {song.status === "ready" && (
@@ -234,7 +234,7 @@ export function SongCard({ song, isFavorite, onToggleFavorite, onRetry, onDelete
                     <Trash2 className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
                   </motion.button>
                 </TooltipTrigger>
-                <TooltipContent>{t("library.delete_tooltip", "Supprimer")}</TooltipContent>
+                <TooltipContent>{t("library.delete_tooltip")}</TooltipContent>
               </Tooltip>
             )}
           </div>

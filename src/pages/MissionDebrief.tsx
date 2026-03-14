@@ -11,11 +11,13 @@ import FallbackNotice from "@/components/cognitio/FallbackNotice";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { usePageSEO } from "@/hooks/usePageSEO";
+import { useTranslation } from "react-i18next";
 import type { MissionRun, CompositeScore, DebriefData, FallbackMode, QualityBand } from "@/domain/cognitio/types";
 import { getQualityBand } from "@/domain/cognitio/validators";
 
 export default function MissionDebrief() {
-  usePageSEO({ title: "Débrief — COGNITIO", description: "Analyse de votre mission", noindex: true });
+  const { t } = useTranslation();
+  usePageSEO({ title: t("mission_debrief.seo_title"), description: t("mission_debrief.seo_description"), noindex: true });
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -73,9 +75,9 @@ export default function MissionDebrief() {
       <div className="min-h-screen bg-background">
         <Navbar />
         <div className="container mx-auto pt-28 pb-16 px-4 text-center">
-          <p className="text-muted-foreground">Débrief introuvable</p>
+          <p className="text-muted-foreground">{t("mission_debrief.not_found")}</p>
           <Button onClick={() => navigate("/library")} className="mt-4">
-            Retour à la bibliothèque
+            {t("mission_debrief.back_to_library")}
           </Button>
         </div>
         <Footer />
@@ -104,12 +106,12 @@ export default function MissionDebrief() {
             onClick={() => navigate("/library")}
             className="gap-2 mb-4 text-muted-foreground"
           >
-            <ArrowLeft className="w-4 h-4" /> Retour
+            <ArrowLeft className="w-4 h-4" /> {t("mission_debrief.back")}
           </Button>
 
-          <h1 className="font-display text-3xl font-bold mb-2">Débrief de mission</h1>
+          <h1 className="font-display text-3xl font-bold mb-2">{t("mission_debrief.title")}</h1>
           <p className="text-muted-foreground">
-            Analyse détaillée de votre performance
+            {t("mission_debrief.subtitle")}
           </p>
         </motion.div>
 
@@ -142,26 +144,26 @@ export default function MissionDebrief() {
             variant="outline"
             className="gap-2 rounded-xl"
           >
-            <RotateCcw className="w-4 h-4" /> Rejouer
+            <RotateCcw className="w-4 h-4" /> {t("mission_debrief.replay")}
           </Button>
           <Button
             onClick={() => navigate("/quiz")}
             className="gap-2 rounded-xl gradient-bg-premium"
           >
-            <ClipboardCheck className="w-4 h-4" /> Lancer un re-test
+            <ClipboardCheck className="w-4 h-4" /> {t("mission_debrief.launch_retest")}
           </Button>
           <Button
             onClick={() => navigate("/profile")}
             variant="ghost"
             className="gap-2 rounded-xl text-muted-foreground"
           >
-            <BookOpen className="w-4 h-4" /> Voir mon profil mémoire
+            <BookOpen className="w-4 h-4" /> {t("mission_debrief.view_memory_profile")}
           </Button>
         </div>
 
         {/* Disclaimer */}
         <p className="text-xs text-muted-foreground text-center border-t border-border/10 pt-6">
-          Usage strictement pédagogique. Les contenus générés ne constituent pas un avis médical, juridique ou professionnel.
+          {t("mission_debrief.disclaimer")}
         </p>
       </div>
       <Footer />

@@ -6,6 +6,7 @@ import { useState } from "react";
 import { ClipboardCheck, ChevronDown, ChevronRight, Check, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "react-i18next";
 import type { ContentBlock, FinalTestItem } from "@/domain/cognitio/generation.types";
 
 interface Props {
@@ -13,16 +14,17 @@ interface Props {
   block: ContentBlock;
 }
 
-const BLOOM_LABELS: Record<number, string> = {
-  1: "Mémoriser",
-  2: "Comprendre",
-  3: "Appliquer",
-  4: "Analyser",
-  5: "Évaluer",
-  6: "Créer",
+const BLOOM_KEYS: Record<number, string> = {
+  1: "cognitio.bloom_1",
+  2: "cognitio.bloom_2",
+  3: "cognitio.bloom_3",
+  4: "cognitio.bloom_4",
+  5: "cognitio.bloom_5",
+  6: "cognitio.bloom_6",
 };
 
 export function FinalTestBlock({ items, block }: Props) {
+  const { t } = useTranslation();
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [revealed, setRevealed] = useState<Set<string>>(new Set());
 
@@ -37,16 +39,16 @@ export function FinalTestBlock({ items, block }: Props) {
         {block.title}
       </h2>
       <p className="text-xs text-muted-foreground">
-        {items.length} question(s) — {new Set(items.map(q => q.bloom_level)).size} niveaux cognitifs
+        {t("cognitio.questions_count", { count: items.length, levels: new Set(items.map(q => q.bloom_level)).size })}
       </p>
 
       {items.map((item, idx) => (
         <div key={item.id} className="border rounded-lg p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium">Question {idx + 1}</span>
+            <span className="text-sm font-medium">{t("cognitio.question_label", { n: idx + 1 })}</span>
             <div className="flex items-center gap-2">
               <Badge variant="outline" className="text-[10px]">
-                {BLOOM_LABELS[item.bloom_level] ?? `Bloom ${item.bloom_level}`}
+                {t(BLOOM_KEYS[item.bloom_level] ?? `Bloom ${item.bloom_level}`)}
               </Badge>
               <Badge variant="secondary" className="text-[10px]">
                 {item.type}
@@ -83,14 +85,14 @@ export function FinalTestBlock({ items, block }: Props) {
               onClick={() => revealAnswer(item.id)}
               className="text-xs"
             >
-              <ChevronRight className="h-3 w-3 mr-1" /> Voir la réponse
+              <ChevronRight className="h-3 w-3 mr-1" /> {t("cognitio.show_answer")}
             </Button>
           ) : (
             <div className="bg-muted/30 rounded p-2 text-xs">
-              <p className="font-medium mb-1">Réponse attendue :</p>
+              <p className="font-medium mb-1">{t("cognitio.expected_answer")}</p>
               <p>{Array.isArray(item.expected_answer) ? item.expected_answer.join(", ") : item.expected_answer}</p>
               <p className="text-muted-foreground mt-1">
-                Concepts : {item.concepts_tested.join(", ")}
+                {t("cognitio.concepts_tested")} {item.concepts_tested.join(", ")}
               </p>
             </div>
           )}

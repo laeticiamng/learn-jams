@@ -8,6 +8,7 @@ import { BarChart3, Brain, Shield, AlertTriangle, Loader2, RefreshCw } from "luc
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { useTranslation } from "react-i18next";
 import {
   getFunnelMetrics,
   getPedagogicalMetrics,
@@ -33,6 +34,7 @@ function getSince(range: TimeRange): string {
 }
 
 export default function AdminDashboard() {
+  const { t } = useTranslation();
   const [range, setRange] = useState<TimeRange>("7d");
   const [loading, setLoading] = useState(true);
   const [funnel, setFunnel] = useState<FunnelMetrics | null>(null);
@@ -69,9 +71,9 @@ export default function AdminDashboard() {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
-              <BarChart3 className="w-6 h-6 text-primary" /> Tableau de bord interne
+              <BarChart3 className="w-6 h-6 text-primary" /> {t("admin.title")}
             </h1>
-            <p className="text-sm text-muted-foreground">Metriques produit, pedagogique et ops</p>
+            <p className="text-sm text-muted-foreground">{t("admin.subtitle")}</p>
           </div>
 
           <div className="flex items-center gap-2">
@@ -121,17 +123,17 @@ export default function AdminDashboard() {
             {funnel && (
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="border rounded-xl p-5 space-y-4">
                 <h2 className="text-sm font-semibold flex items-center gap-2">
-                  <BarChart3 className="w-4 h-4 text-primary" /> Funnel produit
+                  <BarChart3 className="w-4 h-4 text-primary" /> {t("admin.funnel_title")}
                 </h2>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <MetricCard label="Landing" value={funnel.landing_views} />
-                  <MetricCard label="Onboarding" value={funnel.onboarding_started} />
-                  <MetricCard label="Upload" value={funnel.upload_started} />
-                  <MetricCard label="Transformation" value={funnel.transformation_generated} />
-                  <MetricCard label="Test final" value={funnel.final_test_completed} />
-                  <MetricCard label="Debrief" value={funnel.debrief_viewed} />
-                  <MetricCard label="Review queue" value={funnel.review_queue_viewed} />
-                  <MetricCard label="Onboarding ok" value={funnel.onboarding_completed} />
+                  <MetricCard label={t("admin.funnel_landing")} value={funnel.landing_views} />
+                  <MetricCard label={t("admin.funnel_onboarding")} value={funnel.onboarding_started} />
+                  <MetricCard label={t("admin.funnel_upload")} value={funnel.upload_started} />
+                  <MetricCard label={t("admin.funnel_transformation")} value={funnel.transformation_generated} />
+                  <MetricCard label={t("admin.funnel_final_test")} value={funnel.final_test_completed} />
+                  <MetricCard label={t("admin.funnel_debrief")} value={funnel.debrief_viewed} />
+                  <MetricCard label={t("admin.funnel_review_queue")} value={funnel.review_queue_viewed} />
+                  <MetricCard label={t("admin.funnel_onboarding_ok")} value={funnel.onboarding_completed} />
                 </div>
               </motion.div>
             )}
@@ -145,25 +147,25 @@ export default function AdminDashboard() {
                 className="border rounded-xl p-5 space-y-4"
               >
                 <h2 className="text-sm font-semibold flex items-center gap-2">
-                  <Brain className="w-4 h-4 text-primary" /> Metriques pedagogiques
+                  <Brain className="w-4 h-4 text-primary" /> {t("admin.pedagogical_title")}
                 </h2>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <MetricCard label="Score brut moy." value={pedagogical.avg_raw_score !== null ? `${Math.round(pedagogical.avg_raw_score * 100)}%` : "—"} />
-                  <MetricCard label="Score composite moy." value={pedagogical.avg_composite_score !== null ? `${Math.round(pedagogical.avg_composite_score * 100)}%` : "—"} />
-                  <MetricCard label="Ecart calibration" value={pedagogical.avg_calibration_gap !== null ? `${Math.round(Math.abs(pedagogical.avg_calibration_gap) * 100)}%` : "—"} />
-                  <MetricCard label="Tests effectues" value={pedagogical.total_recall_tests} />
-                  <MetricCard label="Retention J+1" value={pedagogical.j1_completion_rate !== null ? `${Math.round(pedagogical.j1_completion_rate * 100)}%` : "—"} />
-                  <MetricCard label="Retention J+7" value={pedagogical.j7_completion_rate !== null ? `${Math.round(pedagogical.j7_completion_rate * 100)}%` : "—"} />
+                  <MetricCard label={t("admin.metric_avg_raw")} value={pedagogical.avg_raw_score !== null ? `${Math.round(pedagogical.avg_raw_score * 100)}%` : "—"} />
+                  <MetricCard label={t("admin.metric_avg_composite")} value={pedagogical.avg_composite_score !== null ? `${Math.round(pedagogical.avg_composite_score * 100)}%` : "—"} />
+                  <MetricCard label={t("admin.metric_calibration_gap")} value={pedagogical.avg_calibration_gap !== null ? `${Math.round(Math.abs(pedagogical.avg_calibration_gap) * 100)}%` : "—"} />
+                  <MetricCard label={t("admin.metric_tests_done")} value={pedagogical.total_recall_tests} />
+                  <MetricCard label={t("admin.metric_j1_retention")} value={pedagogical.j1_completion_rate !== null ? `${Math.round(pedagogical.j1_completion_rate * 100)}%` : "—"} />
+                  <MetricCard label={t("admin.metric_j7_retention")} value={pedagogical.j7_completion_rate !== null ? `${Math.round(pedagogical.j7_completion_rate * 100)}%` : "—"} />
                 </div>
 
                 {pedagogical.format_effectiveness.length > 0 && (
                   <div className="space-y-2 mt-4">
-                    <p className="text-xs font-medium text-muted-foreground">Efficacite par format</p>
+                    <p className="text-xs font-medium text-muted-foreground">{t("admin.format_effectiveness")}</p>
                     {pedagogical.format_effectiveness.map((f) => (
                       <div key={f.format} className="flex items-center justify-between text-xs">
                         <span className="font-medium">{f.format}</span>
                         <span className="text-muted-foreground">
-                          retention: {(f.avg_retention * 100).toFixed(0)}% ({f.count} utilisateur(s))
+                          {t("admin.retention_label", { value: (f.avg_retention * 100).toFixed(0), count: f.count })}
                         </span>
                       </div>
                     ))}
@@ -181,16 +183,16 @@ export default function AdminDashboard() {
                 className="border rounded-xl p-5 space-y-4"
               >
                 <h2 className="text-sm font-semibold flex items-center gap-2">
-                  <Shield className="w-4 h-4 text-primary" /> Qualite / Ops
+                  <Shield className="w-4 h-4 text-primary" /> {t("admin.ops_title")}
                 </h2>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <MetricCard label="QA pass" value={ops.qa_pass} color="text-green-600" />
-                  <MetricCard label="QA warn" value={ops.qa_warn} color="text-orange-600" />
-                  <MetricCard label="QA block" value={ops.qa_block} color="text-red-600" />
-                  <MetricCard label="Block rate" value={`${(ops.qa_block_rate * 100).toFixed(0)}%`} color={ops.qa_block_rate > 0.2 ? "text-red-600" : undefined} />
-                  <MetricCard label="Erreurs" value={ops.error_count} color={ops.error_count > 0 ? "text-red-600" : undefined} />
-                  <MetricCard label="Transformations" value={ops.total_transformations} />
-                  <MetricCard label="Seeds demarrees" value={ops.seed_transformations_started} />
+                  <MetricCard label={t("admin.ops_qa_pass")} value={ops.qa_pass} color="text-green-600" />
+                  <MetricCard label={t("admin.ops_qa_warn")} value={ops.qa_warn} color="text-orange-600" />
+                  <MetricCard label={t("admin.ops_qa_block")} value={ops.qa_block} color="text-red-600" />
+                  <MetricCard label={t("admin.ops_block_rate")} value={`${(ops.qa_block_rate * 100).toFixed(0)}%`} color={ops.qa_block_rate > 0.2 ? "text-red-600" : undefined} />
+                  <MetricCard label={t("admin.ops_errors")} value={ops.error_count} color={ops.error_count > 0 ? "text-red-600" : undefined} />
+                  <MetricCard label={t("admin.ops_transformations")} value={ops.total_transformations} />
+                  <MetricCard label={t("admin.ops_seeds_started")} value={ops.seed_transformations_started} />
                 </div>
               </motion.div>
             )}
