@@ -61,17 +61,17 @@ export default function Navbar() {
           {user ? (
             <>
               <Button variant="ghost" size="sm" onClick={() => navigate("/create")} className={navButtonClass("/create")}>
-                <Plus className="w-4 h-4" /> Importer
+                <Plus className="w-4 h-4" /> {t("nav.import", "Importer")}
               </Button>
               <Button variant="ghost" size="sm" onClick={() => navigate("/library")} className={navButtonClass("/library")}>
-                <Library className="w-4 h-4" /> Missions
+                <Library className="w-4 h-4" /> {t("nav.missions", "Missions")}
               </Button>
               <Button variant="ghost" size="sm" onClick={() => navigate("/quiz")} className={navButtonClass("/quiz")}>
-                <ClipboardCheck className="w-4 h-4" /> Révision
+                <ClipboardCheck className="w-4 h-4" /> {t("nav.review", "Révision")}
               </Button>
               <Button variant="ghost" size="sm" onClick={() => navigate("/profile")} className={navButtonClass("/profile")}
-                aria-label="Profil mémoire">
-                <User className="w-4 h-4" /> Profil
+                aria-label={t("nav.profile", "Profil")}>
+                <User className="w-4 h-4" /> {t("nav.profile", "Profil")}
               </Button>
               <NotificationBell />
               <div className="w-px h-5 bg-border/30 mx-1" />
@@ -120,16 +120,16 @@ export default function Navbar() {
                 {user ? (
                   <>
                     <Button variant="ghost" className="justify-start gap-3 rounded-xl h-12" onClick={() => go("/create")}>
-                      <Plus className="w-4 h-4" /> Importer un cours
+                      <Plus className="w-4 h-4" /> {t("nav.import_course", "Importer un cours")}
                     </Button>
                     <Button variant="ghost" className="justify-start gap-3 rounded-xl h-12" onClick={() => go("/library")}>
-                      <Library className="w-4 h-4" /> Mes missions
+                      <Library className="w-4 h-4" /> {t("nav.my_missions", "Mes missions")}
                     </Button>
                     <Button variant="ghost" className="justify-start gap-3 rounded-xl h-12" onClick={() => go("/quiz")}>
-                      <ClipboardCheck className="w-4 h-4" /> Révision
+                      <ClipboardCheck className="w-4 h-4" /> {t("nav.review", "Révision")}
                     </Button>
                     <Button variant="ghost" className="justify-start gap-3 rounded-xl h-12" onClick={() => go("/profile")}>
-                      <User className="w-4 h-4" /> Profil mémoire
+                      <User className="w-4 h-4" /> {t("nav.memory_profile", "Profil mémoire")}
                     </Button>
                     <div className="h-px bg-border/20 my-2" />
                     <Button variant="ghost" className="justify-start gap-3 rounded-xl h-12 text-muted-foreground" onClick={() => go("/pricing")}>

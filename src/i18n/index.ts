@@ -10,41 +10,31 @@ import ar from "./locales/ar.json";
 import zh from "./locales/zh.json";
 import hi from "./locales/hi.json";
 
-export const supportedLanguages = [
-  { code: "fr", label: "Français", flag: "🇫🇷" },
-  { code: "en", label: "English", flag: "🇬🇧" },
-  { code: "de", label: "Deutsch", flag: "🇩🇪" },
-  { code: "es", label: "Español", flag: "🇪🇸" },
-  { code: "ar", label: "العربية", flag: "🇸🇦", dir: "rtl" },
-  { code: "zh", label: "中文", flag: "🇨🇳" },
-  { code: "hi", label: "हिन्दी", flag: "🇮🇳" },
-] as const;
+import { LOCALE_REGISTRY } from "./localeRegistry";
+import { applyDocumentDirection } from "./direction";
+import { I18N_CONFIG } from "./config";
 
-export type LangCode = (typeof supportedLanguages)[number]["code"];
-
-const rtlLanguages = ["ar"];
-
-const updateDirection = (lang: string) => {
-  const dir = rtlLanguages.includes(lang) ? "rtl" : "ltr";
-  document.documentElement.setAttribute("dir", dir);
-  document.documentElement.setAttribute("lang", lang);
-};
+// Re-export for backwards compatibility
+export const supportedLanguages = LOCALE_REGISTRY;
+export type LangCode = (typeof LOCALE_REGISTRY)[number]["code"];
 
 i18n
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
-    resources: { fr: { translation: fr }, en: { translation: en }, de: { translation: de }, es: { translation: es }, ar: { translation: ar }, zh: { translation: zh }, hi: { translation: hi } },
-    fallbackLng: "fr",
-    supportedLngs: supportedLanguages.map((l) => l.code),
-    interpolation: { escapeValue: false },
-    detection: {
-      order: ["localStorage", "navigator"],
-      caches: ["localStorage"],
+    resources: {
+      fr: { translation: fr },
+      en: { translation: en },
+      de: { translation: de },
+      es: { translation: es },
+      ar: { translation: ar },
+      zh: { translation: zh },
+      hi: { translation: hi },
     },
+    ...I18N_CONFIG,
   });
 
-updateDirection(i18n.language || "fr");
-i18n.on("languageChanged", updateDirection);
+applyDocumentDirection(i18n.language || "fr");
+i18n.on("languageChanged", applyDocumentDirection);
 
 export default i18n;
