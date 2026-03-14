@@ -37,5 +37,5 @@ export function isMinorByBirthYear(birthYear: number, referenceYear = new Date()
 
 export function isWithinAllowedHours(profile: Pick<UserMinorProfile, "allowed_hours_start" | "allowed_hours_end">): boolean {
   const hour = new Date().getHours();
-  return hour >= profile.allowed_hours_start && hour < profile.allowed_hours_end;
+  return hour >= profile.allowed_hours_start && hour <= profile.allowed_hours_end;
 }

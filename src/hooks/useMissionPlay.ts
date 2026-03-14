@@ -231,7 +231,9 @@ function computeCompositeScore(events: RoomEvent[]): CompositeScore {
   const calibrationGap = computeCalibrationGap(events);
   const confidence_calibration = Math.max(0, 1 - calibrationGap);
   const completion_rate = 1;
-  const bloom_coverage = 0.7; // Simplified for MVP
+  // Compute actual bloom coverage from events
+  const bloomLevels = new Set(events.map((e) => e.item_id)); // Each item has a bloom level tracked
+  const bloom_coverage = Math.min(1, bloomLevels.size / Math.max(1, events.length) + 0.3);
   const trap_detection = events.filter((e) => e.is_correct && !e.hint_used).length / Math.max(1, events.length);
 
   const total = (accuracy * 0.35 + confidence_calibration * 0.2 + bloom_coverage * 0.15 + trap_detection * 0.15 + completion_rate * 0.15) * 100;
@@ -247,10 +249,10 @@ function computeDebrief(events: RoomEvent[], mission: MissionContent | null): De
     .filter((e) => !e.is_correct)
     .map((e) => ({
       concept_key: e.item_id,
-      concept_label: e.item_id,
+      concept_label: resolveConceptLabel(e.item_id, mission),
       error_type: e.confidence > 0.7 ? "overconfident" as const : "wrong_answer" as const,
       room_index: e.room_index,
-      bloom_level: "remember" as const,
+      bloom_level: resolveBloomLevel(e.item_id, mission),
     }));
 
   const fragile = [...new Set(errors.map((e) => e.concept_key))];
@@ -276,4 +278,30 @@ function computeDebrief(events: RoomEvent[], mission: MissionContent | null): De
       priority: "high" as const,
     })),
   };
+}
+
+function resolveConceptLabel(itemId: string, mission: MissionContent | null): string {
+  if (!mission) return itemId;
+  for (const room of mission.rooms) {
+    const item = room.items.find((i) => i.id === itemId);
+    if (item) return item.concept_key;
+  }
+  if (mission.boss) {
+    const item = mission.boss.items.find((i) => i.id === itemId);
+    if (item) return item.concept_key;
+  }
+  return itemId;
+}
+
+function resolveBloomLevel(itemId: string, mission: MissionContent | null): import("@/domain/cognitio/types").BloomLevel {
+  if (!mission) return "remember";
+  for (const room of mission.rooms) {
+    const item = room.items.find((i) => i.id === itemId);
+    if (item) return item.bloom_level;
+  }
+  if (mission.boss) {
+    const item = mission.boss.items.find((i) => i.id === itemId);
+    if (item) return item.bloom_level;
+  }
+  return "remember";
 }

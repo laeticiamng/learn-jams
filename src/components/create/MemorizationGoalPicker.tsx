@@ -12,10 +12,10 @@ interface MemorizationGoalPickerProps {
 }
 
 const GOALS: { id: MemorizationGoal; label: string; icon: typeof Brain; desc: string }[] = [
-  { id: "discover", label: "Comprendre", icon: Sparkles, desc: "Premiere decouverte du sujet" },
-  { id: "revise", label: "Reviser", icon: BookOpen, desc: "Consolider les connaissances" },
-  { id: "exam", label: "Examen", icon: ClipboardCheck, desc: "Preparer un controle ou examen" },
-  { id: "max_retention", label: "Retention max", icon: Brain, desc: "Memoriser durablement par l'ecoute" },
+  { id: "discover", label: "Comprendre", icon: Sparkles, desc: "Première découverte du sujet" },
+  { id: "revise", label: "Réviser", icon: BookOpen, desc: "Consolider les connaissances" },
+  { id: "exam", label: "Examen", icon: ClipboardCheck, desc: "Préparer un contrôle ou examen" },
+  { id: "max_retention", label: "Rétention max", icon: Brain, desc: "Mémoriser durablement par l'écoute" },
 ];
 
 export default function MemorizationGoalPicker({ selected, onSelect }: MemorizationGoalPickerProps) {

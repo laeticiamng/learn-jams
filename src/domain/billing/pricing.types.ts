@@ -168,7 +168,7 @@ export interface UnitCostSnapshot {
 // ---------- Consumption Result ----------
 
 export type ConsumeResult =
-  | { allowed: true; source: "quota" | "credit"; remaining: number }
+  | { allowed: true; source: "quota" | "flex" | "credit"; remaining: number }
   | { allowed: false; reason: "quota_exceeded" | "feature_disabled"; upgrade_to?: PlanKey };
 
 // ---------- Margin Targets ----------

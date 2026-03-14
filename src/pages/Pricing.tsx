@@ -7,7 +7,7 @@ import { useState, useEffect, useRef } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { Check, X, Sparkles, Crown } from "lucide-react";
+import { Check, X, Sparkles, Crown, Gamepad2, Zap, RefreshCw } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { toast } from "sonner";
 import { usePageSEO } from "@/hooks/usePageSEO";
@@ -316,6 +316,83 @@ export default function Pricing() {
             </table>
           </motion.div>
 
+          {/* Escape Game Premium Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1, duration: 0.6, ease }}
+            className="mt-16 max-w-4xl mx-auto"
+          >
+            <div className="glass-card-elevated p-8 sm:p-10 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/5 pointer-events-none" />
+              <div className="relative z-10">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
+                    <Gamepad2 className="w-5 h-5 text-primary" />
+                  </div>
+                  <h2 className="font-display text-2xl font-bold tracking-tight">
+                    {t("pricing.escape_game_title", { defaultValue: "Escape Games Pédagogiques" })}
+                  </h2>
+                </div>
+                <p className="text-muted-foreground mb-6 leading-relaxed">
+                  {t("pricing.escape_game_desc", { defaultValue: "De vraies missions interactives avec briefing, univers narratif, énigmes variées, indices progressifs et débrief complet. Pas un simple quiz déguisé." })}
+                </p>
+                <div className="grid sm:grid-cols-3 gap-4">
+                  {[
+                    { icon: "🎯", label: t("pricing.eg_feature_1", { defaultValue: "Briefing & objectif clair" }) },
+                    { icon: "🧩", label: t("pricing.eg_feature_2", { defaultValue: "10+ mécaniques de puzzles" }) },
+                    { icon: "📊", label: t("pricing.eg_feature_3", { defaultValue: "Débrief & rétention active" }) },
+                  ].map((f, i) => (
+                    <div key={i} className="flex items-center gap-2.5 text-sm">
+                      <span>{f.icon}</span>
+                      <span>{f.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Adaptive Credits Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.15, duration: 0.6, ease }}
+            className="mt-10 max-w-4xl mx-auto"
+          >
+            <div className="glass-card-elevated p-8 sm:p-10">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-secondary/15 flex items-center justify-center">
+                  <RefreshCw className="w-5 h-5 text-secondary" />
+                </div>
+                <h2 className="font-display text-2xl font-bold tracking-tight">
+                  {t("pricing.adaptive_title", { defaultValue: "Crédits adaptatifs" })}
+                </h2>
+              </div>
+              <p className="text-muted-foreground mb-6 leading-relaxed">
+                {t("pricing.adaptive_desc", { defaultValue: "Ton plan s'adapte à ta manière d'apprendre. Tu utilises surtout la musique ? Une partie de ta valeur mensuelle peut être réallouée. La vidéo IA reste plafonnée pour préserver un usage équitable." })}
+              </p>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="flex items-start gap-3">
+                  <Zap className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium">{t("pricing.adaptive_point_1", { defaultValue: "Réallocation automatique" })}</p>
+                    <p className="text-xs text-muted-foreground">{t("pricing.adaptive_point_1_desc", { defaultValue: "Les quotas non utilisés se convertissent vers tes formats préférés" })}</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Zap className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium">{t("pricing.adaptive_point_2", { defaultValue: "Marge protégée" })}</p>
+                    <p className="text-xs text-muted-foreground">{t("pricing.adaptive_point_2_desc", { defaultValue: "La vidéo IA premium reste plafonnée, la conversion respecte les coûts réels" })}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
           {/* FAQ */}
           <motion.div
             initial={{ opacity: 0, y: 24 }}
@@ -328,7 +405,7 @@ export default function Pricing() {
               {t("pricing.faq_title")}
             </h2>
             <Accordion type="single" collapsible className="space-y-3">
-              {[1, 2, 3, 4].map(n => (
+              {[1, 2, 3, 4, 5, 6].map(n => (
                 <AccordionItem key={n} value={`faq-${n}`} className="glass-card-elevated px-6 border-none">
                   <AccordionTrigger className="text-left font-medium hover:no-underline py-5 text-[15px]">
                     {t(`pricing.faq${n}_q`)}

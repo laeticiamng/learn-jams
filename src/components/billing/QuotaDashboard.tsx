@@ -10,6 +10,7 @@ interface QuotaEntry {
   used: number;
   limit: number;
   credits: number;
+  flex?: number;
 }
 
 interface QuotaDashboardProps {
@@ -44,7 +45,7 @@ export function QuotaDashboard({ usage, loading }: QuotaDashboardProps) {
   if (!usage) return null;
 
   const entries = VISIBLE_FEATURES
-    .filter((f) => usage[f] && (usage[f].limit !== 0 || usage[f].credits > 0))
+    .filter((f) => usage[f] && (usage[f].limit !== 0 || usage[f].credits > 0 || (usage[f].flex ?? 0) > 0))
     .map((f) => ({ feature: f, ...usage[f] }));
 
   if (entries.length === 0) return null;
@@ -52,7 +53,7 @@ export function QuotaDashboard({ usage, loading }: QuotaDashboardProps) {
   return (
     <div className="space-y-4">
       <h3 className="font-display text-lg font-bold">{t("quota.title")}</h3>
-      {entries.map(({ feature, used, limit, credits }) => {
+      {entries.map(({ feature, used, limit, credits, flex }) => {
         const isUnlimited = limit === -1;
         const total = isUnlimited ? used : limit;
         const pct = isUnlimited ? 0 : total > 0 ? Math.min((used / total) * 100, 100) : 0;
@@ -66,6 +67,9 @@ export function QuotaDashboard({ usage, loading }: QuotaDashboardProps) {
                 {isUnlimited
                   ? t("quota.unlimited_used", { used })
                   : `${used} / ${limit}`}
+                {(flex ?? 0) > 0 && (
+                  <span className="ml-1 text-secondary">+{flex} flex</span>
+                )}
                 {credits > 0 && (
                   <span className="ml-1 text-primary">+{credits}</span>
                 )}
