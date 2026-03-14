@@ -29,6 +29,8 @@ import { useCourseAnalysis } from "@/hooks/useCourseAnalysis";
 import { useMemoryArchitecture } from "@/hooks/useMemoryArchitecture";
 import { useFormatDecision } from "@/hooks/useFormatDecision";
 import { useDynamicSheetGeneration } from "@/hooks/useDynamicSheetGeneration";
+import { useAnimatedStoryGeneration } from "@/hooks/useAnimatedStoryGeneration";
+import { StoryboardLayout } from "@/components/cognitio/StoryboardLayout";
 import type { IngestInput } from "@/domain/cognitio/contracts";
 import type { AmbiguousZone, LearningObjective } from "@/domain/cognitio/types";
 import type { LearnerAudienceProfile } from "@/domain/cognitio/learner-profile.types";
@@ -46,6 +48,7 @@ export default function Create() {
   const memory = useMemoryArchitecture();
   const format = useFormatDecision();
   const generation = useDynamicSheetGeneration();
+  const storyGeneration = useAnimatedStoryGeneration();
 
   const handleImport = async (input: IngestInput) => {
     setObjective(input.objective);
@@ -99,10 +102,24 @@ export default function Create() {
       return;
     }
 
-    // M5: Generate dynamic sheet if format is fiche_dynamique
+    // M5: Generate based on chosen format
     if (format.result.chosen_format === "fiche_dynamique") {
       setPhase("generating");
       await generation.generate(
+        analysis.result,
+        memory.result,
+        format.result,
+        ingestion.result.document_id,
+        ingestion.result.word_count,
+        ingestion.result.source_type,
+        ingestion.result.confidence_level,
+        ingestion.result.issues.map((i) => i.message),
+        objective,
+        learnerProfile
+      );
+    } else if (format.result.chosen_format === "histoire_animee") {
+      setPhase("generating");
+      await storyGeneration.generate(
         analysis.result,
         memory.result,
         format.result,
@@ -130,6 +147,7 @@ export default function Create() {
     memory.reset();
     format.reset();
     generation.reset();
+    storyGeneration.reset();
     setPhase("import");
   };
 
@@ -139,6 +157,7 @@ export default function Create() {
     ...(["architecting", "formatting", "generating", "result"].includes(phase) ? memory.steps : []),
     ...(["formatting", "generating", "result"].includes(phase) ? format.steps : []),
     ...(["generating", "result"].includes(phase) ? generation.steps : []),
+    ...(["generating", "result"].includes(phase) ? storyGeneration.steps : []),
   ];
 
   const phaseTitle = {
@@ -150,7 +169,7 @@ export default function Create() {
   }[phase as string] ?? "Progression";
 
   const hasBlocking = ingestion.result?.issues.some((i) => i.severity === "blocking") ?? false;
-  const anyError = ingestion.error || analysis.error || memory.error || format.error || generation.error;
+  const anyError = ingestion.error || analysis.error || memory.error || format.error || generation.error || storyGeneration.error;
 
   return (
     <div className="min-h-screen bg-background">
@@ -226,20 +245,24 @@ export default function Create() {
                 <p className="text-sm font-medium mb-1">
                   {hasBlocking
                     ? "Le document ne peut pas être analysé en l'état"
-                    : generation.result
-                      ? "Fiche dynamique générée avec succès"
-                      : format.result
-                        ? "Architecture mémoire et format sélectionnés"
-                        : analysis.result
-                          ? "Voilà ce que le moteur a compris"
-                          : "Analyse terminée"}
+                    : storyGeneration.result
+                      ? "Histoire interactive générée avec succès"
+                      : generation.result
+                        ? "Fiche dynamique générée avec succès"
+                        : format.result
+                          ? "Architecture mémoire et format sélectionnés"
+                          : analysis.result
+                            ? "Voilà ce que le moteur a compris"
+                            : "Analyse terminée"}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {hasBlocking
                     ? "Des problèmes bloquants ont été détectés. Consultez les détails ci-dessous."
-                    : generation.result
-                      ? "Votre fiche pédagogique est prête. Consultez-la ci-dessous ou accédez-y depuis votre bibliothèque."
-                      : "Les résultats ci-dessous montrent l'analyse, l'architecture mémoire et le format choisi."}
+                    : storyGeneration.result
+                      ? "Votre histoire interactive est prête. Naviguez entre les scènes ci-dessous."
+                      : generation.result
+                        ? "Votre fiche pédagogique est prête. Consultez-la ci-dessous ou accédez-y depuis votre bibliothèque."
+                        : "Les résultats ci-dessous montrent l'analyse, l'architecture mémoire et le format choisi."}
                 </p>
               </div>
 
@@ -255,6 +278,13 @@ export default function Create() {
                       </p>
                     </div>
                   </div>
+                </div>
+              )}
+
+              {/* Generated Animated Story */}
+              {storyGeneration.result && (
+                <div className="border rounded-lg p-4">
+                  <StoryboardLayout output={storyGeneration.result} />
                 </div>
               )}
 
@@ -389,7 +419,13 @@ export default function Create() {
                   </Button>
                 )}
 
-                {!hasBlocking && format.result && !generation.result && (
+                {storyGeneration.result && (
+                  <Button onClick={() => navigate(`/transformation/${storyGeneration.result!.transformation_id}`)}>
+                    <Eye className="h-4 w-4 mr-2" /> Voir l'histoire
+                  </Button>
+                )}
+
+                {!hasBlocking && format.result && !generation.result && !storyGeneration.result && (
                   <Button disabled className="opacity-50 cursor-not-allowed">
                     <ArrowRight className="h-4 w-4 mr-2" /> Format non supporté pour la génération
                   </Button>
