@@ -812,6 +812,18 @@
     "view_sheet": "View sheet",
     "view_story": "View story",
     "format_unsupported": "Format not supported for generation",
+    "error_source_ingestion": "Document import",
+    "error_source_analysis": "Pedagogical analysis",
+    "error_source_memory": "Memory architecture",
+    "error_source_format": "Format selection",
+    "error_source_generation": "Generation",
+    "error_source_qa": "Quality control",
+    "error_source_default": "Processing",
+    "error_phase_hint": "Step involved: {{phase}}",
+    "retry": "Retry",
+    "paste_text_instead": "Paste text directly",
+    "import_other_doc": "Import another document",
+    "show_debug": "Technical details",
     "disclaimer": "The analysis is based on the provided content. The engine does not claim to have understood what it did not. Uncertainty zones are explicitly flagged."
   },
   "mission_debrief": {

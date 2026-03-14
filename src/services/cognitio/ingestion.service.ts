@@ -25,13 +25,17 @@ export async function uploadDocument(
       .upload(fileName, input.file);
 
     if (uploadError) {
+      console.warn("[COGNITIO] source-raw upload failed, trying course-documents:", uploadError.message);
       // Fallback to course-documents bucket
       const { error: uploadError2 } = await supabase.storage
         .from("course-documents")
         .upload(fileName, input.file);
 
       if (uploadError2) {
-        throw createCognitioError("STORAGE_WRITE_FAILED", uploadError2.message);
+        throw createCognitioError(
+          "STORAGE_WRITE_FAILED",
+          `storage:upload failed on both buckets. source-raw: ${uploadError.message} | course-documents: ${uploadError2.message}`
+        );
       }
     }
     storagePath = fileName;
@@ -50,7 +54,7 @@ export async function uploadDocument(
     .select("id")
     .single();
 
-  if (error) throw createCognitioError("DB_WRITE_FAILED", error.message);
+  if (error) throw createCognitioError("DB_WRITE_FAILED", `db:source_documents insert failed: ${error.message} (code: ${error.code}, hint: ${error.hint ?? "none"})`);
 
   return { document_id: data.id, storage_path: storagePath };
 }
@@ -75,20 +79,49 @@ export async function runIngestion(
     });
 
     if (error) throw error;
+
+    // Edge function may return an error payload with 200 status
+    if (data?.error) {
+      throw new Error(`edge_fn:${data.error_source ?? "unknown"}: ${data.error}`);
+    }
+
     return data as M1_Output;
   } catch (err) {
-    console.warn("Edge function failed, falling back to local ingestion:", err);
+    console.warn("[COGNITIO] Edge function failed, falling back to local ingestion:", err);
     return runLocalIngestion(documentId, input);
   }
 }
 
 // ---------- Local Ingestion Fallback ----------
 
+async function readFileAsText(file: File): Promise<string> {
+  try {
+    return await file.text();
+  } catch (err) {
+    console.error("Failed to read file as text:", err);
+    return "";
+  }
+}
+
 export async function runLocalIngestion(
   documentId: string,
   input: IngestInput
 ): Promise<M1_Output> {
-  const text = input.pasted_text || "";
+  let text = input.pasted_text || "";
+
+  // If no pasted text but a file was uploaded, extract text from the file
+  if (!text && input.file) {
+    console.info("[COGNITIO] Local fallback: reading uploaded file as text");
+    text = await readFileAsText(input.file);
+    if (!text) {
+      console.warn("[COGNITIO] Local fallback: file read returned empty content for", input.file.name, input.file.type);
+    }
+  }
+
+  if (!text && !input.file && !input.pasted_text) {
+    console.warn("[COGNITIO] Local fallback: no text and no file available");
+  }
+
   const result = extractAndAnalyzeText(text);
 
   try {

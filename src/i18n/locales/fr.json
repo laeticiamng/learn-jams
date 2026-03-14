@@ -953,6 +953,18 @@
     "view_sheet": "Voir la fiche",
     "view_story": "Voir l'histoire",
     "format_unsupported": "Format non supporté pour la génération",
+    "error_source_ingestion": "Import du document",
+    "error_source_analysis": "Analyse pédagogique",
+    "error_source_memory": "Architecture mémoire",
+    "error_source_format": "Sélection du format",
+    "error_source_generation": "Génération",
+    "error_source_qa": "Contrôle qualité",
+    "error_source_default": "Traitement",
+    "error_phase_hint": "Étape concernée : {{phase}}",
+    "retry": "Réessayer",
+    "paste_text_instead": "Coller le texte directement",
+    "import_other_doc": "Importer un autre document",
+    "show_debug": "Détails techniques",
     "disclaimer": "L'analyse est basée sur le contenu fourni. Le moteur ne prétend pas avoir compris ce qu'il ne comprend pas. Les zones d'incertitude sont signalées explicitement."
   },
   "mission_debrief": {

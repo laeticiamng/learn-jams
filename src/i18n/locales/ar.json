@@ -791,6 +791,18 @@
     "view_sheet": "عرض الورقة",
     "view_story": "عرض القصة",
     "format_unsupported": "التنسيق غير مدعوم للإنشاء",
+    "error_source_ingestion": "استيراد الوثيقة",
+    "error_source_analysis": "التحليل التربوي",
+    "error_source_memory": "هندسة الذاكرة",
+    "error_source_format": "اختيار التنسيق",
+    "error_source_generation": "الإنشاء",
+    "error_source_qa": "مراقبة الجودة",
+    "error_source_default": "المعالجة",
+    "error_phase_hint": "الخطوة المعنية: {{phase}}",
+    "retry": "إعادة المحاولة",
+    "paste_text_instead": "لصق النص مباشرة",
+    "import_other_doc": "استيراد وثيقة أخرى",
+    "show_debug": "التفاصيل التقنية",
     "disclaimer": "يعتمد التحليل على المحتوى المقدم. المحرك لا يدّعي فهم ما لم يفهمه. مناطق عدم اليقين مُعلَّمة بوضوح."
   },
   "mission_debrief": {

@@ -791,6 +791,18 @@
     "view_sheet": "शीट देखें",
     "view_story": "कहानी देखें",
     "format_unsupported": "जनरेशन के लिए प्रारूप समर्थित नहीं",
+    "error_source_ingestion": "दस्तावेज़ आयात",
+    "error_source_analysis": "शैक्षिक विश्लेषण",
+    "error_source_memory": "स्मृति वास्तुकला",
+    "error_source_format": "प्रारूप चयन",
+    "error_source_generation": "सामग्री निर्माण",
+    "error_source_qa": "गुणवत्ता नियंत्रण",
+    "error_source_default": "प्रसंस्करण",
+    "error_phase_hint": "संबंधित चरण: {{phase}}",
+    "retry": "पुनः प्रयास करें",
+    "paste_text_instead": "टेक्स्ट सीधे पेस्ट करें",
+    "import_other_doc": "एक और दस्तावेज़ आयात करें",
+    "show_debug": "तकनीकी विवरण",
     "disclaimer": "विश्लेषण प्रदान की गई सामग्री पर आधारित है। इंजन उसे समझने का दावा नहीं करता जो उसने नहीं समझा। अनिश्चितता क्षेत्र स्पष्ट रूप से चिह्नित हैं।"
   },
   "mission_debrief": {
