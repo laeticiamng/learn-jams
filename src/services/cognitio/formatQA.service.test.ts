@@ -7,7 +7,13 @@ import type { SongQAInput, SheetQAInput, StoryQAInput, VideoQAInput } from "@/do
 describe("runSongQA", () => {
   const wellFormedSong: SongQAInput = {
     title: "The Water Cycle Song",
-    lyrics: "Water falls from the sky as rain\nIt flows into rivers and streams again\nThe sun heats the surface and water evaporates\nRising up into clouds where it condensates\nAnd the cycle begins once more\nEvaporation, condensation, precipitation, and more",
+    lyrics:
+      "Water falls from the sky as rain\n" +
+      "It flows into rivers and streams again\n" +
+      "The sun heats the surface and water evaporates\n" +
+      "Rising up into clouds where it condensates\n" +
+      "And the cycle begins once more\n" +
+      "Evaporation, condensation, precipitation, and more\n",
     style: "folk acoustic",
     duration_sec: 120,
     concept_keys: ["evaporation", "condensation"],
@@ -16,7 +22,7 @@ describe("runSongQA", () => {
     language: "en",
   };
 
-  it("passes a well-formed song", () => {
+  it("passes a well-formed song (title, lyrics 100+ chars, style, objectives, duration 120s)", () => {
     const report = runSongQA("gen_001", wellFormedSong);
     expect(report.publish_blocked).toBe(false);
     expect(report.format).toBe("music");
@@ -25,7 +31,7 @@ describe("runSongQA", () => {
     expect(report.blocking_violations).toHaveLength(0);
   });
 
-  it("blocks a song with an empty title", () => {
+  it("blocks a song with empty title", () => {
     const song: SongQAInput = { ...wellFormedSong, title: "" };
     const report = runSongQA("gen_002", song);
     expect(report.publish_blocked).toBe(true);
@@ -44,8 +50,8 @@ describe("runSongQA", () => {
     expect(lyricsCheck?.passed).toBe(false);
   });
 
-  it("blocks a song with very short lyrics (under 50 chars)", () => {
-    const song: SongQAInput = { ...wellFormedSong, lyrics: "Short." };
+  it("blocks a song with lyrics shorter than 50 characters", () => {
+    const song: SongQAInput = { ...wellFormedSong, lyrics: "Short lyrics." };
     const report = runSongQA("gen_004", song);
     expect(report.publish_blocked).toBe(true);
     expect(report.blocking_violations.some(c => c.check_id === "song_lyrics_present")).toBe(true);
@@ -60,10 +66,9 @@ describe("runSongQA", () => {
     expect(objCheck?.passed).toBe(false);
   });
 
-  it("warns on short duration (under 30s)", () => {
+  it("warns on short duration under 30s but does not block", () => {
     const song: SongQAInput = { ...wellFormedSong, duration_sec: 10 };
     const report = runSongQA("gen_006", song);
-    // Should not block publication (only a warning)
     expect(report.publish_blocked).toBe(false);
     const durationWarning = report.warnings.find(c => c.check_id === "song_duration");
     expect(durationWarning).toBeDefined();
@@ -71,8 +76,8 @@ describe("runSongQA", () => {
     expect(durationWarning?.severity).toBe("warning");
   });
 
-  it("warns on high repetition in lyrics", () => {
-    // All identical lines produces 100% repetition ratio — uniqueLines.size / lines.length < 0.4
+  it("warns on high repetition in lyrics but does not block", () => {
+    // All identical lines: repetition ratio = 1/N < 0.4
     const repetitiveLyrics = Array(20).fill("Water falls down").join("\n");
     const song: SongQAInput = { ...wellFormedSong, lyrics: repetitiveLyrics };
     const report = runSongQA("gen_007", song);
@@ -87,9 +92,12 @@ describe("runSongQA", () => {
 // ===== runSheetQA =====
 
 describe("runSheetQA", () => {
+  const richContent =
+    "This section contains detailed educational content about the topic at hand, covering all major points and explaining concepts clearly for students.";
+
   const makeSection = (title: string, conceptKeys: string[] = [], hasVisuals = false) => ({
     title,
-    content: "This section contains detailed educational content about the topic at hand, covering all major points and explaining concepts clearly for students.",
+    content: richContent,
     has_visuals: hasVisuals,
     concept_keys: conceptKeys,
   });
@@ -109,7 +117,7 @@ describe("runSheetQA", () => {
     language: "en",
   };
 
-  it("passes a well-formed sheet with title, 3 sections with content, concepts, summary, key points, and exercises", () => {
+  it("passes a well-formed sheet (title, 3 sections with content, concepts covered, summary, key points, exercises)", () => {
     const report = runSheetQA("gen_010", wellFormedSheet);
     expect(report.publish_blocked).toBe(false);
     expect(report.format).toBe("dynamic_sheet");
@@ -117,7 +125,7 @@ describe("runSheetQA", () => {
     expect(report.overall_score).toBeGreaterThan(0);
   });
 
-  it("blocks a sheet with no sections (empty array)", () => {
+  it("blocks a sheet with no sections", () => {
     const sheet: SheetQAInput = { ...wellFormedSheet, sections: [] };
     const report = runSheetQA("gen_011", sheet);
     expect(report.publish_blocked).toBe(true);
@@ -152,7 +160,7 @@ describe("runSheetQA", () => {
     expect(contentCheck?.passed).toBe(false);
   });
 
-  it("warns when summary is missing", () => {
+  it("warns when summary is missing but does not block", () => {
     const sheet: SheetQAInput = { ...wellFormedSheet, has_summary: false };
     const report = runSheetQA("gen_014", sheet);
     expect(report.publish_blocked).toBe(false);
@@ -162,7 +170,7 @@ describe("runSheetQA", () => {
     expect(summaryWarning?.severity).toBe("warning");
   });
 
-  it("warns when exercises are missing", () => {
+  it("warns when exercises are missing but does not block", () => {
     const sheet: SheetQAInput = { ...wellFormedSheet, has_exercises: false };
     const report = runSheetQA("gen_015", sheet);
     expect(report.publish_blocked).toBe(false);
@@ -176,10 +184,15 @@ describe("runSheetQA", () => {
 // ===== runStoryQA =====
 
 describe("runStoryQA", () => {
-  const makeScene = (index: number, conceptKeys: string[] = [], visualDescription = "A vivid scene showing the main character exploring the forest.") => ({
+  const makeScene = (
+    index: number,
+    conceptKeys: string[] = [],
+    visualDescription = "A vivid scene showing the main character exploring the enchanted forest.",
+  ) => ({
     scene_index: index,
     title: `Scene ${index + 1}`,
-    narration: "The character walked through the forest, noticing the light filtering through the leaves above them.",
+    narration:
+      "The character walked through the forest, noticing the light filtering through the leaves above them.",
     visual_description: visualDescription,
     concept_keys: conceptKeys,
     interaction_type: index === 1 ? "tap_to_continue" : undefined,
@@ -193,14 +206,15 @@ describe("runStoryQA", () => {
       makeScene(2, ["food_chain"]),
       makeScene(3, ["habitat"]),
     ],
-    narrative_arc: "A young explorer discovers a magical forest and learns about the ecosystem, encountering each concept as part of their journey.",
+    narrative_arc:
+      "A young explorer discovers a magical forest and learns about the ecosystem, encountering each concept as part of their journey.",
     concept_keys: ["ecosystem", "biodiversity", "food_chain", "habitat"],
     learning_objectives: ["Understand core ecological relationships"],
     estimated_duration_sec: 240,
     language: "en",
   };
 
-  it("passes a well-formed story with title, 4 scenes, narrative arc, sequential indices, and objectives", () => {
+  it("passes a well-formed story (title, 4 scenes, narrative arc, sequential indices, objectives)", () => {
     const report = runStoryQA("gen_020", wellFormedStory);
     expect(report.publish_blocked).toBe(false);
     expect(report.format).toBe("animated_story");
@@ -236,19 +250,19 @@ describe("runStoryQA", () => {
     expect(arcCheck?.passed).toBe(false);
   });
 
-  it("blocks a story with a narrative arc that is too short (under 20 chars)", () => {
+  it("blocks a story with a narrative arc shorter than 20 characters", () => {
     const story: StoryQAInput = { ...wellFormedStory, narrative_arc: "Short arc." };
     const report = runStoryQA("gen_024", story);
     expect(report.publish_blocked).toBe(true);
     expect(report.blocking_violations.some(c => c.check_id === "story_arc")).toBe(true);
   });
 
-  it("blocks a story with non-sequential scene indices", () => {
+  it("blocks a story with non-sequential scene indices (skipped index)", () => {
     const story: StoryQAInput = {
       ...wellFormedStory,
       scenes: [
         makeScene(0, ["ecosystem"]),
-        makeScene(2, ["biodiversity"]), // skipped index 1
+        makeScene(2, ["biodiversity"]), // index 1 skipped
         makeScene(3, ["food_chain"]),
         makeScene(4, ["habitat"]),
       ],
@@ -260,7 +274,7 @@ describe("runStoryQA", () => {
     expect(progressionCheck?.passed).toBe(false);
   });
 
-  it("warns when visual descriptions are missing or too short", () => {
+  it("warns when visual descriptions are missing or too short but does not block", () => {
     const story: StoryQAInput = {
       ...wellFormedStory,
       scenes: [
@@ -285,14 +299,16 @@ describe("runVideoQA", () => {
   const makeVideoScene = (index: number, durationSec: number, conceptKeys: string[] = []) => ({
     scene_index: index,
     duration_sec: durationSec,
-    script_text: "In this scene we explore the concept through a vivid animated sequence showing the process in detail.",
+    script_text:
+      "In this scene we explore the concept through a vivid animated sequence showing the process in detail.",
     visual_type: "animation" as const,
     concept_keys: conceptKeys,
   });
 
   const wellFormedVideo: VideoQAInput = {
     title: "How Volcanoes Work",
-    script: "This educational video walks students through the formation of volcanoes, starting from tectonic plate movement and ending with a dramatic eruption sequence. Each scene builds on the previous to create a cohesive learning journey.",
+    script:
+      "This educational video walks students through the formation of volcanoes, starting from tectonic plate movement and ending with a dramatic eruption sequence. Each scene builds on the previous to create a cohesive learning journey.",
     scenes: [
       makeVideoScene(0, 40, ["tectonics"]),
       makeVideoScene(1, 40, ["magma"]),
@@ -305,7 +321,7 @@ describe("runVideoQA", () => {
     language: "en",
   };
 
-  it("passes a well-formed video with title, script 200+ chars, 3 scenes, 120s duration, subtitles, and voiceover", () => {
+  it("passes a well-formed video (title, script 200 chars, 3 scenes, duration 120s, subtitles, voiceover)", () => {
     const report = runVideoQA("gen_030", wellFormedVideo);
     expect(report.publish_blocked).toBe(false);
     expect(report.format).toBe("video");
@@ -323,7 +339,7 @@ describe("runVideoQA", () => {
     expect(scriptCheck?.passed).toBe(false);
   });
 
-  it("blocks a video with a script under 100 chars", () => {
+  it("blocks a video with a script under 100 characters", () => {
     const video: VideoQAInput = { ...wellFormedVideo, script: "Too short." };
     const report = runVideoQA("gen_032", video);
     expect(report.publish_blocked).toBe(true);
@@ -349,7 +365,7 @@ describe("runVideoQA", () => {
     expect(report.blocking_violations.some(c => c.check_id === "video_scenes")).toBe(true);
   });
 
-  it("warns when subtitles are missing", () => {
+  it("warns when subtitles are missing but does not block", () => {
     const video: VideoQAInput = { ...wellFormedVideo, has_subtitles: false };
     const report = runVideoQA("gen_035", video);
     expect(report.publish_blocked).toBe(false);
@@ -359,7 +375,7 @@ describe("runVideoQA", () => {
     expect(subtitlesWarning?.severity).toBe("warning");
   });
 
-  it("warns on duration inconsistency between scenes and total", () => {
+  it("warns on duration inconsistency between scenes and total (>5s diff) but does not block", () => {
     // Scenes sum to 90s but total declared as 120s — difference of 30s exceeds allowed ±5s
     const video: VideoQAInput = {
       ...wellFormedVideo,
