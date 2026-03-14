@@ -57,32 +57,32 @@ describe("getLegacyMapping", () => {
     expect(mapping).toBeNull();
   });
 
-  it("maps legacy_basic to the core target plan", () => {
+  it("maps legacy_basic to the correct target plan (core)", () => {
     const mapping = getLegacyMapping("legacy_basic");
     expect(mapping?.target_plan_key).toBe("core");
   });
 
-  it("maps legacy_standard to the plus target plan", () => {
+  it("maps legacy_standard to the correct target plan (plus)", () => {
     const mapping = getLegacyMapping("legacy_standard");
     expect(mapping?.target_plan_key).toBe("plus");
   });
 
-  it("maps legacy_premium to the premium_family target plan", () => {
+  it("maps legacy_premium to the correct target plan (premium_family)", () => {
     const mapping = getLegacyMapping("legacy_premium");
     expect(mapping?.target_plan_key).toBe("premium_family");
   });
 
-  it("maps legacy_family to the family_plus target plan", () => {
+  it("maps legacy_family to the correct target plan (family_plus)", () => {
     const mapping = getLegacyMapping("legacy_family");
     expect(mapping?.target_plan_key).toBe("family_plus");
   });
 
-  it("maps legacy_student to the core target plan", () => {
+  it("maps legacy_student to the correct target plan (core)", () => {
     const mapping = getLegacyMapping("legacy_student");
     expect(mapping?.target_plan_key).toBe("core");
   });
 
-  it("maps legacy_trial_pro to the free target plan", () => {
+  it("maps legacy_trial_pro to the correct target plan (free)", () => {
     const mapping = getLegacyMapping("legacy_trial_pro");
     expect(mapping?.target_plan_key).toBe("free");
   });
@@ -96,13 +96,13 @@ describe("computeMigrationRules", () => {
     expect(rules).toEqual([]);
   });
 
-  it("computes compensation credits when the new quota is lower than the legacy quota (finite reduction)", () => {
-    // legacy_trial_pro → free; free.music_generation = 2, legacy had 10 → diff of 8
+  it("computes compensation when quotas decrease (finite reduction)", () => {
+    // legacy_trial_pro → free; free.music_generation = 2, legacy had 10 → reduction of 8
     const rules = computeMigrationRules("legacy_trial_pro", { music_generation: 10 });
     const musicRule = rules.find(r => r.feature_key === "music_generation");
     expect(musicRule).toBeDefined();
     expect(musicRule?.compensation_credits).toBeGreaterThan(0);
-    // Compensation should be the difference: 10 - 2 = 8
+    // Compensation = legacy (10) - new (2) = 8
     expect(musicRule?.compensation_credits).toBe(8);
   });
 
@@ -123,17 +123,7 @@ describe("computeMigrationRules", () => {
     expect(musicRule?.compensation_credits).toBe(0);
   });
 
-  it("grants no compensation when quotas stay the same", () => {
-    // legacy_basic → core; core.dynamic_sheet_generation = -1, legacy also had -1 (both unlimited)
-    const rules = computeMigrationRules("legacy_basic", { dynamic_sheet_generation: -1 });
-    const sheetRule = rules.find(r => r.feature_key === "dynamic_sheet_generation");
-    expect(sheetRule).toBeDefined();
-    // Both unlimited — compensation is 0 from computation, but static rule may override with 10
-    // The static rule for legacy_basic grants 10 credits for dynamic_sheet_generation
-    expect(sheetRule?.compensation_credits).toBeGreaterThanOrEqual(0);
-  });
-
-  it("grants no compensation when the new quota is also unlimited", () => {
+  it("grants no compensation when quotas stay the same (both unlimited)", () => {
     // legacy_standard → plus; plus.animated_story_generation = -1, legacy also had -1
     const rules = computeMigrationRules("legacy_standard", { animated_story_generation: -1 });
     const storyRule = rules.find(r => r.feature_key === "animated_story_generation");
@@ -141,21 +131,19 @@ describe("computeMigrationRules", () => {
     expect(storyRule?.compensation_credits).toBe(0);
   });
 
-  it("skips features not present in the legacy quotas object", () => {
-    // Only pass guardian_sms — other features should not appear in the output
-    const rules = computeMigrationRules("legacy_standard", { guardian_sms: 5 });
-    // Only guardian_sms should be present in rules (no other features passed)
-    expect(rules.every(r => r.feature_key === "guardian_sms")).toBe(true);
-  });
-
-  it("prefers the higher compensation between static and computed rules", () => {
+  it("prefers higher compensation between static and computed rules for legacy_basic", () => {
     // legacy_basic has a static rule for dynamic_sheet_generation with 10 credits
-    // If computed is lower, static value (10) should win
+    // computed gives 0 (both unlimited); static gives 10 → result must be 10
     const rules = computeMigrationRules("legacy_basic", { dynamic_sheet_generation: -1 });
     const sheetRule = rules.find(r => r.feature_key === "dynamic_sheet_generation");
     expect(sheetRule).toBeDefined();
-    // Static rule grants 10; computed grants 0 (both unlimited) → result is 10
     expect(sheetRule?.compensation_credits).toBe(10);
+  });
+
+  it("skips features not present in the legacy quotas object", () => {
+    // Only pass guardian_sms — other features should not appear in rules
+    const rules = computeMigrationRules("legacy_standard", { guardian_sms: 5 });
+    expect(rules.every(r => r.feature_key === "guardian_sms")).toBe(true);
   });
 });
 
@@ -178,7 +166,7 @@ describe("simulateMigration", () => {
     expect(result.summary.length).toBeGreaterThan(0);
   });
 
-  it("summary includes the source and target plan names", () => {
+  it("summary includes both source and target plan names", () => {
     const result = simulateMigration("legacy_standard", { music_generation: 10 });
     expect(result.summary).toContain("legacy_standard");
     expect(result.summary).toContain("plus");
@@ -191,26 +179,25 @@ describe("simulateMigration", () => {
   });
 
   it("calculates total compensation across all features", () => {
-    // legacy_trial_pro → free; pass a quota that will be reduced
+    // legacy_trial_pro → free; music: 20 - 2 = 18, escape: 5 - 0 = 5 → total = 23
     const result = simulateMigration("legacy_trial_pro", {
-      music_generation: 20,     // free has 2 → reduction of 18
-      escape_game_generation: 5, // free has 0 → reduction of 5
+      music_generation: 20,
+      escape_game_generation: 5,
     });
     expect(result.totalCompensation).toBeGreaterThan(0);
-    // music: 20 - 2 = 18, escape: 5 - 0 = 5 → total = 23
     expect(result.totalCompensation).toBe(23);
   });
 
-  it("returns zero compensation when all quotas increase or stay equal", () => {
-    // legacy_student → core; pass quotas lower than what core provides (so no downgrade)
+  it("returns zero total compensation when all quotas increase or stay equal", () => {
+    // legacy_student → core; both features increase in core vs legacy quotas
     const result = simulateMigration("legacy_student", {
-      music_generation: 5,            // core has 25 → increase, no compensation
-      escape_game_generation: 2,       // core has 10 → increase, no compensation
+      music_generation: 5,        // core has 25 → increase, no compensation
+      escape_game_generation: 2,  // core has 10 → increase, no compensation
     });
     expect(result.totalCompensation).toBe(0);
   });
 
-  it("returns a rules array from simulateMigration", () => {
+  it("returns a rules array", () => {
     const result = simulateMigration("legacy_premium", { music_generation: 10 });
     expect(Array.isArray(result.rules)).toBe(true);
   });
@@ -239,28 +226,27 @@ describe("executeMigration", () => {
     expect(audit.target_plan_key).toBe("premium_family");
   });
 
-  it("audit entry has a non-empty id", () => {
+  it("audit entry has a non-empty generated id", () => {
     const audit = executeMigration("user_123", "legacy_basic", {});
     expect(typeof audit.id).toBe("string");
     expect(audit.id.length).toBeGreaterThan(0);
   });
 
-  it("audit entry has a migrated_at ISO timestamp", () => {
+  it("audit entry has a valid migrated_at ISO timestamp", () => {
     const audit = executeMigration("user_123", "legacy_basic", {});
     expect(() => new Date(audit.migrated_at)).not.toThrow();
     expect(new Date(audit.migrated_at).toString()).not.toBe("Invalid Date");
   });
 
   it("sets compensation_granted to true when rules produce credits", () => {
-    // legacy_trial_pro → free; music_generation 20 → 2, compensation expected
+    // legacy_trial_pro → free; music 20 → 2, compensation expected
     const audit = executeMigration("user_comp", "legacy_trial_pro", { music_generation: 20 });
     expect(audit.compensation_granted).toBe(true);
   });
 
   it("sets compensation_granted to false when no credits are awarded", () => {
-    // legacy_student → core with quotas that only increase
+    // legacy_student → core with quotas that only increase → no compensation
     const audit = executeMigration("user_nocomp", "legacy_student", { music_generation: 5 });
-    // music 5 → 25 is an increase, no compensation, and legacy_student has no static rules
     expect(audit.compensation_granted).toBe(false);
   });
 });
@@ -268,7 +254,7 @@ describe("executeMigration", () => {
 // ===== rollbackMigration =====
 
 describe("rollbackMigration", () => {
-  it("changes the status of a completed migration to 'rolled_back'", () => {
+  it("changes status to 'rolled_back' for a completed migration", () => {
     const audit = executeMigration("user_rollback", "legacy_basic", {});
     expect(audit.status).toBe("completed");
 
@@ -276,7 +262,7 @@ describe("rollbackMigration", () => {
     expect(rolledBack.status).toBe("rolled_back");
   });
 
-  it("rolled-back entry retains the original user_id and legacy_plan_id", () => {
+  it("rolled-back entry retains original user_id and legacy_plan_id", () => {
     const audit = executeMigration("user_rollback_2", "legacy_family", {});
     const rolledBack = rollbackMigration(audit.id);
     expect(rolledBack.user_id).toBe("user_rollback_2");
@@ -311,10 +297,8 @@ describe("getMigrationStats", () => {
     expect(stats.rolled_back).toBeGreaterThanOrEqual(0);
   });
 
-  it("total is at least the sum of completed, pending, failed, and rolled_back", () => {
+  it("total is at least as large as each individual status count", () => {
     const stats = getMigrationStats();
-    const sum = stats.completed + stats.pending + stats.failed + stats.rolled_back;
-    // total >= sum because the mock base may include unaccounted entries
     expect(stats.total).toBeGreaterThanOrEqual(stats.completed);
     expect(stats.total).toBeGreaterThanOrEqual(stats.pending);
     expect(stats.total).toBeGreaterThanOrEqual(stats.failed);
