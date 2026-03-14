@@ -13,6 +13,19 @@ export const FEATURE_FLAG_KEYS = [
   "ff_experiments_enabled",
   "ff_admin_dashboards_enabled",
   "ff_extended_disclaimers_enabled",
+  // Provider & infrastructure flags
+  "ff_openai_video_enabled",
+  "ff_openai_image_enabled",
+  "ff_openai_tts_enabled",
+  "ff_suno_music_enabled",
+  "ff_resend_enabled",
+  "ff_twilio_enabled",
+  "ff_stripe_enabled",
+  "ff_posthog_enabled",
+  "ff_sentry_enabled",
+  "ff_internal_ffmpeg_render_enabled",
+  "ff_provider_failover_enabled",
+  "ff_video_kernel_enabled",
 ] as const;
 
 export type FeatureFlagKey = (typeof FEATURE_FLAG_KEYS)[number];
@@ -50,4 +63,17 @@ export const DEFAULT_FLAGS: ResolvedFlags = {
   ff_experiments_enabled: false,
   ff_admin_dashboards_enabled: false,
   ff_extended_disclaimers_enabled: true,
+  // Provider & infrastructure defaults
+  ff_openai_video_enabled: false,
+  ff_openai_image_enabled: true,
+  ff_openai_tts_enabled: true,
+  ff_suno_music_enabled: true,
+  ff_resend_enabled: true,
+  ff_twilio_enabled: false,
+  ff_stripe_enabled: true,
+  ff_posthog_enabled: false,
+  ff_sentry_enabled: true,
+  ff_internal_ffmpeg_render_enabled: true,
+  ff_provider_failover_enabled: true,
+  ff_video_kernel_enabled: false,
 };
