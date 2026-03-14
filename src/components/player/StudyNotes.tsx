@@ -1,11 +1,12 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { BookOpen, ChevronDown, Brain, Zap, Target, CheckCircle2 } from "lucide-react";
+import { BookOpen, ChevronDown, Brain, Zap, Target, CheckCircle2, Users, AlertTriangle } from "lucide-react";
 import { TFunction } from "i18next";
 
 interface StudyNotesProps {
   metadata: string;
   t: TFunction;
+  sanitizerReport?: { replacedCount: number; replacedWords: string[] } | null;
 }
 
 interface ParsedSections {
@@ -13,15 +14,16 @@ interface ParsedSections {
   punchlines: string[];
   anchors: string[];
   coverage: string[];
+  audienceFit: string[];
 }
 
 function parseMetadata(raw: string): ParsedSections {
-  const sections: ParsedSections = { notions: [], punchlines: [], anchors: [], coverage: [] };
-  
-  // Split by section headers A) B) C) D)
-  const sectionRegex = /^[A-D]\)\s*.+$/gm;
+  const sections: ParsedSections = { notions: [], punchlines: [], anchors: [], coverage: [], audienceFit: [] };
+
+  // Split by section headers A) B) C) D) E)
+  const sectionRegex = /^[A-E]\)\s*.+$/gm;
   const matches = [...raw.matchAll(sectionRegex)];
-  
+
   if (matches.length === 0) {
     // Fallback: return everything as notions
     sections.notions = raw.split("\n").filter(l => l.trim());
@@ -33,12 +35,13 @@ function parseMetadata(raw: string): ParsedSections {
     const end = i + 1 < matches.length ? matches[i + 1].index! : raw.length;
     const content = raw.slice(start, end).trim();
     const lines = content.split("\n").map(l => l.trim()).filter(Boolean);
-    
+
     const header = matches[i][0].toUpperCase();
     if (header.startsWith("A)")) sections.notions = lines;
     else if (header.startsWith("B)")) sections.punchlines = lines;
     else if (header.startsWith("C)")) sections.anchors = lines;
     else if (header.startsWith("D)")) sections.coverage = lines;
+    else if (header.startsWith("E)")) sections.audienceFit = lines;
   }
 
   return sections;
@@ -49,11 +52,12 @@ const tabs = [
   { key: "punchlines" as const, icon: Zap, labelKey: "player.tab_punchlines", fallback: "Punchlines" },
   { key: "anchors" as const, icon: Target, labelKey: "player.tab_anchors", fallback: "Exam Anchors" },
   { key: "coverage" as const, icon: CheckCircle2, labelKey: "player.tab_coverage", fallback: "Coverage" },
+  { key: "audienceFit" as const, icon: Users, labelKey: "player.tab_audience", fallback: "Audience" },
 ];
 
 const ease = [0.25, 0.46, 0.45, 0.94] as [number, number, number, number];
 
-export function StudyNotes({ metadata, t }: StudyNotesProps) {
+export function StudyNotes({ metadata, t, sanitizerReport }: StudyNotesProps) {
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<keyof ParsedSections>("notions");
   const parsed = useMemo(() => parseMetadata(metadata), [metadata]);
@@ -96,6 +100,18 @@ export function StudyNotes({ metadata, t }: StudyNotesProps) {
             className="overflow-hidden"
           >
             <div className="glass-card-elevated mt-2 rounded-2xl overflow-hidden">
+              {/* Sanitizer notice */}
+              {sanitizerReport && sanitizerReport.replacedCount > 0 && (
+                <div className="flex items-start gap-2.5 px-6 py-3 bg-amber-500/5 border-b border-amber-500/10">
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-500 mt-0.5 shrink-0" />
+                  <p className="text-[11px] text-amber-700">
+                    {sanitizerReport.replacedCount} terme(s) adapte(s) pour la generation audio :
+                    {" "}<span className="font-mono text-[10px]">{sanitizerReport.replacedWords.join(", ")}</span>.
+                    Les paroles pedagogiques ci-dessous restent intactes.
+                  </p>
+                </div>
+              )}
+
               {/* Tab bar */}
               <div className="flex border-b border-border/15 overflow-x-auto scrollbar-none">
                 {availableTabs.map((tab) => {
@@ -137,7 +153,7 @@ export function StudyNotes({ metadata, t }: StudyNotesProps) {
                 >
                   {activeContent.map((line, i) => {
                     const trimmed = line.replace(/^[-•]\s*/, "");
-                    
+
                     // Section headers like [Verse 1]:
                     if (/^\[.+\]:/.test(trimmed)) {
                       const [header, ...rest] = trimmed.split(":");
@@ -152,9 +168,9 @@ export function StudyNotes({ metadata, t }: StudyNotesProps) {
                         </div>
                       );
                     }
-                    
+
                     // Sub-headers (bold or indented labels)
-                    if (/^(Exact formulations|Critical distinctions|Keywords)/i.test(trimmed)) {
+                    if (/^(Exact formulations|Critical distinctions|Keywords|Target level|Vocabulary register|Density|Simplifications|Technical terms)/i.test(trimmed)) {
                       return (
                         <p key={i} className="font-semibold text-sm text-foreground mt-4 first:mt-0">
                           {trimmed.replace(/[*]/g, "")}
@@ -189,6 +205,16 @@ export function StudyNotes({ metadata, t }: StudyNotesProps) {
                         <blockquote key={i} className="border-l-2 border-primary/30 pl-4 py-1 my-2">
                           <span className="text-foreground/85 text-sm italic leading-relaxed">{trimmed}</span>
                         </blockquote>
+                      );
+                    }
+
+                    // Audience fit items
+                    if (activeTab === "audienceFit") {
+                      return (
+                        <div key={i} className="flex items-start gap-2.5 py-1.5">
+                          <Users className="w-3.5 h-3.5 text-primary/50 mt-0.5 shrink-0" />
+                          <span className="text-foreground/85 text-sm leading-relaxed">{trimmed}</span>
+                        </div>
                       );
                     }
 

@@ -14,7 +14,7 @@ import { StudyNotes } from "@/components/player/StudyNotes";
 import { AudioVisualizer } from "@/components/player/AudioVisualizer";
 import { usePageSEO } from "@/hooks/usePageSEO";
 
-interface Song { id: string; title: string; style: string; original_text: string; generated_lyrics: string | null; audio_url: string | null; duration: number | null; status: string; subject: string | null; lyrics_metadata: string | null; }
+interface Song { id: string; title: string; style: string; original_text: string; generated_lyrics: string | null; audio_url: string | null; duration: number | null; status: string; subject: string | null; lyrics_metadata: string | null; canonical_lyrics: string | null; sanitizer_report_json: Record<string, unknown> | null; }
 
 const ease = [0.25, 0.46, 0.45, 0.94] as [number, number, number, number];
 
@@ -115,7 +115,8 @@ export default function Player() {
   };
 
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, "0")}`;
-  const lyricsLines = song?.generated_lyrics?.split("\n").filter(Boolean) || [];
+  // Prefer canonical_lyrics over generated_lyrics (canonical preserves exact pedagogical terms)
+  const lyricsLines = (song?.canonical_lyrics ?? song?.generated_lyrics)?.split("\n").filter(Boolean) || [];
 
   if (loading) return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -350,7 +351,13 @@ export default function Player() {
         )}
 
         {/* Study Notes */}
-        {song.lyrics_metadata && <StudyNotes metadata={song.lyrics_metadata} t={t} />}
+        {song.lyrics_metadata && (
+          <StudyNotes
+            metadata={song.lyrics_metadata}
+            t={t}
+            sanitizerReport={song.sanitizer_report_json as { replacedCount: number; replacedWords: string[] } | null}
+          />
+        )}
 
         {/* Quiz CTA */}
         {song.generated_lyrics && (
