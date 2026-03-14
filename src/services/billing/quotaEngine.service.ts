@@ -5,6 +5,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { FeatureKey, PlanKey, ConsumeResult } from "@/domain/billing/pricing.types";
 import { getPlanQuota, isFeatureEnabled, suggestUpgrade } from "./planResolver.service";
+import { checkFlexCredit, consumeFlexCredit } from "./adaptiveCredits.service";
 
 // ---------- Check if user can consume ----------
 
@@ -34,6 +35,13 @@ export async function checkQuota(
     return { allowed: true, source: "quota", remaining: remaining - amount };
   }
 
+  // Check adaptive / flex credits (based on unused quotas from other formats)
+  const allUsage = await getAllCurrentUsage(userId);
+  const flexCheck = checkFlexCredit(plan, feature, allUsage, amount);
+  if (flexCheck.available) {
+    return { allowed: true, source: "flex", remaining: flexCheck.flexRemaining - amount };
+  }
+
   // Check top-up credits
   const credits = await getCreditBalance(userId, feature);
   if (credits >= amount) {
@@ -56,6 +64,9 @@ export async function consumeQuota(
 
   if (check.source === "quota") {
     await incrementUsage(userId, feature, amount);
+  } else if (check.source === "flex") {
+    const allUsage = await getAllCurrentUsage(userId);
+    await consumeFlexCredit(userId, plan, feature, allUsage, amount);
   } else {
     await decrementCredits(userId, feature, amount);
   }
@@ -115,6 +126,24 @@ async function incrementUsage(userId: string, feature: FeatureKey, amount: numbe
   }
 }
 
+// ---------- Get all current usage (for flex credit calculation) ----------
+
+async function getAllCurrentUsage(userId: string): Promise<Partial<Record<FeatureKey, number>>> {
+  const now = new Date().toISOString();
+  const { data } = await supabase
+    .from("usage_quotas_v2")
+    .select("counters_json")
+    .eq("user_id", userId)
+    .lte("billing_period_start", now)
+    .gte("billing_period_end", now)
+    .order("billing_period_start", { ascending: false })
+    .limit(1)
+    .single();
+
+  if (!data) return {};
+  return (data.counters_json as Record<string, number>) ?? {};
+}
+
 // ---------- Credit balance ----------
 
 async function getCreditBalance(userId: string, feature: FeatureKey): Promise<number> {
@@ -162,7 +191,7 @@ async function decrementCredits(userId: string, feature: FeatureKey, amount: num
 export async function getUserUsageSummary(
   userId: string,
   plan: PlanKey,
-): Promise<Record<FeatureKey, { used: number; limit: number; credits: number }>> {
+): Promise<Record<FeatureKey, { used: number; limit: number; credits: number; flex: number }>> {
   const now = new Date().toISOString();
   const { data: quotaData } = await supabase
     .from("usage_quotas_v2")
@@ -196,14 +225,19 @@ export async function getUserUsageSummary(
     "guardian_sms", "guardian_email", "premium_export",
   ];
 
-  const summary: Record<string, { used: number; limit: number; credits: number }> = {};
+  // Compute flex credits available
+  const { computeAvailableFlexCredits } = await import("./adaptiveCredits.service");
+  const flexCredits = computeAvailableFlexCredits(plan, counters);
+
+  const summary: Record<string, { used: number; limit: number; credits: number; flex: number }> = {};
   for (const feature of features) {
     summary[feature] = {
       used: counters[feature] ?? 0,
       limit: getPlanQuota(plan, feature),
       credits: creditMap[feature] ?? 0,
+      flex: flexCredits[feature] ?? 0,
     };
   }
 
-  return summary as Record<FeatureKey, { used: number; limit: number; credits: number }>;
+  return summary as Record<FeatureKey, { used: number; limit: number; credits: number; flex: number }>;
 }
