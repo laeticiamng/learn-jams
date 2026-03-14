@@ -4,6 +4,9 @@
 // ============================================================
 
 import { useState, useEffect } from "react";
+import { FormatSelector } from "@/components/cognitio/FormatSelector";
+import type { CreateFormat } from "@/lib/create-format-config";
+import { FORMAT_CONFIGS } from "@/lib/create-format-config";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -46,6 +49,7 @@ export default function Create() {
   const pipeline = useCreatePipeline();
   const { seeds, loading: seedsLoading } = useSeedLibrary();
   const [activeSeedId, setActiveSeedId] = useState<string | null>(null);
+  const [selectedFormat, setSelectedFormat] = useState<CreateFormat | null>(null);
 
   // Handle seed parameter from URL
   useEffect(() => {
@@ -96,7 +100,25 @@ export default function Create() {
               exit={{ opacity: 0, y: -20 }}
               className="space-y-8"
             >
-              <ImportDropzone onImport={handleImport} />
+              {/* Step 1: Format Selection */}
+              <FormatSelector
+                selectedFormat={selectedFormat}
+                onSelectFormat={(f) => {
+                  setSelectedFormat(f);
+                  track({ event_name: "format_selected", metadata: { format: f } });
+                }}
+              />
+
+              {/* Step 2: Import (only visible after format selection) */}
+              {selectedFormat && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="space-y-6"
+                >
+                  <ImportDropzone onImport={handleImport} />
+                </motion.div>
+              )}
 
               {/* Seed Library */}
               <FeatureFlagGuard flag="ff_seed_library_enabled">
@@ -201,24 +223,16 @@ export default function Create() {
                   <p className="text-sm font-medium mb-1">
                     {pipeline.hasBlocking
                       ? t("create_page.result_blocking")
-                      : storyGeneration.result
-                        ? t("create_page.result_story_success")
-                        : generation.result
-                          ? t("create_page.result_sheet_success")
-                          : format.result
-                            ? t("create_page.result_format_selected")
-                            : analysis.result
-                              ? t("create_page.result_analysis_done")
-                              : t("create_page.result_complete")}
+                      : t("create_page.result_success", {
+                          defaultValue: "Ton contenu a été généré avec succès !",
+                        })}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {pipeline.hasBlocking
                       ? t("create_page.result_blocking_detail")
-                      : storyGeneration.result
-                        ? t("create_page.result_story_detail")
-                        : generation.result
-                          ? t("create_page.result_sheet_detail")
-                          : t("create_page.result_default_detail")}
+                      : t("create_page.result_success_detail", {
+                          defaultValue: "Tu peux maintenant consulter et utiliser ta création.",
+                        })}
                   </p>
                 </div>
               )}

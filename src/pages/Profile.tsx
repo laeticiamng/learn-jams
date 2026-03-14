@@ -233,10 +233,10 @@ export default function Profile() {
           <div className="space-y-2">
             <Label className="text-sm font-medium flex items-center gap-2">
               <BookOpen className="w-4 h-4 text-primary" />
-              {t("profile.university", "University")}
+              {t("profile.university", "Établissement")}
             </Label>
             <Input
-              placeholder={t("profile.university_placeholder", "E.g.: Sorbonne, TUM, Oxford...")}
+              placeholder={t("profile.university_placeholder", "Ex : Sorbonne, Nanterre, Polytechnique...")}
               value={university}
               onChange={(e) => setUniversity(e.target.value)}
               className="bg-muted/15 border-border/20 h-11 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all duration-300"
@@ -247,10 +247,10 @@ export default function Profile() {
           <div className="space-y-2">
             <Label className="text-sm font-medium flex items-center gap-2">
               <Globe className="w-4 h-4 text-primary" />
-              {t("profile.country", "Country")}
+              {t("profile.country", "Pays")}
             </Label>
             <Input
-              placeholder={t("profile.country_placeholder", "E.g.: France, Germany, UK...")}
+              placeholder={t("profile.country_placeholder", "Ex : France, Belgique, Suisse...")}
               value={country}
               onChange={(e) => setCountry(e.target.value)}
               className="bg-muted/15 border-border/20 h-11 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all duration-300"

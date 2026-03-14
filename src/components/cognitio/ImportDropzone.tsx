@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { FileUp, FileText, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -50,6 +51,7 @@ const ACCEPTED_TYPES: Record<string, ContentType> = {
 };
 
 export default function ImportDropzone({ onImport, disabled }: ImportDropzoneProps) {
+  const { t } = useTranslation();
   const [tab, setTab] = useState<"upload" | "paste">("upload");
   const [file, setFile] = useState<File | null>(null);
   const [pastedText, setPastedText] = useState("");
@@ -97,7 +99,7 @@ export default function ImportDropzone({ onImport, disabled }: ImportDropzonePro
     <div className="space-y-6">
       {/* Objective selector */}
       <div>
-        <label className="text-sm font-medium mb-3 block">Objectif d'apprentissage</label>
+        <label className="text-sm font-medium mb-3 block">{t("create.objective_label", { defaultValue: "Objectif d'apprentissage" })}</label>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {OBJECTIVES.map((obj) => (
             <button
@@ -119,7 +121,7 @@ export default function ImportDropzone({ onImport, disabled }: ImportDropzonePro
       {/* Learner profile selector */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="text-sm font-medium mb-2 block">Pour quel niveau ?</label>
+          <label className="text-sm font-medium mb-2 block">{t("create.level_label", { defaultValue: "Pour quel niveau ?" })}</label>
           <div className="grid grid-cols-2 gap-1.5">
             {EDUCATION_STAGES.map((s) => (
               <button
@@ -138,7 +140,7 @@ export default function ImportDropzone({ onImport, disabled }: ImportDropzonePro
         </div>
 
         <div>
-          <label className="text-sm font-medium mb-2 block">Style d'explication</label>
+          <label className="text-sm font-medium mb-2 block">{t("create.style_label", { defaultValue: "Style d'explication" })}</label>
           <div className="grid grid-cols-2 gap-1.5">
             {EXPLANATION_STYLES.map((s) => (
               <button
@@ -161,10 +163,10 @@ export default function ImportDropzone({ onImport, disabled }: ImportDropzonePro
       <Tabs value={tab} onValueChange={(v) => setTab(v as "upload" | "paste")}>
         <TabsList className="w-full">
           <TabsTrigger value="upload" className="flex-1 gap-2">
-            <Upload className="w-4 h-4" /> Importer un fichier
+            <Upload className="w-4 h-4" /> {t("create.import_file", { defaultValue: "Importer un fichier" })}
           </TabsTrigger>
           <TabsTrigger value="paste" className="flex-1 gap-2">
-            <FileText className="w-4 h-4" /> Coller du texte
+            <FileText className="w-4 h-4" /> {t("create.paste_text", { defaultValue: "Coller du texte" })}
           </TabsTrigger>
         </TabsList>
 
@@ -197,16 +199,16 @@ export default function ImportDropzone({ onImport, disabled }: ImportDropzonePro
                   onClick={() => setFile(null)}
                   className="mt-3 text-muted-foreground"
                 >
-                  Changer de fichier
+                  {t("create.change_file", { defaultValue: "Changer de fichier" })}
                 </Button>
               </div>
             ) : (
               <div>
                 <p className="text-sm text-muted-foreground mb-2">
-                  Glissez-déposez un fichier ici
+                  {t("create.drop_hint", { defaultValue: "Glissez-déposez un fichier ici" })}
                 </p>
                 <p className="text-xs text-muted-foreground mb-4">
-                  PDF, DOCX ou TXT (max 50 Mo)
+                  {t("create.file_types", { defaultValue: "PDF, DOCX ou TXT (max 50 Mo)" })}
                 </p>
                 <label>
                   <input
@@ -216,7 +218,7 @@ export default function ImportDropzone({ onImport, disabled }: ImportDropzonePro
                     className="hidden"
                   />
                   <Button variant="outline" size="sm" asChild>
-                    <span>Parcourir</span>
+                    <span>{t("create.browse", { defaultValue: "Parcourir" })}</span>
                   </Button>
                 </label>
               </div>
@@ -228,11 +230,11 @@ export default function ImportDropzone({ onImport, disabled }: ImportDropzonePro
           <Textarea
             value={pastedText}
             onChange={(e) => setPastedText(e.target.value)}
-            placeholder="Collez le contenu de votre cours ici (minimum 50 caractères)..."
+            placeholder={t("create.paste_placeholder", { defaultValue: "Collez le contenu de votre cours ici (minimum 50 caractères)..." })}
             className="min-h-[200px] rounded-xl resize-y"
           />
           <p className="text-xs text-muted-foreground mt-2">
-            {pastedText.trim().split(/\s+/).filter(Boolean).length} mots
+            {pastedText.trim().split(/\s+/).filter(Boolean).length} {t("create.word_count", { defaultValue: "mots" })}
           </p>
         </TabsContent>
       </Tabs>
@@ -244,7 +246,7 @@ export default function ImportDropzone({ onImport, disabled }: ImportDropzonePro
         size="lg"
         className="w-full gradient-bg-premium rounded-xl h-12 text-base shadow-lg shadow-primary/20"
       >
-        Transformer en mission
+        {t("create.submit_cta", { defaultValue: "Créer" })}
       </Button>
     </div>
   );
