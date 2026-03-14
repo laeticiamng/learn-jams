@@ -4,7 +4,7 @@
 
 import { motion } from "framer-motion";
 import { GraduationCap, School, Briefcase, Shield } from "lucide-react";
-import { HOME_COPY } from "@/lib/home-copy";
+import { useTranslation } from "react-i18next";
 
 const ease = [0.25, 0.46, 0.45, 0.94] as [number, number, number, number];
 
@@ -15,8 +15,15 @@ const ICON_MAP: Record<string, React.ElementType> = {
   Shield,
 };
 
+const AUDIENCE_PROFILES = [
+  { key: "student", icon: "GraduationCap" },
+  { key: "teacher", icon: "School" },
+  { key: "pro", icon: "Briefcase" },
+  { key: "parent", icon: "Shield" },
+] as const;
+
 export default function AudienceAdaptationSection() {
-  const { label, title, subtitle, profiles } = HOME_COPY.audience;
+  const { t } = useTranslation();
 
   return (
     <section className="py-16 sm:py-20 md:py-28 lg:py-32 px-4">
@@ -27,7 +34,7 @@ export default function AudienceAdaptationSection() {
           viewport={{ once: true }}
           className="text-center text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-4"
         >
-          {label}
+          {t("home.audience_label")}
         </motion.p>
         <motion.h2
           initial={{ opacity: 0, y: 20 }}
@@ -35,7 +42,7 @@ export default function AudienceAdaptationSection() {
           viewport={{ once: true }}
           className="font-display text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-5 tracking-tight"
         >
-          {title}
+          {t("home.audience_title")}
         </motion.h2>
         <motion.p
           initial={{ opacity: 0, y: 10 }}
@@ -43,11 +50,11 @@ export default function AudienceAdaptationSection() {
           viewport={{ once: true }}
           className="text-center text-muted-foreground mb-10 sm:mb-16 md:mb-20 text-lg max-w-2xl mx-auto"
         >
-          {subtitle}
+          {t("home.audience_subtitle")}
         </motion.p>
 
         <div className="grid sm:grid-cols-2 gap-6 sm:gap-8">
-          {profiles.map((profile, i) => {
+          {AUDIENCE_PROFILES.map((profile, i) => {
             const Icon = ICON_MAP[profile.icon] ?? GraduationCap;
             return (
               <motion.article
@@ -61,8 +68,8 @@ export default function AudienceAdaptationSection() {
                 <div className="w-12 h-12 rounded-xl gradient-bg-premium flex items-center justify-center mb-5 shadow-lg shadow-primary/20">
                   <Icon className="w-6 h-6 text-primary-foreground" />
                 </div>
-                <h3 className="font-display text-lg font-semibold mb-3">{profile.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{profile.desc}</p>
+                <h3 className="font-display text-lg font-semibold mb-3">{t(`home.audience_${profile.key}_title`)}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{t(`home.audience_${profile.key}_desc`)}</p>
               </motion.article>
             );
           })}

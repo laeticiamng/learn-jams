@@ -10,12 +10,14 @@ import { useSeedLibrary } from "@/hooks/useSeedLibrary";
 import { SeedLibraryGrid } from "@/components/product/SeedLibraryGrid";
 import { FeatureFlagGuard } from "@/components/product/FeatureFlagGuard";
 import { resolveCTARoute } from "@/lib/home-cta-map";
+import { useTranslation } from "react-i18next";
 
 export default function SeedDemoSection() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { track } = useProductTracking();
   const { seeds, loading } = useSeedLibrary();
+  const { t } = useTranslation();
 
   return (
     <FeatureFlagGuard flag="ff_seed_library_enabled">
@@ -27,10 +29,10 @@ export default function SeedDemoSection() {
             viewport={{ once: true }}
             className="font-display text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-5 tracking-tight"
           >
-            Essayez sans importer
+            {t("home.seed_demo_title")}
           </motion.h2>
           <p className="text-center text-muted-foreground mb-10 text-lg">
-            Testez le moteur avec des missions prêtes à l'emploi
+            {t("home.seed_demo_subtitle")}
           </p>
           <SeedLibraryGrid
             seeds={seeds}

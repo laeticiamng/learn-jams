@@ -17,7 +17,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { useMemo, useEffect, useState, useRef, useCallback } from "react";
 import { useProductTracking } from "@/hooks/useProductTracking";
 import { resolveCTARoute } from "@/lib/home-cta-map";
-import { HOME_COPY } from "@/lib/home-copy";
+import { useTranslation } from "react-i18next";
 
 // Section components
 import HeroMultimodal from "@/components/home/HeroMultimodal";
@@ -54,30 +54,13 @@ const ParallaxOrbs = () => {
   );
 };
 
-const BEFORE_AFTER = {
-  before: [
-    "Relire ses notes 3 fois.",
-    "Surligner en jaune.",
-    "Faire un résumé IA.",
-    "Oublier 80% en 48h.",
-    "Se croire prêt pour l'exam.",
-  ],
-  after: [
-    "Importer son cours (2 clics).",
-    "L'IA extrait les concepts clés.",
-    "Choisir mission, chanson ou quiz.",
-    "Débrief avec arbre d'erreurs.",
-    "Re-test J+1 et J+7 automatiques.",
-    "Rétention mesurable et durable.",
-  ],
-};
+const BEFORE_KEYS = [1, 2, 3, 4, 5] as const;
+const AFTER_KEYS = [1, 2, 3, 4, 5, 6] as const;
 
 const testimonialAvatars = [testimonialMarie, testimonialKarim, testimonialChloe];
-const TESTIMONIALS = [
-  { name: "Marie L.", field: "Médecine 4e année", quote: "J'ai révisé ma cardio en mode mission. Le débrief m'a montré exactement où j'étais trop confiante." },
-  { name: "Karim B.", field: "Droit des affaires", quote: "Enfin un outil qui ne me résume pas mon cours mais qui me force à le comprendre activement." },
-  { name: "Chloé D.", field: "Sciences infirmières", quote: "Les re-tests J+7 ont changé ma rétention. Je retiens vraiment sur le long terme maintenant." },
-];
+const TESTIMONIAL_KEYS = [1, 2, 3] as const;
+
+const FAQ_KEYS = [1, 2, 3, 4, 5, 6, 7] as const;
 
 export default function Index() {
   const navigate = useNavigate();
@@ -86,23 +69,24 @@ export default function Index() {
   const heroRef = useRef<HTMLDivElement>(null);
   const ctaRef = useRef<HTMLElement>(null);
   const { track } = useProductTracking();
+  const { t } = useTranslation();
   const isAuthed = !!user;
 
   usePageSEO({
-    title: "COGNITIO — Transformez n'importe quel cours en expérience d'apprentissage multimodale",
-    description: "Importez votre cours, transformez-le en missions interactives, chansons, quiz, vidéos et fiches. Pas un résumé IA, un moteur de rétention.",
+    title: t("home.seo_title"),
+    description: t("home.seo_description"),
     canonical: "/",
   });
 
   const faqJsonLd = useMemo(() => ({
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    mainEntity: HOME_COPY.faq.map(f => ({
+    mainEntity: FAQ_KEYS.map(i => ({
       "@type": "Question",
-      name: f.q,
-      acceptedAnswer: { "@type": "Answer", text: f.a },
+      name: t(`home.faq${i}_q`),
+      acceptedAnswer: { "@type": "Answer", text: t(`home.faq${i}_a`) },
     })),
-  }), []);
+  }), [t]);
 
   useEffect(() => {
     const script = document.createElement("script");
@@ -161,13 +145,13 @@ export default function Index() {
       <section className="py-16 sm:py-20 md:py-28 lg:py-32 px-4">
         <div className="container mx-auto max-w-5xl">
           <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="font-display text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-16 tracking-tight">
-            Avant / Après COGNITIO
+            {t("home.before_after_title")}
           </motion.h2>
           <div className="grid md:grid-cols-2 gap-8 items-stretch">
             <motion.div initial={{ opacity: 0, x: -24 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, ease }} className="glass-card p-8 sm:p-10 relative">
-              <div className="absolute top-5 left-5 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground bg-muted/60 px-3 py-1 rounded-full">Avant</div>
+              <div className="absolute top-5 left-5 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground bg-muted/60 px-3 py-1 rounded-full">{t("home.before_label")}</div>
               <div className="pt-10 text-sm text-muted-foreground leading-relaxed font-mono">
-                {BEFORE_AFTER.before.map((line, i) => <span key={i}>{line}<br /></span>)}
+                {BEFORE_KEYS.map((i) => <span key={i}>{t(`home.before_${i}`)}<br /></span>)}
               </div>
             </motion.div>
             <div className="flex justify-center md:hidden -my-1 relative z-10">
@@ -176,9 +160,9 @@ export default function Index() {
               </div>
             </div>
             <motion.div initial={{ opacity: 0, x: 24 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: 0.15, duration: 0.6, ease }} className="glass-card-elevated p-8 sm:p-10 relative glow-intense">
-              <div className="absolute top-5 left-5 text-[11px] font-semibold uppercase tracking-widest text-foreground/90 bg-foreground/5 border border-foreground/10 px-3 py-1 rounded-full">Avec COGNITIO</div>
+              <div className="absolute top-5 left-5 text-[11px] font-semibold uppercase tracking-widest text-foreground/90 bg-foreground/5 border border-foreground/10 px-3 py-1 rounded-full">{t("home.after_label")}</div>
               <div className="pt-10 text-sm text-foreground leading-relaxed whitespace-pre-line">
-                {BEFORE_AFTER.after.join("\n")}
+                {AFTER_KEYS.map(i => t(`home.after_${i}`)).join("\n")}
               </div>
             </motion.div>
           </div>
@@ -201,18 +185,18 @@ export default function Index() {
       <section className="py-16 sm:py-20 md:py-28 lg:py-32 px-4">
         <div className="container mx-auto max-w-5xl">
           <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="font-display text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-10 sm:mb-16 md:mb-20 tracking-tight">
-            Ce qu'ils en disent
+            {t("home.testimonials_title")}
           </motion.h2>
           <div className="grid md:grid-cols-3 gap-8">
-            {TESTIMONIALS.map((t, i) => (
-              <motion.article key={i} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.15, duration: 0.6, ease }} className="glass-card-elevated p-8 sm:p-9 flex flex-col gradient-border">
+            {TESTIMONIAL_KEYS.map((idx, i) => (
+              <motion.article key={idx} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.15, duration: 0.6, ease }} className="glass-card-elevated p-8 sm:p-9 flex flex-col gradient-border">
                 <Quote className="w-8 h-8 text-primary/40 mb-5" />
-                <p className="text-sm text-foreground/90 leading-relaxed flex-1 italic">"{t.quote}"</p>
+                <p className="text-sm text-foreground/90 leading-relaxed flex-1 italic">"{t(`home.testimonial${idx}_quote`)}"</p>
                 <div className="flex items-center gap-3 mt-7 pt-6 border-t border-border/20">
-                  <img src={testimonialAvatars[i]} alt={t.name} className="w-10 h-10 rounded-full object-cover bg-muted ring-2 ring-border/20" loading="lazy" />
+                  <img src={testimonialAvatars[i]} alt={t(`home.testimonial${idx}_name`)} className="w-10 h-10 rounded-full object-cover bg-muted ring-2 ring-border/20" loading="lazy" />
                   <div>
-                    <p className="text-sm font-semibold">{t.name}</p>
-                    <p className="text-xs text-muted-foreground">{t.field}</p>
+                    <p className="text-sm font-semibold">{t(`home.testimonial${idx}_name`)}</p>
+                    <p className="text-xs text-muted-foreground">{t(`home.testimonial${idx}_field`)}</p>
                   </div>
                 </div>
               </motion.article>
@@ -232,14 +216,14 @@ export default function Index() {
       <section className="py-16 sm:py-20 md:py-28 lg:py-32 px-4">
         <div className="container mx-auto max-w-2xl">
           <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="font-display text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-5 tracking-tight">
-            Questions fréquentes
+            {t("home.faq_title")}
           </motion.h2>
-          <p className="text-center text-muted-foreground mb-16 text-lg">Tout ce que vous devez savoir</p>
+          <p className="text-center text-muted-foreground mb-16 text-lg">{t("home.faq_subtitle")}</p>
           <Accordion type="single" collapsible className="space-y-3">
-            {HOME_COPY.faq.map((faq, i) => (
-              <AccordionItem key={i} value={`faq-${i}`} className="glass-card-elevated px-6 border-none">
-                <AccordionTrigger className="text-left font-medium hover:no-underline py-5 text-[15px]">{faq.q}</AccordionTrigger>
-                <AccordionContent className="text-muted-foreground pb-5 leading-relaxed text-sm">{faq.a}</AccordionContent>
+            {FAQ_KEYS.map((idx) => (
+              <AccordionItem key={idx} value={`faq-${idx}`} className="glass-card-elevated px-6 border-none">
+                <AccordionTrigger className="text-left font-medium hover:no-underline py-5 text-[15px]">{t(`home.faq${idx}_q`)}</AccordionTrigger>
+                <AccordionContent className="text-muted-foreground pb-5 leading-relaxed text-sm">{t(`home.faq${idx}_a`)}</AccordionContent>
               </AccordionItem>
             ))}
           </Accordion>
@@ -254,10 +238,10 @@ export default function Index() {
           <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.7, ease }} className="glass-card-elevated p-8 sm:p-12 md:p-16 text-center glow-intense relative overflow-hidden">
             <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[200px] ambient-orb" style={{ background: "hsl(265, 90%, 60%)", opacity: 0.1 }} />
             <h2 className="font-display text-3xl md:text-5xl font-bold mb-5 tracking-tight relative z-10">
-              {HOME_COPY.cta.title}
+              {t("home.cta_title")}
             </h2>
             <p className="text-muted-foreground mb-12 text-lg relative z-10">
-              {HOME_COPY.cta.subtitle}
+              {t("home.cta_subtitle")}
             </p>
             <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="relative z-10">
               <Button
@@ -265,7 +249,7 @@ export default function Index() {
                 className="gradient-bg-premium text-lg px-10 h-14 shimmer-btn rounded-2xl shadow-xl shadow-primary/25"
                 onClick={() => navigate(resolveCTARoute("create", isAuthed))}
               >
-                {isAuthed ? "Créer un contenu" : "Commencer gratuitement"}
+                {isAuthed ? t("home.hero_cta_logged_in") : t("home.hero_cta_logged_out")}
               </Button>
             </motion.div>
           </motion.div>
@@ -280,7 +264,7 @@ export default function Index() {
               className="w-full gradient-bg-premium h-12 text-base font-semibold shimmer-btn rounded-xl shadow-lg shadow-primary/20"
               onClick={() => navigate(resolveCTARoute("create", isAuthed))}
             >
-              {isAuthed ? "Créer un contenu" : "Commencer"} <ArrowRight className="w-4 h-4 ml-2" />
+              {isAuthed ? t("home.hero_cta_logged_in") : t("home.sticky_cta_start")} <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </motion.div>
         )}
@@ -289,8 +273,7 @@ export default function Index() {
       {/* Disclaimer */}
       <div className="container mx-auto px-4 pb-4">
         <p className="text-[10px] text-muted-foreground/50 text-center">
-          Usage strictement pédagogique. COGNITIO ne fournit aucun conseil médical, juridique ou professionnel.
-          Les contenus générés respectent la fidélité au document source.
+          {t("home.disclaimer")}
         </p>
       </div>
 

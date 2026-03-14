@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import {
   Target, Music, HelpCircle, Video, FileText, BookOpen,
 } from "lucide-react";
-import { HOME_COPY } from "@/lib/home-copy";
+import { useTranslation } from "react-i18next";
 
 const ease = [0.25, 0.46, 0.45, 0.94] as [number, number, number, number];
 
@@ -19,8 +19,17 @@ const ICON_MAP: Record<string, React.ElementType> = {
   BookOpen,
 };
 
+const FORMAT_ITEMS = [
+  { key: "mission", icon: "Target" },
+  { key: "song", icon: "Music" },
+  { key: "quiz", icon: "HelpCircle" },
+  { key: "video", icon: "Video" },
+  { key: "sheet", icon: "FileText" },
+  { key: "story", icon: "BookOpen" },
+] as const;
+
 export default function FormatChooserSection() {
-  const { label, title, subtitle, items } = HOME_COPY.formats;
+  const { t } = useTranslation();
 
   return (
     <section className="py-16 sm:py-20 md:py-28 lg:py-32 px-4">
@@ -31,7 +40,7 @@ export default function FormatChooserSection() {
           viewport={{ once: true }}
           className="text-center text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-4"
         >
-          {label}
+          {t("home.formats_label")}
         </motion.p>
         <motion.h2
           initial={{ opacity: 0, y: 20 }}
@@ -39,7 +48,7 @@ export default function FormatChooserSection() {
           viewport={{ once: true }}
           className="font-display text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-5 tracking-tight"
         >
-          {title}
+          {t("home.formats_title")}
         </motion.h2>
         <motion.p
           initial={{ opacity: 0, y: 10 }}
@@ -47,11 +56,11 @@ export default function FormatChooserSection() {
           viewport={{ once: true }}
           className="text-center text-muted-foreground mb-10 sm:mb-16 md:mb-20 text-lg max-w-2xl mx-auto"
         >
-          {subtitle}
+          {t("home.formats_subtitle")}
         </motion.p>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
-          {items.map((item, i) => {
+          {FORMAT_ITEMS.map((item, i) => {
             const Icon = ICON_MAP[item.icon] ?? Target;
             return (
               <motion.article
@@ -68,8 +77,8 @@ export default function FormatChooserSection() {
                 >
                   <Icon className="w-7 h-7 text-primary-foreground" />
                 </motion.div>
-                <h3 className="font-display text-lg font-semibold mb-3">{item.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
+                <h3 className="font-display text-lg font-semibold mb-3">{t(`home.format_${item.key}_title`)}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{t(`home.format_${item.key}_desc`)}</p>
               </motion.article>
             );
           })}

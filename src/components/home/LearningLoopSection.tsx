@@ -4,7 +4,7 @@
 
 import { motion } from "framer-motion";
 import { FileUp, Brain, LayoutGrid, RefreshCw } from "lucide-react";
-import { HOME_COPY } from "@/lib/home-copy";
+import { useTranslation } from "react-i18next";
 
 const ease = [0.25, 0.46, 0.45, 0.94] as [number, number, number, number];
 
@@ -15,8 +15,15 @@ const ICON_MAP: Record<string, React.ElementType> = {
   RefreshCw,
 };
 
+const LOOP_STEPS = [
+  { index: 1, icon: "FileUp" },
+  { index: 2, icon: "Brain" },
+  { index: 3, icon: "LayoutGrid" },
+  { index: 4, icon: "RefreshCw" },
+] as const;
+
 export default function LearningLoopSection() {
-  const { label, title, steps } = HOME_COPY.loop;
+  const { t } = useTranslation();
 
   return (
     <section className="py-16 sm:py-20 md:py-28 lg:py-32 px-4">
@@ -27,7 +34,7 @@ export default function LearningLoopSection() {
           viewport={{ once: true }}
           className="text-center text-xs uppercase tracking-[0.2em] text-primary font-semibold mb-4"
         >
-          {label}
+          {t("home.loop_label")}
         </motion.p>
         <motion.h2
           initial={{ opacity: 0, y: 20 }}
@@ -35,15 +42,15 @@ export default function LearningLoopSection() {
           viewport={{ once: true }}
           className="font-display text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-10 sm:mb-16 md:mb-20 tracking-tight"
         >
-          {title}
+          {t("home.loop_title")}
         </motion.h2>
 
         <div className="grid md:grid-cols-4 gap-5 sm:gap-6 max-w-6xl mx-auto">
-          {steps.map((step, i) => {
+          {LOOP_STEPS.map((step, i) => {
             const Icon = ICON_MAP[step.icon] ?? FileUp;
             return (
               <motion.article
-                key={i}
+                key={step.index}
                 initial={{ opacity: 0, y: 24 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
@@ -57,10 +64,10 @@ export default function LearningLoopSection() {
                   <Icon className="w-7 h-7 text-primary-foreground" />
                 </motion.div>
                 <div className="text-xs text-muted-foreground mb-3 uppercase tracking-widest font-medium">
-                  Étape {i + 1}
+                  {t("home.loop_step_label", { n: step.index })}
                 </div>
-                <h3 className="font-display text-lg font-semibold mb-3">{step.title}</h3>
-                <p className="text-muted-foreground text-sm leading-relaxed">{step.desc}</p>
+                <h3 className="font-display text-lg font-semibold mb-3">{t(`home.loop_step${step.index}_title`)}</h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">{t(`home.loop_step${step.index}_desc`)}</p>
               </motion.article>
             );
           })}

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useProductTracking } from "@/hooks/useProductTracking";
-import { HOME_COPY } from "@/lib/home-copy";
+import { useTranslation } from "react-i18next";
 import { resolveCTARoute } from "@/lib/home-cta-map";
 import { useSeedLibrary } from "@/hooks/useSeedLibrary";
 import { useMemo } from "react";
@@ -37,7 +37,7 @@ export default function HeroMultimodal() {
   const { user } = useAuth();
   const { track } = useProductTracking();
   const { seeds } = useSeedLibrary();
-  const copy = HOME_COPY.hero;
+  const { t } = useTranslation();
   const isAuthed = !!user;
 
   return (
@@ -54,17 +54,17 @@ export default function HeroMultimodal() {
             transition={{ delay: 0.2, duration: 0.5 }}
             className="inline-flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border border-foreground/20 bg-foreground/5 mb-8 sm:mb-12 text-xs sm:text-sm text-foreground/90 font-medium backdrop-blur-sm"
           >
-            {copy.badge}
+            {t("home.hero_badge")}
           </motion.p>
 
           <h1 className="font-display text-4xl sm:text-5xl md:text-7xl lg:text-[5.5rem] font-bold mb-6 sm:mb-8 leading-[1.05] sm:leading-[1.02] tracking-tight">
-            {copy.title_line1}
+            {t("home.hero_title_line1")}
             <br />
-            <span className="gradient-text glow-text">{copy.title_highlight}</span>
+            <span className="gradient-text glow-text">{t("home.hero_title_highlight")}</span>
           </h1>
 
           <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 sm:mb-14 leading-relaxed">
-            {copy.subtitle}
+            {t("home.hero_subtitle")}
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8 px-4">
@@ -77,7 +77,7 @@ export default function HeroMultimodal() {
                   navigate(resolveCTARoute("create", isAuthed));
                 }}
               >
-                {isAuthed ? copy.cta_logged_in : copy.cta_logged_out}
+                {isAuthed ? t("home.hero_cta_logged_in") : t("home.hero_cta_logged_out")}
               </Button>
             </motion.div>
 
@@ -92,7 +92,7 @@ export default function HeroMultimodal() {
                     navigate(resolveCTARoute("demo", true, seeds[0].id));
                   }}
                 >
-                  {copy.cta_demo}
+                  {t("home.hero_cta_demo")}
                 </Button>
               </motion.div>
             )}
@@ -104,7 +104,7 @@ export default function HeroMultimodal() {
                 onClick={() => navigate(resolveCTARoute("login", false))}
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors underline-offset-4 hover:underline"
               >
-                {copy.already_account}
+                {t("home.hero_already_account")}
               </button>
             </div>
           )}
