@@ -6,6 +6,7 @@ import { ParallaxOrbs } from "@/components/ParallaxOrbs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Plus, Music, Loader2, Heart, ListMusic, Clock, Trash2 } from "lucide-react";
+import { useProductTracking } from "@/hooks/useProductTracking";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/hooks/useAuth";
@@ -38,6 +39,9 @@ export default function Library() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { track } = useProductTracking();
+
+  useEffect(() => { track({ event_name: "library_viewed" }); }, []);
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
   const { songs, favorites, loading, toggleFavorite } = useSongs(user?.id);

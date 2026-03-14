@@ -25,6 +25,8 @@ import { ReviewQueueCard } from "@/components/cognitio/progress/ReviewQueueCard"
 import { BestFormatCard } from "@/components/cognitio/progress/BestFormatCard";
 import { ProgressTimelineCard } from "@/components/cognitio/progress/ProgressTimelineCard";
 import { CalibrationTrendCard } from "@/components/cognitio/progress/CalibrationTrendCard";
+import { useProductTracking } from "@/hooks/useProductTracking";
+import { ResumeLastActionCard, type ResumeAction } from "@/components/product/ResumeLastActionCard";
 
 const ease = [0.25, 0.46, 0.45, 0.94] as [number, number, number, number];
 
@@ -58,6 +60,9 @@ export default function Profile() {
   const learner = useLearnerProfile();
   const reviewQueue = useReviewQueue();
   const progressSnapshots = useProgressSnapshots();
+  const { track } = useProductTracking();
+
+  useEffect(() => { track({ event_name: "profile_viewed" }); }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -275,6 +280,24 @@ export default function Profile() {
                 {t("profile.manage_subscription", "Gérer mon abonnement")}
               </Button>
             </motion.div>
+          </motion.div>
+        )}
+
+        {/* ── Resume Action ── */}
+        {reviewQueue.stats.total > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25, duration: 0.5, ease }}
+            className="mt-6"
+          >
+            <ResumeLastActionCard
+              action={{ type: "review_queue", count: reviewQueue.stats.total } as ResumeAction}
+              onResume={() => {
+                track({ event_name: "review_queue_viewed" });
+                track({ event_name: "session_resumed" });
+              }}
+            />
           </motion.div>
         )}
 

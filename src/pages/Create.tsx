@@ -2,8 +2,8 @@
 // Create Page — Import & Transform (M1 + M2 + M3 + M4 + M5 Pipeline)
 // ============================================================
 
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Brain, FileText, AlertTriangle, RotateCcw, Eye } from "lucide-react";
@@ -40,11 +40,16 @@ import type { IngestInput } from "@/domain/cognitio/contracts";
 import type { AmbiguousZone, LearningObjective } from "@/domain/cognitio/types";
 import type { LearnerAudienceProfile } from "@/domain/cognitio/learner-profile.types";
 import type { M7_Input } from "@/domain/cognitio/qa.contracts";
+import { useProductTracking } from "@/hooks/useProductTracking";
+import { useSeedLibrary } from "@/hooks/useSeedLibrary";
+import { SeedLibraryGrid } from "@/components/product/SeedLibraryGrid";
+import { FeatureFlagGuard } from "@/components/product/FeatureFlagGuard";
 
 type Phase = "import" | "ingesting" | "analyzing" | "architecting" | "formatting" | "generating" | "result";
 
 export default function Create() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [phase, setPhase] = useState<Phase>("import");
   const [objective, setObjective] = useState<LearningObjective>("discovery");
   const [learnerProfile, setLearnerProfile] = useState<LearnerAudienceProfile | undefined>();
@@ -56,11 +61,23 @@ export default function Create() {
   const generation = useDynamicSheetGeneration();
   const storyGeneration = useAnimatedStoryGeneration();
   const qa = useQAStatus();
+  const { track } = useProductTracking();
+  const { seeds, loading: seedsLoading, getById: getSeedById } = useSeedLibrary();
+  const [activeSeedId, setActiveSeedId] = useState<string | null>(null);
+
+  // Handle seed parameter from URL
+  useEffect(() => {
+    const seedId = searchParams.get("seed");
+    if (seedId && phase === "import") {
+      setActiveSeedId(seedId);
+    }
+  }, [searchParams, phase]);
 
   const handleImport = async (input: IngestInput) => {
     setObjective(input.objective);
     setLearnerProfile(input.learner_profile);
     setPhase("ingesting");
+    track({ event_name: "upload_started" });
 
     await ingestion.ingest(input);
 
@@ -241,8 +258,22 @@ export default function Create() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
+              className="space-y-8"
             >
               <ImportDropzone onImport={handleImport} />
+
+              {/* Seed Library */}
+              <FeatureFlagGuard flag="ff_seed_library_enabled">
+                <SeedLibraryGrid
+                  seeds={seeds}
+                  loading={seedsLoading}
+                  onStartSeed={(id) => {
+                    track({ event_name: "seed_transformation_started", metadata: { seed_id: id } });
+                    setActiveSeedId(id);
+                    navigate(`/create?seed=${id}`, { replace: true });
+                  }}
+                />
+              </FeatureFlagGuard>
             </motion.div>
           )}
 

@@ -16,6 +16,10 @@ import Footer from "@/components/Footer";
 import { usePageSEO } from "@/hooks/usePageSEO";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useMemo, useEffect, useState, useRef, useCallback } from "react";
+import { useProductTracking } from "@/hooks/useProductTracking";
+import { useSeedLibrary } from "@/hooks/useSeedLibrary";
+import { SeedLibraryGrid } from "@/components/product/SeedLibraryGrid";
+import { FeatureFlagGuard } from "@/components/product/FeatureFlagGuard";
 
 const ease = [0.25, 0.46, 0.45, 0.94] as [number, number, number, number];
 
@@ -103,6 +107,8 @@ export default function Index() {
   const [showStickyCta, setShowStickyCta] = useState(false);
   const heroRef = useRef<HTMLElement>(null);
   const ctaRef = useRef<HTMLElement>(null);
+  const { track } = useProductTracking();
+  const { seeds, loading: seedsLoading } = useSeedLibrary();
 
   usePageSEO({
     title: "COGNITIO — Transformez n'importe quel cours en mission d'apprentissage",
@@ -139,6 +145,10 @@ export default function Index() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [handleScroll]);
 
+  useEffect(() => {
+    track({ event_name: "landing_viewed" });
+  }, []);
+
   return (
     <div className="min-h-screen bg-background overflow-hidden">
       <Navbar />
@@ -168,11 +178,29 @@ export default function Index() {
                 <Button
                   size="lg"
                   className="gradient-bg-premium text-base sm:text-lg px-8 sm:px-10 h-13 sm:h-14 w-full sm:w-auto shimmer-btn rounded-2xl shadow-xl shadow-primary/25"
-                  onClick={() => navigate(user ? "/create" : "/signup")}
+                  onClick={() => {
+                    track({ event_name: user ? "upload_started" : "onboarding_started" });
+                    navigate(user ? "/create" : "/signup");
+                  }}
                 >
                   {user ? "Importer un cours" : "Commencer gratuitement"}
                 </Button>
               </motion.div>
+              {user && seeds.length > 0 && (
+                <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="text-base sm:text-lg px-8 h-13 sm:h-14 w-full sm:w-auto rounded-2xl"
+                    onClick={() => {
+                      track({ event_name: "seed_transformation_started" });
+                      navigate(`/create?seed=${seeds[0].id}`);
+                    }}
+                  >
+                    Essayer une demo
+                  </Button>
+                </motion.div>
+              )}
             </div>
             {!user && (
               <div className="flex flex-col items-center gap-2 mb-12">
@@ -347,6 +375,28 @@ export default function Index() {
       </section>
 
       <SectionDivider />
+
+      {/* Seed Library */}
+      <FeatureFlagGuard flag="ff_seed_library_enabled">
+        <section className="py-16 sm:py-20 md:py-28 px-4">
+          <div className="container mx-auto max-w-3xl">
+            <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="font-display text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-5 tracking-tight">
+              Essayez sans importer
+            </motion.h2>
+            <p className="text-center text-muted-foreground mb-10 text-lg">Testez le moteur avec des missions pretes a l'emploi</p>
+            <SeedLibraryGrid
+              seeds={seeds}
+              loading={seedsLoading}
+              onStartSeed={(id) => {
+                track({ event_name: "seed_transformation_started", metadata: { seed_id: id } });
+                navigate(user ? `/create?seed=${id}` : "/signup");
+              }}
+            />
+          </div>
+        </section>
+
+        <SectionDivider />
+      </FeatureFlagGuard>
 
       {/* FAQ */}
       <section className="py-16 sm:py-20 md:py-28 lg:py-32 px-4">
