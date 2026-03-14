@@ -387,12 +387,12 @@
     "s6_text": "Vous disposez des droits d'accès, rectification, suppression, portabilité, opposition et limitation du traitement. Pour exercer vos droits : <a href='mailto:contact@emotionscare.com' class='text-primary hover:underline'>contact@emotionscare.com</a>. Délai de réponse : 30 jours. Vous pouvez également introduire une réclamation auprès de la CNIL."
   },
   "footer": {
-    "description": "Plateforme de révision musicale par IA. Transforme tes cours en chansons pour mémoriser efficacement.",
+    "description": "Plateforme d'apprentissage multimodale par IA. Transforme tes cours en missions, quiz, vidéos et chansons pour mémoriser efficacement.",
     "product": "Produit", "legal": "Légal", "features": "Fonctionnalités", "about": "À propos",
     "signup": "Créer un compte", "login": "Se connecter", "contact": "Contact & Support",
     "terms": "CGU", "privacy": "Confidentialité",
     "lyrics_gen": "Génération de paroles par IA", "styles_count": "30 styles musicaux", "import": "Import PDF et photos", "quiz": "Quiz interactif",
-    "rights": "© {{year}} EMOTIONSCARE SASU — StudyBeats. Tous droits réservés."
+    "rights": "© {{year}} EMOTIONSCARE SASU — COGNITIO. Tous droits réservés."
   },
   "common": { "back": "Retour", "loading": "Chargement...", "error": "Erreur", "return": "Revenir à l'accueil" },
   "notfound": { "title": "Page introuvable", "text": "Cette page n'existe pas ou a été déplacée." },

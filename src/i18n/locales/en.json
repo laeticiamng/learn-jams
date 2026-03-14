@@ -294,12 +294,12 @@
     "s6_text": "You have rights of access, rectification, deletion, portability, objection and restriction of processing. To exercise your rights: <a href='mailto:contact@emotionscare.com' class='text-primary hover:underline'>contact@emotionscare.com</a>. Response time: 30 days. You may also file a complaint with the French data protection authority (CNIL)."
   },
   "footer": {
-    "description": "AI-powered musical revision platform. Turn your notes into songs for effective memorization.",
+    "description": "AI-powered multimodal learning platform. Transform your courses into missions, quizzes, videos and songs for effective memorization.",
     "product": "Product", "legal": "Legal", "features": "Features", "about": "About",
     "signup": "Create account", "login": "Sign in", "contact": "Contact & Support",
     "terms": "Terms of Service", "privacy": "Privacy Policy",
     "lyrics_gen": "AI lyrics generation", "styles_count": "30 music styles", "import": "PDF & photo import", "quiz": "Interactive quiz",
-    "rights": "© {{year}} EMOTIONSCARE SASU — StudyBeats. All rights reserved."
+    "rights": "© {{year}} EMOTIONSCARE SASU — COGNITIO. All rights reserved."
   },
   "common": { "back": "Back", "loading": "Loading...", "error": "Error", "return": "Back to home" },
   "notfound": { "title": "Page not found", "text": "This page doesn't exist or has been moved." },
