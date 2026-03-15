@@ -194,7 +194,7 @@ async function upsertConceptNode(
   let savedNode: ConceptMemoryNode;
 
   if (existing) {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("learner_knowledge_graph")
       .update(nodeData)
       .eq("id", (existing as Record<string, unknown>).id)
