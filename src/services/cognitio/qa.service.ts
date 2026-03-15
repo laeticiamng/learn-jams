@@ -1,11 +1,18 @@
 // ============================================================
 // COGNITIO QA Service — Quality assurance for generated content
+// Enhanced: semantic QA scoring for concept quality, definition
+//           compression, mnemonic quality, learner adaptation
 // ============================================================
 
 import { supabase } from "@/integrations/supabase/client";
 import type { QAInput, QAOutput, QAChecklistItem, QAViolation } from "@/domain/cognitio/contracts";
 import type { MissionContent } from "@/domain/cognitio/types";
 import { QA_MIN_SCORE, validateQAScore, MAX_NEW_ITEMS_PER_SEGMENT, MIN_RECALL_PER_WORDS } from "@/domain/cognitio/validators";
+import {
+  normalizeConceptLabel,
+  rejectConceptArtifact,
+  isValidConceptLabel,
+} from "@/lib/cognitio-semantic-cleaning";
 
 export async function runQA(input: QAInput): Promise<QAOutput> {
   const { data, error } = await supabase.functions.invoke("cognitio-qa", {
@@ -16,7 +23,7 @@ export async function runQA(input: QAInput): Promise<QAOutput> {
   return data as QAOutput;
 }
 
-// Client-side QA checks
+// Client-side QA checks with semantic scoring
 export function runLocalQA(input: QAInput): QAOutput {
   const checklist: QAChecklistItem[] = [];
   const violations: QAViolation[] = [];
@@ -25,13 +32,15 @@ export function runLocalQA(input: QAInput): QAOutput {
   const concepts = input.concepts;
   const sourceWords = input.source_text.split(/\s+/).length;
 
+  // ===== STRUCTURAL CHECKS =====
+
   // Check 1: Has active recall
   const hasRecall = mission.rooms.some(r => r.items.length > 0);
   checklist.push({
     check_id: "has_active_recall",
     label: "Rappel actif présent",
     passed: hasRecall,
-    weight: 15,
+    weight: 10,
   });
   if (!hasRecall) {
     violations.push({
@@ -48,7 +57,7 @@ export function runLocalQA(input: QAInput): QAOutput {
     check_id: "no_cognitive_overload",
     label: "Pas de surcharge cognitive",
     passed: noOverload,
-    weight: 10,
+    weight: 7,
   });
   if (!noOverload) {
     violations.push({
@@ -67,16 +76,9 @@ export function runLocalQA(input: QAInput): QAOutput {
     check_id: "bloom_diversity",
     label: "Diversité Bloom (3+ niveaux)",
     passed: bloomDiversity,
-    weight: 10,
+    weight: 5,
     details: `${bloomLevels.size} niveaux utilisés`,
   });
-  if (!bloomDiversity) {
-    violations.push({
-      violation_type: "bloom_gap",
-      severity: "warning",
-      message: `Seulement ${bloomLevels.size} niveau(x) Bloom utilisé(s), minimum 3 recommandé`,
-    });
-  }
 
   // Check 4: Source fidelity (no hallucination check)
   const allConceptKeys = new Set(concepts.map(c => c.stable_key));
@@ -89,7 +91,7 @@ export function runLocalQA(input: QAInput): QAOutput {
     check_id: "no_hallucination",
     label: "Pas de concept inventé",
     passed: noHallucination,
-    weight: 20,
+    weight: 15,
   });
   if (!noHallucination) {
     violations.push({
@@ -107,7 +109,7 @@ export function runLocalQA(input: QAInput): QAOutput {
     check_id: "critical_coverage",
     label: "Concepts critiques couverts (>80%)",
     passed: criticalCoverage,
-    weight: 15,
+    weight: 8,
     details: `${coveredCritical.length}/${criticalConcepts.length}`,
   });
 
@@ -120,7 +122,7 @@ export function runLocalQA(input: QAInput): QAOutput {
     check_id: "valid_sequence",
     label: "Séquence de salles valide",
     passed: seqValid,
-    weight: 5,
+    weight: 3,
   });
 
   // Check 7: Has explanations
@@ -131,7 +133,7 @@ export function runLocalQA(input: QAInput): QAOutput {
     check_id: "has_explanations",
     label: "Explications présentes",
     passed: allHaveExplanations,
-    weight: 10,
+    weight: 5,
   });
 
   // Check 8: Reasonable duration
@@ -143,7 +145,7 @@ export function runLocalQA(input: QAInput): QAOutput {
     check_id: "reasonable_duration",
     label: "Durée raisonnable (<15 min)",
     passed: reasonableDuration,
-    weight: 5,
+    weight: 2,
   });
 
   // Check 9: Quality score threshold
@@ -152,8 +154,64 @@ export function runLocalQA(input: QAInput): QAOutput {
     check_id: "quality_threshold",
     label: "Score qualité source suffisant",
     passed: goodQuality,
-    weight: 10,
+    weight: 5,
   });
+
+  // ===== SEMANTIC CHECKS =====
+
+  // Check 10: Concept label cleanliness
+  const labelIssues = assessConceptLabelCleanliness(concepts);
+  const labelCleanOk = labelIssues.score >= 0.7;
+  checklist.push({
+    check_id: "concept_label_cleanliness",
+    label: "Propreté labels concepts",
+    passed: labelCleanOk,
+    weight: 10,
+    details: `${Math.round(labelIssues.score * 100)}% — ${labelIssues.issues.length} problème(s)`,
+  });
+  if (!labelCleanOk && labelIssues.issues.length > 0) {
+    violations.push({
+      violation_type: "dirty_concept_labels",
+      severity: labelIssues.score < 0.4 ? "blocking" : "warning",
+      message: `Labels bruités: ${labelIssues.issues.slice(0, 3).join(", ")}`,
+    });
+  }
+
+  // Check 11: Definition quality
+  const defQuality = assessDefinitionQuality(concepts);
+  const defQualityOk = defQuality.score >= 0.6;
+  checklist.push({
+    check_id: "definition_quality",
+    label: "Qualité définitions",
+    passed: defQualityOk,
+    weight: 10,
+    details: `${Math.round(defQuality.score * 100)}% — ${defQuality.rawCopyCount} copier-coller, ${defQuality.tooLongCount} trop longues`,
+  });
+  if (!defQualityOk) {
+    violations.push({
+      violation_type: "poor_definitions",
+      severity: defQuality.score < 0.3 ? "blocking" : "warning",
+      message: `Définitions insuffisantes: ${defQuality.rawCopyCount} non reformulées, ${defQuality.tooLongCount} trop longues`,
+    });
+  }
+
+  // Check 12: Critical concept validity
+  const criticalQuality = assessCriticalConceptQuality(concepts);
+  const criticalQualityOk = criticalQuality.score >= 0.7;
+  checklist.push({
+    check_id: "critical_concept_quality",
+    label: "Qualité concepts critiques",
+    passed: criticalQualityOk,
+    weight: 10,
+    details: `${Math.round(criticalQuality.score * 100)}% — ${criticalQuality.artifactCriticals.length} artefact(s)`,
+  });
+  if (criticalQuality.artifactCriticals.length > 0) {
+    violations.push({
+      violation_type: "artifact_as_critical",
+      severity: "blocking",
+      message: `Artefacts promus critiques: ${criticalQuality.artifactCriticals.join(", ")}`,
+    });
+  }
 
   // Compute total score
   const totalWeight = checklist.reduce((s, c) => s + c.weight, 0);
@@ -172,20 +230,123 @@ export function runLocalQA(input: QAInput): QAOutput {
   };
 }
 
+// ---------- Semantic Assessment Functions ----------
+
+function assessConceptLabelCleanliness(concepts: { label: string; stable_key: string }[]): {
+  score: number;
+  issues: string[];
+} {
+  if (concepts.length === 0) return { score: 1, issues: [] };
+
+  const issues: string[] = [];
+  let cleanCount = 0;
+
+  for (const c of concepts) {
+    const { rejected, reason } = rejectConceptArtifact({
+      label: c.label,
+      definition: "placeholder for label check",
+      source_trace: [],
+    });
+
+    // We only check label validity here, not definition
+    if (!isValidConceptLabel(c.label)) {
+      issues.push(`"${c.label}"`);
+    } else {
+      cleanCount++;
+    }
+  }
+
+  return {
+    score: concepts.length > 0 ? cleanCount / concepts.length : 1,
+    issues,
+  };
+}
+
+function assessDefinitionQuality(concepts: { label: string; definition: string }[]): {
+  score: number;
+  rawCopyCount: number;
+  tooLongCount: number;
+} {
+  if (concepts.length === 0) return { score: 1, rawCopyCount: 0, tooLongCount: 0 };
+
+  let goodCount = 0;
+  let rawCopyCount = 0;
+  let tooLongCount = 0;
+
+  for (const c of concepts) {
+    const def = c.definition.trim();
+
+    if (def.length < 15) continue;
+
+    if (def.length > 400) {
+      tooLongCount++;
+      const sentenceCount = (def.match(/[.!?]/g) || []).length;
+      if (sentenceCount > 5) rawCopyCount++;
+      continue;
+    }
+
+    const hasInternalRefs = /\([Cc]f\.?\s|voir\s+(page|chapitre|section)/i.test(def);
+    const hasRangLabels = /Rang\s+[A-Z]|R2C/i.test(def);
+    const hasBulletFragments = /^\s*[-•]\s/m.test(def) && def.split("\n").length > 3;
+
+    if (hasInternalRefs || hasRangLabels || hasBulletFragments) {
+      rawCopyCount++;
+    } else {
+      goodCount++;
+    }
+  }
+
+  return {
+    score: concepts.length > 0 ? goodCount / concepts.length : 1,
+    rawCopyCount,
+    tooLongCount,
+  };
+}
+
+function assessCriticalConceptQuality(concepts: { label: string; definition: string; criticality: number }[]): {
+  score: number;
+  artifactCriticals: string[];
+} {
+  const criticals = concepts.filter(c => c.criticality === 1);
+  if (criticals.length === 0) return { score: 1, artifactCriticals: [] };
+
+  const artifactCriticals: string[] = [];
+  let validCount = 0;
+
+  for (const c of criticals) {
+    if (!isValidConceptLabel(c.label) || c.definition.trim().length < 15) {
+      artifactCriticals.push(c.label);
+    } else {
+      validCount++;
+    }
+  }
+
+  return {
+    score: criticals.length > 0 ? validCount / criticals.length : 1,
+    artifactCriticals,
+  };
+}
+
 function buildRecommendations(
   checklist: QAChecklistItem[],
   violations: QAViolation[]
 ): string[] {
   const recs: string[] = [];
 
+  if (!checklist.find(c => c.check_id === "concept_label_cleanliness")?.passed) {
+    recs.push("Nettoyez les labels de concepts : supprimez les artefacts éditoriaux (Rang, R2C, fragments typographiques)");
+  }
+  if (!checklist.find(c => c.check_id === "definition_quality")?.passed) {
+    recs.push("Améliorez les définitions : condensez, reformulez, supprimez les copier-coller bruts du polycopié");
+  }
+  if (!checklist.find(c => c.check_id === "critical_concept_quality")?.passed) {
+    recs.push("Vérifiez les concepts critiques : un artefact ou métadonnée ne devrait jamais être critique");
+  }
   if (!checklist.find(c => c.check_id === "bloom_diversity")?.passed) {
     recs.push("Ajoutez des questions de niveaux Bloom plus élevés (appliquer, analyser)");
   }
   if (!checklist.find(c => c.check_id === "critical_coverage")?.passed) {
     recs.push("Assurez-vous que les concepts critiques sont bien couverts dans la mission");
-  }
-  if (!checklist.find(c => c.check_id === "has_explanations")?.passed) {
-    recs.push("Complétez les explications manquantes pour chaque item");
   }
 
   return recs;

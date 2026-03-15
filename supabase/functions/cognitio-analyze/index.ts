@@ -324,7 +324,22 @@ RÈGLES ABSOLUES :
 - Si un concept n'est pas clairement traçable, mettre source_confidence < 0.5
 - Signaler les zones ambiguës honnêtement
 - Maximum 30 concepts
-- Attribuer la criticality en fonction de l'importance réelle dans le cours
+- Attribuer la criticality en fonction de l'importance MÉDICALE/PÉDAGOGIQUE réelle dans le cours
+
+RÈGLES DE QUALITÉ SÉMANTIQUE (CRITIQUES) :
+- Un concept DOIT être une notion médicale/scientifique/pédagogique réelle, intelligible seule
+- NE PAS extraire comme concept : labels administratifs (Rang A, Rang B, R2C), balises pédagogiques, métadonnées de support, fragments typographiques, titres de section sales, ponctuation résiduelle
+- Chaque label de concept DOIT être propre, lisible, normalisé (ex: "Pneumonie aiguë communautaire (PAC)" et non "COM R2C : Rang A")
+- Les définitions DOIVENT être condensées et reformulées pédagogiquement : PAS de copier-coller brut du polycopié
+- Chaque définition doit être autonome, compréhensible sans contexte, en 1-3 phrases maximum
+- Chaque concept critique (criticality=1) doit être réellement central au sujet médical/scientifique, pas un artefact du document
+- Si un fragment du texte n'est pas un vrai concept (ex: ") - Signes généraux inconstants"), NE PAS l'inclure
+
+QUALITÉ DES DÉFINITIONS :
+- Reformuler, condenser, clarifier
+- Supprimer le jargon éditorial et les références internes au polycopié
+- Garder l'essentiel médical/scientifique
+- Ajouter un piège/distinction si pertinent directement dans "traps"
 
 CONTEXTE :
 - Objectif utilisateur : ${objective}
@@ -344,8 +359,8 @@ Retourne UNIQUEMENT du JSON valide avec cette structure exacte :
   "concepts": [
     {
       "stable_key": "snake_case_unique",
-      "label": "Nom du concept",
-      "definition": "Définition claire",
+      "label": "Nom propre et lisible du concept",
+      "definition": "Définition condensée, reformulée, pédagogiquement exploitable (1-3 phrases)",
       "type": "catégorie/domaine",
       "criticality": 1-4,
       "criticality_score": 0.0-1.0,
@@ -388,7 +403,7 @@ function normalizeAnalysisResult(
   sourceText: string,
   segments: AnalyzeRequest["segments"]
 ): AnalysisResult {
-  const concepts = ((raw.concepts as unknown[]) ?? []).slice(0, 30).map((c: Record<string, unknown>, i: number) => {
+  const rawConcepts = ((raw.concepts as unknown[]) ?? []).slice(0, 30).map((c: Record<string, unknown>, i: number) => {
     const criticality = Math.min(4, Math.max(1, Math.round((c.criticality as number) || 3)));
     return {
       stable_key: (c.stable_key as string) || `concept_${i}`,
@@ -412,6 +427,23 @@ function normalizeAnalysisResult(
       uncertain: false, // Will be set by validation step
     };
   });
+
+  // --- CONCEPT NORMALIZATION & ARTIFACT FILTERING ---
+  const concepts = rawConcepts.filter(c => {
+    // Reject editorial artifacts promoted as concepts
+    const rejection = rejectConceptArtifactEdge(c.label, c.definition);
+    if (rejection.rejected) {
+      console.log(`[M2] Rejected concept artifact: "${c.label}" — ${rejection.reason}`);
+      return false;
+    }
+    return true;
+  }).map(c => ({
+    ...c,
+    // Normalize labels
+    label: normalizeConceptLabelEdge(c.label) || c.label,
+    // Compress definitions
+    definition: compressDefinitionEdge(c.definition),
+  }));
 
   const traps = ((raw.traps as unknown[]) ?? []).map((t: Record<string, unknown>) => ({
     concept_key: (t.concept_key as string) || "",
@@ -578,4 +610,77 @@ async function logOps(
   } catch {
     console.error("Ops logging failed for:", eventType);
   }
+}
+
+// ---------- Concept Normalization Helpers ----------
+
+const CONCEPT_NOISE_PATTERNS: RegExp[] = [
+  /^[\s)(\-–—•:;,.\]}\[{]+/,
+  /[\s)(\-–—•:;,.\]}\[{]+$/,
+  /^(?:COM\s+)?R2C\s*:\s*Rang\s+[A-Z]\s*[-–—:]\s*/i,
+  /\s*[-–—]\s*Rang\s+[A-Z]\s*$/i,
+  /^Rang\s+[A-Z]\s*[-–—:]\s*/i,
+  /^Item\s+\d+\s*[-–—:]\s*/i,
+  /^N°\s*\d+\s*[-–—:]\s*/i,
+  /^[)]\s*[-–—]\s*/,
+];
+
+function normalizeConceptLabelEdge(rawLabel: string): string | null {
+  let label = rawLabel.trim();
+  for (const pattern of CONCEPT_NOISE_PATTERNS) {
+    label = label.replace(pattern, "").trim();
+  }
+  if (label.length < 3) return null;
+  if (/^(?:Rang|R2C|COM|Item|UE|DFGSM|ECN|EDN)\s/i.test(label)) return null;
+  if (/^[\d\s\-–—:.;,()]+$/.test(label)) return null;
+  if (/^[)\]}>]/.test(label)) return null;
+  label = label.replace(/\s*[-–—:]\s*$/, "").trim();
+  return label.length >= 3 ? label : null;
+}
+
+function rejectConceptArtifactEdge(label: string, definition: string): { rejected: boolean; reason?: string } {
+  const normalized = normalizeConceptLabelEdge(label);
+  if (!normalized) return { rejected: true, reason: `Label is artifact: "${label}"` };
+  if (!/[a-zA-ZÀ-ÿ]/.test(normalized)) return { rejected: true, reason: "No letters in label" };
+  if (normalized.length < 3) return { rejected: true, reason: "Label too short" };
+
+  // Reject non-concept structural fragments
+  const rejectPatterns = [
+    /^(?:Signes?\s+(?:généraux|cliniques?|fonctionnels?)\s*(?:inconstants?)?)\s*$/i,
+    /^(?:Voir|Cf\.?|Tableau|Figure|Annexe)\s/i,
+    /^(?:Introduction|Conclusion|Résumé|Bibliographie|Références?)\s*$/i,
+    /^(?:NB|PS|Note)\s*:/i,
+    /^(?:Suite|Fin|Début)\s*$/i,
+  ];
+  if (rejectPatterns.some(p => p.test(normalized))) {
+    return { rejected: true, reason: `Structural fragment: "${normalized}"` };
+  }
+
+  if (definition.trim().length < 10) return { rejected: true, reason: "Definition too short" };
+  if (definition.trim().toLowerCase() === label.trim().toLowerCase()) {
+    return { rejected: true, reason: "Definition is just the label" };
+  }
+
+  return { rejected: false };
+}
+
+function compressDefinitionEdge(rawDef: string, maxLen = 250): string {
+  let def = rawDef.trim();
+  def = def.replace(/^(?:Il s'agit d'|C'est |On appelle |On définit |Par définition,?\s*)/i, "");
+  def = def.replace(/\s*\([Cc]f\.?\s*[^)]+\)\s*$/g, "");
+  def = def.replace(/\s*\[[\d,\s]+\]\s*$/g, "");
+  def = def.replace(/\s*\(Rang\s+[A-Z]\)\s*/gi, " ");
+  def = def.replace(/\s*\(R2C[^)]*\)\s*/gi, " ");
+  def = def.replace(/\s{2,}/g, " ").trim();
+  if (def.length > maxLen) {
+    const sentences = def.match(/[^.!?]+[.!?]+/g) || [def];
+    let compressed = "";
+    for (const s of sentences) {
+      if ((compressed + s).length <= maxLen) compressed += s;
+      else break;
+    }
+    def = compressed.trim() || def.slice(0, maxLen).replace(/\s\S*$/, "…");
+  }
+  if (def.length > 0) def = def.charAt(0).toUpperCase() + def.slice(1);
+  return def;
 }

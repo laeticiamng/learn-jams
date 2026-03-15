@@ -580,7 +580,67 @@ function cleanRawText(text: string): string {
   cleaned = cleaned.replace(/\n{3,}/g, "\n\n"); // max 2 consecutive newlines
   cleaned = cleaned.trim();
 
+  // Phase 2: Editorial artifact filtering
+  cleaned = filterEditorialArtifacts(cleaned);
+
   return cleaned;
+}
+
+/**
+ * Filter editorial artifacts, metadata, and structural noise from source text.
+ * Runs after basic PDF cleanup to remove pedagogically irrelevant content.
+ */
+function filterEditorialArtifacts(text: string): string {
+  const ARTIFACT_LINE_PATTERNS: RegExp[] = [
+    // Rang/classification labels (French medical)
+    /^\s*(?:COM\s+)?R2C\s*:\s*Rang\s+[A-Z]\s*$/i,
+    /^\s*Rang\s+[A-Z]\s*$/i,
+    // Revision/version metadata
+    /^\s*(?:Dernière\s+)?(?:mise\s+à\s+jour|MAJ|révision)\s*[:—–-]\s*\d/i,
+    /^\s*Version\s+\d+/i,
+    /^\s*(?:Révisé|Modifié|Créé)\s+(?:le|en)\s+/i,
+    /^\s*\d{1,2}[\/.-]\d{1,2}[\/.-]\d{2,4}\s*$/,
+    // Course metadata headers
+    /^\s*(?:UE|DFGSM|DFASM|ECN|EDN|iECN)\s*\d/i,
+    /^\s*Collège\s+(?:national|des)\s/i,
+    // Page/copyright
+    /^\s*Page\s+\d+/i,
+    /^\s*\d+\s*\/\s*\d+\s*$/,
+    /^\s*©\s/,
+    /^\s*Tous\s+droits\s+réservés/i,
+    // Minimal punctuation-only lines
+    /^\s*[-–—]+\s*$/,
+    /^\s*[)(\]}\[{]\s*[-–—]\s*$/,
+    /^\s*[•\-–]\s*$/,
+  ];
+
+  const lines = text.split("\n");
+  const cleaned: string[] = [];
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (trimmed.length === 0) {
+      cleaned.push("");
+      continue;
+    }
+
+    // Skip pure artifact lines
+    if (ARTIFACT_LINE_PATTERNS.some(p => p.test(trimmed))) {
+      continue;
+    }
+
+    // Clean inline Rang labels
+    let cleanedLine = trimmed;
+    cleanedLine = cleanedLine.replace(/\s*\(?\s*Rang\s+[A-Z]\s*\)?\s*/gi, " ");
+    cleanedLine = cleanedLine.replace(/\s*[-–—]\s*R2C\s*:\s*Rang\s+[A-Z]\s*/gi, " ");
+    cleanedLine = cleanedLine.replace(/\s{2,}/g, " ").trim();
+
+    if (cleanedLine.length >= 3) {
+      cleaned.push(cleanedLine);
+    }
+  }
+
+  return cleaned.join("\n").replace(/\n{3,}/g, "\n\n").trim();
 }
 
 function detectLanguage(text: string): string {
