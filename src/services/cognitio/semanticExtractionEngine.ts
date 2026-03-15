@@ -3,7 +3,7 @@
 // pipeline: noise filter → headers → tables → concepts → topic → QA
 // ============================================================
 
-import { filterEditorialNoise, type EditorialFilterResult } from "./editorialNoiseFilter";
+import { filterEditorialNoise, detectFrontMatter, type EditorialFilterResult } from "./editorialNoiseFilter";
 import { detectSectionHeaders, buildDocumentHierarchy, type DocumentHierarchy } from "./sectionHeaderDetector";
 import { extractTables, type TableExtractionResult } from "./tableAwareExtractor";
 import { normalizeConcepts, groupAndDeduplicateConcepts, type NormalizationResult } from "./conceptNormalizer";
@@ -62,8 +62,12 @@ export interface SemanticExtractionOutput {
  * 6. Semantic QA (compute scores, generate debug panel)
  */
 export function runSemanticExtraction(input: SemanticExtractionInput): SemanticExtractionOutput {
-  // Stage 1: Editorial noise filter
-  const editorialFilter = filterEditorialNoise(input.raw_text);
+  // Stage 0: Front matter detection — strip branding/R2C/revision headers from top
+  const frontMatter = detectFrontMatter(input.raw_text);
+  const textForAnalysis = frontMatter.has_front_matter ? frontMatter.body_text : input.raw_text;
+
+  // Stage 1: Editorial noise filter (on text with front matter already stripped)
+  const editorialFilter = filterEditorialNoise(textForAnalysis);
 
   // Stage 2: Section header detection
   const cleanedLines = editorialFilter.cleaned_text.split("\n");

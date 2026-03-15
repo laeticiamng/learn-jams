@@ -33,7 +33,7 @@ import {
   computeHeaderNoiseScore,
   type ConceptCandidateScores,
 } from "@/lib/cognitio-semantic-cleaning";
-import { filterEditorialNoise } from "./editorialNoiseFilter";
+import { filterEditorialNoise, detectFrontMatter } from "./editorialNoiseFilter";
 
 // ---------- Run Analysis (Edge Function) ----------
 
@@ -210,18 +210,38 @@ function emitDiagnosticTrace(trace: M2DiagnosticTrace, result: M2_Output): void 
  * and other noise that confuses concept extraction.
  */
 function preNormalizeForM2(input: M2_Input): M2_Input {
-  // Step 1: Apply deep R2C/revision-specific cleaning BEFORE generic editorial filter
-  const r2cCleaned = cleanR2CRevisionArtifacts(input.clean_text);
+  // Step 0: Detect and strip front matter (branding, R2C headers, revision metadata)
+  const frontMatter = detectFrontMatter(input.clean_text);
+  const textAfterFrontMatter = frontMatter.has_front_matter ? frontMatter.body_text : input.clean_text;
+
+  if (frontMatter.has_front_matter) {
+    console.info(
+      `[COGNITIO][M2] Front matter detected:\n` +
+      `  front_matter_lines=${frontMatter.front_matter_lines.length}\n` +
+      `  body_start_line=${frontMatter.body_start_line}\n` +
+      `  front_matter_samples=[${frontMatter.front_matter_lines.slice(0, 5).map(l => `"${l.original.slice(0, 60)}"`).join(", ")}]\n` +
+      `  text_before=${input.clean_text.length} → text_after=${textAfterFrontMatter.length}`
+    );
+  }
+
+  // Step 1: Apply deep R2C/revision-specific cleaning AFTER front matter strip
+  const r2cCleaned = cleanR2CRevisionArtifacts(textAfterFrontMatter);
 
   // Step 2: Apply generic editorial noise filter
   const filterResult = filterEditorialNoise(r2cCleaned);
 
-  // Also clean segment content
-  const cleanedSegments = input.segments.map(seg => ({
-    ...seg,
-    content: filterEditorialNoise(cleanR2CRevisionArtifacts(seg.content)).cleaned_text,
-    title: seg.title ? cleanMainTopic(seg.title) || seg.title : seg.title,
-  }));
+  // Also clean segment content — with front matter awareness
+  const cleanedSegments = input.segments.map((seg, idx) => {
+    // For segment 0, apply front matter detection to strip polluted headers
+    const segText = idx === 0 && frontMatter.has_front_matter
+      ? detectFrontMatter(seg.content).body_text
+      : seg.content;
+    return {
+      ...seg,
+      content: filterEditorialNoise(cleanR2CRevisionArtifacts(segText)).cleaned_text,
+      title: seg.title ? cleanMainTopic(seg.title) || seg.title : seg.title,
+    };
+  });
 
   const cleanedLength = filterResult.cleaned_text_length;
   const rawLength = input.clean_text.length; // Use original length for ratio
@@ -229,7 +249,7 @@ function preNormalizeForM2(input: M2_Input): M2_Input {
 
   console.info(
     `[COGNITIO][M2] Pre-normalization:\n` +
-    `  raw=${rawLength} chars → after_r2c=${r2cCleaned.length} → cleaned=${cleanedLength} chars (${(retentionRatio * 100).toFixed(1)}% retained)\n` +
+    `  raw=${rawLength} chars → after_frontmatter=${textAfterFrontMatter.length} → after_r2c=${r2cCleaned.length} → cleaned=${cleanedLength} chars (${(retentionRatio * 100).toFixed(1)}% retained)\n` +
     `  removed_lines=${filterResult.removed_lines_count}\n` +
     `  removed_types=[${filterResult.removed_patterns.slice(0, 8).map(p => p.type).join(", ")}${filterResult.removed_patterns.length > 8 ? "…" : ""}]`
   );
@@ -397,12 +417,30 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
   const chapters = reconstructChapterHierarchy(segments);
   console.info(`[COGNITIO][M2] m2_chapters_detected=${chapters.length}, titles=[${chapters.map(c => `"${c.title}"`).join(", ")}]`);
 
+  // === SEGMENT 0 QUARANTINE ===
+  // Detect if segment 0 is heavily noisy (front matter / branding / R2C headers).
+  // If so, quarantine it: exclude from primary concept extraction.
+  const segment0Quarantined = isSegment0Noisy(segments);
+  if (segment0Quarantined) {
+    console.info(
+      `[COGNITIO][M2] SEGMENT_0_QUARANTINE: Segment 0 is heavily noisy. ` +
+      `Excluding from primary concept extraction. Will extract from body segments only.`
+    );
+  }
+
   // === Level 3: Extract concepts per chapter ===
   const rawConcepts: AnalyzedConcept[] = [];
   let globalIdx = 0;
 
   for (let chapterIdx = 0; chapterIdx < chapters.length; chapterIdx++) {
     const chapter = chapters[chapterIdx];
+
+    // SEGMENT 0 QUARANTINE: Skip chapter 0 if quarantined
+    if (chapterIdx === 0 && segment0Quarantined) {
+      console.info(`[COGNITIO][M2] Skipping quarantined chapter 0 ("${chapter.title}") for concept extraction.`);
+      continue;
+    }
+
     const chapterContent = cleanSourceNoise(chapter.content);
 
     // P0 AUDIT FIX: Multi-strategy sentence splitting for bullet-point medical text
@@ -589,6 +627,70 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
     `  m2_reject_reasons=${JSON.stringify(rejectReasons)}\n` +
     `  m2_rejected_samples=[${rejectedLabels.join(", ")}]`
   );
+
+  // ============================================================
+  // P0 GUARD RAIL: SECONDARY PASS ON BODY ONLY
+  // If all concepts were editorial artifacts OR all came from the
+  // same noisy header, relaunch extraction on body segments only
+  // (segments 1+), bypassing the polluted front matter entirely.
+  // ============================================================
+  if (concepts.length === 0 && rawConcepts.length > 0 && segments.length > 1) {
+    _dbg_fallback_level = "secondary_body_pass";
+    console.warn(
+      `[COGNITIO][M2] SECONDARY_BODY_PASS: All ${rawConcepts.length} concepts rejected as artifacts. ` +
+      `Relaunching extraction on body segments only (segments 1-${segments.length - 1}).`
+    );
+
+    const bodySegments = segments.slice(1);
+    const bodyText = bodySegments.map(s => s.content).join("\n\n");
+    const cleanedBodyText = cleanSourceNoise(bodyText);
+
+    if (cleanedBodyText.length > 50) {
+      const bodyConcepts = extractConceptsFromText(cleanedBodyText, bodySegments, globalIdx);
+      for (const bc of bodyConcepts) {
+        const { rejected } = rejectConceptArtifact(bc);
+        if (!rejected) {
+          concepts.push(bc);
+          globalIdx++;
+        }
+      }
+      console.info(
+        `[COGNITIO][M2] Secondary body pass: ${cleanedBodyText.length} chars → ${bodyConcepts.length} candidates → ${concepts.length} accepted.`
+      );
+    }
+  }
+
+  // P0 GUARD RAIL: MULTI-SEGMENT CONCEPT DIVERSITY CHECK
+  // If all accepted concepts come from segment 0 and we have more segments,
+  // force extraction from later segments to ensure concept diversity.
+  if (concepts.length > 0 && segments.length > 1) {
+    const allFromSeg0 = concepts.every(c =>
+      c.source_trace.every(t => t.segment_index === 0)
+    );
+    if (allFromSeg0) {
+      console.warn(
+        `[COGNITIO][M2] MULTI_SEGMENT_GUARD: All ${concepts.length} concepts from segment 0. ` +
+        `Forcing extraction from body segments for diversity.`
+      );
+      const bodySegments = segments.slice(1);
+      const bodyText = bodySegments.map(s => s.content).join("\n\n");
+      const cleanedBodyText = cleanSourceNoise(bodyText);
+
+      if (cleanedBodyText.length > 50) {
+        const diversityConcepts = extractConceptsFromText(cleanedBodyText, bodySegments, globalIdx);
+        for (const dc of diversityConcepts) {
+          const { rejected } = rejectConceptArtifact(dc);
+          if (!rejected) {
+            concepts.push(dc);
+            globalIdx++;
+          }
+        }
+        console.info(
+          `[COGNITIO][M2] Multi-segment diversity: added ${concepts.length} total concepts.`
+        );
+      }
+    }
+  }
 
   // P0 FIX: If all concepts were rejected but we have non-empty text,
   // force-extract minimal concepts so downstream never sees 0 without cause.
@@ -1105,6 +1207,132 @@ function isEditorialArtifactForHeuristic(line: string): boolean {
   if (editorialScore >= 0.5) return true;
 
   return false;
+}
+
+// ---------- Concept Label Builder ----------
+
+// ---------- Segment 0 Quarantine ----------
+
+/**
+ * Detect if segment 0 is heavily polluted with editorial noise.
+ * Returns true if segment 0 should be quarantined (excluded from
+ * primary concept extraction).
+ */
+function isSegment0Noisy(segments: SegmentOutput[]): boolean {
+  if (segments.length < 2) return false; // Can't quarantine if there's only one segment
+
+  const seg0 = segments[0];
+  if (!seg0 || seg0.content.length < 10) return false;
+
+  const lines = seg0.content.split("\n").map(l => l.trim()).filter(l => l.length > 0);
+  if (lines.length === 0) return false;
+
+  // Count how many lines are editorial noise
+  let noiseLines = 0;
+  for (const line of lines) {
+    if (isEditorialArtifactForHeuristic(line)) {
+      noiseLines++;
+    }
+  }
+
+  const noiseRatio = noiseLines / lines.length;
+
+  // Quarantine if >60% of segment 0 lines are noise
+  if (noiseRatio > 0.6) {
+    console.info(
+      `[COGNITIO][M2] Segment 0 noise analysis: ${noiseLines}/${lines.length} lines are noise (${(noiseRatio * 100).toFixed(0)}%). QUARANTINED.`
+    );
+    return true;
+  }
+
+  // Also quarantine if segment 0 title itself is a branding/classification header
+  if (seg0.title) {
+    const titleScore = computeEditorialArtifactScore(seg0.title);
+    if (titleScore >= 0.5) {
+      console.info(
+        `[COGNITIO][M2] Segment 0 title "${seg0.title}" is editorial noise (score=${titleScore.toFixed(2)}). QUARANTINED.`
+      );
+      return true;
+    }
+  }
+
+  return false;
+}
+
+// ---------- Multi-Segment Concept Extraction ----------
+
+/**
+ * Extract concepts from a text block using multi-strategy sentence splitting.
+ * Used for secondary body-only passes and multi-segment diversity enforcement.
+ */
+function extractConceptsFromText(
+  text: string,
+  sourceSegments: SegmentOutput[],
+  startIdx: number,
+): AnalyzedConcept[] {
+  const concepts: AnalyzedConcept[] = [];
+
+  // Multi-strategy sentence extraction
+  const joinedText = text.replace(/\n+/g, " ").replace(/\s{2,}/g, " ");
+
+  // Strategy 1: Standard sentence boundary
+  let sentences = joinedText.split(/(?<=[.!?])\s+/).filter(s => s.trim().length > 15);
+
+  // Strategy 2: Line-based (for bullet-point text)
+  if (sentences.length < 3 && text.length > 100) {
+    const lineSentences = text
+      .split(/\n/)
+      .map(l => l.trim())
+      .filter(l => l.length > 10 && /[a-zA-ZÀ-ÿ]/.test(l));
+    if (lineSentences.length > sentences.length) {
+      sentences = lineSentences;
+    }
+  }
+
+  // Strategy 3: Paragraph split
+  if (sentences.length < 3 && text.length > 100) {
+    const paragraphs = text.split(/\n\s*\n/).flatMap(p => {
+      const trimmed = p.trim();
+      return trimmed.length > 10 ? [trimmed] : [];
+    });
+    if (paragraphs.length > sentences.length) {
+      sentences = paragraphs;
+    }
+  }
+
+  for (let i = 0; i < Math.min(15, sentences.length); i++) {
+    const sentence = sentences[i].trim();
+    if (sentence.length < 10) continue;
+
+    // Skip lines that are editorial noise
+    if (isEditorialArtifactForHeuristic(sentence)) continue;
+
+    const words = sentence.split(/\s+/);
+    const rawLabel = buildConceptLabel(sentence, "");
+    const label = normalizeConceptLabel(rawLabel) || words.slice(0, 5).join(" ");
+    const definition = compressDefinition(sentence, 250);
+
+    if (label.length < 3 || definition.length < 10) continue;
+
+    const segIndex = Math.min(i + 1, Math.max(0, (sourceSegments.length || 1) - 1));
+
+    concepts.push({
+      stable_key: `concept_body_${startIdx + i}`,
+      label,
+      definition,
+      type: "general",
+      criticality: (i < 3 ? 1 : i < 7 ? 2 : 3) as 1 | 2 | 3 | 4,
+      criticality_score: i < 3 ? 0.9 : i < 7 ? 0.6 : 0.4,
+      bloom_target: determineBlooms(sentence),
+      relations: [],
+      prerequisites: [],
+      source_confidence: 0.55,
+      source_trace: [{ segment_index: segIndex, excerpt: sentence.slice(0, 120) }],
+      uncertain: false,
+    });
+  }
+
+  return concepts;
 }
 
 // ---------- Concept Label Builder ----------

@@ -31,7 +31,144 @@ export type EditorialNoiseType =
   | "url_email"
   | "copyright"
   | "course_metadata"
-  | "color_formatting";
+  | "color_formatting"
+  | "front_matter";
+
+// ---------- Front Matter Detection ----------
+
+export interface FrontMatterResult {
+  /** Index of first line that is NOT front matter (0-based) */
+  body_start_line: number;
+  /** Lines identified as front matter */
+  front_matter_lines: FilteredPattern[];
+  /** The text with front matter stripped */
+  body_text: string;
+  /** Whether significant front matter was detected */
+  has_front_matter: boolean;
+}
+
+/**
+ * Front matter patterns — lines at the top of a document that are
+ * branding, classification, revision metadata, or editorial headers.
+ * These must be stripped before concept extraction.
+ */
+const FRONT_MATTER_PATTERNS: RegExp[] = [
+  // Branding / platform
+  /\bCODEX\b/i,
+  /\bS[\s-]*ECN(?:\.COM)?\b/i,
+  /\bECN\.COM\b/i,
+  /\bMED[\s-]*LINE\b/i,
+  /\biKB\b/,
+  /\bPREP['']?ECN\b/i,
+  /\bELLIPSES\b/i,
+  /\bVERNAZOBRES/i,
+  // Classification / Rang
+  /\bR2C\b/i,
+  /\bRang\s+[A-Z]\b/i,
+  /\bCOM\s+R2C\b/i,
+  /\ben\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS)\b/i,
+  // ITEM / course metadata
+  /\bITEM\s+\d+/i,
+  /\bUE\s*\d+/i,
+  /\bDFGSM\b/i,
+  /\bDFASM\b/i,
+  /\biECN\b/,
+  /\bEDN\b/,
+  // Revision / dates
+  /\bRévision\s+\d/i,
+  /\bMAJ\s*[:—–\-]/i,
+  /\bVersion\s+\d/i,
+  /\bDernière\s+(?:mise\s+à\s+jour|révision)/i,
+  /^\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4}$/,
+  // Institutional headers
+  /^(?:Université|Faculté|Institut|École|Département|Campus)\s/i,
+  /^(?:Collège\s+(?:national|des)|Référentiel)\s/i,
+  /^(?:Cours|Module|Matière|Chapitre)\s*[:—–\-]/i,
+  /^(?:Enseignant|Professeur|Dr|Pr)\s*[:—–.]/i,
+  /^(?:Année\s+(?:universitaire|scolaire|académique))\s*[:—–\-]/i,
+  /^(?:Semestre|Trimestre)\s*\d/i,
+  // Separator lines
+  /^[-–—=_]{3,}\s*$/,
+  // Copyright / source
+  /^©\s/,
+  /^Tous\s+droits\s+réservés/i,
+  // Color formatting standalone
+  /^en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS)\s*$/i,
+  // Page numbers
+  /^Page\s+\d+/i,
+  /^\d+\s*\/\s*\d+\s*$/,
+  // Composite branding headers
+  /CODEX\b.*\bS[\s-]*ECN/i,
+  /S[\s-]*ECN\.COM\b.*\bR2C/i,
+  /iKB\b.*\bR2C\b/i,
+];
+
+/**
+ * Detect front matter at the top of a document.
+ * Scans from line 0 forward. Stops when it hits a run of 2+ consecutive
+ * non-front-matter, non-blank lines (= real pedagogical content).
+ *
+ * Returns the body text with front matter removed plus metadata.
+ */
+export function detectFrontMatter(text: string): FrontMatterResult {
+  const lines = text.split("\n");
+  const frontMatterLines: FilteredPattern[] = [];
+  let bodyStartLine = 0;
+  let consecutiveClean = 0;
+
+  for (let i = 0; i < lines.length; i++) {
+    const trimmed = lines[i].trim();
+
+    // Blank lines don't reset the counter but aren't front matter
+    if (trimmed.length === 0) {
+      continue;
+    }
+
+    // Very short non-alpha lines are noise
+    if (trimmed.length <= 2 && /^[^a-zA-ZÀ-ÿ0-9]/.test(trimmed)) {
+      frontMatterLines.push({ type: "front_matter", original: trimmed, line_number: i + 1 });
+      consecutiveClean = 0;
+      continue;
+    }
+
+    const isFrontMatter = FRONT_MATTER_PATTERNS.some(p => p.test(trimmed));
+
+    if (isFrontMatter) {
+      frontMatterLines.push({ type: "front_matter", original: trimmed, line_number: i + 1 });
+      consecutiveClean = 0;
+    } else {
+      consecutiveClean++;
+      // Once we see 2 consecutive clean, content-bearing lines, we're in the body
+      if (consecutiveClean >= 2) {
+        // Body starts at the first clean line of this run
+        bodyStartLine = i - 1;
+        break;
+      }
+    }
+
+    // Safety: don't scan more than 60 lines for front matter
+    if (i >= 59) {
+      bodyStartLine = i + 1;
+      break;
+    }
+  }
+
+  // If we never found 2 consecutive clean lines, body starts after last front matter line
+  if (consecutiveClean < 2 && frontMatterLines.length > 0) {
+    const lastFM = frontMatterLines[frontMatterLines.length - 1].line_number;
+    bodyStartLine = lastFM; // line_number is 1-based, so this is the correct 0-based index
+  }
+
+  const bodyLines = lines.slice(bodyStartLine);
+  const bodyText = bodyLines.join("\n").replace(/^\n+/, "").trim();
+
+  return {
+    body_start_line: bodyStartLine,
+    front_matter_lines: frontMatterLines,
+    body_text: bodyText,
+    has_front_matter: frontMatterLines.length >= 2,
+  };
+}
 
 // ---------- Pattern Registry ----------
 
