@@ -48,7 +48,7 @@ export async function getCostSummary(
   since: string,
   until?: string,
 ): Promise<{ feature_key: string; provider_key: string; total_estimated: number; total_actual: number; count: number }[]> {
-  let query = supabase
+  let query = (supabase as any)
     .from("cost_events")
     .select("feature_key, provider_key, estimated_cost_usd, actual_cost_usd")
     .gte("created_at", since);
