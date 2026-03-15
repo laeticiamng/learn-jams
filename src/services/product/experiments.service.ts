@@ -75,10 +75,10 @@ export async function recordMeasurement(input: RecordMeasurementInput): Promise<
     .insert([{
       experiment_run_id: input.experiment_run_id,
       experiment_key: input.experiment_key ?? '',
-      metric_key: input.measure_key ?? input.metric_key ?? '',
+      metric_key: input.measure_key ?? '',
       measure_value_numeric: input.value_numeric ?? null,
       measure_value_text: input.value_text ?? null,
-    }]);
+    } as Record<string, unknown>]);
 
   if (error) throw new Error(`Measurement recording failed: ${error.message}`);
 }

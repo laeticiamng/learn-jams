@@ -1840,7 +1840,7 @@ export type Database = {
           created_at: string
           generated_from_version: number | null
           id: string
-          mission_run_id: string
+          mission_run_id: string | null
           questions_json: Json | null
           raw_score: number | null
           results_json: Json | null
@@ -1854,7 +1854,7 @@ export type Database = {
           created_at?: string
           generated_from_version?: number | null
           id?: string
-          mission_run_id: string
+          mission_run_id?: string | null
           questions_json?: Json | null
           raw_score?: number | null
           results_json?: Json | null
@@ -1868,7 +1868,7 @@ export type Database = {
           created_at?: string
           generated_from_version?: number | null
           id?: string
-          mission_run_id?: string
+          mission_run_id?: string | null
           questions_json?: Json | null
           raw_score?: number | null
           results_json?: Json | null
@@ -2600,6 +2600,111 @@ export type Database = {
           storage_path?: string | null
           updated_at?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      video_generation_plans: {
+        Row: {
+          created_at: string
+          id: string
+          plan_json: Json | null
+          project_id: string | null
+          status: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          plan_json?: Json | null
+          project_id?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          plan_json?: Json | null
+          project_id?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      video_projects: {
+        Row: {
+          config_json: Json | null
+          created_at: string
+          description: string | null
+          id: string
+          output_url: string | null
+          status: string | null
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          config_json?: Json | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          output_url?: string | null
+          status?: string | null
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          config_json?: Json | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          output_url?: string | null
+          status?: string | null
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      video_provider_runs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          input_json: Json | null
+          output_json: Json | null
+          project_id: string | null
+          provider_key: string | null
+          started_at: string | null
+          status: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          input_json?: Json | null
+          output_json?: Json | null
+          project_id?: string | null
+          provider_key?: string | null
+          started_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          input_json?: Json | null
+          output_json?: Json | null
+          project_id?: string | null
+          provider_key?: string | null
+          started_at?: string | null
+          status?: string | null
         }
         Relationships: []
       }
