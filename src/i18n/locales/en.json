@@ -824,7 +824,55 @@
     "paste_text_instead": "Paste text directly",
     "import_other_doc": "Import another document",
     "show_debug": "Technical details",
-    "disclaimer": "The analysis is based on the provided content. The engine does not claim to have understood what it did not. Uncertainty zones are explicitly flagged."
+    "disclaimer": "The analysis is based on the provided content. The engine does not claim to have understood what it did not. Uncertainty zones are explicitly flagged.",
+    "result_success": "Your content has been generated successfully!",
+    "result_success_detail": "You can now view and use your creation."
+  },
+  "formats": {
+    "escape_game": {
+      "label": "Interactive Mission",
+      "description": "Gamified path with puzzles, active recall and confidence calibration."
+    },
+    "music": {
+      "label": "Educational Song",
+      "description": "Your concepts turned into music — 30 styles available."
+    },
+    "dynamic_sheet": {
+      "label": "Study Sheet",
+      "description": "Structured sheet with Bloom hierarchy and traced sources."
+    },
+    "animated_story": {
+      "label": "Animated Story",
+      "description": "Immersive narrative to anchor concepts in a story."
+    },
+    "video": {
+      "label": "Educational Video",
+      "description": "AI-generated visual synthesis or animated template."
+    }
+  },
+  "format": {
+    "tag": {
+      "game": "game",
+      "interactive": "interactive",
+      "puzzle": "puzzle",
+      "audio": "audio",
+      "creative": "creative",
+      "song": "song",
+      "worksheet": "worksheet",
+      "document": "document",
+      "printable": "printable",
+      "story": "story",
+      "animation": "animation",
+      "narrative": "narrative",
+      "video": "video",
+      "template": "template",
+      "visual": "visual"
+    },
+    "unlimited": "Unlimited",
+    "remaining": "{{count}} remaining"
+  },
+  "create": {
+    "choose_format": "What do you want to create?"
   },
   "mission_debrief": {
     "seo_title": "Debrief — COGNITIO",
