@@ -266,7 +266,7 @@ function buildBoss(input: GenerateExperienceInput): MissionBossRoom {
 
 function buildSynthesisOnly(input: GenerateExperienceInput): MissionContent {
   return {
-    title: `Synthèse: ${input.concepts[0]?.category ?? "Contenu"}`,
+    title: `Synthèse: ${input.concepts[0]?.type ?? "Contenu"}`,
     narrative_intro: "La qualité du contenu source ne permet pas de générer une mission interactive complète. Voici une synthèse des concepts identifiés.",
     rooms: [],
     learning_contract: input.learning_contract,
