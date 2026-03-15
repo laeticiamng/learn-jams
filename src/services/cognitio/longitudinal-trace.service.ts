@@ -78,7 +78,7 @@ export async function updateKnowledgeGraph(
     const nextReview = computeNextReview(newScore, test_type);
 
     if (existing) {
-      await supabase
+      await (supabase as any)
         .from("learner_knowledge_graph")
         .update({
           mastery_score: newScore,
