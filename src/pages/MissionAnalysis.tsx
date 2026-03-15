@@ -87,7 +87,7 @@ export default function MissionAnalysis() {
         setM1Output(m1);
 
         // Load course profile
-        const { data: profile } = await supabase
+        const { data: profile } = await (supabase as any)
           .from("course_profiles")
           .select("*")
           .eq("document_id", id)
