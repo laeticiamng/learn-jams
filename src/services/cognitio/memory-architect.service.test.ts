@@ -127,7 +127,7 @@ describe("buildLocalMemoryArchitect", () => {
 
   // ---------- Mnemonics ----------
 
-  it("generates acronym mnemonic for >= 3 critical concepts", () => {
+  it("generates mnemonic for >= 3 critical concepts", () => {
     const concepts: AnalyzedConcept[] = [];
     for (let i = 0; i < 5; i++) {
       concepts.push(makeConcept(`crit_${i}`, 1));
@@ -136,8 +136,9 @@ describe("buildLocalMemoryArchitect", () => {
       concepts.push(makeConcept(`other_${i}`, 3));
     }
     const result = buildLocalMemoryArchitect(makeInput(10, { concepts }));
-    const acronyms = result.mnemonics.filter(m => m.type === "acronym");
-    expect(acronyms.length).toBeGreaterThanOrEqual(1);
+    // Should generate either an acronym (if pronounceable) or a story-based mnemonic
+    const criticalMnemonics = result.mnemonics.filter(m => m.type === "acronym" || m.type === "story");
+    expect(criticalMnemonics.length).toBeGreaterThanOrEqual(1);
   });
 
   it("generates no acronym with < 3 critical concepts", () => {

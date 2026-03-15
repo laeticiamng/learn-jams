@@ -19,6 +19,13 @@ import { createCognitioError } from "@/lib/cognitio-errors";
 import { toCourseProfile, toConcept, toConfusionPair, conceptToAnalyzed, m2OutputToCourseProfileRow, analyzedConceptToRow, analyzedConfusionPairToRow } from "@/domain/cognitio/mappers";
 import { detectAudienceMismatch } from "@/domain/cognitio/learner-profile.types";
 import type { LearnerAudienceProfile } from "@/domain/cognitio/learner-profile.types";
+import {
+  cleanSourceNoise,
+  normalizeConceptLabel,
+  rejectConceptArtifact,
+  compressDefinition,
+  mergeDuplicateOrNoisyConcepts,
+} from "@/lib/cognitio-semantic-cleaning";
 
 // ---------- Run Analysis (Edge Function) ----------
 
@@ -41,20 +48,28 @@ export async function runAnalysis(input: M2_Input): Promise<M2_Output> {
 export function runLocalAnalysis(input: M2_Input): M2_Output {
   const { document_id, clean_text, segments, confidence_level, user_objective } = input;
 
-  const sentences = clean_text.split(/[.!?]+/).filter((s) => s.trim().length > 20);
+  // Apply semantic cleaning before extraction
+  const cleanedText = cleanSourceNoise(clean_text);
 
-  // Extract concepts from sentences
-  const concepts: AnalyzedConcept[] = sentences.slice(0, 20).map((sentence, i) => {
+  const sentences = cleanedText.split(/[.!?]+/).filter((s) => s.trim().length > 20);
+
+  // Extract concepts from sentences, with normalization and artifact filtering
+  const rawConcepts: AnalyzedConcept[] = sentences.slice(0, 20).map((sentence, i) => {
     const words = sentence.trim().split(/\s+/);
     const key = words.slice(0, 3).join("_").toLowerCase().replace(/[^a-z0-9_]/g, "");
     const excerpt = sentence.trim().slice(0, 120);
 
     const criticality = (i < 3 ? 1 : i < 7 ? 2 : i < 12 ? 3 : 4) as 1 | 2 | 3 | 4;
 
+    // Normalize and compress
+    const rawLabel = words.slice(0, 5).join(" ").trim();
+    const label = normalizeConceptLabel(rawLabel) || rawLabel;
+    const definition = compressDefinition(sentence.trim());
+
     return {
       stable_key: `concept_${key}_${i}`,
-      label: words.slice(0, 5).join(" ").trim(),
-      definition: sentence.trim(),
+      label,
+      definition,
       type: "general",
       criticality,
       criticality_score: criticality === 1 ? 1 : criticality === 2 ? 0.7 : criticality === 3 ? 0.4 : 0.2,
@@ -66,6 +81,13 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
       uncertain: false,
     };
   });
+
+  // Filter out artifact concepts and deduplicate
+  const filteredConcepts = rawConcepts.filter(c => {
+    const { rejected } = rejectConceptArtifact(c);
+    return !rejected;
+  });
+  const concepts = mergeDuplicateOrNoisyConcepts(filteredConcepts);
 
   // Detect reasoning type
   const hasSteps = /étape|step|\d+\.\s/i.test(clean_text);

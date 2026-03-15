@@ -98,9 +98,9 @@ function makeQAInput(overrides: Partial<QAInput> = {}): QAInput {
       visual_anchors: [],
     },
     concepts: [
-      { stable_key: "concept_a", label: "A", definition: "Definition of A", type: "general", criticality: 1, criticality_score: 0.9, bloom_target: "remember", relations: [], prerequisites: [], source_confidence: 0.8, source_trace: [{ segment_index: 0, excerpt: "About A" }], uncertain: false },
-      { stable_key: "concept_b", label: "B", definition: "Definition of B", type: "general", criticality: 2, criticality_score: 0.7, bloom_target: "understand", relations: [], prerequisites: [], source_confidence: 0.8, source_trace: [{ segment_index: 0, excerpt: "About B" }], uncertain: false },
-      { stable_key: "concept_c", label: "C", definition: "Definition of C", type: "general", criticality: 3, criticality_score: 0.5, bloom_target: "apply", relations: [], prerequisites: [], source_confidence: 0.8, source_trace: [{ segment_index: 1, excerpt: "About C" }], uncertain: false },
+      { stable_key: "concept_a", label: "Pneumonie aiguë communautaire", definition: "Infection du parenchyme pulmonaire acquise en milieu extrahospitalier, causée principalement par Streptococcus pneumoniae.", type: "general", criticality: 1, criticality_score: 0.9, bloom_target: "remember", relations: [], prerequisites: [], source_confidence: 0.8, source_trace: [{ segment_index: 0, excerpt: "About pneumonie" }], uncertain: false },
+      { stable_key: "concept_b", label: "Score de Fine", definition: "Score pronostique permettant de stratifier la gravité des pneumonies communautaires et de guider la décision d'hospitalisation.", type: "general", criticality: 2, criticality_score: 0.7, bloom_target: "understand", relations: [], prerequisites: [], source_confidence: 0.8, source_trace: [{ segment_index: 0, excerpt: "About Score de Fine" }], uncertain: false },
+      { stable_key: "concept_c", label: "Antibiothérapie probabiliste", definition: "Traitement antibiotique initial prescrit avant identification du germe, basé sur les données épidémiologiques locales.", type: "general", criticality: 3, criticality_score: 0.5, bloom_target: "apply", relations: [], prerequisites: [], source_confidence: 0.8, source_trace: [{ segment_index: 1, excerpt: "About antibiothérapie" }], uncertain: false },
     ],
     quality_score: 0.8,
     source_text: "This is a test source text with enough words to pass the quality checks and provide adequate context for the mission generation process.",
@@ -120,8 +120,8 @@ describe("runLocalQA", () => {
     const input = makeQAInput();
     // Remove concept_c from known concepts
     input.concepts = [
-      { stable_key: "concept_a", label: "A", definition: "Definition of A", type: "general", criticality: 1, criticality_score: 0.9, bloom_target: "remember", relations: [], prerequisites: [], source_confidence: 0.8, source_trace: [{ segment_index: 0, excerpt: "About A" }], uncertain: false },
-      { stable_key: "concept_b", label: "B", definition: "Definition of B", type: "general", criticality: 2, criticality_score: 0.7, bloom_target: "understand", relations: [], prerequisites: [], source_confidence: 0.8, source_trace: [{ segment_index: 0, excerpt: "About B" }], uncertain: false },
+      { stable_key: "concept_a", label: "Pneumonie aiguë communautaire", definition: "Infection du parenchyme pulmonaire acquise en milieu extrahospitalier, causée principalement par Streptococcus pneumoniae.", type: "general", criticality: 1, criticality_score: 0.9, bloom_target: "remember", relations: [], prerequisites: [], source_confidence: 0.8, source_trace: [{ segment_index: 0, excerpt: "About pneumonie" }], uncertain: false },
+      { stable_key: "concept_b", label: "Score de Fine", definition: "Score pronostique permettant de stratifier la gravité des pneumonies communautaires et de guider la décision d'hospitalisation.", type: "general", criticality: 2, criticality_score: 0.7, bloom_target: "understand", relations: [], prerequisites: [], source_confidence: 0.8, source_trace: [{ segment_index: 0, excerpt: "About Score de Fine" }], uncertain: false },
     ];
     const result = runLocalQA(input);
     expect(result.publish_blocked).toBe(true);

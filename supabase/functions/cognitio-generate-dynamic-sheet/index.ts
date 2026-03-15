@@ -162,7 +162,11 @@ function generateDynamicSheet(input: any) {
   for (let i = 0; i < segments.length; i++) {
     const seg = segments[i];
     const segC = concepts.filter((c: any) => (seg.concept_keys ?? []).includes(c.stable_key));
-    const lines = segC.slice(0, 5).map((c: any) => `**${c.label}** : ${c.definition}`);
+    const lines = segC.slice(0, 5).map((c: any) => {
+      // Compress definitions for pedagogical quality
+      const def = compressDefEdge(c.definition ?? "");
+      return `**${c.label}** : ${def}`;
+    });
     if (i > 0) lines.unshift("Suite :");
 
     const segConf = confusions.filter((p: any) =>
@@ -343,6 +347,27 @@ function buildEdgeFinalTest(concepts: any[], confusions: any[]) {
     });
   }
   return items.slice(0, 10);
+}
+
+function compressDefEdge(rawDef: string, maxLen = 200): string {
+  let def = rawDef.trim();
+  def = def.replace(/^(?:Il s'agit d'|C'est |On appelle |On définit |Par définition,?\s*)/i, "");
+  def = def.replace(/\s*\([Cc]f\.?\s*[^)]+\)\s*$/g, "");
+  def = def.replace(/\s*\[[\d,\s]+\]\s*$/g, "");
+  def = def.replace(/\s*\(Rang\s+[A-Z]\)\s*/gi, " ");
+  def = def.replace(/\s*\(R2C[^)]*\)\s*/gi, " ");
+  def = def.replace(/\s{2,}/g, " ").trim();
+  if (def.length > maxLen) {
+    const sentences = def.match(/[^.!?]+[.!?]+/g) || [def];
+    let compressed = "";
+    for (const s of sentences) {
+      if ((compressed + s).length <= maxLen) compressed += s;
+      else break;
+    }
+    def = compressed.trim() || def.slice(0, maxLen).replace(/\s\S*$/, "…");
+  }
+  if (def.length > 0) def = def.charAt(0).toUpperCase() + def.slice(1);
+  return def;
 }
 
 async function logOps(supabase: any, eventType: string, severity: string, documentId: string, userId: string, payload: any) {

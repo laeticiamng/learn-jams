@@ -28,8 +28,10 @@ import {
   getSegmentTransition,
   getRecallPromptStyle,
   getDefinitionIntro,
+  detectAudienceMismatch,
 } from "@/domain/cognitio/learner-profile.types";
 import type { AudienceAdaptation } from "@/domain/cognitio/learner-profile.types";
+import { compressDefinition } from "@/lib/cognitio-semantic-cleaning";
 
 // ---------- Edge Function Call ----------
 
@@ -342,7 +344,9 @@ function buildPedagogicalBlock(
 
   const defIntro = getDefinitionIntro(adaptation);
   for (const c of segConcepts.slice(0, adaptation.max_new_elements_per_block)) {
-    explanationLines.push(`**${c.label}** : ${defIntro} ${c.definition}`);
+    // Adapt definition to learner level
+    const adaptedDef = adaptDefinitionToLevel(c.definition, adaptation);
+    explanationLines.push(`**${c.label}** : ${defIntro} ${adaptedDef}`);
   }
 
   // Find visual anchor for first critical concept in segment
@@ -535,6 +539,49 @@ function buildDisclaimerText(disclaimer: SourceDisclaimer): string {
   lines.push(`Niveau de confiance global : ${Math.round(disclaimer.confidence_level * 100)}%`);
 
   return lines.join("\n\n");
+}
+
+// ============================================================
+// Learner Adaptation Helpers
+// ============================================================
+
+/**
+ * Adapt a definition to the learner's level by compressing,
+ * simplifying vocabulary, and adjusting sentence length.
+ */
+function adaptDefinitionToLevel(rawDefinition: string, adaptation: AudienceAdaptation): string {
+  // First, compress to remove noise
+  let def = compressDefinition(rawDefinition);
+
+  // Adapt max length based on vocabulary level
+  const maxLengths: Record<string, number> = {
+    simple: 120,
+    intermediate: 180,
+    academic: 220,
+    technical: 250,
+  };
+  const maxLen = maxLengths[adaptation.vocabulary_level] || 180;
+
+  // Re-compress to target length if needed
+  if (def.length > maxLen) {
+    def = compressDefinition(def, maxLen);
+  }
+
+  // For simple vocabulary: add clarifying patterns
+  if (adaptation.vocabulary_level === "simple") {
+    // Replace complex medical jargon with simpler alternatives where possible
+    def = def.replace(/\bétiologie\b/gi, "cause");
+    def = def.replace(/\bphysiopathologie\b/gi, "mécanisme");
+    def = def.replace(/\bépidémiologie\b/gi, "fréquence");
+    def = def.replace(/\bpronostic\b/gi, "évolution attendue");
+    def = def.replace(/\basymptomatique\b/gi, "sans symptôme");
+    def = def.replace(/\bidiopathique\b/gi, "de cause inconnue");
+    def = def.replace(/\biatrogène\b/gi, "causé par un traitement");
+    def = def.replace(/\bbilatéral\b/gi, "des deux côtés");
+    def = def.replace(/\bunilatéral\b/gi, "d'un seul côté");
+  }
+
+  return def;
 }
 
 // ============================================================

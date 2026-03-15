@@ -237,33 +237,73 @@ function buildRepetitionPlan(
 function buildMnemonics(sorted: AnalyzedConcept[]): MnemonicItem[] {
   const mnemonics: MnemonicItem[] = [];
 
-  // Acronym from critical concepts
   const critical = sorted.filter(c => c.criticality === 1);
+
+  // 1. Acronym from critical concepts — only if it forms a pronounceable word
   if (critical.length >= 3) {
-    const labels = critical.slice(0, 6).map(c => c.label);
+    const labels = critical.slice(0, 7).map(c => c.label);
+    const initials = labels.map(l => l.charAt(0).toUpperCase()).join("");
+
+    // Check if the acronym is pronounceable (has vowels and consonants)
+    const hasVowel = /[AEIOUY]/i.test(initials);
+    const hasConsonant = /[^AEIOUY\s]/i.test(initials);
+    const isPronounceable = hasVowel && hasConsonant && initials.length >= 3;
+
+    if (isPronounceable) {
+      mnemonics.push({
+        concept_keys: critical.slice(0, 7).map(c => c.stable_key),
+        mnemonic: initials,
+        type: "acronym",
+        effectiveness_hint: `"${initials}" pour retenir : ${labels.slice(0, 4).join(", ")}${labels.length > 4 ? "…" : ""}`,
+      });
+    } else if (critical.length >= 3) {
+      // Fallback: create a sentence mnemonic from first words
+      const firstWords = critical.slice(0, 5).map(c => {
+        const words = c.label.split(/\s+/);
+        return words[0];
+      });
+      mnemonics.push({
+        concept_keys: critical.slice(0, 5).map(c => c.stable_key),
+        mnemonic: `Retenir : ${firstWords.join(" → ")}`,
+        type: "story",
+        effectiveness_hint: `Chaîne mnémonique reliant les ${Math.min(5, critical.length)} concepts critiques`,
+      });
+    }
+  }
+
+  // 2. Visual/metaphor anchor for the most critical concept
+  if (critical.length >= 1) {
+    const top = critical[0];
+    const shortDef = top.definition.slice(0, 60).replace(/\s\S*$/, "");
     mnemonics.push({
-      concept_keys: critical.slice(0, 6).map(c => c.stable_key),
-      mnemonic: labels.map(l => l.charAt(0).toUpperCase()).join(""),
-      type: "acronym",
-      effectiveness_hint: "Acronyme formé par les initiales des concepts critiques",
+      concept_keys: [top.stable_key],
+      mnemonic: `Imaginez "${top.label}" comme le pilier central : ${shortDef}`,
+      type: "association",
+      effectiveness_hint: "Image mentale pour le concept le plus important",
     });
   }
 
-  // Association mnemonics for related concept pairs
+  // 3. Contrast mnemonic for related concept pairs (help distinguish confusables)
   const relatedPairs = sorted
     .flatMap(c => c.relations
-      .filter(r => r.relation_type === "related")
-      .map(r => ({ a: c.stable_key, b: r.target_key, labelA: c.label }))
+      .filter(r => r.relation_type === "contrasts_with" || r.relation_type === "related")
+      .map(r => ({ a: c.stable_key, b: r.target_key, labelA: c.label, relType: r.relation_type }))
     )
-    .slice(0, 3);
+    .slice(0, 2);
 
   for (const pair of relatedPairs) {
     const conceptB = sorted.find(c => c.stable_key === pair.b);
     if (conceptB) {
+      const mnemText = pair.relType === "contrasts_with"
+        ? `"${pair.labelA}" ≠ "${conceptB.label}" — ne pas confondre !`
+        : `"${pair.labelA}" → "${conceptB.label}" — concepts liés`;
       mnemonics.push({
         concept_keys: [pair.a, pair.b],
-        mnemonic: `${pair.labelA} ↔ ${conceptB.label}`,
+        mnemonic: mnemText,
         type: "association",
+        effectiveness_hint: pair.relType === "contrasts_with"
+          ? "Distinction entre concepts facilement confondus"
+          : "Lien entre concepts complémentaires",
       });
     }
   }

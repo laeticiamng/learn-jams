@@ -209,28 +209,63 @@ function buildMemoryArchitecture(input: MemoryArchitectRequest) {
     };
   });
 
-  // Mnemonics
+  // Mnemonics — improved quality
   const mnemonics: any[] = [];
   const critical = sorted.filter(c => c.criticality === 1);
   if (critical.length >= 3) {
+    const labels = critical.slice(0, 7).map(c => c.label);
+    const initials = labels.map(l => l.charAt(0).toUpperCase()).join("");
+
+    // Check pronounceability
+    const hasVowel = /[AEIOUY]/i.test(initials);
+    const hasConsonant = /[^AEIOUY\s]/i.test(initials);
+    const isPronounceable = hasVowel && hasConsonant && initials.length >= 3;
+
+    if (isPronounceable) {
+      mnemonics.push({
+        concept_keys: critical.slice(0, 7).map(c => c.stable_key),
+        mnemonic: initials,
+        type: "acronym",
+        effectiveness_hint: `"${initials}" pour retenir : ${labels.slice(0, 4).join(", ")}${labels.length > 4 ? "…" : ""}`,
+      });
+    } else {
+      // Fallback: sentence-based mnemonic
+      const firstWords = critical.slice(0, 5).map(c => c.label.split(/\s+/)[0]);
+      mnemonics.push({
+        concept_keys: critical.slice(0, 5).map(c => c.stable_key),
+        mnemonic: `Retenir : ${firstWords.join(" → ")}`,
+        type: "story",
+        effectiveness_hint: `Chaîne mnémonique reliant les ${Math.min(5, critical.length)} concepts critiques`,
+      });
+    }
+  }
+
+  // Visual anchor for top critical concept
+  if (critical.length >= 1) {
+    const top = critical[0];
     mnemonics.push({
-      concept_keys: critical.slice(0, 6).map(c => c.stable_key),
-      mnemonic: critical.slice(0, 6).map(c => c.label.charAt(0).toUpperCase()).join(""),
-      type: "acronym",
-      effectiveness_hint: "Acronyme des concepts critiques",
+      concept_keys: [top.stable_key],
+      mnemonic: `Imaginez "${top.label}" comme le pilier central : ${top.definition.slice(0, 60)}`,
+      type: "association",
+      effectiveness_hint: "Image mentale pour le concept le plus important",
     });
   }
 
-  // Visual anchors
+  // Visual anchors — with compressed definitions
   const visualAnchors = sorted
     .filter(c => c.criticality <= 2)
     .slice(0, 6)
-    .map(c => ({
-      concept_key: c.stable_key,
-      anchor_type: "metaphor",
-      content: `Visualisez "${c.label}" — ${c.definition.slice(0, 80)}`,
-      related_concepts: c.relations.map(r => r.target_key).slice(0, 3),
-    }));
+    .map(c => {
+      // Compress definition for visual anchor
+      let shortDef = c.definition.slice(0, 80);
+      if (shortDef.length === 80) shortDef = shortDef.replace(/\s\S*$/, "…");
+      return {
+        concept_key: c.stable_key,
+        anchor_type: "metaphor",
+        content: `Visualisez "${c.label}" comme un élément fondamental — ${shortDef}`,
+        related_concepts: c.relations.map(r => r.target_key).slice(0, 3),
+      };
+    });
 
   const totalDuration = segments.reduce((s: number, seg: any) => s + seg.estimated_duration_sec, 0);
   const needsSplitting = totalDuration > MAX_DURATION_BEFORE_SPLIT;
