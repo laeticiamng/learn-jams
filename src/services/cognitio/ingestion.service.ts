@@ -343,7 +343,7 @@ function computeConfidence(wordCount: number, structure: DetectedStructureType, 
 // ---------- Getters ----------
 
 export async function getDocument(documentId: string): Promise<SourceDocument | null> {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("source_documents")
     .select("*")
     .eq("id", documentId)
