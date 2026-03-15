@@ -209,7 +209,7 @@ function buildPrompt(brick: BrickType, concept: GenerateExperienceInput["concept
     case "SEQUENCE":
       return `Placez "${concept.label}" dans la séquence correcte`;
     case "ELIMINATION":
-      return `Parmi ces éléments liés à "${concept.category}", lequel est l'intrus ?`;
+      return `Parmi ces éléments liés à "${concept.type}", lequel est l'intrus ?`;
     case "DECISION":
       return `Face à ce cas clinique, quelle est la bonne approche concernant "${concept.label}" ?`;
   }
