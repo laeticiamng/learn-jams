@@ -92,7 +92,7 @@ export function generateMissionLocally(
 }
 
 function buildNarrativeIntro(input: GenerateExperienceInput, qualityBand: QualityBand): string {
-  const topic = input.concepts[0]?.category ?? "ce sujet";
+  const topic = input.concepts[0]?.type ?? "ce sujet";
   const base = `Bienvenue dans le service d'urgence pédagogique. Vous êtes confronté à un cas complexe portant sur ${topic}. Chaque salle vous mettra face à une épreuve cognitive.`;
 
   if (qualityBand === "medium") {
