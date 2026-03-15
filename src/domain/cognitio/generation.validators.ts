@@ -138,18 +138,20 @@ export function validateM5Input(input: M5_Input): M5ValidationResult {
   }
 
   if (!input.m2_output.key_concepts || input.m2_output.key_concepts.length === 0) {
-    errors.push({
+    // P0 FIX: downgrade from fatal to warning — the generator now handles
+    // empty concepts with a minimal fallback instead of crashing.
+    warnings.push({
       code: "NO_CONCEPTS",
-      message: "No concepts available for generation",
-      severity: "fatal",
+      message: "No concepts available for generation — minimal fallback will be used",
+      severity: "warning",
     });
   }
 
   if (!input.m3_output.segments || input.m3_output.segments.length === 0) {
-    errors.push({
+    warnings.push({
       code: "NO_SEGMENTS",
-      message: "No memory segments available",
-      severity: "fatal",
+      message: "No memory segments available — a single default segment will be used",
+      severity: "warning",
     });
   }
 

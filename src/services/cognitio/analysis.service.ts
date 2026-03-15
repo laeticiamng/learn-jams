@@ -54,6 +54,9 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
   // Apply semantic cleaning before extraction
   const cleanedText = cleanSourceNoise(clean_text);
 
+  // P0 debug counters
+  let _dbg_sentences_extracted = 0;
+
   // === Level 1: Extract clean main topic ===
   const mainTopic = extractCleanMainTopic(segments);
 
@@ -68,6 +71,7 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
     const chapter = chapters[chapterIdx];
     const chapterContent = cleanSourceNoise(chapter.content);
     const sentences = chapterContent.split(/[.!?]+/).filter(s => s.trim().length > 20);
+    _dbg_sentences_extracted += sentences.length;
     const chapterType = chapter.title;
 
     // Extract concepts from this chapter's content
@@ -135,6 +139,7 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
   // If no chapters detected, fall back to sentence-based extraction
   if (rawConcepts.length === 0) {
     const sentences = cleanedText.split(/[.!?]+/).filter(s => s.trim().length > 20);
+    _dbg_sentences_extracted += sentences.length;
     for (let i = 0; i < Math.min(20, sentences.length); i++) {
       const sentence = sentences[i].trim();
       const words = sentence.split(/\s+/);
@@ -159,11 +164,62 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
   }
 
   // Filter out artifact concepts and deduplicate
+  const rejectReasons: Record<string, number> = {};
   const filteredConcepts = rawConcepts.filter(c => {
-    const { rejected } = rejectConceptArtifact(c);
+    const { rejected, reason } = rejectConceptArtifact(c);
+    if (rejected && reason) {
+      rejectReasons[reason] = (rejectReasons[reason] || 0) + 1;
+    }
     return !rejected;
   });
-  const concepts = mergeDuplicateOrNoisyConcepts(filteredConcepts);
+  let concepts = mergeDuplicateOrNoisyConcepts(filteredConcepts);
+
+  // P0 FIX: If all concepts were rejected but we have non-empty text,
+  // force-extract minimal concepts so downstream never sees 0 without cause.
+  if (concepts.length === 0 && cleanedText.length > 50) {
+    console.warn(
+      `[COGNITIO][P0] All ${rawConcepts.length} raw concepts rejected! ` +
+      `Reasons: ${JSON.stringify(rejectReasons)}. ` +
+      `Applying emergency fallback extraction.`
+    );
+
+    // Emergency: take first N sentences as concepts, skip rejection filters
+    const emergencySentences = cleanedText
+      .split(/[.!?\n]+/)
+      .map(s => s.trim())
+      .filter(s => s.length > 30 && /[a-zA-ZÀ-ÿ]/.test(s));
+
+    for (let i = 0; i < Math.min(5, emergencySentences.length); i++) {
+      const sentence = emergencySentences[i];
+      const words = sentence.split(/\s+/);
+      const label = words.slice(0, 6).join(" ");
+      concepts.push({
+        stable_key: `concept_emergency_${i}`,
+        label,
+        definition: compressDefinition(sentence, 200),
+        type: "general",
+        criticality: (i === 0 ? 1 : i < 3 ? 2 : 3) as 1 | 2 | 3 | 4,
+        criticality_score: i === 0 ? 1 : i < 3 ? 0.7 : 0.4,
+        bloom_target: "remember",
+        relations: [],
+        prerequisites: [],
+        source_confidence: 0.35,
+        source_trace: [{ segment_index: 0, excerpt: sentence.slice(0, 120) }],
+        uncertain: true,
+      });
+    }
+
+    console.info(`[COGNITIO][P0] Emergency fallback produced ${concepts.length} concepts.`);
+  }
+
+  // P0 debug logging
+  console.info(
+    `[COGNITIO][DEBUG] M2 extraction: ` +
+    `chapters=${chapters.length}, sentences=${_dbg_sentences_extracted}, ` +
+    `raw_concepts=${rawConcepts.length}, after_filter=${filteredConcepts.length}, ` +
+    `after_dedup=${concepts.length}, rejected=${rawConcepts.length - filteredConcepts.length}, ` +
+    `reject_reasons=${JSON.stringify(rejectReasons)}`
+  );
 
   // Detect reasoning type
   const hasSteps = /étape|step|\d+\.\s/i.test(clean_text);

@@ -544,6 +544,34 @@ function segmentText(text: string): SegmentOutput[] {
     flushSegment();
   }
 
+  // P0 FIX: If only 0–1 segments were created (flat document with no headings),
+  // apply paragraph-based segmentation so downstream M2 gets usable chunks.
+  if (segments.length <= 1 && text.length > 200) {
+    const paragraphs = text
+      .split(/\n\s*\n/)
+      .map(p => p.trim())
+      .filter(p => p.length > 50);
+
+    if (paragraphs.length >= 2) {
+      console.info(`[COGNITIO] Flat document detected (${segments.length} segment). Applying paragraph-based fallback → ${paragraphs.length} paragraphs.`);
+      const paraSegments: SegmentOutput[] = paragraphs.map((p, idx) => {
+        const firstLine = p.split(/\n/)[0].trim();
+        const autoTitle = firstLine.length <= 100 && firstLine.length >= 5
+          ? firstLine
+          : `Section ${idx + 1}`;
+        return {
+          segment_index: idx,
+          title: autoTitle,
+          content: p,
+          hierarchy_level: 1,
+          confidence_score: 0.5,
+          page_ref: null,
+        };
+      });
+      return paraSegments;
+    }
+  }
+
   return segments;
 }
 
