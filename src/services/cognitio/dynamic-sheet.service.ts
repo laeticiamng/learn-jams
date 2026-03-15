@@ -703,7 +703,7 @@ export async function persistTransformation(
 
   // 3. Insert final test
   const bloomLevels = new Set(output.final_test.map(q => q.bloom_level));
-  const { error: ftErr } = await supabase
+  const { error: ftErr } = await (supabase as any)
     .from("final_tests")
     .insert({
       transformation_id: output.transformation_id,
