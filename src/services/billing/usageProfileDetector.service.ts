@@ -80,7 +80,7 @@ export async function persistUsageProfile(
     .single();
 
   if (existing) {
-    await supabase
+    await (supabase as any)
       .from("user_usage_profiles")
       .update({
         dominant_usage_profile: profile,
