@@ -265,7 +265,7 @@ export async function consumeFlexCredit(
     const log = existing.reallocation_log_json as ReallocationEntry[];
     log.push(entry);
 
-    await supabase
+    await (supabase as any)
       .from("adaptive_credit_balances")
       .update({
         consumed_flex_credits_json: consumed,
