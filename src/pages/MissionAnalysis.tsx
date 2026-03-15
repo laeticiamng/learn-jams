@@ -109,7 +109,7 @@ export default function MissionAnalysis() {
             .select("*")
             .eq("course_profile_id", profile.id);
 
-          const keyConcepts: AnalyzedConcept[] = (concepts ?? []).map((c: Record<string, unknown>) => ({
+          const keyConcepts = (concepts ?? []).map((c: Record<string, unknown>) => ({
             stable_key: c.stable_key as string,
             label: c.label as string,
             definition: (c.definition as string) ?? "",
