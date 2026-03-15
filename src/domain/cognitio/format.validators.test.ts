@@ -4,6 +4,8 @@ import {
   checkOverrides,
   applyOverrides,
   validateM4Output,
+  resolveFormatWithUserIntent,
+  assessFormatFeasibility,
 } from "./format.validators";
 import type { M4_Input, M4_Output } from "./format.contracts";
 
@@ -158,12 +160,16 @@ describe("validateM4Output", () => {
       needs_split: false,
       overrides_applied: [],
       cost_level: "low",
+      system_recommended_format: "fiche_dynamique",
+      fallback_candidates: [],
+      override_requires_confirmation: false,
       decision_trace: {
         reasoning_type: "declaratif",
         objective: "discovery",
         matrix_result: "fiche_dynamique",
         overrides_checked: [],
         final_format: "fiche_dynamique",
+        user_intent_respected: true,
       },
       ...overrides,
     };
@@ -194,8 +200,73 @@ describe("validateM4Output", () => {
         matrix_result: "fiche_dynamique",
         overrides_checked: [],
         final_format: "fiche_dynamique",
+        user_intent_respected: true,
       },
     }));
     expect(result.valid).toBe(false);
+  });
+});
+
+// ---------- User Intent Priority Tests ----------
+
+describe("resolveFormatWithUserIntent", () => {
+  it("respects user choice when feasible", () => {
+    const input = makeInput({ user_selected_format: "histoire_animee", total_concepts: 10, quality_score: 0.8 });
+    const result = resolveFormatWithUserIntent(input, "fiche_dynamique", []);
+    expect(result.finalFormat).toBe("histoire_animee");
+    expect(result.userIntentRespected).toBe(true);
+    expect(result.overrideRequiresConfirmation).toBe(false);
+  });
+
+  it("allows degraded mode when user chooses histoire_animee with minimal structure", () => {
+    const input = makeInput({ user_selected_format: "histoire_animee", structure_type: "minimal", total_concepts: 5, quality_score: 0.8 });
+    const result = resolveFormatWithUserIntent(input, "fiche_dynamique", []);
+    expect(result.finalFormat).toBe("histoire_animee");
+    expect(result.userIntentRespected).toBe(true);
+    // Should have degraded info
+    expect(result.overrideReason).toBeTruthy();
+  });
+
+  it("blocks user choice when truly infeasible and requires confirmation", () => {
+    const input = makeInput({ user_selected_format: "histoire_animee", total_concepts: 1, quality_score: 0.1 });
+    const result = resolveFormatWithUserIntent(input, "fiche_dynamique", []);
+    expect(result.finalFormat).not.toBe("histoire_animee");
+    expect(result.userIntentRespected).toBe(false);
+    expect(result.overrideRequiresConfirmation).toBe(true);
+    expect(result.overrideReason).toBeTruthy();
+  });
+
+  it("uses system recommendation when no user choice", () => {
+    const input = makeInput({ total_concepts: 10, quality_score: 0.8 });
+    const overrides = checkOverrides(input, "histoire_animee");
+    const result = resolveFormatWithUserIntent(input, "histoire_animee", overrides);
+    expect(result.userIntentRespected).toBe(true);
+  });
+});
+
+describe("assessFormatFeasibility", () => {
+  it("fiche_dynamique is always feasible", () => {
+    const input = makeInput({ total_concepts: 1, quality_score: 0.1 });
+    const result = assessFormatFeasibility("fiche_dynamique", input);
+    expect(result.feasible).toBe(true);
+  });
+
+  it("mission_interactive is feasible with enough concepts", () => {
+    const input = makeInput({ total_concepts: 5, quality_score: 0.6 });
+    const result = assessFormatFeasibility("mission_interactive", input);
+    expect(result.feasible).toBe(true);
+  });
+
+  it("mission_interactive is degraded with few concepts", () => {
+    const input = makeInput({ total_concepts: 2, quality_score: 0.6 });
+    const result = assessFormatFeasibility("mission_interactive", input);
+    expect(result.feasible).toBe(true);
+    expect(result.degraded).toBe(true);
+  });
+
+  it("mission_interactive is infeasible with very low quality", () => {
+    const input = makeInput({ total_concepts: 5, quality_score: 0.2 });
+    const result = assessFormatFeasibility("mission_interactive", input);
+    expect(result.feasible).toBe(false);
   });
 });

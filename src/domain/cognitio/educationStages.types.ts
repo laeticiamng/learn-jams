@@ -1,3 +1,8 @@
+// ============================================================
+// COGNITIO Education Stages — Taxonomy with natural labels
+// Includes explicit health/medical tracks for PASS/LAS/médecine etc.
+// ============================================================
+
 export const EDUCATION_STAGES = [
   "college",       // Collège (6e-3e)
   "lycee",         // Lycée général/technologique
@@ -28,6 +33,8 @@ export const INSTITUTION_TYPES = [
 
 export type InstitutionType = (typeof INSTITUTION_TYPES)[number];
 
+// ---------- Field Categories ----------
+
 export const FIELD_CATEGORIES = [
   "sciences",
   "humanities",
@@ -45,15 +52,51 @@ export const FIELD_CATEGORIES = [
 
 export type FieldCategory = (typeof FIELD_CATEGORIES)[number];
 
+// ---------- Health / Medical Subfields ----------
+
+export const HEALTH_SUBFIELDS = [
+  "pass",             // PASS (Parcours Accès Santé Spécifique)
+  "las",              // LAS (Licence Accès Santé)
+  "medecine",         // Médecine
+  "pharmacie",        // Pharmacie
+  "maieutique",       // Maïeutique (sage-femme)
+  "odontologie",      // Odontologie
+  "kinesitherapie",   // Kinésithérapie
+  "infirmier",        // Soins infirmiers
+  "other_health",     // Autres études de santé
+] as const;
+
+export type HealthSubfield = (typeof HEALTH_SUBFIELDS)[number];
+
+// ---------- Medical Progression ----------
+
+export const MEDICAL_PROGRESSIONS = [
+  "pass_las",         // PASS / LAS (1re année)
+  "dfgsm",            // DFGSM (2e-3e année)
+  "dfasm",            // DFASM / Externat (4e-6e année)
+  "edn_ecos",         // EDN / ECOS (concours)
+  "internat",         // Internat / DES
+  "these",            // Thèse d'exercice
+  "other_progression", // Autre
+] as const;
+
+export type MedicalProgression = (typeof MEDICAL_PROGRESSIONS)[number];
+
+// ---------- Education Profile ----------
+
 export interface EducationProfile {
   stage: EducationStage;
   institution_type?: InstitutionType;
   field_category?: FieldCategory;
   field_of_study?: string;       // free text: "Droit constitutionnel", "Médecine générale"
   year_in_program?: number;       // e.g., L2 = 2, M1 = 1
+  // Health-specific
+  health_subfield?: HealthSubfield;
+  medical_progression?: MedicalProgression;
 }
 
-// Stage metadata for UI
+// ---------- Stage Metadata for UI ----------
+
 export interface StageMetadata {
   stage: EducationStage;
   label_key: string;              // i18n key
@@ -210,3 +253,65 @@ export const STAGE_METADATA: StageMetadata[] = [
     audience_level: "adult_pro",
   },
 ];
+
+// ---------- Health Subfield Metadata (for conditional UI) ----------
+
+export interface HealthSubfieldMetadata {
+  subfield: HealthSubfield;
+  label: string;
+  emoji: string;
+  description: string;
+}
+
+export const HEALTH_SUBFIELD_METADATA: HealthSubfieldMetadata[] = [
+  { subfield: "pass", label: "PASS", emoji: "🎯", description: "Parcours Accès Santé Spécifique" },
+  { subfield: "las", label: "LAS", emoji: "📖", description: "Licence Accès Santé" },
+  { subfield: "medecine", label: "Médecine", emoji: "🩺", description: "Études de médecine" },
+  { subfield: "pharmacie", label: "Pharmacie", emoji: "💊", description: "Études de pharmacie" },
+  { subfield: "maieutique", label: "Maïeutique", emoji: "👶", description: "Sage-femme" },
+  { subfield: "odontologie", label: "Odontologie", emoji: "🦷", description: "Chirurgie dentaire" },
+  { subfield: "kinesitherapie", label: "Kinésithérapie", emoji: "🏃", description: "Masso-kinésithérapie" },
+  { subfield: "infirmier", label: "Soins infirmiers", emoji: "💉", description: "IFSI / Sciences infirmières" },
+  { subfield: "other_health", label: "Autre filière santé", emoji: "🏥", description: "Autre parcours de santé" },
+];
+
+// ---------- Medical Progression Metadata ----------
+
+export interface MedicalProgressionMetadata {
+  progression: MedicalProgression;
+  label: string;
+  description: string;
+}
+
+export const MEDICAL_PROGRESSION_METADATA: MedicalProgressionMetadata[] = [
+  { progression: "pass_las", label: "PASS / LAS", description: "Première année" },
+  { progression: "dfgsm", label: "DFGSM (2e-3e année)", description: "Diplôme de Formation Générale en Sciences Médicales" },
+  { progression: "dfasm", label: "DFASM / Externat", description: "4e à 6e année — stages hospitaliers" },
+  { progression: "edn_ecos", label: "EDN / ECOS", description: "Préparation aux examens nationaux" },
+  { progression: "internat", label: "Internat / DES", description: "Diplôme d'Études Spécialisées" },
+  { progression: "these", label: "Thèse d'exercice", description: "Thèse de fin d'études" },
+  { progression: "other_progression", label: "Autre", description: "Autre étape du cursus" },
+];
+
+// ---------- Field Labels (for UI) ----------
+
+export const FIELD_LABELS: Record<FieldCategory, string> = {
+  sciences: "Sciences",
+  humanities: "Lettres & Sciences humaines",
+  languages: "Langues",
+  law_political: "Droit & Sciences politiques",
+  health_medical: "Santé & Médecine",
+  engineering_tech: "Ingénierie & Technologie",
+  business_management: "Commerce & Gestion",
+  arts_design: "Arts & Design",
+  education: "Éducation & Formation",
+  social_sciences: "Sciences sociales",
+  sport: "STAPS & Sport",
+  other: "Autre",
+};
+
+// ---------- Helper: is health/medical stage ----------
+
+export function isHealthStage(stage: EducationStage): boolean {
+  return stage === "medical";
+}

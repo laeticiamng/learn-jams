@@ -21,7 +21,7 @@ import type {
 
 export interface M7_Input {
   transformation_id: string;
-  format: "fiche_dynamique" | "histoire_animee";
+  format: "fiche_dynamique" | "histoire_animee" | "mission_interactive";
 
   // Generated content (one of these)
   m5_output?: M5_Output;

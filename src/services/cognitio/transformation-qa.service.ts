@@ -61,6 +61,9 @@ export function runLocalTransformationQA(input: M7_Input): M7_Output {
   // Common checks
   runCommonChecks(input, checklist, violations, criticalConcepts, uncertainConcepts);
 
+  // Semantic quality checks (new)
+  runSemanticQualityChecks(input, checklist, violations);
+
   // Compute score
   const totalWeight = checklist.reduce((s, c) => s + c.weight, 0);
   const passedWeight = checklist.filter(c => c.status === "pass").reduce((s, c) => s + c.weight, 0);
@@ -400,6 +403,121 @@ function runCommonChecks(
   if (!formatMatch) {
     violations.push({ type: "format_inconsistent", severity: "blocking", message: `Format incohérent : M4 a choisi ${m4Format}, généré ${actualFormat}` });
   }
+}
+
+// ---------- Semantic Quality Checks ----------
+
+import {
+  isValidConceptLabel,
+  cleanMainTopic,
+} from "@/lib/cognitio-semantic-cleaning";
+
+function runSemanticQualityChecks(
+  input: M7_Input,
+  checklist: QACheckResult[],
+  violations: QAViolation[],
+) {
+  const concepts = input.m2_output.key_concepts;
+
+  // CHECK: respect_user_intent — format fidelity
+  const userSelected = input.m4_output.user_selected_format;
+  const userIntentRespected = input.m4_output.decision_trace.user_intent_respected;
+  if (userSelected) {
+    checklist.push({
+      key: "RESPECT_USER_INTENT",
+      label: "Respect du choix utilisateur",
+      status: userIntentRespected ? "pass" : "fail",
+      weight: 15,
+      details: userIntentRespected
+        ? `Format choisi (${userSelected}) respecté`
+        : `Format choisi (${userSelected}) remplacé par ${input.m4_output.chosen_format}`,
+    });
+    if (!userIntentRespected) {
+      violations.push({
+        type: "user_intent_overridden",
+        severity: "warning",
+        message: `Le format explicitement choisi (${userSelected}) a été remplacé par ${input.m4_output.chosen_format}. Raison : ${input.m4_output.override_reason ?? "non spécifiée"}`,
+      });
+    }
+  }
+
+  // CHECK: concept_cleanliness — label quality
+  let cleanLabelCount = 0;
+  const dirtyLabels: string[] = [];
+  for (const c of concepts) {
+    if (isValidConceptLabel(c.label)) {
+      cleanLabelCount++;
+    } else {
+      dirtyLabels.push(c.label);
+    }
+  }
+  const cleanlinessScore = concepts.length > 0 ? cleanLabelCount / concepts.length : 1;
+  checklist.push({
+    key: "CONCEPT_CLEANLINESS",
+    label: "Propreté des labels concepts",
+    status: cleanlinessScore >= 0.85 ? "pass" : cleanlinessScore >= 0.6 ? "warn" : "fail",
+    weight: 10,
+    details: `${Math.round(cleanlinessScore * 100)}% propres — ${dirtyLabels.length} label(s) bruité(s)`,
+  });
+  if (cleanlinessScore < 0.6) {
+    violations.push({
+      type: "dirty_labels",
+      severity: "warning",
+      message: `Labels bruités : ${dirtyLabels.slice(0, 5).join(", ")}`,
+    });
+  }
+
+  // CHECK: semantic_coherence — main topic not noisy
+  const mainTopic = input.m2_output.main_topic;
+  const cleanedTopic = cleanMainTopic(mainTopic);
+  const topicIsClean = cleanedTopic === mainTopic || cleanedTopic.length > 5;
+  const topicHasNoise = /COM\s+R2C|en\s+(?:NOIR|BLEU|ROUGE)/i.test(mainTopic);
+  checklist.push({
+    key: "SEMANTIC_COHERENCE",
+    label: "Cohérence sémantique du sujet",
+    status: !topicHasNoise ? "pass" : "warn",
+    weight: 5,
+    details: topicHasNoise
+      ? `Sujet bruité : "${mainTopic}" → nettoyé : "${cleanedTopic}"`
+      : `Sujet propre : "${mainTopic}"`,
+  });
+
+  // CHECK: definition_quality — no raw copy-paste
+  let goodDefCount = 0;
+  let rawCopyCount = 0;
+  for (const c of concepts) {
+    const def = c.definition.trim();
+    if (def.length < 15) continue;
+    const hasInternalRefs = /\([Cc]f\.?\s|voir\s+(page|chapitre|section)/i.test(def);
+    const hasRangLabels = /Rang\s+[A-Z]|R2C/i.test(def);
+    const hasBulletFragments = /^\s*[-•]\s/m.test(def) && def.split("\n").length > 3;
+    if (hasInternalRefs || hasRangLabels || hasBulletFragments) {
+      rawCopyCount++;
+    } else {
+      goodDefCount++;
+    }
+  }
+  const defScore = concepts.length > 0 ? goodDefCount / concepts.length : 1;
+  checklist.push({
+    key: "DEFINITION_QUALITY",
+    label: "Qualité des définitions",
+    status: defScore >= 0.7 ? "pass" : defScore >= 0.4 ? "warn" : "fail",
+    weight: 10,
+    details: `${Math.round(defScore * 100)}% reformulées — ${rawCopyCount} brutes`,
+  });
+
+  // CHECK: format_fidelity — M4 output matches actual generation
+  const formatMatch = input.m4_output.chosen_format === input.format
+    || (input.m4_output.chosen_format === "mission_interactive" && input.format === "fiche_dynamique"); // temp fallback
+  checklist.push({
+    key: "FORMAT_FIDELITY",
+    label: "Fidélité du format",
+    status: formatMatch ? "pass" : "fail",
+    weight: 10,
+    details: formatMatch
+      ? `Format cohérent : ${input.format}`
+      : `M4: ${input.m4_output.chosen_format}, Généré: ${input.format}`,
+  });
 }
 
 // ---------- Recommendations ----------

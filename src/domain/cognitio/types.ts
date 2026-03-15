@@ -64,7 +64,7 @@ export type KnowledgeType =
   | "procedural"
   | "metacognitive";
 
-export type ChosenFormat = "fiche_dynamique" | "histoire_animee";
+export type ChosenFormat = "fiche_dynamique" | "histoire_animee" | "mission_interactive";
 
 export type BrickType =
   | "TRI"

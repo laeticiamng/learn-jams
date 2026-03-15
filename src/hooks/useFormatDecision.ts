@@ -1,6 +1,7 @@
 // ============================================================
 // Hook: useFormatDecision
 // Manages M4 format selector pipeline with step tracking
+// Now supports user_selected_format for intent priority
 // ============================================================
 
 import { useState, useCallback } from "react";
@@ -9,7 +10,7 @@ import type { M4_Output } from "@/domain/cognitio/format.contracts";
 import type { M4_Input } from "@/domain/cognitio/format.contracts";
 import type { M3_Output } from "@/domain/cognitio/memory.contracts";
 import type { M2_Output } from "@/domain/cognitio/contracts";
-import type { PipelineStepStatus, LearningObjective } from "@/domain/cognitio/types";
+import type { PipelineStepStatus, LearningObjective, ChosenFormat } from "@/domain/cognitio/types";
 import { selectFormatLocally, persistFormatDecision } from "@/services/cognitio/format-selector.service";
 
 export type FormatStepName = "matrix" | "overrides" | "splitting" | "saving";
@@ -46,7 +47,8 @@ export function useFormatDecision() {
     m2Output: M2_Output,
     documentId: string,
     qualityScore: number,
-    objective: LearningObjective
+    objective: LearningObjective,
+    userSelectedFormat?: ChosenFormat,
   ) => {
     if (!session?.user?.id) {
       setError("Vous devez être connecté.");
@@ -58,8 +60,10 @@ export function useFormatDecision() {
     setSteps(INITIAL_STEPS);
 
     try {
-      // Step 1: Matrix
-      updateStep("matrix", "running", "Application de la matrice décisionnelle...");
+      // Step 1: Matrix + User Intent
+      updateStep("matrix", "running", userSelectedFormat
+        ? `Vérification du format choisi : ${userSelectedFormat}...`
+        : "Application de la matrice décisionnelle...");
       await delay(300);
 
       const input: M4_Input = {
@@ -78,20 +82,26 @@ export function useFormatDecision() {
         structure_type: m2Output.structure_type,
         quality_score: qualityScore,
         objective,
+        user_selected_format: userSelectedFormat,
       };
 
       const output = selectFormatLocally(input);
 
-      updateStep("matrix", "completed", `Matrice: ${output.decision_trace.matrix_result}`);
+      const intentMsg = output.decision_trace.user_intent_respected
+        ? (userSelectedFormat ? `Choix utilisateur respecté : ${output.chosen_format}` : `Matrice: ${output.decision_trace.matrix_result}`)
+        : `Format ajusté : ${output.chosen_format} (choix initial non réalisable)`;
+      updateStep("matrix", "completed", intentMsg);
 
       // Step 2: Overrides
       updateStep("overrides", "running", "Vérification des conditions de dérogation...");
       await delay(250);
-      updateStep("overrides", "completed",
-        output.overrides_applied.length > 0
-          ? `${output.overrides_applied.length} override(s) appliqué(s)`
-          : "Aucun override nécessaire"
-      );
+
+      const overrideMsg = !output.decision_trace.user_intent_respected
+        ? `Format demandé non disponible — ${output.override_reason ?? "contraintes détectées"}`
+        : output.overrides_applied.length > 0
+          ? `${output.overrides_applied.length} contrainte(s) détectée(s) — choix utilisateur maintenu`
+          : "Aucune contrainte bloquante";
+      updateStep("overrides", "completed", overrideMsg);
 
       // Step 3: Splitting
       updateStep("splitting", "running", "Analyse du découpage...");

@@ -4,6 +4,11 @@ import {
   INSTITUTION_TYPES,
   FIELD_CATEGORIES,
   STAGE_METADATA,
+  HEALTH_SUBFIELD_METADATA,
+  HEALTH_SUBFIELDS,
+  MEDICAL_PROGRESSIONS,
+  MEDICAL_PROGRESSION_METADATA,
+  isHealthStage,
   type EducationStage,
   type EducationProfile,
 } from "./educationStages.types";
@@ -146,5 +151,70 @@ describe("EducationProfile type (structural)", () => {
     expect(profile.field_category).toBe("sciences");
     expect(profile.field_of_study).toBe("Physique quantique");
     expect(profile.year_in_program).toBe(1);
+  });
+
+  it("can create a health profile with subfield and progression", () => {
+    const profile: EducationProfile = {
+      stage: "medical",
+      field_category: "health_medical",
+      health_subfield: "medecine",
+      medical_progression: "dfasm",
+      field_of_study: "Pneumologie",
+    };
+    expect(profile.stage).toBe("medical");
+    expect(profile.health_subfield).toBe("medecine");
+    expect(profile.medical_progression).toBe("dfasm");
+    expect(profile.field_of_study).toBe("Pneumologie");
+  });
+});
+
+describe("HEALTH_SUBFIELDS", () => {
+  it("has 9 subfields", () => {
+    expect(HEALTH_SUBFIELDS).toHaveLength(9);
+  });
+
+  it("contains all key health tracks", () => {
+    expect(HEALTH_SUBFIELDS).toContain("pass");
+    expect(HEALTH_SUBFIELDS).toContain("las");
+    expect(HEALTH_SUBFIELDS).toContain("medecine");
+    expect(HEALTH_SUBFIELDS).toContain("pharmacie");
+    expect(HEALTH_SUBFIELDS).toContain("maieutique");
+    expect(HEALTH_SUBFIELDS).toContain("odontologie");
+  });
+});
+
+describe("HEALTH_SUBFIELD_METADATA", () => {
+  it("has one entry per subfield", () => {
+    expect(HEALTH_SUBFIELD_METADATA).toHaveLength(HEALTH_SUBFIELDS.length);
+  });
+
+  it("each entry has label, emoji, description", () => {
+    for (const meta of HEALTH_SUBFIELD_METADATA) {
+      expect(meta.label.length).toBeGreaterThan(0);
+      expect(meta.emoji.length).toBeGreaterThan(0);
+      expect(meta.description.length).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe("MEDICAL_PROGRESSIONS", () => {
+  it("has 7 progressions", () => {
+    expect(MEDICAL_PROGRESSIONS).toHaveLength(7);
+  });
+
+  it("has metadata for each progression", () => {
+    expect(MEDICAL_PROGRESSION_METADATA).toHaveLength(MEDICAL_PROGRESSIONS.length);
+  });
+});
+
+describe("isHealthStage", () => {
+  it("returns true for medical", () => {
+    expect(isHealthStage("medical")).toBe(true);
+  });
+
+  it("returns false for other stages", () => {
+    expect(isHealthStage("licence")).toBe(false);
+    expect(isHealthStage("college")).toBe(false);
+    expect(isHealthStage("law")).toBe(false);
   });
 });

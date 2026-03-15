@@ -21,7 +21,13 @@ export type QACheckKey =
   | "DENSITY_ACCEPTABLE"
   | "FORMAT_CONSISTENT_WITH_M4"
   | "CLARITY_PEAK_PRESENT"
-  | "CONSOLIDATION_PRESENT";
+  | "CONSOLIDATION_PRESENT"
+  // New semantic quality checks
+  | "RESPECT_USER_INTENT"
+  | "CONCEPT_CLEANLINESS"
+  | "SEMANTIC_COHERENCE"
+  | "DEFINITION_QUALITY"
+  | "FORMAT_FIDELITY";
 
 export interface QACheckResult {
   key: QACheckKey;
@@ -42,7 +48,12 @@ export type QAViolationType =
   | "format_inconsistent"
   | "bloom_insufficient"
   | "density_excessive"
-  | "structure_incomplete";
+  | "structure_incomplete"
+  // New semantic quality violations
+  | "user_intent_overridden"
+  | "dirty_labels"
+  | "noisy_main_topic"
+  | "poor_definitions";
 
 export interface QAViolation {
   type: QAViolationType;
