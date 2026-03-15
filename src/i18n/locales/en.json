@@ -874,6 +874,26 @@
   "create": {
     "choose_format": "What do you want to create?"
   },
+  "explanation_style": {
+    "guided": { "label": "Fully guided", "desc": "Each concept is explained step by step" },
+    "balanced": { "label": "Balanced", "desc": "A good mix of clarity and density" },
+    "academic": { "label": "Academic", "desc": "Technical vocabulary, university style" },
+    "professional": { "label": "Professional", "desc": "Maximum precision, zero simplification" }
+  },
+  "memorization_goal": {
+    "discover": { "label": "Understand", "desc": "First discovery of the topic" },
+    "revise": { "label": "Revise", "desc": "Consolidate knowledge" },
+    "exam": { "label": "Exam prep", "desc": "Prepare for a test or exam" },
+    "max_retention": { "label": "Max retention", "desc": "Long-term memorization through listening" }
+  },
+  "learner_level": {
+    "middle_school": "Middle school",
+    "high_school": "High school",
+    "undergrad": "Undergraduate",
+    "graduate": "Graduate",
+    "professional": "Professional",
+    "adult_reskilling": "Career change"
+  },
   "mission_debrief": {
     "seo_title": "Debrief — COGNITIO",
     "seo_description": "Analysis of your mission",

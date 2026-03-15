@@ -1015,6 +1015,26 @@
   "create": {
     "choose_format": "Que veux-tu créer ?"
   },
+  "explanation_style": {
+    "guided": { "label": "Très guidé", "desc": "Chaque notion est expliquée pas à pas" },
+    "balanced": { "label": "Équilibré", "desc": "Un bon mix entre clarté et densité" },
+    "academic": { "label": "Académique", "desc": "Vocabulaire technique, style universitaire" },
+    "professional": { "label": "Professionnel", "desc": "Précision maximale, zéro simplification" }
+  },
+  "memorization_goal": {
+    "discover": { "label": "Comprendre", "desc": "Première découverte du sujet" },
+    "revise": { "label": "Réviser", "desc": "Consolider les connaissances" },
+    "exam": { "label": "Examen", "desc": "Préparer un contrôle ou examen" },
+    "max_retention": { "label": "Rétention max", "desc": "Mémoriser durablement par l'écoute" }
+  },
+  "learner_level": {
+    "middle_school": "Collège",
+    "high_school": "Lycée",
+    "undergrad": "Licence",
+    "graduate": "Master",
+    "professional": "Professionnel",
+    "adult_reskilling": "Reprise d'études"
+  },
   "mission_debrief": {
     "seo_title": "Débrief — COGNITIO",
     "seo_description": "Analyse de votre mission",
