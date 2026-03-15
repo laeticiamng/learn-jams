@@ -19,6 +19,7 @@ import { DocumentQualityPanel } from "@/components/cognitio/DocumentQualityPanel
 import { DocumentPreview } from "@/components/cognitio/DocumentPreview";
 import { PipelineVisualization } from "@/components/cognitio/PipelineVisualization";
 import { ConceptList } from "@/components/cognitio/ConceptList";
+import { ConceptGraph } from "@/components/cognitio/ConceptGraph";
 import { ConfusionPairsCard } from "@/components/cognitio/ConfusionPairsCard";
 import AmbiguityWarning from "@/components/cognitio/AmbiguityWarning";
 import { MemoryPlanCard } from "@/components/cognitio/MemoryPlanCard";
@@ -554,6 +555,14 @@ export default function Create() {
                 <div className="border rounded-lg p-4">
                   <ConceptList concepts={analysis.result.key_concepts} maxDisplay={10} />
                 </div>
+              )}
+
+              {/* Concept Graph */}
+              {analysis.result && analysis.result.key_concepts.length > 1 && (
+                <ConceptGraph
+                  concepts={analysis.result.key_concepts}
+                  confusionPairs={analysis.result.confusion_pairs}
+                />
               )}
 
               {/* Confusions & Traps */}
