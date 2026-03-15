@@ -163,7 +163,7 @@ async function getCreditBalance(userId: string, feature: FeatureKey): Promise<nu
 
 async function decrementCredits(userId: string, feature: FeatureKey, amount: number): Promise<void> {
   const now = new Date().toISOString();
-  const { data } = await supabase
+  const { data } = await (supabase as any)
     .from("user_credit_balances")
     .select("id, remaining")
     .eq("user_id", userId)
