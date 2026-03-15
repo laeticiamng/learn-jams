@@ -28,9 +28,9 @@ export async function uploadDocument(
 
     if (uploadError) {
       console.warn("[COGNITIO] source-raw upload failed, trying course-documents:", uploadError.message);
-      // Fallback to course-documents bucket
+      // Fallback to course-documents bucket (must match edge function fallback)
       const { error: uploadError2 } = await supabase.storage
-        .from("course-uploads")
+        .from("course-documents")
         .upload(fileName, input.file);
 
       if (uploadError2) {

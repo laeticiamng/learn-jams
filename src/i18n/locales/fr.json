@@ -965,7 +965,75 @@
     "paste_text_instead": "Coller le texte directement",
     "import_other_doc": "Importer un autre document",
     "show_debug": "Détails techniques",
-    "disclaimer": "L'analyse est basée sur le contenu fourni. Le moteur ne prétend pas avoir compris ce qu'il ne comprend pas. Les zones d'incertitude sont signalées explicitement."
+    "disclaimer": "L'analyse est basée sur le contenu fourni. Le moteur ne prétend pas avoir compris ce qu'il ne comprend pas. Les zones d'incertitude sont signalées explicitement.",
+    "result_success": "Ton contenu a été généré avec succès !",
+    "result_success_detail": "Tu peux maintenant consulter et utiliser ta création."
+  },
+  "formats": {
+    "escape_game": {
+      "label": "Mission interactive",
+      "description": "Parcours gamifié avec énigmes, rappel actif et calibration confiance."
+    },
+    "music": {
+      "label": "Chanson pédagogique",
+      "description": "Vos concepts transformés en musique — 30 styles disponibles."
+    },
+    "dynamic_sheet": {
+      "label": "Fiche de révision",
+      "description": "Fiche structurée avec hiérarchie Bloom et sources tracées."
+    },
+    "animated_story": {
+      "label": "Histoire animée",
+      "description": "Narration immersive pour ancrer les concepts dans un récit."
+    },
+    "video": {
+      "label": "Vidéo pédagogique",
+      "description": "Synthèse visuelle générée par IA ou template animé."
+    }
+  },
+  "format": {
+    "tag": {
+      "game": "jeu",
+      "interactive": "interactif",
+      "puzzle": "puzzle",
+      "audio": "audio",
+      "creative": "créatif",
+      "song": "chanson",
+      "worksheet": "fiche",
+      "document": "document",
+      "printable": "imprimable",
+      "story": "histoire",
+      "animation": "animation",
+      "narrative": "narratif",
+      "video": "vidéo",
+      "template": "template",
+      "visual": "visuel"
+    },
+    "unlimited": "Illimité",
+    "remaining": "{{count}} restant(s)"
+  },
+  "create": {
+    "choose_format": "Que veux-tu créer ?"
+  },
+  "explanation_style": {
+    "guided": { "label": "Très guidé", "desc": "Chaque notion est expliquée pas à pas" },
+    "balanced": { "label": "Équilibré", "desc": "Un bon mix entre clarté et densité" },
+    "academic": { "label": "Académique", "desc": "Vocabulaire technique, style universitaire" },
+    "professional": { "label": "Professionnel", "desc": "Précision maximale, zéro simplification" }
+  },
+  "memorization_goal": {
+    "discover": { "label": "Comprendre", "desc": "Première découverte du sujet" },
+    "revise": { "label": "Réviser", "desc": "Consolider les connaissances" },
+    "exam": { "label": "Examen", "desc": "Préparer un contrôle ou examen" },
+    "max_retention": { "label": "Rétention max", "desc": "Mémoriser durablement par l'écoute" }
+  },
+  "learner_level": {
+    "middle_school": "Collège",
+    "high_school": "Lycée",
+    "undergrad": "Licence",
+    "graduate": "Master",
+    "professional": "Professionnel",
+    "adult_reskilling": "Reprise d'études"
   },
   "mission_debrief": {
     "seo_title": "Débrief — COGNITIO",

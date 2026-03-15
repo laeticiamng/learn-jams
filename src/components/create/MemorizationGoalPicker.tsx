@@ -4,6 +4,7 @@
 
 import { motion } from "framer-motion";
 import { Sparkles, BookOpen, ClipboardCheck, Brain } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type { MemorizationGoal } from "@/domain/lyrics/learnerProfile.types";
 
 interface MemorizationGoalPickerProps {
@@ -11,14 +12,16 @@ interface MemorizationGoalPickerProps {
   onSelect: (goal: MemorizationGoal) => void;
 }
 
-const GOALS: { id: MemorizationGoal; label: string; icon: typeof Brain; desc: string }[] = [
-  { id: "discover", label: "Comprendre", icon: Sparkles, desc: "Première découverte du sujet" },
-  { id: "revise", label: "Réviser", icon: BookOpen, desc: "Consolider les connaissances" },
-  { id: "exam", label: "Examen", icon: ClipboardCheck, desc: "Préparer un contrôle ou examen" },
-  { id: "max_retention", label: "Rétention max", icon: Brain, desc: "Mémoriser durablement par l'écoute" },
+const GOALS: { id: MemorizationGoal; icon: typeof Brain }[] = [
+  { id: "discover", icon: Sparkles },
+  { id: "revise", icon: BookOpen },
+  { id: "exam", icon: ClipboardCheck },
+  { id: "max_retention", icon: Brain },
 ];
 
 export default function MemorizationGoalPicker({ selected, onSelect }: MemorizationGoalPickerProps) {
+  const { t } = useTranslation();
+
   return (
     <div className="grid grid-cols-2 gap-2">
       {GOALS.map((goal) => {
@@ -39,9 +42,11 @@ export default function MemorizationGoalPicker({ selected, onSelect }: Memorizat
             <Icon className={`w-4 h-4 mt-0.5 shrink-0 ${isActive ? "text-primary" : "text-muted-foreground"}`} />
             <div>
               <span className={`text-xs font-medium block ${isActive ? "text-foreground" : "text-muted-foreground"}`}>
-                {goal.label}
+                {t(`memorization_goal.${goal.id}.label`)}
               </span>
-              <span className="text-[10px] text-muted-foreground">{goal.desc}</span>
+              <span className="text-[10px] text-muted-foreground">
+                {t(`memorization_goal.${goal.id}.desc`)}
+              </span>
             </div>
           </motion.button>
         );
