@@ -72,7 +72,7 @@ export async function completeExperimentRun(runId: string): Promise<void> {
 export async function recordMeasurement(input: RecordMeasurementInput): Promise<void> {
   const row: Record<string, unknown> = {
     experiment_run_id: input.experiment_run_id,
-    experiment_key: (input as Record<string, unknown>).experiment_key ?? '',
+    experiment_key: (input as unknown as Record<string, unknown>).experiment_key ?? '',
     metric_key: input.measure_key ?? '',
     measure_value_numeric: input.value_numeric ?? null,
     measure_value_text: input.value_text ?? null,
