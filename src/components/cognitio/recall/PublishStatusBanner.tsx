@@ -4,13 +4,13 @@
 
 import { motion } from "framer-motion";
 import { CheckCircle2, AlertTriangle, XCircle, Clock } from "lucide-react";
-import type { PublishDecision } from "@/domain/cognitio/qa.types";
+import type { PublishDecision, PublishDecisionStatus } from "@/domain/cognitio/qa.types";
 
 interface PublishStatusBannerProps {
   decision: PublishDecision;
 }
 
-const STATUS_CONFIG: Record<PublishDecision["status"], {
+const STATUS_CONFIG: Record<PublishDecisionStatus, {
   icon: typeof CheckCircle2;
   label: string;
   bgClass: string;
@@ -43,7 +43,7 @@ const STATUS_CONFIG: Record<PublishDecision["status"], {
 };
 
 export function PublishStatusBanner({ decision }: PublishStatusBannerProps) {
-  const config = STATUS_CONFIG[decision.status];
+  const config = STATUS_CONFIG[decision.decision_status];
   const Icon = config.icon;
 
   return (

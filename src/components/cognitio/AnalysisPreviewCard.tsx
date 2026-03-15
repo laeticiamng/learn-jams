@@ -48,7 +48,7 @@ export default function AnalysisPreviewCard({ analysis, qualityScore }: Analysis
 
         <div className="flex flex-wrap gap-2">
           <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-            {analysis.knowledge_type}
+            {analysis.reasoning_type}
           </span>
           <span className="text-xs px-2 py-0.5 rounded-full bg-muted/20 text-muted-foreground">
             {analysis.structure_type}
@@ -58,7 +58,7 @@ export default function AnalysisPreviewCard({ analysis, qualityScore }: Analysis
         {/* Top concepts preview */}
         <div className="space-y-1.5">
           <p className="text-xs text-muted-foreground">Concepts principaux :</p>
-          {analysis.concepts.slice(0, 5).map((c) => (
+          {analysis.key_concepts.slice(0, 5).map((c) => (
             <div key={c.stable_key} className="flex items-center gap-2 text-sm">
               <span className={`w-2 h-2 rounded-full ${
                 c.criticality === 1
@@ -73,15 +73,15 @@ export default function AnalysisPreviewCard({ analysis, qualityScore }: Analysis
               </span>
             </div>
           ))}
-          {analysis.concepts.length > 5 && (
+          {analysis.key_concepts.length > 5 && (
             <p className="text-xs text-muted-foreground">
-              +{analysis.concepts.length - 5} autres concepts
+              +{analysis.key_concepts.length - 5} autres concepts
             </p>
           )}
         </div>
       </div>
 
-      <AmbiguityWarning zones={analysis.ambiguous_zones} />
+      <AmbiguityWarning zones={analysis.confidence.ambiguous_zones} />
     </div>
   );
 }

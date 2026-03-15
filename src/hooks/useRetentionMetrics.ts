@@ -20,12 +20,13 @@ export function useRetentionMetrics() {
   const [data, setData] = useState<RetentionData[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetch = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     if (!user) return;
     setLoading(true);
 
     try {
-      const { data: runs, error } = await supabase
+      // Use any-typed query to bypass missing table types
+      const { data: runs, error } = await (supabase as any)
         .from("mission_runs")
         .select(`
           id,
@@ -65,8 +66,8 @@ export function useRetentionMetrics() {
   }, [user]);
 
   useEffect(() => {
-    fetch();
-  }, [fetch]);
+    fetchData();
+  }, [fetchData]);
 
   const avgRetention = {
     j0: average(data.map((d) => d.j0Score).filter(notNull)),
@@ -74,7 +75,7 @@ export function useRetentionMetrics() {
     j7: average(data.map((d) => d.j7Score).filter(notNull)),
   };
 
-  return { data, avgRetention, loading, refresh: fetch };
+  return { data, avgRetention, loading, refresh: fetchData };
 }
 
 function notNull<T>(v: T | null): v is T {
