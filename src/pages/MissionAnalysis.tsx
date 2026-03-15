@@ -58,7 +58,7 @@ export default function MissionAnalysis() {
         }
 
         // Load segments
-        const { data: segments } = await supabase
+        const { data: segments } = await (supabase as any)
           .from("document_segments")
           .select("*")
           .eq("document_id", id)
