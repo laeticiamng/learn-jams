@@ -172,6 +172,9 @@ export function useMissionGeneration() {
           })),
           quality_score: ingestionResult.confidence_level,
           objective: input.objective,
+          main_topic: analysisResult.main_topic,
+          reasoning_type: analysisResult.reasoning_type,
+          estimated_audience_level: analysisResult.estimated_audience_level,
         });
         updateStep("generation", {
           status: "completed",

@@ -12,6 +12,8 @@ import {
   normalizeConceptLabel,
   rejectConceptArtifact,
   isValidConceptLabel,
+  cleanMainTopic,
+  isEditorialArtifact,
 } from "@/lib/cognitio-semantic-cleaning";
 
 export async function runQA(input: QAInput): Promise<QAOutput> {
@@ -213,6 +215,53 @@ export function runLocalQA(input: QAInput): QAOutput {
     });
   }
 
+  // Check 13: Topic cleanliness — main topic not polluted by artifacts
+  const topicClean = assessTopicCleanliness(mission.title, concepts);
+  checklist.push({
+    check_id: "topic_cleanliness",
+    label: "Sujet principal propre",
+    passed: topicClean.score >= 0.7,
+    weight: 8,
+    details: topicClean.details,
+  });
+  if (topicClean.score < 0.5) {
+    violations.push({
+      violation_type: "dirty_topic",
+      severity: "warning",
+      message: `Sujet principal pollué : ${topicClean.details}`,
+    });
+  }
+
+  // Check 14: Section coverage — mission covers distinct chapters
+  const sectionCoverage = assessSectionCoverage(concepts, mission);
+  checklist.push({
+    check_id: "section_coverage",
+    label: "Couverture des chapitres",
+    passed: sectionCoverage.score >= 0.5,
+    weight: 7,
+    details: `${sectionCoverage.coveredTypes}/${sectionCoverage.totalTypes} types couverts`,
+  });
+
+  // Check 15: Concept normalization — labels are properly reformulated
+  const normScore = assessConceptNormalization(concepts);
+  checklist.push({
+    check_id: "concept_normalization",
+    label: "Normalisation des concepts",
+    passed: normScore.score >= 0.7,
+    weight: 8,
+    details: `${Math.round(normScore.score * 100)}% — ${normScore.fragmentCount} fragments, ${normScore.tooLiteralCount} trop littéraux`,
+  });
+
+  // Check 16: Mission theme coherence — narrative matches subject
+  const themeFit = assessThemeCoherence(mission);
+  checklist.push({
+    check_id: "mission_theme_fit",
+    label: "Cohérence thème mission",
+    passed: themeFit.score >= 0.6,
+    weight: 5,
+    details: themeFit.details,
+  });
+
   // Compute total score
   const totalWeight = checklist.reduce((s, c) => s + c.weight, 0);
   const passedWeight = checklist.filter(c => c.passed).reduce((s, c) => s + c.weight, 0);
@@ -327,6 +376,133 @@ function assessCriticalConceptQuality(concepts: { label: string; definition: str
   };
 }
 
+function assessTopicCleanliness(title: string, concepts: { label: string; type: string }[]): {
+  score: number;
+  details: string;
+} {
+  const cleaned = cleanMainTopic(title.replace(/^Mission:\s*/i, ""));
+
+  // Check if cleaned topic still contains artifacts
+  const hasR2C = /R2C|COM\s|Rang\s/i.test(cleaned);
+  const hasEditorial = isEditorialArtifact(cleaned);
+  const isTooShort = cleaned.length < 5;
+  const isGeneric = /^(Apprentissage|Général|general|Contenu|Sujet)$/i.test(cleaned);
+
+  let score = 1;
+  const issues: string[] = [];
+
+  if (hasR2C) { score -= 0.4; issues.push("contient métadonnées R2C"); }
+  if (hasEditorial) { score -= 0.3; issues.push("artefact éditorial"); }
+  if (isTooShort) { score -= 0.2; issues.push("trop court"); }
+  if (isGeneric) { score -= 0.3; issues.push("trop générique"); }
+
+  return {
+    score: Math.max(0, score),
+    details: issues.length > 0 ? issues.join(", ") : `Sujet propre : "${cleaned}"`,
+  };
+}
+
+function assessSectionCoverage(
+  concepts: { type: string; stable_key: string }[],
+  mission: MissionContent
+): { score: number; coveredTypes: number; totalTypes: number } {
+  // Count distinct concept types (chapters/categories)
+  const allTypes = new Set(concepts.map(c => c.type).filter(t => t && t !== "general" && t !== "Général"));
+  if (allTypes.size === 0) return { score: 1, coveredTypes: 0, totalTypes: 0 };
+
+  // Check which types are covered by mission items
+  const missionConceptKeys = new Set(mission.rooms.flatMap(r => r.items.map(i => i.concept_key)));
+  if (mission.boss) {
+    for (const item of mission.boss.items) missionConceptKeys.add(item.concept_key);
+  }
+
+  const coveredTypes = new Set<string>();
+  for (const c of concepts) {
+    if (missionConceptKeys.has(c.stable_key) && c.type && c.type !== "general") {
+      coveredTypes.add(c.type);
+    }
+  }
+
+  return {
+    score: allTypes.size > 0 ? coveredTypes.size / allTypes.size : 1,
+    coveredTypes: coveredTypes.size,
+    totalTypes: allTypes.size,
+  };
+}
+
+function assessConceptNormalization(concepts: { label: string; definition: string }[]): {
+  score: number;
+  fragmentCount: number;
+  tooLiteralCount: number;
+} {
+  if (concepts.length === 0) return { score: 1, fragmentCount: 0, tooLiteralCount: 0 };
+
+  let normalizedCount = 0;
+  let fragmentCount = 0;
+  let tooLiteralCount = 0;
+
+  for (const c of concepts) {
+    const label = c.label;
+
+    // Fragment detection: starts with lowercase, starts with punctuation, very short
+    if (/^[a-zà-ÿ]/.test(label) && label.length < 15) {
+      fragmentCount++;
+      continue;
+    }
+    if (/^[\-–—•:;,.\])>]/.test(label)) {
+      fragmentCount++;
+      continue;
+    }
+
+    // Too literal: label is just a copy-paste of the start of definition
+    const defStart = c.definition.toLowerCase().slice(0, 40);
+    if (defStart.includes(label.toLowerCase()) && label.length > 10) {
+      tooLiteralCount++;
+      continue;
+    }
+
+    normalizedCount++;
+  }
+
+  return {
+    score: concepts.length > 0 ? normalizedCount / concepts.length : 1,
+    fragmentCount,
+    tooLiteralCount,
+  };
+}
+
+function assessThemeCoherence(mission: MissionContent): {
+  score: number;
+  details: string;
+} {
+  const intro = mission.narrative_intro.toLowerCase();
+
+  // Check if the narrative is still the old hardcoded hospital theme
+  const isGenericHospital = intro.includes("service d'urgence pédagogique");
+  if (isGenericHospital) {
+    return { score: 0.3, details: "Thème générique hospitalier non adapté au sujet" };
+  }
+
+  // Check if the narrative mentions the mission title/topic
+  const topicWords = mission.title.replace(/^Mission:\s*/i, "").toLowerCase().split(/\s+/).filter(w => w.length > 3);
+  const topicMentioned = topicWords.some(w => intro.includes(w));
+
+  // Check if rooms have distinct narratives (not all the same)
+  const narratives = new Set(mission.rooms.map(r => r.narrative_context));
+  const hasVariety = narratives.size >= Math.min(3, mission.rooms.length);
+
+  let score = 0.5;
+  if (topicMentioned) score += 0.3;
+  if (hasVariety) score += 0.2;
+
+  return {
+    score: Math.min(1, score),
+    details: topicMentioned
+      ? "Thème cohérent avec le sujet"
+      : "Le thème pourrait être mieux adapté au sujet",
+  };
+}
+
 function buildRecommendations(
   checklist: QAChecklistItem[],
   violations: QAViolation[]
@@ -347,6 +523,18 @@ function buildRecommendations(
   }
   if (!checklist.find(c => c.check_id === "critical_coverage")?.passed) {
     recs.push("Assurez-vous que les concepts critiques sont bien couverts dans la mission");
+  }
+  if (!checklist.find(c => c.check_id === "topic_cleanliness")?.passed) {
+    recs.push("Le sujet principal est pollué par des artefacts éditoriaux — nettoyez le titre");
+  }
+  if (!checklist.find(c => c.check_id === "section_coverage")?.passed) {
+    recs.push("La mission ne couvre pas assez de chapitres du cours — élargissez la couverture");
+  }
+  if (!checklist.find(c => c.check_id === "concept_normalization")?.passed) {
+    recs.push("Certains concepts sont trop bruts ou fragmentaires — reformulez les labels");
+  }
+  if (!checklist.find(c => c.check_id === "mission_theme_fit")?.passed) {
+    recs.push("Le thème de la mission ne correspond pas au sujet — adaptez l'univers narratif");
   }
 
   return recs;
