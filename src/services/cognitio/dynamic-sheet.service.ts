@@ -687,7 +687,7 @@ export async function persistTransformation(
   if (tErr) throw new Error(`Failed to persist transformation: ${tErr.message}`);
 
   // 2. Insert generated content
-  const { error: cErr } = await supabase
+  const { error: cErr } = await (supabase as any)
     .from("generated_contents")
     .insert({
       transformation_id: output.transformation_id,
