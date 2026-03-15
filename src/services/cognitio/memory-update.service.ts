@@ -252,7 +252,7 @@ async function updateConfusionEdges(
       const newHits = currentHits + entry.confusion_count;
       const severity = Math.min(1, newHits / 10);
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("learner_confusion_edges")
         .update({
           hits_count: newHits,
