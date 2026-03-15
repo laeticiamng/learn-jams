@@ -97,7 +97,7 @@ export default function MissionAnalysis() {
 
         if (profile) {
           // Load concepts
-          const { data: concepts } = await supabase
+          const { data: concepts } = await (supabase as any)
             .from("concepts")
             .select("*")
             .eq("course_profile_id", profile.id)
