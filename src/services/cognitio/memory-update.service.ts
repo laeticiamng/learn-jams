@@ -237,7 +237,7 @@ async function updateConfusionEdges(
     // Normalize key order for consistent lookups
     const [keyA, keyB] = [entry.concept_a, entry.concept_b].sort();
 
-    const { data: existing } = await supabase
+    const { data: existing } = await (supabase as any)
       .from("learner_confusion_edges")
       .select("*")
       .eq("user_id", userId)
