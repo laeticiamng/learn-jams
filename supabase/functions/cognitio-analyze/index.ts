@@ -14,7 +14,46 @@ const corsHeaders = {
 };
 
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
-const PROMPT_VERSION = "m2-analyze-v2.0";
+const PROMPT_VERSION = "m2-analyze-v3.0";
+
+// Document Understanding Layer — System prompt for pre-comprehension
+const DOCUMENT_UNDERSTANDING_SYSTEM_PROMPT = `Tu es la couche de compréhension globale de COGNITIO.
+Ta mission est d'abord de comprendre réellement le document d'apprentissage comme le ferait un excellent enseignant humain AVANT d'extraire des concepts.
+
+RÈGLE FONDAMENTALE : Tu dois comprendre avant de structurer.
+
+CE QUE TU DOIS IGNORER / DÉPRIORISER :
+- branding ou nom de site (CODEX, S-ECN, iKB, PREP-ECN, MED-LINE)
+- entêtes de polycopié, mentions de rang (Rang A/B/C), R2C/EDN/ECN
+- dates de révision, numéros d'item, répétitions d'en-têtes
+- fragments typographiques, artefacts OCR, blocs documentaires non pédagogiques
+Ces éléments ne doivent JAMAIS devenir le sujet principal, un concept, un titre de mission ou un ancrage mnémotechnique.
+
+CE QUE TU DOIS FAIRE AVANT TOUTE EXTRACTION :
+A. Identifier le VRAI sujet pédagogique (3-12 mots, jamais R2C/Rang/CODEX/Item)
+B. Reconstruire la carte réelle du document (chapitres, sous-parties, séquence logique)
+C. Identifier les zones de bruit (front matter, headers, footers, tableaux mal extraits)
+D. Identifier le cœur pédagogique (3-8 grands axes, notions structurantes, distinctions clés)
+
+EXTRACTION DES CONCEPTS — QUALITÉ :
+Un concept doit être : compréhensible seul, utile pédagogiquement, formulé proprement, non éditorial, relié au cœur du cours.
+Un concept ne doit JAMAIS être : une ligne de header, un nom de site, un rang, une date, un item, un fragment non reformulé.
+Si le document est sale, reformule proprement. Tu dois penser comme un enseignant qui nettoie et clarifie.
+
+PRIORITÉ : Préférer une petite liste de concepts justes et propres plutôt qu'une grande liste de concepts faux ou bruités.
+
+SI LE DOCUMENT EST BRUITÉ : ignore le bruit, base-toi sur le corps, cherche les titres réels, les définitions, mécanismes, diagnostics, traitements.
+
+MISSION UNIVERSE RULE :
+L'univers de mission doit dépendre du vrai sujet et du type de raisonnement :
+- médecine clinique aiguë → prise en charge / décision / priorisation
+- santé publique / prévention → enquête / audit / contrôle du risque
+- droit → dossier / arbitrage / argumentation
+- informatique → diagnostic / système / architecture / débogage
+- histoire → enquête chronologique / causalité / sources
+- sciences fondamentales → exploration / mécanismes / chaînes explicatives
+Ne jamais utiliser un univers générique par défaut.`;
+
 
 // ---------- Types ----------
 
@@ -281,6 +320,7 @@ async function analyzeWithClaude(
     body: JSON.stringify({
       model: "claude-sonnet-4-20250514",
       max_tokens: 8192,
+      system: DOCUMENT_UNDERSTANDING_SYSTEM_PROMPT,
       messages: [{ role: "user", content: prompt }],
     }),
   });
@@ -316,7 +356,16 @@ function buildAnalysisPrompt(
   sourceType: string,
   confidenceLevel: number
 ): string {
-  return `Tu es un analyste pédagogique expert. Analyse ce contenu éducatif et produis un profil pédagogique structuré.
+  return `Analyse ce contenu éducatif et produis un profil pédagogique structuré.
+
+ÉTAPE 1 — PRÉ-COMPRÉHENSION (obligatoire avant extraction) :
+Avant d'extraire des concepts, tu DOIS d'abord identifier mentalement :
+- Le VRAI sujet pédagogique du document (jamais un label éditorial R2C/Rang/CODEX/Item)
+- Les grands blocs structurants du cours (définitions, mécanismes, diagnostic, traitement...)
+- Les zones de bruit à ignorer (front matter, branding, en-têtes répétés)
+- Le cœur pédagogique réel (3-8 axes clés que l'étudiant doit retenir)
+
+ÉTAPE 2 — EXTRACTION (basée sur la compréhension) :
 
 RÈGLES ABSOLUES :
 - Ne JAMAIS inventer de concepts absents du texte source
@@ -324,21 +373,21 @@ RÈGLES ABSOLUES :
 - Si un concept n'est pas clairement traçable, mettre source_confidence < 0.5
 - Signaler les zones ambiguës honnêtement
 - Maximum 30 concepts
-- Attribuer la criticality en fonction de l'importance MÉDICALE/PÉDAGOGIQUE réelle dans le cours
+- Attribuer la criticality en fonction de l'importance PÉDAGOGIQUE réelle dans le cours
 
 RÈGLES DE QUALITÉ SÉMANTIQUE (CRITIQUES) :
-- Un concept DOIT être une notion médicale/scientifique/pédagogique réelle, intelligible seule
+- Un concept DOIT être une notion scientifique/pédagogique réelle, intelligible seule
 - NE PAS extraire comme concept : labels administratifs (Rang A, Rang B, R2C), balises pédagogiques, métadonnées de support, fragments typographiques, titres de section sales, ponctuation résiduelle
 - Chaque label de concept DOIT être propre, lisible, normalisé (ex: "Pneumonie aiguë communautaire (PAC)" et non "COM R2C : Rang A")
 - Les définitions DOIVENT être condensées et reformulées pédagogiquement : PAS de copier-coller brut du polycopié
 - Chaque définition doit être autonome, compréhensible sans contexte, en 1-3 phrases maximum
-- Chaque concept critique (criticality=1) doit être réellement central au sujet médical/scientifique, pas un artefact du document
+- Chaque concept critique (criticality=1) doit être réellement central au sujet, pas un artefact du document
 - Si un fragment du texte n'est pas un vrai concept (ex: ") - Signes généraux inconstants"), NE PAS l'inclure
 
 QUALITÉ DES DÉFINITIONS :
 - Reformuler, condenser, clarifier
 - Supprimer le jargon éditorial et les références internes au polycopié
-- Garder l'essentiel médical/scientifique
+- Garder l'essentiel scientifique/pédagogique
 - Ajouter un piège/distinction si pertinent directement dans "traps"
 
 CONTEXTE :

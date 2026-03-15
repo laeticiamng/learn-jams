@@ -203,10 +203,29 @@ export function useCreatePipeline() {
       counters.extracted_concepts_after_filter_count = m2Result.key_concepts.length;
       counters.extracted_concepts_raw_count = m2Result.total_concepts;
       counters.rejected_concepts_count = m2Result.total_concepts - m2Result.key_concepts.length;
+      // Document Understanding Layer trace
+      if (m2Result.document_understanding) {
+        const du = m2Result.document_understanding;
+        counters.pipeline_trace.push({
+          step: "B2_understanding",
+          input_length: canonicalSemanticText.length,
+          detail: `true_topic="${du.true_topic}", domain=${du.domain_classification}, ` +
+            `reasoning=${du.dominant_reasoning}, sections=${du.section_map.length}, ` +
+            `learning_core=${du.learning_core.length}, noise_zones=${du.noise_zones.length}, ` +
+            `confidence=${du.comprehension_confidence.toFixed(2)}`,
+          warning: du.noise_zones.length > 3
+            ? `Document fortement bruité : ${du.noise_zones.length} zones de bruit détectées`
+            : undefined,
+        });
+      }
+
       counters.pipeline_trace.push({
         step: "C_topic",
         input_length: canonicalSemanticText.length,
-        detail: `detected_topic="${m2Result.main_topic}"`,
+        detail: `detected_topic="${m2Result.main_topic}"` +
+          (m2Result.document_understanding
+            ? ` (understanding_topic="${m2Result.document_understanding.true_topic}")`
+            : ""),
       });
       counters.pipeline_trace.push({
         step: "D_concept_extraction",
@@ -263,10 +282,15 @@ export function useCreatePipeline() {
         detail: `concepts_from_segment_0=${conceptsFromSeg0}, concepts_from_body=${conceptsFromBody}, ` +
           `front_matter=${m2Result._diag_front_matter_detected ?? false}, ` +
           `seg0_quarantined=${m2Result._diag_segment_0_quarantined ?? false}, ` +
+          `seg0_quarantined_retroactive=${m2Result._diag_segment_0_quarantined_retroactive ?? false}, ` +
+          `body_pass_trigger_condition_met=${m2Result._diag_body_pass_trigger_condition_met ?? false}, ` +
           `body_pass=${m2Result._diag_body_only_second_pass_triggered ?? false}, ` +
-          `body_concepts=${m2Result._diag_body_only_second_pass_concepts_count ?? 0}`,
+          `body_pass_reason_if_not=${m2Result._diag_body_pass_reason_if_not_triggered ?? "n/a"}, ` +
+          `body_concepts=${m2Result._diag_body_only_second_pass_concepts_count ?? 0}, ` +
+          `secondary_topic="${m2Result._diag_secondary_pass_topic ?? "n/a"}", ` +
+          `secondary_concepts=${m2Result._diag_secondary_pass_concepts_count ?? 0}`,
         warning: conceptsFromSeg0 > 0 && conceptsFromBody === 0 && m1Result.segments.length > 1
-          ? `All concepts from segment 0 — body segments ignored`
+          ? `WARNING: All concepts from segment 0 — body segments ignored`
           : undefined,
       });
 
