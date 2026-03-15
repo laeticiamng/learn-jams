@@ -23,6 +23,7 @@ import {
 } from "@/domain/cognitio/validators";
 import { updateIngestionStatus } from "./ingestion.service";
 import { selectMissionFamily, selectMissionSubTheme, selectUniverseProfile, type AudienceLevel, type MissionFamily, type MissionSubTheme } from "@/domain/cognitio/escapeGame.types";
+import { cleanMainTopic, isEditorialArtifact } from "@/lib/cognitio-semantic-cleaning";
 
 const BRICK_TYPES: BrickType[] = ["TRI", "SEQUENCE", "ELIMINATION", "OBSERVATION", "DECISION"];
 
@@ -81,7 +82,12 @@ export function generateMissionLocally(
   const rooms = buildRooms(input, roomCount, subTheme);
   const boss = includesBoss ? buildBoss(input, subTheme) : undefined;
 
-  const topicLabel = input.main_topic || input.concepts[0]?.type || "Apprentissage";
+  // P0: Clean main topic to prevent editorial artifacts in mission title
+  const rawTopicLabel = input.main_topic || input.concepts[0]?.type || "Apprentissage";
+  const cleanedTopicLabel = cleanMainTopic(rawTopicLabel);
+  const topicLabel = (cleanedTopicLabel.length >= 3 && !isEditorialArtifact(cleanedTopicLabel))
+    ? cleanedTopicLabel
+    : "Apprentissage";
   const mission_json: MissionContent = {
     title: `Mission: ${topicLabel}`,
     narrative_intro: buildThemedNarrativeIntro(topicLabel, subTheme, qualityBand),
@@ -240,9 +246,12 @@ function buildRooms(input: GenerateExperienceInput, roomCount: number, subTheme:
 
     if (roomConcepts.length === 0) continue;
 
+    // P0 FIX: Use rooms.length for sequential indexing instead of loop index
+    // to prevent gaps when rooms are skipped (e.g., "Salle 2" without "Salle 1")
+    const roomNumber = rooms.length;
     rooms.push({
-      room_index: i,
-      title: `Salle ${i + 1} — ${getBrickLabel(brick)}`,
+      room_index: roomNumber,
+      title: `Salle ${roomNumber + 1} — ${getBrickLabel(brick)}`,
       narrative_context: subTheme.roomNarratives[brick],
       brick_type: brick,
       items: buildItems(brick, roomConcepts, confusion_pairs),
