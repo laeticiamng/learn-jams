@@ -130,7 +130,7 @@ async function incrementUsage(userId: string, feature: FeatureKey, amount: numbe
 
 async function getAllCurrentUsage(userId: string): Promise<Partial<Record<FeatureKey, number>>> {
   const now = new Date().toISOString();
-  const { data } = await supabase
+  const { data } = await (supabase as any)
     .from("usage_quotas_v2")
     .select("counters_json")
     .eq("user_id", userId)
