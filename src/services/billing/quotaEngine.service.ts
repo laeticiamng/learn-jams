@@ -177,10 +177,11 @@ async function decrementCredits(userId: string, feature: FeatureKey, amount: num
   let toConsume = amount;
   for (const row of data) {
     if (toConsume <= 0) break;
-    const consume = Math.min(toConsume, row.remaining);
+    const rowRemaining = row.remaining ?? 0;
+    const consume = Math.min(toConsume, rowRemaining);
     await supabase
       .from("user_credit_balances")
-      .update({ remaining: row.remaining - consume, updated_at: now })
+      .update({ remaining: rowRemaining - consume, updated_at: now })
       .eq("id", row.id);
     toConsume -= consume;
   }
