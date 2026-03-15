@@ -16,6 +16,7 @@ import Footer from "@/components/Footer";
 import IngestionStatus from "@/components/cognitio/IngestionStatus";
 import ImportDebugPanel from "@/components/cognitio/ImportDebugPanel";
 import { DocumentQualityPanel } from "@/components/cognitio/DocumentQualityPanel";
+import { DocumentPreview } from "@/components/cognitio/DocumentPreview";
 import { ConceptList } from "@/components/cognitio/ConceptList";
 import { ConfusionPairsCard } from "@/components/cognitio/ConfusionPairsCard";
 import AmbiguityWarning from "@/components/cognitio/AmbiguityWarning";
@@ -353,6 +354,14 @@ export default function Create() {
                           })}
                   </p>
                 </div>
+              )}
+
+              {/* P0: Document preview — shows cleaned text, segments, issues */}
+              {ingestion.result && (
+                <DocumentPreview
+                  m1Output={ingestion.result}
+                  rawTextEstimate={pipeline.debugCounters?.raw_text_length}
+                />
               )}
 
               {/* P0: Debug counters summary (always visible when available) */}
