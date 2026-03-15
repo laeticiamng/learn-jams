@@ -268,7 +268,7 @@ async function updateConfusionEdges(
     } else {
       const severity = Math.min(1, entry.confusion_count / 10);
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("learner_confusion_edges")
         .insert({
           user_id: userId,
