@@ -101,7 +101,7 @@ async function incrementUsage(userId: string, feature: FeatureKey, amount: numbe
   const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
 
   // Upsert current period
-  const { data: existing } = await supabase
+  const { data: existing } = await (supabase as any)
     .from("usage_quotas_v2")
     .select("id, counters_json")
     .eq("user_id", userId)
