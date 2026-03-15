@@ -28,6 +28,10 @@ import {
   extractCleanMainTopic,
   cleanMainTopic,
   reconstructChapterHierarchy,
+  scoreConceptCandidate,
+  computeEditorialArtifactScore,
+  computeHeaderNoiseScore,
+  type ConceptCandidateScores,
 } from "@/lib/cognitio-semantic-cleaning";
 import { filterEditorialNoise } from "./editorialNoiseFilter";
 
@@ -512,6 +516,30 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
     );
   }
 
+  // P0: Post-heuristic scoring — reject remaining concepts that are still noisy
+  if (concepts.length > 0) {
+    const scoredConcepts = concepts.filter(c => {
+      const scores = scoreConceptCandidate(c.label, c.definition);
+      if (!scores.accepted) {
+        console.warn(
+          `[COGNITIO][M2][POST_SCORE] Rejecting concept "${c.label}" after scoring:\n` +
+          `  editorial=${scores.editorial_artifact_score}, header=${scores.header_noise_score}, ` +
+          `validity=${scores.concept_semantic_validity_score}, reason="${scores.reject_reason}"`
+        );
+        return false;
+      }
+      return true;
+    });
+
+    if (scoredConcepts.length < concepts.length) {
+      console.info(
+        `[COGNITIO][M2][POST_SCORE] Removed ${concepts.length - scoredConcepts.length} noisy concepts after scoring. ` +
+        `${scoredConcepts.length} remain.`
+      );
+      concepts = scoredConcepts;
+    }
+  }
+
   // P0 ANOMALY GUARD: Final check — log detailed anomaly if still 0
   if (concepts.length === 0 && clean_text.length > 5000) {
     console.error(
@@ -624,6 +652,8 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
       { code: "FALLBACK_ANALYSIS", message: "Analyse locale heuristique (LLM non disponible)", severity: "warning" },
       ...(_dbg_fallback_level === "emergency" ? [{ code: "EMERGENCY_EXTRACTION" as const, message: `Extraction de secours utilisée — ${Object.entries(rejectReasons).map(([r, c]) => `${r}:${c}`).join(", ")}`, severity: "warning" as const }] : []),
       ...(_dbg_fallback_level === "heuristic_secours" ? [{ code: "HEURISTIC_LAST_RESORT" as const, message: `Mode secours heuristique activé — toutes les méthodes standard ont échoué sur ${clean_text.length} caractères`, severity: "error" as const }] : []),
+      ...(concepts.length === 0 && clean_text.length > 50 ? [{ code: "ALL_CONCEPTS_REJECTED" as const, message: `Tous les concepts candidats ont été rejetés (bruit éditorial). Aucune fiche exploitable ne peut être produite.`, severity: "blocking" as const }] : []),
+      ...(concepts.length === 1 && concepts[0]?.uncertain ? [{ code: "SINGLE_UNCERTAIN_CONCEPT" as const, message: `Un seul concept incertain détecté — qualité insuffisante pour une fiche standard.`, severity: "warning" as const }] : []),
     ],
     total_concepts: concepts.length,
     critical_count: concepts.filter((c) => c.criticality === 1).length,
@@ -654,11 +684,35 @@ function extractHeuristicConcepts(
   const concepts: AnalyzedConcept[] = [];
   const seenLabels = new Set<string>();
 
+  const debugEntries: { label: string; scores: ConceptCandidateScores; accepted: boolean; reject_reason: string | null }[] = [];
+
   function addConcept(label: string, definition: string, criticality: 1 | 2 | 3 | 4, source: string) {
     const cleanLabel = label.trim().replace(/\s{2,}/g, " ");
     if (cleanLabel.length < 3) return;
     const key = cleanLabel.toLowerCase().replace(/[^a-zà-ÿ0-9]/g, "");
     if (seenLabels.has(key)) return;
+
+    // P0: Score candidate before promoting
+    const scores = scoreConceptCandidate(cleanLabel, definition);
+    debugEntries.push({
+      label: cleanLabel,
+      scores,
+      accepted: scores.accepted,
+      reject_reason: scores.reject_reason,
+    });
+
+    if (!scores.accepted) {
+      console.info(
+        `[COGNITIO][M2][HEURISTIC] REJECTED concept candidate: "${cleanLabel}"\n` +
+        `  editorial_artifact_score=${scores.editorial_artifact_score}\n` +
+        `  header_noise_score=${scores.header_noise_score}\n` +
+        `  concept_semantic_validity_score=${scores.concept_semantic_validity_score}\n` +
+        `  reject_reason="${scores.reject_reason}"\n` +
+        `  source=${source}`
+      );
+      return;
+    }
+
     seenLabels.add(key);
 
     const effectiveDef = definition.trim().length >= 10
@@ -747,24 +801,65 @@ function extractHeuristicConcepts(
     `[COGNITIO][M2] Heuristic extraction detail:\n` +
     `  from_segment_titles=${[...seenLabels].length}\n` +
     `  total_heuristic_concepts=${concepts.length}\n` +
-    `  labels=[${concepts.map(c => `"${c.label}"`).join(", ")}]`
+    `  labels=[${concepts.map(c => `"${c.label}"`).join(", ")}]\n` +
+    `  debug_per_candidate=[\n${debugEntries.map(d =>
+      `    { label: "${d.label}", accepted: ${d.accepted}, ` +
+      `editorial=${d.scores.editorial_artifact_score}, header=${d.scores.header_noise_score}, ` +
+      `validity=${d.scores.concept_semantic_validity_score}` +
+      `${d.reject_reason ? `, reject: "${d.reject_reason}"` : ""} }`
+    ).join(",\n")}\n  ]`
   );
 
   return concepts;
 }
 
 /**
- * Quick editorial artifact check for heuristic extraction.
- * Less aggressive than the main filter — we want to keep as much as possible.
+ * P0 HARDENED: Editorial artifact check for heuristic extraction.
+ * Now catches composite headers, branding, R2C labels, and noisy editorial tokens.
  */
 function isEditorialArtifactForHeuristic(line: string): boolean {
-  return /^(?:COM\s+)?R2C\s*:/i.test(line)
-    || /^(?:Rang|Item|UE|DFGSM|ECN|EDN)\s+\d/i.test(line)
-    || /^(?:Page|Version)\s+\d/i.test(line)
-    || /^(?:Université|Faculté|Institut|École)\s/i.test(line)
-    || /^en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS)\s*$/i.test(line)
-    || /^©\s/.test(line)
-    || /^\d+\s*[\/\-–]\s*\d+\s*$/.test(line);
+  const trimmed = line.trim();
+
+  // Basic structural noise
+  if (/^(?:COM\s+)?R2C\s*:/i.test(trimmed)) return true;
+  if (/^(?:Rang|Item|UE|DFGSM|ECN|EDN)\s+\d/i.test(trimmed)) return true;
+  if (/^(?:Page|Version)\s+\d/i.test(trimmed)) return true;
+  if (/^(?:Université|Faculté|Institut|École)\s/i.test(trimmed)) return true;
+  if (/^en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS)\s*$/i.test(trimmed)) return true;
+  if (/^©\s/.test(trimmed)) return true;
+  if (/^\d+\s*[\/\-–]\s*\d+\s*$/.test(trimmed)) return true;
+
+  // P0: Platform branding — catch CODEX, S-ECN, ECN.COM, MED-LINE, iKB, etc.
+  if (/\bCODEX\b/i.test(trimmed)) return true;
+  if (/\bS[\s-]*ECN\b/i.test(trimmed)) return true;
+  if (/\bECN\.COM\b/i.test(trimmed)) return true;
+  if (/\bMED-LINE\b/i.test(trimmed)) return true;
+  if (/\bVERNAZOBRES/i.test(trimmed)) return true;
+  if (/\biKB\b/.test(trimmed)) return true;
+  if (/\bPREP['']?ECN\b/i.test(trimmed)) return true;
+  if (/\bELLIPSES\b/i.test(trimmed)) return true;
+
+  // P0: Rang classification anywhere in line
+  if (/\bRang\s+[A-Z]\b/i.test(trimmed)) return true;
+  if (/\bR2C\b/i.test(trimmed)) return true;
+
+  // P0: Revision/version metadata
+  if (/\bRévision\s+\d/i.test(trimmed)) return true;
+  if (/\bMAJ\s*[:—–\-]/i.test(trimmed)) return true;
+  if (/\bMise\s+à\s+jour\b/i.test(trimmed)) return true;
+
+  // P0: Item numbers
+  if (/\bITEM\s+\d+/i.test(trimmed)) return true;
+
+  // P0: Composite header detection using scoring
+  const headerScore = computeHeaderNoiseScore(trimmed);
+  if (headerScore >= 0.5) return true;
+
+  // P0: High editorial token ratio
+  const editorialScore = computeEditorialArtifactScore(trimmed);
+  if (editorialScore >= 0.5) return true;
+
+  return false;
 }
 
 // ---------- Concept Label Builder ----------

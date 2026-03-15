@@ -24,6 +24,7 @@ import type { M5_Output } from "@/domain/cognitio/generation.contracts";
 import type { M5B_Output } from "@/domain/cognitio/story.contracts";
 import type { CreateFormat } from "@/lib/create-format-config";
 import { validateGenerationNotEmpty } from "@/domain/cognitio/generation.validators";
+import { scoreConceptCandidate } from "@/lib/cognitio-semantic-cleaning";
 
 export type PipelinePhase =
   | "import"
@@ -248,6 +249,37 @@ export function useCreatePipeline() {
         });
         setPhase("result");
         return;
+      }
+
+      // === P0 PRODUCT GUARD: Reject single uncertain noisy concept ===
+      if (m2Result.key_concepts.length > 0) {
+        const allConceptsNoisy = m2Result.key_concepts.every(c => {
+          const scores = scoreConceptCandidate(c.label, c.definition);
+          return !scores.accepted || scores.editorial_artifact_score >= 0.4 || scores.header_noise_score >= 0.4;
+        });
+        const allUncertain = m2Result.key_concepts.every(c => c.uncertain === true || c.source_confidence < 0.4);
+
+        if (allConceptsNoisy || (m2Result.key_concepts.length === 1 && allUncertain && allConceptsNoisy)) {
+          const sampleLabel = m2Result.key_concepts[0]?.label ?? "?";
+          const rootCause = `Le moteur a détecté ${m2Result.key_concepts.length} concept(s) mais ils sont tous des artefacts éditoriaux ` +
+            `(ex: "${sampleLabel}"). Aucune fiche pédagogique exploitable ne peut être produite. ` +
+            `Veuillez fournir un texte plus propre, sans entêtes de polycopié.`;
+          console.error(
+            `[COGNITIO][P0] PRODUCT GUARD: All ${m2Result.key_concepts.length} concepts are editorial artifacts. ` +
+            `Pipeline blocked. Labels: [${m2Result.key_concepts.map(c => `"${c.label}"`).join(", ")}]`
+          );
+          counters.final_generation_status = "error";
+          counters.success_gate_reason = "All concepts are editorial artifacts — no standard fiche possible";
+          counters.generation_error = rootCause;
+          setDebugCounters(counters);
+          setPipelineError({
+            source: "analysis",
+            message: rootCause,
+            phase: "analyzing",
+          });
+          setPhase("result");
+          return;
+        }
       }
 
       // === M3: Memory Architecture ===
