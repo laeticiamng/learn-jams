@@ -109,12 +109,12 @@ export async function saveRecallTest(
 ) {
   const { data, error } = await supabase
     .from("recall_tests")
-    .insert({
+    .insert([{
       user_id: userId,
       transformation_id: transformationId,
       test_type: testType,
       questions_json: questions as unknown as Json,
-    })
+    }])
     .select("id")
     .single();
 
