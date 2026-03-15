@@ -170,7 +170,7 @@ export async function getKnowledgeGraph(userId: string) {
 }
 
 export async function getFragileConcepts(userId: string) {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("learner_knowledge_graph")
     .select("*")
     .eq("user_id", userId)
