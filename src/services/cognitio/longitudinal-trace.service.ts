@@ -7,7 +7,7 @@ import type { UpdateMemoryInput, UpdateMemoryOutput } from "@/domain/cognitio/co
 import type { LearnerProfile, LearnerKnowledgeNode, MasteryStatus } from "@/domain/cognitio/types";
 
 export async function getOrCreateLearnerProfile(userId: string): Promise<LearnerProfile> {
-  const { data: existing } = await supabase
+  const { data: existing } = await (supabase as any)
     .from("learner_profiles")
     .select("*")
     .eq("user_id", userId)
