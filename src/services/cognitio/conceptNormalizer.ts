@@ -53,6 +53,8 @@ export interface NormalizationResult {
   rejected_concepts_count: number;
   reject_reasons: { reason: ConceptRejectionReason; count: number }[];
   concept_quality_score: number; // average quality
+  /** Count of rejected concepts that were editorial artifacts */
+  rejected_editorial_artifacts_count: number;
 }
 
 // ---------- Rejection Patterns ----------
@@ -84,6 +86,13 @@ const REJECT_PATTERNS: { reason: ConceptRejectionReason; pattern: RegExp }[] = [
   { reason: "document_noise", pattern: /\bRévision\s+\d[\d\/]*/i },
   { reason: "document_noise", pattern: /\bPage\s+\d+/i },
   { reason: "document_noise", pattern: /^\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4}$/ },
+  // P0: Enhanced editorial artifact rejection — catch R2C/Rang ANYWHERE in label
+  { reason: "classification_label", pattern: /\bR2C\b/i },
+  { reason: "classification_label", pattern: /\bRang\s+[A-Z]\b/i },
+  { reason: "color_metadata", pattern: /(?:NOIR|BLEU|ROUGE|VERT|GRIS)/i },
+  { reason: "document_noise", pattern: /\bITEM\s+\d+/i },
+  { reason: "document_noise", pattern: /\bELLIPSES\b/i },
+  { reason: "document_noise", pattern: /\bRévision\b/i },
 ];
 
 // Label noise to strip
@@ -145,6 +154,14 @@ export function normalizeConcepts(
     ? accepted.reduce((sum, c) => sum + c.quality_score, 0) / accepted.length
     : 0;
 
+  // Count editorial artifact rejections
+  const editorialArtifactReasons: ConceptRejectionReason[] = [
+    "editorial_artifact", "classification_label", "color_metadata", "document_noise",
+  ];
+  const rejectedEditorialArtifactsCount = rejected.filter(
+    r => r.rejection && editorialArtifactReasons.includes(r.rejection.reason)
+  ).length;
+
   return {
     accepted,
     rejected,
@@ -153,6 +170,7 @@ export function normalizeConcepts(
     rejected_concepts_count: rejected.length,
     reject_reasons: Array.from(rejectReasonCounts.entries()).map(([reason, count]) => ({ reason, count })),
     concept_quality_score: avgQuality,
+    rejected_editorial_artifacts_count: rejectedEditorialArtifactsCount,
   };
 }
 

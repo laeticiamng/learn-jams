@@ -380,13 +380,34 @@ export interface PipelineDebugCounters {
   final_generation_status: "success" | "empty_generation" | "error" | "pending";
   success_gate_reason?: string;
 
+  // P0: Front matter / header cleaning metrics
+  front_matter_lines_detected?: number;
+  front_matter_chars_removed?: number;
+  header_noise_score_before?: number;
+  header_noise_score_after?: number;
+  segment_0_noise_score?: number;
+
+  // P0: Segment distribution metrics
+  concepts_from_segment_0_count?: number;
+  concepts_from_body_count?: number;
+  rejected_editorial_artifacts_count?: number;
+
+  // P0: Second pass metrics
+  body_first_pass_triggered?: boolean;
+  secondary_pass_triggered?: boolean;
+  secondary_pass_concepts_count?: number;
+
+  // P0: Final topic after cleaning
+  final_topic_clean?: string;
+  final_concepts_count?: number;
+
   // Pipeline trace — root-cause diagnostic
   pipeline_trace: PipelineTraceEntry[];
 }
 
 /** Structured trace entry for each pipeline step */
 export interface PipelineTraceEntry {
-  step: "A_import" | "B_cleaning" | "C_topic" | "D_concept_extraction" | "E_concept_filtering" | "F_memory" | "G_generation";
+  step: "A_import" | "B_cleaning" | "B1_front_matter" | "C_topic" | "D_concept_extraction" | "E_concept_filtering" | "E1_segment_distribution" | "E2_secondary_pass" | "F_memory" | "G_generation";
   input_length?: number;
   output_length?: number;
   input_count?: number;

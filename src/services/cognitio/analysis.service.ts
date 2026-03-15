@@ -33,7 +33,7 @@ import {
   computeHeaderNoiseScore,
   type ConceptCandidateScores,
 } from "@/lib/cognitio-semantic-cleaning";
-import { filterEditorialNoise, detectFrontMatter } from "./editorialNoiseFilter";
+import { filterEditorialNoise, detectFrontMatter, computeSegmentNoiseScore } from "./editorialNoiseFilter";
 
 // ---------- Run Analysis (Edge Function) ----------
 
@@ -214,15 +214,19 @@ function preNormalizeForM2(input: M2_Input): M2_Input {
   const frontMatter = detectFrontMatter(input.clean_text);
   const textAfterFrontMatter = frontMatter.has_front_matter ? frontMatter.body_text : input.clean_text;
 
-  if (frontMatter.has_front_matter) {
-    console.info(
-      `[COGNITIO][M2] Front matter detected:\n` +
-      `  front_matter_lines=${frontMatter.front_matter_lines.length}\n` +
-      `  body_start_line=${frontMatter.body_start_line}\n` +
-      `  front_matter_samples=[${frontMatter.front_matter_lines.slice(0, 5).map(l => `"${l.original.slice(0, 60)}"`).join(", ")}]\n` +
-      `  text_before=${input.clean_text.length} → text_after=${textAfterFrontMatter.length}`
-    );
-  }
+  // Always log front matter detection results (including when none found)
+  console.info(
+    `[COGNITIO][M2] Front matter detection:\n` +
+    `  has_front_matter=${frontMatter.has_front_matter}\n` +
+    `  front_matter_lines_detected=${frontMatter.front_matter_lines_detected}\n` +
+    `  front_matter_chars_removed=${frontMatter.front_matter_chars_removed}\n` +
+    `  header_noise_score_before=${frontMatter.header_noise_score_before}\n` +
+    `  header_noise_score_after=${frontMatter.header_noise_score_after}\n` +
+    `  segment_0_noise_score=${frontMatter.segment_0_noise_score}\n` +
+    `  body_start_line=${frontMatter.body_start_line}\n` +
+    `  front_matter_samples=[${frontMatter.front_matter_lines.slice(0, 5).map(l => `"${l.original.slice(0, 60)}"`).join(", ")}]\n` +
+    `  text_before=${input.clean_text.length} → text_after=${textAfterFrontMatter.length}`
+  );
 
   // Step 1: Apply deep R2C/revision-specific cleaning AFTER front matter strip
   const r2cCleaned = cleanR2CRevisionArtifacts(textAfterFrontMatter);
@@ -607,15 +611,33 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
   // Filter out artifact concepts and deduplicate
   const rejectReasons: Record<string, number> = {};
   const rejectedLabels: string[] = [];
+  let _dbg_rejected_editorial_artifacts_count = 0;
   const filteredConcepts = rawConcepts.filter(c => {
     const { rejected, reason } = rejectConceptArtifact(c);
     if (rejected && reason) {
       rejectReasons[reason] = (rejectReasons[reason] || 0) + 1;
       if (rejectedLabels.length < 10) rejectedLabels.push(`"${c.label}" (${reason})`);
+      // Track editorial artifact rejections
+      if (reason.includes("artifact") || reason.includes("editorial") ||
+          reason.includes("classification") || reason.includes("noise") ||
+          reason.includes("color") || reason.includes("branding")) {
+        _dbg_rejected_editorial_artifacts_count++;
+      }
     }
     return !rejected;
   });
   let concepts = mergeDuplicateOrNoisyConcepts(filteredConcepts);
+
+  // P0: Compute segment distribution metrics
+  const conceptsFromSegment0Count = concepts.filter(c =>
+    c.source_trace.some(t => t.segment_index === 0)
+  ).length;
+  const conceptsFromBodyCount = concepts.filter(c =>
+    c.source_trace.some(t => t.segment_index > 0)
+  ).length;
+  let _dbg_secondary_pass_triggered = false;
+  let _dbg_secondary_pass_concepts_count = 0;
+  let _dbg_body_first_pass_triggered = false;
 
   // P0 AUDIT: Log filter results with rejected label samples
   console.info(
@@ -624,34 +646,55 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
     `  m2_after_filter=${filteredConcepts.length}\n` +
     `  m2_after_dedup=${concepts.length}\n` +
     `  m2_rejected=${rawConcepts.length - filteredConcepts.length}\n` +
+    `  m2_rejected_editorial_artifacts=${_dbg_rejected_editorial_artifacts_count}\n` +
+    `  m2_concepts_from_segment_0=${conceptsFromSegment0Count}\n` +
+    `  m2_concepts_from_body=${conceptsFromBodyCount}\n` +
     `  m2_reject_reasons=${JSON.stringify(rejectReasons)}\n` +
     `  m2_rejected_samples=[${rejectedLabels.join(", ")}]`
   );
 
   // ============================================================
-  // P0 GUARD RAIL: SECONDARY PASS ON BODY ONLY
-  // If all concepts were editorial artifacts OR all came from the
-  // same noisy header, relaunch extraction on body segments only
-  // (segments 1+), bypassing the polluted front matter entirely.
+  // P0 GUARD RAIL: ARTIFACT-ONLY FIRST PASS → BODY-ONLY SECOND PASS
+  // If ALL concepts from first pass are editorial artifacts OR
+  // all concepts come from segment 0, trigger a body-only second pass.
+  // Logic: artifact_only_first_pass → body_only_second_pass → final_decision
   // ============================================================
-  if (concepts.length === 0 && rawConcepts.length > 0 && segments.length > 1) {
+  const allConceptsAreArtifacts = concepts.length > 0 && concepts.every(c => {
+    const scores = scoreConceptCandidate(c.label, c.definition);
+    return !scores.accepted || scores.editorial_artifact_score >= 0.4 || scores.header_noise_score >= 0.4;
+  });
+
+  if ((concepts.length === 0 && rawConcepts.length > 0 && segments.length > 1) ||
+      (allConceptsAreArtifacts && segments.length > 1)) {
     _dbg_fallback_level = "secondary_body_pass";
-    console.warn(
-      `[COGNITIO][M2] SECONDARY_BODY_PASS: All ${rawConcepts.length} concepts rejected as artifacts. ` +
-      `Relaunching extraction on body segments only (segments 1-${segments.length - 1}).`
-    );
+    _dbg_secondary_pass_triggered = true;
+
+    if (allConceptsAreArtifacts && concepts.length > 0) {
+      console.warn(
+        `[COGNITIO][M2] ARTIFACT_ONLY_FIRST_PASS: All ${concepts.length} concepts are editorial artifacts. ` +
+        `Clearing and relaunching body-only second pass (segments 1-${segments.length - 1}).`
+      );
+      concepts = []; // Clear artifact concepts
+    } else {
+      console.warn(
+        `[COGNITIO][M2] SECONDARY_BODY_PASS: All ${rawConcepts.length} concepts rejected as artifacts. ` +
+        `Relaunching extraction on body segments only (segments 1-${segments.length - 1}).`
+      );
+    }
 
     const bodySegments = segments.slice(1);
     const bodyText = bodySegments.map(s => s.content).join("\n\n");
     const cleanedBodyText = cleanSourceNoise(bodyText);
 
     if (cleanedBodyText.length > 50) {
+      _dbg_body_first_pass_triggered = true;
       const bodyConcepts = extractConceptsFromText(cleanedBodyText, bodySegments, globalIdx);
       for (const bc of bodyConcepts) {
         const { rejected } = rejectConceptArtifact(bc);
         if (!rejected) {
           concepts.push(bc);
           globalIdx++;
+          _dbg_secondary_pass_concepts_count++;
         }
       }
       console.info(
@@ -663,7 +706,7 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
   // P0 GUARD RAIL: MULTI-SEGMENT CONCEPT DIVERSITY CHECK
   // If all accepted concepts come from segment 0 and we have more segments,
   // force extraction from later segments to ensure concept diversity.
-  if (concepts.length > 0 && segments.length > 1) {
+  if (concepts.length > 0 && segments.length > 1 && !_dbg_secondary_pass_triggered) {
     const allFromSeg0 = concepts.every(c =>
       c.source_trace.every(t => t.segment_index === 0)
     );
@@ -672,6 +715,7 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
         `[COGNITIO][M2] MULTI_SEGMENT_GUARD: All ${concepts.length} concepts from segment 0. ` +
         `Forcing extraction from body segments for diversity.`
       );
+      _dbg_body_first_pass_triggered = true;
       const bodySegments = segments.slice(1);
       const bodyText = bodySegments.map(s => s.content).join("\n\n");
       const cleanedBodyText = cleanSourceNoise(bodyText);
@@ -914,7 +958,20 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
     }
   }
 
-  // P0 comprehensive debug logging
+  // P0: Recompute final segment distribution
+  const finalConceptsFromSeg0 = concepts.filter(c =>
+    c.source_trace.some(t => t.segment_index === 0)
+  ).length;
+  const finalConceptsFromBody = concepts.filter(c =>
+    c.source_trace.some(t => t.segment_index > 0)
+  ).length;
+
+  // Compute segment 0 noise score for logging
+  const seg0NoiseScore = segments.length > 0
+    ? computeSegmentNoiseScore(segments[0].content)
+    : 0;
+
+  // P0 comprehensive debug logging with ALL requested metrics
   console.info(
     `[COGNITIO][M2] FINAL SUMMARY:\n` +
     `  m2_input_length=${clean_text.length}\n` +
@@ -927,9 +984,18 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
     `  m2_filtered_concepts_count=${filteredConcepts.length}\n` +
     `  m2_final_concepts_count=${concepts.length}\n` +
     `  m2_rejected_count=${rawConcepts.length - filteredConcepts.length}\n` +
+    `  m2_rejected_editorial_artifacts_count=${_dbg_rejected_editorial_artifacts_count}\n` +
+    `  m2_segment_0_noise_score=${seg0NoiseScore.toFixed(2)}\n` +
+    `  m2_segment_0_quarantined=${segment0Quarantined}\n` +
+    `  m2_concepts_from_segment_0_count=${finalConceptsFromSeg0}\n` +
+    `  m2_concepts_from_body_count=${finalConceptsFromBody}\n` +
+    `  m2_body_first_pass_triggered=${_dbg_body_first_pass_triggered}\n` +
+    `  m2_secondary_pass_triggered=${_dbg_secondary_pass_triggered}\n` +
+    `  m2_secondary_pass_concepts_count=${_dbg_secondary_pass_concepts_count}\n` +
     `  m2_reject_reasons=${JSON.stringify(rejectReasons)}\n` +
     `  m2_fallback_level=${_dbg_fallback_level}\n` +
-    `  m2_final_topic="${finalTopic}"`
+    `  m2_final_topic="${finalTopic}"\n` +
+    `  m2_final_concepts_count=${concepts.length}`
   );
 
   // Detect reasoning type
@@ -1224,6 +1290,9 @@ function isSegment0Noisy(segments: SegmentOutput[]): boolean {
   const seg0 = segments[0];
   if (!seg0 || seg0.content.length < 10) return false;
 
+  // Use the editorial noise filter's scoring for comprehensive detection
+  const noiseScore = computeSegmentNoiseScore(seg0.content);
+
   const lines = seg0.content.split("\n").map(l => l.trim()).filter(l => l.length > 0);
   if (lines.length === 0) return false;
 
@@ -1237,10 +1306,11 @@ function isSegment0Noisy(segments: SegmentOutput[]): boolean {
 
   const noiseRatio = noiseLines / lines.length;
 
-  // Quarantine if >60% of segment 0 lines are noise
-  if (noiseRatio > 0.6) {
+  // P0: Lowered threshold from 0.6 to 0.4 — be more aggressive about quarantining
+  if (noiseRatio > 0.4 || noiseScore > 0.4) {
     console.info(
-      `[COGNITIO][M2] Segment 0 noise analysis: ${noiseLines}/${lines.length} lines are noise (${(noiseRatio * 100).toFixed(0)}%). QUARANTINED.`
+      `[COGNITIO][M2] Segment 0 noise analysis: ${noiseLines}/${lines.length} lines are noise ` +
+      `(heuristic_ratio=${(noiseRatio * 100).toFixed(0)}%, filter_score=${(noiseScore * 100).toFixed(0)}%). QUARANTINED.`
     );
     return true;
   }
@@ -1248,9 +1318,11 @@ function isSegment0Noisy(segments: SegmentOutput[]): boolean {
   // Also quarantine if segment 0 title itself is a branding/classification header
   if (seg0.title) {
     const titleScore = computeEditorialArtifactScore(seg0.title);
-    if (titleScore >= 0.5) {
+    const titleHeaderScore = computeHeaderNoiseScore(seg0.title);
+    if (titleScore >= 0.4 || titleHeaderScore >= 0.4) {
       console.info(
-        `[COGNITIO][M2] Segment 0 title "${seg0.title}" is editorial noise (score=${titleScore.toFixed(2)}). QUARANTINED.`
+        `[COGNITIO][M2] Segment 0 title "${seg0.title}" is editorial noise ` +
+        `(editorial=${titleScore.toFixed(2)}, header=${titleHeaderScore.toFixed(2)}). QUARANTINED.`
       );
       return true;
     }

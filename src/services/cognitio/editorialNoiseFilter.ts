@@ -45,6 +45,16 @@ export interface FrontMatterResult {
   body_text: string;
   /** Whether significant front matter was detected */
   has_front_matter: boolean;
+  /** Number of front matter lines detected */
+  front_matter_lines_detected: number;
+  /** Total characters removed by front matter stripping */
+  front_matter_chars_removed: number;
+  /** Noise score of the header area before cleaning (0-1) */
+  header_noise_score_before: number;
+  /** Noise score of the header area after cleaning (0-1) */
+  header_noise_score_after: number;
+  /** Noise score of segment 0 (0-1) */
+  segment_0_noise_score: number;
 }
 
 /**
@@ -101,6 +111,14 @@ const FRONT_MATTER_PATTERNS: RegExp[] = [
   /CODEX\b.*\bS[\s-]*ECN/i,
   /S[\s-]*ECN\.COM\b.*\bR2C/i,
   /iKB\b.*\bR2C\b/i,
+  // P0: Enhanced composite header patterns
+  /^.*\bR2C\b.*\bRang\s+[A-Z]\b.*(?:en\s+)?(?:NOIR|BLEU|ROUGE)/i,
+  /^.*\bRang\s+[A-Z]\b.*\bRang\s+[A-Z]\b/i, // Multiple Rang on one line
+  /^.*\bITEM\s+\d+\b.*\bRang\b/i, // ITEM + Rang composite
+  /^.*\bRang\s+[A-Z]\s+en\s+(?:noir|bleu|rouge|vert|gris)\b/i, // Rang A en noir
+  /^.*(?:NOIR|BLEU|ROUGE|VERT|GRIS)\s*[-–—]\s*(?:NOIR|BLEU|ROUGE|VERT|GRIS)/i, // color - color
+  /^\s*(?:Rang\s+[A-Z]\s*[-–—:,]\s*)+$/i, // Lists of Rang labels only
+  /^\s*[-–—]\s*$/,  // Standalone dash lines
 ];
 
 /**
@@ -115,6 +133,19 @@ export function detectFrontMatter(text: string): FrontMatterResult {
   const frontMatterLines: FilteredPattern[] = [];
   let bodyStartLine = 0;
   let consecutiveClean = 0;
+
+  // Compute header noise score from the first 30 lines (before cleaning)
+  const headerAreaLines = lines.slice(0, 30).map(l => l.trim()).filter(l => l.length > 0);
+  let headerNoiseLinesBefore = 0;
+  for (const line of headerAreaLines) {
+    if (FRONT_MATTER_PATTERNS.some(p => p.test(line)) ||
+        (line.length <= 2 && /^[^a-zA-ZÀ-ÿ0-9]/.test(line))) {
+      headerNoiseLinesBefore++;
+    }
+  }
+  const headerNoiseScoreBefore = headerAreaLines.length > 0
+    ? headerNoiseLinesBefore / headerAreaLines.length
+    : 0;
 
   for (let i = 0; i < lines.length; i++) {
     const trimmed = lines[i].trim();
@@ -162,11 +193,44 @@ export function detectFrontMatter(text: string): FrontMatterResult {
   const bodyLines = lines.slice(bodyStartLine);
   const bodyText = bodyLines.join("\n").replace(/^\n+/, "").trim();
 
+  // Compute chars removed
+  const frontMatterCharsRemoved = frontMatterLines.reduce((sum, l) => sum + l.original.length, 0);
+
+  // Compute header noise score after cleaning
+  const headerAreaAfter = bodyText.split("\n").slice(0, 30).map(l => l.trim()).filter(l => l.length > 0);
+  let headerNoiseLinesAfter = 0;
+  for (const line of headerAreaAfter) {
+    if (FRONT_MATTER_PATTERNS.some(p => p.test(line))) {
+      headerNoiseLinesAfter++;
+    }
+  }
+  const headerNoiseScoreAfter = headerAreaAfter.length > 0
+    ? headerNoiseLinesAfter / headerAreaAfter.length
+    : 0;
+
+  // Compute segment 0 noise score (entire first segment area = lines 0 to bodyStartLine)
+  const segment0Lines = lines.slice(0, Math.max(bodyStartLine, 10)).map(l => l.trim()).filter(l => l.length > 0);
+  let seg0NoiseLines = 0;
+  for (const line of segment0Lines) {
+    if (FRONT_MATTER_PATTERNS.some(p => p.test(line)) ||
+        (line.length <= 2 && /^[^a-zA-ZÀ-ÿ0-9]/.test(line))) {
+      seg0NoiseLines++;
+    }
+  }
+  const segment0NoiseScore = segment0Lines.length > 0
+    ? seg0NoiseLines / segment0Lines.length
+    : 0;
+
   return {
     body_start_line: bodyStartLine,
     front_matter_lines: frontMatterLines,
     body_text: bodyText,
     has_front_matter: frontMatterLines.length >= 2,
+    front_matter_lines_detected: frontMatterLines.length,
+    front_matter_chars_removed: frontMatterCharsRemoved,
+    header_noise_score_before: Math.round(headerNoiseScoreBefore * 100) / 100,
+    header_noise_score_after: Math.round(headerNoiseScoreAfter * 100) / 100,
+    segment_0_noise_score: Math.round(segment0NoiseScore * 100) / 100,
   };
 }
 
@@ -327,4 +391,25 @@ export function isEditorialNoise(line: string): boolean {
   const trimmed = line.trim();
   if (trimmed.length <= 2 && /^[^a-zA-ZÀ-ÿ0-9]/.test(trimmed)) return true;
   return NOISE_PATTERNS.some(({ pattern }) => pattern.test(trimmed));
+}
+
+/**
+ * Compute a noise score for a segment's content (0-1).
+ * Used for segment 0 quarantine decisions.
+ */
+export function computeSegmentNoiseScore(content: string): number {
+  const lines = content.split("\n").map(l => l.trim()).filter(l => l.length > 0);
+  if (lines.length === 0) return 1;
+
+  let noiseLines = 0;
+  for (const line of lines) {
+    const isFrontMatter = FRONT_MATTER_PATTERNS.some(p => p.test(line));
+    const isNoise = NOISE_PATTERNS.some(({ pattern }) => pattern.test(line));
+    const isShortNoise = line.length <= 2 && /^[^a-zA-ZÀ-ÿ0-9]/.test(line);
+    if (isFrontMatter || isNoise || isShortNoise) {
+      noiseLines++;
+    }
+  }
+
+  return Math.round((noiseLines / lines.length) * 100) / 100;
 }

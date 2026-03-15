@@ -3,7 +3,7 @@
 // pipeline: noise filter → headers → tables → concepts → topic → QA
 // ============================================================
 
-import { filterEditorialNoise, detectFrontMatter, type EditorialFilterResult } from "./editorialNoiseFilter";
+import { filterEditorialNoise, detectFrontMatter, type EditorialFilterResult, type FrontMatterResult } from "./editorialNoiseFilter";
 import { detectSectionHeaders, buildDocumentHierarchy, type DocumentHierarchy } from "./sectionHeaderDetector";
 import { extractTables, type TableExtractionResult } from "./tableAwareExtractor";
 import { normalizeConcepts, groupAndDeduplicateConcepts, type NormalizationResult } from "./conceptNormalizer";
@@ -45,6 +45,9 @@ export interface SemanticExtractionOutput {
 
   // Editorial filter details
   editorial_filter: EditorialFilterResult;
+
+  // Front matter details
+  front_matter: FrontMatterResult;
 }
 
 // ---------- Main Orchestrator ----------
@@ -98,6 +101,11 @@ export function runSemanticExtraction(input: SemanticExtractionInput): SemanticE
     topic,
     original_text_length: input.raw_text.length,
     total_concepts_in_source: input.raw_concepts.length,
+    front_matter_lines_detected: frontMatter.front_matter_lines_detected,
+    front_matter_chars_removed: frontMatter.front_matter_chars_removed,
+    header_noise_score_before: frontMatter.header_noise_score_before,
+    header_noise_score_after: frontMatter.header_noise_score_after,
+    segment_0_noise_score: frontMatter.segment_0_noise_score,
   };
 
   const qaScores = computeSemanticQAScores(pipelineResults);
@@ -117,5 +125,6 @@ export function runSemanticExtraction(input: SemanticExtractionInput): SemanticE
     qa_warnings: qaEval.warnings,
     debug_panel: debugPanel,
     editorial_filter: editorialFilter,
+    front_matter: frontMatter,
   };
 }

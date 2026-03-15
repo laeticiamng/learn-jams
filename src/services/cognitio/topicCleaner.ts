@@ -42,6 +42,19 @@ const FORBIDDEN_TOPIC_PATTERNS: { pattern: RegExp; reason: string }[] = [
   { pattern: /^(?:www\.|http)/i, reason: "URL" },
   { pattern: /^[^a-zA-ZÀ-ÿ]*$/, reason: "No alphabetic characters" },
   { pattern: /^Sujet\s+principal\s*:/i, reason: "Meta-label" },
+  // P0: Enhanced composite header rejection
+  { pattern: /\bR2C\b/i, reason: "Contains R2C classification" },
+  { pattern: /\bRang\s+[A-Z]\b/i, reason: "Contains Rang classification" },
+  { pattern: /\bCODEX\b/i, reason: "Contains CODEX branding" },
+  { pattern: /\bS[\s-]*ECN\b/i, reason: "Contains S-ECN branding" },
+  { pattern: /\biKB\b/, reason: "Contains iKB branding" },
+  { pattern: /\bMED[\s-]*LINE\b/i, reason: "Contains MED-LINE branding" },
+  { pattern: /\bRévision\b/i, reason: "Contains revision marker" },
+  { pattern: /\bITEM\s+\d/i, reason: "Contains ITEM number" },
+  { pattern: /(?:NOIR|BLEU|ROUGE|VERT|GRIS)/i, reason: "Contains color metadata" },
+  { pattern: /\bPREP['']?ECN\b/i, reason: "Contains PrepECN branding" },
+  { pattern: /\bELLIPSES\b/i, reason: "Contains ELLIPSES branding" },
+  { pattern: /\bVERNAZOBRES/i, reason: "Contains Vernazobres branding" },
 ];
 
 // Noise to strip from topic
@@ -70,8 +83,16 @@ export function extractAndCleanTopic(
 ): CleanedTopic {
   const rejectedCandidates: RejectedTopicCandidate[] = [];
 
-  // Strategy 1: First level-1 heading
-  for (const seg of segments) {
+  // P0: Determine if segment 0 is noisy — if so, skip it for topic extraction
+  const segment0IsNoisy = segments.length > 1 && isSegmentNoisy(segments[0]);
+
+  // Strategy 1: First level-1 heading (skip segment 0 if noisy)
+  for (let i = 0; i < segments.length; i++) {
+    const seg = segments[i];
+    if (i === 0 && segment0IsNoisy) {
+      if (seg.title) rejectedCandidates.push({ candidate: seg.title, reason: "Segment 0 quarantined (noisy header)" });
+      continue;
+    }
     if (!seg.title || seg.hierarchy_level > 1) continue;
     const cleaned = cleanTopicString(seg.title);
     const rejection = validateTopic(cleaned);
@@ -84,8 +105,10 @@ export function extractAndCleanTopic(
     }
   }
 
-  // Strategy 2: Any heading
-  for (const seg of segments) {
+  // Strategy 2: Any heading (skip segment 0 if noisy)
+  for (let i = 0; i < segments.length; i++) {
+    const seg = segments[i];
+    if (i === 0 && segment0IsNoisy) continue;
     if (!seg.title) continue;
     const cleaned = cleanTopicString(seg.title);
     const rejection = validateTopic(cleaned);
@@ -98,8 +121,10 @@ export function extractAndCleanTopic(
     }
   }
 
-  // Strategy 3: First substantial sentence
-  for (const seg of segments) {
+  // Strategy 3: First substantial sentence (skip segment 0 if noisy)
+  for (let i = 0; i < segments.length; i++) {
+    const seg = segments[i];
+    if (i === 0 && segment0IsNoisy) continue;
     if (seg.content.length < 30) continue;
     const firstSentence = seg.content.split(/[.!?]/)[0]?.trim();
     if (firstSentence && firstSentence.length >= 10 && firstSentence.length <= 120) {
@@ -112,7 +137,9 @@ export function extractAndCleanTopic(
   }
 
   // Strategy 4: Content analysis — find most frequent meaningful noun phrase
-  const allContent = segments.map((s) => s.content).join(" ");
+  // Use body segments only (skip segment 0 if noisy)
+  const bodySegments = segment0IsNoisy ? segments.slice(1) : segments;
+  const allContent = bodySegments.map((s) => s.content).join(" ");
   const topicFromContent = extractTopicFromContent(allContent);
   if (topicFromContent) {
     return { raw_topic: topicFromContent, clean_topic: topicFromContent, confidence: 0.45, source: "content_analysis", rejected_candidates: rejectedCandidates };
@@ -126,6 +153,31 @@ export function extractAndCleanTopic(
     source: "fallback",
     rejected_candidates: rejectedCandidates,
   };
+}
+
+/**
+ * Check if a segment is noisy (contains mostly editorial/header content).
+ */
+function isSegmentNoisy(seg: { title: string | null; content: string }): boolean {
+  // Check title
+  if (seg.title) {
+    const titleRejection = validateTopic(cleanTopicString(seg.title));
+    if (titleRejection) return true;
+  }
+
+  // Check content lines
+  const lines = seg.content.split("\n").map(l => l.trim()).filter(l => l.length > 0);
+  if (lines.length === 0) return true;
+
+  let noiseLines = 0;
+  for (const line of lines) {
+    // Check if the line matches any forbidden topic pattern
+    if (FORBIDDEN_TOPIC_PATTERNS.some(({ pattern }) => pattern.test(line))) {
+      noiseLines++;
+    }
+  }
+
+  return lines.length > 0 && (noiseLines / lines.length) > 0.5;
 }
 
 /**

@@ -17,6 +17,13 @@ export interface SemanticDebugPanel {
   cleaned_text_length: number;
   noise_removal_ratio: number;
 
+  // Front matter metrics
+  front_matter_lines_detected: number;
+  front_matter_chars_removed: number;
+  header_noise_score_before: number;
+  header_noise_score_after: number;
+  segment_0_noise_score: number;
+
   // Structure metrics
   detected_headers_count: number;
   detected_sections_count: number;
@@ -26,6 +33,7 @@ export interface SemanticDebugPanel {
   raw_concepts_count: number;
   normalized_concepts_count: number;
   rejected_concepts_count: number;
+  rejected_editorial_artifacts_count: number;
   reject_reasons: { reason: ConceptRejectionReason; count: number }[];
 
   // Table metrics
@@ -68,6 +76,12 @@ export interface SemanticPipelineResults {
   topic: CleanedTopic;
   original_text_length: number;
   total_concepts_in_source: number;
+  /** Front matter detection metrics */
+  front_matter_lines_detected?: number;
+  front_matter_chars_removed?: number;
+  header_noise_score_before?: number;
+  header_noise_score_after?: number;
+  segment_0_noise_score?: number;
 }
 
 // ---------- Main Functions ----------
@@ -87,6 +101,12 @@ export function buildDebugPanel(results: SemanticPipelineResults): SemanticDebug
     cleaned_text_length: results.editorial_filter.cleaned_text_length,
     noise_removal_ratio: Math.round(noiseRemovalRatio * 100) / 100,
 
+    front_matter_lines_detected: results.front_matter_lines_detected ?? 0,
+    front_matter_chars_removed: results.front_matter_chars_removed ?? 0,
+    header_noise_score_before: results.header_noise_score_before ?? 0,
+    header_noise_score_after: results.header_noise_score_after ?? 0,
+    segment_0_noise_score: results.segment_0_noise_score ?? 0,
+
     detected_headers_count: results.hierarchy.detected_headers_count,
     detected_sections_count: results.hierarchy.detected_sections_count,
     max_hierarchy_depth: results.hierarchy.max_depth,
@@ -94,6 +114,7 @@ export function buildDebugPanel(results: SemanticPipelineResults): SemanticDebug
     raw_concepts_count: results.concept_normalization.raw_concepts_count,
     normalized_concepts_count: results.concept_normalization.normalized_concepts_count,
     rejected_concepts_count: results.concept_normalization.rejected_concepts_count,
+    rejected_editorial_artifacts_count: results.concept_normalization.rejected_editorial_artifacts_count,
     reject_reasons: results.concept_normalization.reject_reasons,
 
     detected_tables_count: results.table_extraction.detected_tables_count,
