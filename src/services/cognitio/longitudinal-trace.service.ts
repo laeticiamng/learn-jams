@@ -15,7 +15,7 @@ export async function getOrCreateLearnerProfile(userId: string): Promise<Learner
 
   if (existing) return existing as unknown as LearnerProfile;
 
-  const { data: created, error } = await supabase
+  const { data: created, error } = await (supabase as any)
     .from("learner_profiles")
     .insert({
       user_id: userId,
