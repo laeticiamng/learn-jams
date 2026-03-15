@@ -91,7 +91,7 @@ export async function updateKnowledgeGraph(
         })
         .eq("id", (existing as Record<string, unknown>).id);
     } else {
-      await supabase
+      await (supabase as any)
         .from("learner_knowledge_graph")
         .insert({
           user_id,
