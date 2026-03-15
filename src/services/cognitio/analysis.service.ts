@@ -148,7 +148,7 @@ export async function persistAnalysis(
   // Insert concepts
   for (const concept of output.key_concepts) {
     const row = analyzedConceptToRow(courseProfileId, concept);
-    const { data: conceptRow, error: conceptError } = await supabase
+    const { data: conceptRow, error: conceptError } = await (supabase as any)
       .from("concepts")
       .insert(row)
       .select("id")
