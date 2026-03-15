@@ -46,10 +46,12 @@ const FORBIDDEN_TOPIC_PATTERNS: { pattern: RegExp; reason: string }[] = [
 
 // Noise to strip from topic
 const TOPIC_NOISE_STRIPS: RegExp[] = [
+  // P0: Aggressive R2C block removal — handles "R2C : Rang A en noir - Rang B en ..."
+  /R2C\s*:?\s*(?:Rang\s+[A-Z]\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS)?\s*[-–—]?\s*)+/gi,
   /\bCOM\s+R2C\s*:\s*/gi,
-  /\s*[-–—]\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS)\b/gi,
-  /\s*en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS)\b/gi,
-  /\s*\(?\s*Rang\s+[A-Z]\s*\)?\s*/gi,
+  /\s*[-–—]\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS)\b.*/gi,
+  /\s*en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS)\b.*/gi,
+  /\s*\(?\s*Rang\s+[A-Z]\s*(?:en\s+\w+)?\s*\)?\s*/gi,
   /\s*R2C[^,)]*\s*/gi,
   /^(?:Item|UE|N°)\s*\d+\s*[-–—:.\s]\s*/i,
   /^Sujet\s+principal\s*:\s*/i,

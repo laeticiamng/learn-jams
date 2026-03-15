@@ -294,23 +294,54 @@ export default function Create() {
                 />
               )}
 
-              {/* Header message */}
+              {/* Header message — P0: never show success for empty generation */}
               {!pipeline.pipelineError && (
-                <div className="border rounded-lg p-4 bg-muted/30">
+                <div className={`border rounded-lg p-4 ${
+                  pipeline.hasBlocking || isEmptyGeneration(pipeline)
+                    ? "bg-orange-50 border-orange-200"
+                    : "bg-muted/30"
+                }`}>
                   <p className="text-sm font-medium mb-1">
                     {pipeline.hasBlocking
                       ? t("create_page.result_blocking")
-                      : t("create_page.result_success", {
-                          defaultValue: "Ton contenu a été généré avec succès !",
-                        })}
+                      : isEmptyGeneration(pipeline)
+                        ? t("create_page.result_empty_generation", {
+                            defaultValue: "Le document a été importé, mais le moteur n'a pas réussi à extraire suffisamment de concepts exploitables pour générer ce format.",
+                          })
+                        : t("create_page.result_success", {
+                            defaultValue: "Ton contenu a été généré avec succès !",
+                          })}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {pipeline.hasBlocking
                       ? t("create_page.result_blocking_detail")
-                      : t("create_page.result_success_detail", {
-                          defaultValue: "Tu peux maintenant consulter et utiliser ta création.",
-                        })}
+                      : isEmptyGeneration(pipeline)
+                        ? t("create_page.result_empty_generation_detail", {
+                            defaultValue: "Essaye de coller le texte directement ou d'importer un document avec plus de contenu structuré.",
+                          })
+                        : t("create_page.result_success_detail", {
+                            defaultValue: "Tu peux maintenant consulter et utiliser ta création.",
+                          })}
                   </p>
+                </div>
+              )}
+
+              {/* P0: Debug counters summary (always visible when available) */}
+              {pipeline.debugCounters && (
+                <div className="border rounded-lg p-3 bg-muted/20 text-xs font-mono space-y-1">
+                  <p className="font-semibold text-muted-foreground mb-1">Diagnostic</p>
+                  <p>Texte brut : {pipeline.debugCounters.raw_text_length} car. | Nettoyé : {pipeline.debugCounters.cleaned_text_length} car.</p>
+                  <p>Sujet : "{pipeline.debugCounters.cleaned_topic || pipeline.debugCounters.raw_topic || "—"}"</p>
+                  <p>Concepts : {pipeline.debugCounters.extracted_concepts_raw_count} bruts → {pipeline.debugCounters.extracted_concepts_after_filter_count} après filtre ({pipeline.debugCounters.rejected_concepts_count} rejetés)</p>
+                  <p>Segments mémoire : {pipeline.debugCounters.memory_segments_generated_count}</p>
+                  <p>Format : {pipeline.debugCounters.final_format_decision || "—"} | Générateur : {pipeline.debugCounters.generator_called || "—"}</p>
+                  <p>Statut final : <span className={pipeline.debugCounters.final_generation_status === "success" ? "text-green-600" : "text-red-600"}>{pipeline.debugCounters.final_generation_status}</span></p>
+                  {pipeline.debugCounters.success_gate_reason && (
+                    <p>Raison : {pipeline.debugCounters.success_gate_reason}</p>
+                  )}
+                  {pipeline.debugCounters.reject_reasons.length > 0 && (
+                    <p>Raisons de rejet : {pipeline.debugCounters.reject_reasons.map(r => `${r.reason}(${r.count})`).join(", ")}</p>
+                  )}
                 </div>
               )}
 
@@ -512,6 +543,40 @@ export default function Create() {
       <Footer />
     </div>
   );
+}
+
+// ============================================================
+// P0: Empty Generation Detection
+// ============================================================
+
+function isEmptyGeneration(pipeline: ReturnType<typeof useCreatePipeline>): boolean {
+  // Check via debug counters (most reliable)
+  if (pipeline.debugCounters?.final_generation_status === "empty_generation") {
+    return true;
+  }
+
+  // Check dynamic sheet result
+  if (pipeline.generation.result) {
+    const concepts = new Set(pipeline.generation.result.content_blocks.flatMap(b => b.concepts_covered));
+    const pedagogical = pipeline.generation.result.content_blocks.filter(b => b.type === "pedagogical");
+    if (concepts.size === 0 || pedagogical.length === 0 || pipeline.generation.result.final_test.length === 0) {
+      return true;
+    }
+  }
+
+  // Check if we're in result phase with no generation output at all (and no error)
+  if (
+    pipeline.phase === "result" &&
+    !pipeline.pipelineError &&
+    !pipeline.hasBlocking &&
+    !pipeline.generation.result &&
+    !pipeline.storyGeneration.result &&
+    !pipeline.missionResult
+  ) {
+    return true;
+  }
+
+  return false;
 }
 
 // ============================================================

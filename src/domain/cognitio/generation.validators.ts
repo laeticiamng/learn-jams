@@ -123,6 +123,75 @@ export interface M5ValidationResult {
   warnings: M5ValidationError[];
 }
 
+// ---------- Empty Generation Gate ----------
+
+/**
+ * P0 FIX: Validates that a generation result is not empty.
+ * A generation with 0 concepts, 0 pedagogical blocks, or 0 questions
+ * must NEVER be presented as a success.
+ */
+export interface EmptyGenerationGateResult {
+  passed: boolean;
+  reason: string;
+  counters: {
+    concepts_count: number;
+    pedagogical_blocks_count: number;
+    questions_count: number;
+    content_blocks_count: number;
+    estimated_duration_min: number;
+    critical_concepts_count: number;
+  };
+}
+
+export function validateGenerationNotEmpty(output: M5_Output): EmptyGenerationGateResult {
+  const pedagogicalBlocks = output.content_blocks.filter(b => b.type === "pedagogical");
+  const conceptsCovered = new Set(output.content_blocks.flatMap(b => b.concepts_covered));
+  const criticalCount = output.internal_summary.critical_concepts.length;
+  const durationMin = Math.round(output.metadata.estimated_duration_sec / 60);
+
+  const counters = {
+    concepts_count: conceptsCovered.size,
+    pedagogical_blocks_count: pedagogicalBlocks.length,
+    questions_count: output.final_test.length,
+    content_blocks_count: output.content_blocks.length,
+    estimated_duration_min: durationMin,
+    critical_concepts_count: criticalCount,
+  };
+
+  // Gate: must have at least 1 concept covered
+  if (conceptsCovered.size === 0) {
+    return {
+      passed: false,
+      reason: "Aucun concept n'a été extrait du document. Le moteur n'a pas pu identifier de notions exploitables.",
+      counters,
+    };
+  }
+
+  // Gate: must have at least 1 pedagogical block
+  if (pedagogicalBlocks.length === 0) {
+    return {
+      passed: false,
+      reason: "Aucun bloc pédagogique n'a été généré. Le contenu est insuffisant pour produire une fiche.",
+      counters,
+    };
+  }
+
+  // Gate: must have at least 1 question
+  if (output.final_test.length === 0) {
+    return {
+      passed: false,
+      reason: "Aucune question n'a été générée pour le test final. La couverture conceptuelle est insuffisante.",
+      counters,
+    };
+  }
+
+  return {
+    passed: true,
+    reason: `Génération valide : ${conceptsCovered.size} concept(s), ${pedagogicalBlocks.length} bloc(s), ${output.final_test.length} question(s).`,
+    counters,
+  };
+}
+
 // ---------- Input Validation ----------
 
 export function validateM5Input(input: M5_Input): M5ValidationResult {
@@ -138,12 +207,12 @@ export function validateM5Input(input: M5_Input): M5ValidationResult {
   }
 
   if (!input.m2_output.key_concepts || input.m2_output.key_concepts.length === 0) {
-    // P0 FIX: downgrade from fatal to warning — the generator now handles
-    // empty concepts with a minimal fallback instead of crashing.
-    warnings.push({
+    // P0: Re-escalated to error — if 0 concepts after emergency fallback,
+    // the output WILL be empty and must not be shown as success.
+    errors.push({
       code: "NO_CONCEPTS",
-      message: "No concepts available for generation — minimal fallback will be used",
-      severity: "warning",
+      message: "Aucun concept extrait — la génération produira un résultat vide",
+      severity: "error",
     });
   }
 
