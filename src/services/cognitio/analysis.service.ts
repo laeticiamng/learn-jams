@@ -162,7 +162,7 @@ export async function persistAnalysis(
   // Insert confusion pairs
   for (const pair of output.confusion_pairs) {
     const row = analyzedConfusionPairToRow(courseProfileId, pair, conceptIds);
-    await supabase.from("confusion_pairs").insert(row);
+    await (supabase as any).from("confusion_pairs").insert(row);
   }
 
   // Update document status
