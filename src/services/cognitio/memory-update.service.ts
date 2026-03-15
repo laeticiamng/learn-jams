@@ -166,7 +166,7 @@ async function upsertConceptNode(
   const now = new Date().toISOString();
 
   // Fetch existing
-  const { data: existing } = await supabase
+  const { data: existing } = await (supabase as any)
     .from("learner_knowledge_graph")
     .select("*")
     .eq("user_id", userId)
