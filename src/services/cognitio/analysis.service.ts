@@ -29,38 +29,119 @@ import {
   cleanMainTopic,
   reconstructChapterHierarchy,
 } from "@/lib/cognitio-semantic-cleaning";
+import { filterEditorialNoise } from "./editorialNoiseFilter";
 
 // ---------- Run Analysis (Edge Function) ----------
 
 export async function runAnalysis(input: M2_Input): Promise<M2_Output> {
+  // P0: Pre-normalize input text for noisy R2C/academic documents
+  const preNormalized = preNormalizeForM2(input);
+
+  console.info(
+    `[COGNITIO][M2] Starting analysis: ` +
+    `m2_input_length=${input.clean_text.length}, ` +
+    `m2_input_after_prenorm=${preNormalized.clean_text.length}, ` +
+    `m2_input_preview="${preNormalized.clean_text.slice(0, 150)}…", ` +
+    `m2_segments=${preNormalized.segments.length}`
+  );
+
   try {
     const { data, error } = await supabase.functions.invoke("cognitio-analyze", {
-      body: input,
+      body: preNormalized,
     });
 
-    if (error) throw error;
+    if (error) {
+      console.warn(
+        `[COGNITIO][M2] m2_remote_call_status=ERROR, error=${error}`
+      );
+      throw error;
+    }
+
+    // P0: Validate remote response shape
+    if (!data || typeof data !== "object") {
+      console.warn(
+        `[COGNITIO][M2] m2_remote_call_status=INVALID_SHAPE, ` +
+        `m2_raw_response_preview="${JSON.stringify(data).slice(0, 200)}", ` +
+        `m2_parse_status=REJECTED (null or non-object)`
+      );
+      return runLocalAnalysis(preNormalized);
+    }
 
     const result = data as M2_Output;
+
+    // P0: Validate key_concepts exists and is an array
+    if (!Array.isArray(result?.key_concepts)) {
+      console.warn(
+        `[COGNITIO][M2] m2_remote_call_status=OK, m2_parse_status=MALFORMED ` +
+        `(key_concepts is ${typeof result?.key_concepts}, not array). ` +
+        `m2_raw_response_preview="${JSON.stringify(data).slice(0, 300)}". ` +
+        `Falling back to local analysis.`
+      );
+      return runLocalAnalysis(preNormalized);
+    }
+
+    console.info(
+      `[COGNITIO][M2] m2_remote_call_status=OK, ` +
+      `m2_candidate_concepts_count=${result.key_concepts.length}, ` +
+      `m2_final_topic="${result.main_topic}"`
+    );
 
     // P0 FIX: If edge function returned 0 concepts but we have non-empty text,
     // the remote result is suspect — fall back to local extraction which has
     // emergency concept generation. This prevents the silent 0-concept pipeline.
     if (
       result.key_concepts.length === 0 &&
-      input.clean_text.length > 50
+      preNormalized.clean_text.length > 50
     ) {
       console.warn(
-        `[COGNITIO][P0] Edge function returned 0 concepts from ${input.clean_text.length}-char text. ` +
-        `Falling back to local analysis with emergency extraction.`
+        `[COGNITIO][M2] m2_remote_call_status=OK but 0 concepts from ` +
+        `${preNormalized.clean_text.length}-char text. ` +
+        `m2_fallback_used=yes (local analysis with emergency extraction).`
       );
-      return runLocalAnalysis(input);
+      return runLocalAnalysis(preNormalized);
     }
 
     return result;
   } catch (err) {
-    console.warn("Edge function failed, falling back to local analysis:", err);
-    return runLocalAnalysis(input);
+    console.warn(
+      `[COGNITIO][M2] m2_remote_call_status=EXCEPTION, ` +
+      `m2_fallback_used=yes, error=`,
+      err
+    );
+    return runLocalAnalysis(preNormalized);
   }
+}
+
+// ---------- Pre-Normalization for Noisy Documents ----------
+
+/**
+ * Apply editorial noise filtering before M2 processing.
+ * This removes R2C classification labels, branding, headers/footers,
+ * and other noise that confuses concept extraction.
+ */
+function preNormalizeForM2(input: M2_Input): M2_Input {
+  const filterResult = filterEditorialNoise(input.clean_text);
+
+  // Also clean segment content
+  const cleanedSegments = input.segments.map(seg => ({
+    ...seg,
+    content: filterEditorialNoise(seg.content).cleaned_text,
+    // Clean segment titles too
+    title: seg.title ? cleanMainTopic(seg.title) || seg.title : seg.title,
+  }));
+
+  console.info(
+    `[COGNITIO][M2] Pre-normalization: ` +
+    `raw=${filterResult.raw_text_length} chars → cleaned=${filterResult.cleaned_text_length} chars, ` +
+    `removed_lines=${filterResult.removed_lines_count}, ` +
+    `removed_types=[${filterResult.removed_patterns.slice(0, 5).map(p => p.type).join(", ")}${filterResult.removed_patterns.length > 5 ? "…" : ""}]`
+  );
+
+  return {
+    ...input,
+    clean_text: filterResult.cleaned_text || input.clean_text, // Preserve original if filter removed everything
+    segments: cleanedSegments,
+  };
 }
 
 // ---------- Local Analysis Fallback ----------
@@ -73,12 +154,23 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
 
   // P0 debug counters
   let _dbg_sentences_extracted = 0;
+  let _dbg_fallback_level = "none";
+
+  console.info(
+    `[COGNITIO][M2] runLocalAnalysis: ` +
+    `m2_input_length=${clean_text.length}, ` +
+    `m2_cleaned_length=${cleanedText.length}, ` +
+    `m2_segments_count=${segments.length}, ` +
+    `m2_input_preview="${cleanedText.slice(0, 150)}…"`
+  );
 
   // === Level 1: Extract clean main topic ===
   const mainTopic = extractCleanMainTopic(segments);
+  console.info(`[COGNITIO][M2] m2_final_topic="${mainTopic}"`);
 
   // === Level 2: Reconstruct chapter hierarchy ===
   const chapters = reconstructChapterHierarchy(segments);
+  console.info(`[COGNITIO][M2] m2_chapters_detected=${chapters.length}, titles=[${chapters.map(c => `"${c.title}"`).join(", ")}]`);
 
   // === Level 3: Extract concepts per chapter ===
   const rawConcepts: AnalyzedConcept[] = [];
@@ -87,7 +179,11 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
   for (let chapterIdx = 0; chapterIdx < chapters.length; chapterIdx++) {
     const chapter = chapters[chapterIdx];
     const chapterContent = cleanSourceNoise(chapter.content);
-    const sentences = chapterContent.split(/[.!?]+/).filter(s => s.trim().length > 20);
+    // P0 FIX: Split on sentence boundaries only, NOT on newlines (which fragment bullet-point text)
+    const sentences = chapterContent
+      .replace(/\n+/g, " ")
+      .split(/(?<=[.!?])\s+/)
+      .filter(s => s.trim().length > 20);
     _dbg_sentences_extracted += sentences.length;
     const chapterType = chapter.title;
 
@@ -155,13 +251,25 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
 
   // If no chapters detected, fall back to sentence-based extraction
   if (rawConcepts.length === 0) {
-    const sentences = cleanedText.split(/[.!?]+/).filter(s => s.trim().length > 20);
+    _dbg_fallback_level = "sentence_based";
+    // P0 FIX: Join lines into paragraphs before splitting on sentence boundaries
+    // to avoid fragmenting bullet-point medical text
+    const joinedText = cleanedText.replace(/\n+/g, " ").replace(/\s{2,}/g, " ");
+    const sentences = joinedText.split(/(?<=[.!?])\s+/).filter(s => s.trim().length > 20);
     _dbg_sentences_extracted += sentences.length;
-    for (let i = 0; i < Math.min(20, sentences.length); i++) {
-      const sentence = sentences[i].trim();
+
+    // If no sentence-boundary splits worked, try splitting on any whitespace-heavy breaks
+    const effectiveSentences = sentences.length > 0 ? sentences
+      : cleanedText.split(/\n\s*\n/).flatMap(p => {
+          const trimmed = p.trim();
+          return trimmed.length > 20 ? [trimmed] : [];
+        });
+
+    for (let i = 0; i < Math.min(20, effectiveSentences.length); i++) {
+      const sentence = effectiveSentences[i].trim();
       const words = sentence.split(/\s+/);
-      const rawLabel = words.slice(0, 5).join(" ");
-      const label = normalizeConceptLabel(rawLabel) || rawLabel;
+      const rawLabel = buildConceptLabel(sentence, "");
+      const label = normalizeConceptLabel(rawLabel) || words.slice(0, 5).join(" ");
 
       rawConcepts.push({
         stable_key: `concept_${words.slice(0, 3).join("_").toLowerCase().replace(/[^a-z0-9_]/g, "")}_${i}`,
@@ -178,6 +286,8 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
         uncertain: false,
       });
     }
+
+    console.info(`[COGNITIO][M2] Sentence-based fallback: ${effectiveSentences.length} sentences → ${rawConcepts.length} raw concepts`);
   }
 
   // Filter out artifact concepts and deduplicate
@@ -194,26 +304,56 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
   // P0 FIX: If all concepts were rejected but we have non-empty text,
   // force-extract minimal concepts so downstream never sees 0 without cause.
   if (concepts.length === 0 && cleanedText.length > 50) {
+    _dbg_fallback_level = "emergency";
     console.warn(
-      `[COGNITIO][P0] All ${rawConcepts.length} raw concepts rejected! ` +
-      `Reasons: ${JSON.stringify(rejectReasons)}. ` +
-      `Applying emergency fallback extraction.`
+      `[COGNITIO][M2] m2_fallback_used=EMERGENCY: All ${rawConcepts.length} raw concepts rejected! ` +
+      `m2_reject_reasons=${JSON.stringify(rejectReasons)}. ` +
+      `Applying emergency fallback extraction on ${cleanedText.length}-char text.`
     );
 
-    // Emergency: take first N sentences as concepts, skip rejection filters
-    const emergencySentences = cleanedText
-      .split(/[.!?\n]+/)
+    // P0 FIX: Emergency extraction — join text into continuous prose first,
+    // then split on sentence boundaries only (NOT on newlines which fragment
+    // bullet-point medical text into too-short chunks).
+    const continuousText = cleanedText.replace(/\n+/g, " ").replace(/\s{2,}/g, " ").trim();
+    let emergencySentences = continuousText
+      .split(/(?<=[.!?])\s+/)
       .map(s => s.trim())
-      .filter(s => s.length > 30 && /[a-zA-ZÀ-ÿ]/.test(s));
+      .filter(s => s.length > 20 && /[a-zA-ZÀ-ÿ]/.test(s));
 
-    for (let i = 0; i < Math.min(5, emergencySentences.length); i++) {
+    // If still no sentences (text has no punctuation), split on arbitrary chunks
+    if (emergencySentences.length === 0 && continuousText.length > 30) {
+      // Split on comma or semicolon as last resort
+      emergencySentences = continuousText
+        .split(/[,;]+/)
+        .map(s => s.trim())
+        .filter(s => s.length > 15 && /[a-zA-ZÀ-ÿ]/.test(s));
+    }
+
+    // Absolute last resort: take word chunks from the text
+    if (emergencySentences.length === 0 && continuousText.length > 30) {
+      const words = continuousText.split(/\s+/);
+      for (let i = 0; i < words.length; i += 10) {
+        const chunk = words.slice(i, i + 15).join(" ");
+        if (chunk.length > 15) {
+          emergencySentences.push(chunk);
+        }
+        if (emergencySentences.length >= 10) break;
+      }
+    }
+
+    for (let i = 0; i < Math.min(10, emergencySentences.length); i++) {
       const sentence = emergencySentences[i];
       const words = sentence.split(/\s+/);
-      const label = words.slice(0, 6).join(" ");
+      // Use buildConceptLabel for better label extraction even in emergency mode
+      const label = buildConceptLabel(sentence, "") || words.slice(0, 6).join(" ");
+      const definition = compressDefinition(sentence, 200);
+      // Skip if definition would be too short (but don't reject — emergency mode)
+      const effectiveDef = definition.length >= 10 ? definition : sentence.slice(0, 200);
+
       concepts.push({
         stable_key: `concept_emergency_${i}`,
         label,
-        definition: compressDefinition(sentence, 200),
+        definition: effectiveDef,
         type: "general",
         criticality: (i === 0 ? 1 : i < 3 ? 2 : 3) as 1 | 2 | 3 | 4,
         criticality_score: i === 0 ? 1 : i < 3 ? 0.7 : 0.4,
@@ -226,16 +366,33 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
       });
     }
 
-    console.info(`[COGNITIO][P0] Emergency fallback produced ${concepts.length} concepts.`);
+    console.info(`[COGNITIO][M2] Emergency fallback produced ${concepts.length} concepts from ${emergencySentences.length} candidate sentences.`);
   }
 
-  // P0 debug logging
+  // P0: If topic is "Sujet non identifié" but we have concepts, try to derive topic from first concept
+  let finalTopic = mainTopic;
+  if ((mainTopic === "Sujet non identifié" || mainTopic.length < 3) && concepts.length > 0) {
+    const firstCritical = concepts.find(c => c.criticality <= 2) || concepts[0];
+    if (firstCritical?.label && firstCritical.label.length >= 5) {
+      finalTopic = firstCritical.label;
+      console.info(`[COGNITIO][M2] Topic derived from first concept: "${finalTopic}"`);
+    }
+  }
+
+  // P0 comprehensive debug logging
   console.info(
-    `[COGNITIO][DEBUG] M2 extraction: ` +
-    `chapters=${chapters.length}, sentences=${_dbg_sentences_extracted}, ` +
-    `raw_concepts=${rawConcepts.length}, after_filter=${filteredConcepts.length}, ` +
-    `after_dedup=${concepts.length}, rejected=${rawConcepts.length - filteredConcepts.length}, ` +
-    `reject_reasons=${JSON.stringify(rejectReasons)}`
+    `[COGNITIO][M2] FINAL: ` +
+    `m2_input_length=${clean_text.length}, ` +
+    `m2_cleaned_length=${cleanedText.length}, ` +
+    `m2_chapters_detected=${chapters.length}, ` +
+    `m2_sentences_extracted=${_dbg_sentences_extracted}, ` +
+    `m2_candidate_concepts_count=${rawConcepts.length}, ` +
+    `m2_filtered_concepts_count=${filteredConcepts.length}, ` +
+    `m2_final_concepts_count=${concepts.length}, ` +
+    `m2_rejected_count=${rawConcepts.length - filteredConcepts.length}, ` +
+    `m2_reject_reasons=${JSON.stringify(rejectReasons)}, ` +
+    `m2_fallback_used=${_dbg_fallback_level}, ` +
+    `m2_final_topic="${finalTopic}"`
   );
 
   // Detect reasoning type
@@ -273,7 +430,7 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
   // Build learning objectives from chapters
   const learningObjectives = chapters.length > 0
     ? chapters.slice(0, 5).map(ch => `Comprendre : ${ch.title}`)
-    : [`Comprendre les notions clés de : ${mainTopic}`];
+    : [`Comprendre les notions clés de : ${finalTopic}`];
 
   // Audience mismatch detection
   const mismatch = input.learner_profile
@@ -287,7 +444,7 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
 
   return {
     course_profile_id: "",
-    main_topic: mainTopic,
+    main_topic: finalTopic,
     learning_objectives: learningObjectives,
     key_concepts: concepts,
     traps: [],
@@ -298,7 +455,10 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
     confidence,
     prerequis: [],
     structure_type: structureType as any,
-    source_issues: [{ code: "FALLBACK_ANALYSIS", message: "Analyse locale heuristique (LLM non disponible)", severity: "warning" }],
+    source_issues: [
+      { code: "FALLBACK_ANALYSIS", message: "Analyse locale heuristique (LLM non disponible)", severity: "warning" },
+      ...(_dbg_fallback_level === "emergency" ? [{ code: "EMERGENCY_EXTRACTION" as const, message: `Extraction de secours utilisée — ${Object.entries(rejectReasons).map(([r, c]) => `${r}:${c}`).join(", ")}`, severity: "warning" as const }] : []),
+    ],
     total_concepts: concepts.length,
     critical_count: concepts.filter((c) => c.criticality === 1).length,
     estimated_complexity: estimatedComplexity,

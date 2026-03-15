@@ -439,9 +439,24 @@ export function extractCleanMainTopic(segments: { title: string | null; content:
   // Fallback: first substantial content sentence
   for (const seg of segments) {
     if (seg.content.length < 30) continue;
-    const firstSentence = seg.content.split(/[.!?]/)[0]?.trim();
-    if (firstSentence && firstSentence.length >= 10) {
-      const words = firstSentence.split(/\s+/).slice(0, 10).join(" ");
+    // Try splitting on sentence boundaries (not newlines) to get a real sentence
+    const sentences = seg.content.split(/[.!?]+/).map(s => s.trim()).filter(s => s.length >= 10);
+    for (const sentence of sentences.slice(0, 3)) {
+      const words = sentence.split(/\s+/).slice(0, 10).join(" ");
+      const cleaned = cleanMainTopic(words);
+      if (cleaned.length >= 5) {
+        return cleaned;
+      }
+    }
+  }
+
+  // Fallback: extract most frequent meaningful noun phrases from all content
+  const allContent = segments.map(s => s.content).join(" ");
+  if (allContent.length >= 30) {
+    // Find the first substantive phrase (skip articles/prepositions)
+    const phrases = allContent.split(/[.!?,;:\n]+/).map(s => s.trim()).filter(s => s.length >= 15 && /[a-zA-ZÀ-ÿ]/.test(s));
+    if (phrases.length > 0) {
+      const words = phrases[0].split(/\s+/).slice(0, 8).join(" ");
       const cleaned = cleanMainTopic(words);
       if (cleaned.length >= 5) {
         return cleaned;
@@ -474,7 +489,19 @@ export function reconstructChapterHierarchy(
     if (seg.title && seg.hierarchy_level <= 1) {
       // New top-level chapter
       const cleanTitle = cleanMainTopic(seg.title);
-      if (cleanTitle.length < 3 || isEditorialArtifact(cleanTitle)) continue;
+      if (cleanTitle.length < 3 || isEditorialArtifact(cleanTitle)) {
+        // P0 FIX: Title is noise, but CONTENT may be valuable.
+        // Don't drop it — append to current chapter or create an untitled one.
+        if (seg.content.length > 30) {
+          if (currentChapter) {
+            currentChapter.content += "\n\n" + seg.content;
+          } else {
+            currentChapter = { title: "Contenu principal", level: 1, content: seg.content, subSections: [] };
+            chapters.push(currentChapter);
+          }
+        }
+        continue;
+      }
 
       currentChapter = { title: cleanTitle, level: 1, content: seg.content, subSections: [] };
       chapters.push(currentChapter);
@@ -483,13 +510,14 @@ export function reconstructChapterHierarchy(
       const cleanTitle = cleanMainTopic(seg.title);
       if (cleanTitle.length >= 3) {
         currentChapter.subSections.push(cleanTitle);
-        currentChapter.content += "\n\n" + seg.content;
       }
+      // P0 FIX: Always preserve content regardless of title validity
+      currentChapter.content += "\n\n" + seg.content;
     } else if (currentChapter) {
       currentChapter.content += "\n\n" + seg.content;
-    } else if (seg.content.length > 50) {
+    } else if (seg.content.length > 30) {
       // Content before any heading — create implicit chapter
-      currentChapter = { title: "Introduction", level: 1, content: seg.content, subSections: [] };
+      currentChapter = { title: seg.title && cleanMainTopic(seg.title).length >= 3 ? cleanMainTopic(seg.title) : "Introduction", level: 1, content: seg.content, subSections: [] };
       chapters.push(currentChapter);
     }
   }
