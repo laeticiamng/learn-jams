@@ -9,7 +9,7 @@ import { ESTIMATED_UNIT_COSTS } from "@/domain/billing/pricing.types";
 // ---------- Record a cost event ----------
 
 export async function recordCostEvent(event: CostEvent): Promise<void> {
-  await supabase.from("cost_events").insert({
+  await (supabase as any).from("cost_events").insert({
     user_id: event.user_id,
     transformation_id: event.transformation_id,
     feature_key: event.feature_key,
