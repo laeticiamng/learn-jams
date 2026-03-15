@@ -134,7 +134,7 @@ export async function persistAnalysis(
 ): Promise<{ courseProfileId: string; conceptIds: Record<string, string> }> {
   const profileRow = m2OutputToCourseProfileRow(documentId, output);
 
-  const { data: profile, error: profileError } = await supabase
+  const { data: profile, error: profileError } = await (supabase as any)
     .from("course_profiles")
     .insert(profileRow)
     .select("id")
@@ -148,7 +148,7 @@ export async function persistAnalysis(
   // Insert concepts
   for (const concept of output.key_concepts) {
     const row = analyzedConceptToRow(courseProfileId, concept);
-    const { data: conceptRow, error: conceptError } = await supabase
+    const { data: conceptRow, error: conceptError } = await (supabase as any)
       .from("concepts")
       .insert(row)
       .select("id")
@@ -162,11 +162,11 @@ export async function persistAnalysis(
   // Insert confusion pairs
   for (const pair of output.confusion_pairs) {
     const row = analyzedConfusionPairToRow(courseProfileId, pair, conceptIds);
-    await supabase.from("confusion_pairs").insert(row);
+    await (supabase as any).from("confusion_pairs").insert(row);
   }
 
   // Update document status
-  await supabase.from("source_documents").update({ ingestion_status: "analyzed" }).eq("id", documentId);
+  await (supabase as any).from("source_documents").update({ ingestion_status: "analyzed" }).eq("id", documentId);
 
   return { courseProfileId, conceptIds };
 }
@@ -187,7 +187,7 @@ export async function analyzeAndPersist(input: M2_Input): Promise<M2_Output> {
 // ---------- Getters ----------
 
 export async function getCourseProfile(documentId: string): Promise<CourseProfile | null> {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("course_profiles")
     .select("*")
     .eq("document_id", documentId)
@@ -200,7 +200,7 @@ export async function getCourseProfile(documentId: string): Promise<CourseProfil
 }
 
 export async function getConcepts(courseProfileId: string): Promise<Concept[]> {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("concepts")
     .select("*")
     .eq("course_profile_id", courseProfileId)
@@ -216,7 +216,7 @@ export async function getAnalyzedConcepts(courseProfileId: string): Promise<Anal
 }
 
 export async function getConfusionPairs(courseProfileId: string): Promise<ConfusionPair[]> {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("confusion_pairs")
     .select("*")
     .eq("course_profile_id", courseProfileId);

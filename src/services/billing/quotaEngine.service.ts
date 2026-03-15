@@ -78,7 +78,7 @@ export async function consumeQuota(
 
 async function getCurrentUsage(userId: string, feature: FeatureKey): Promise<number> {
   const now = new Date().toISOString();
-  const { data } = await supabase
+  const { data } = await (supabase as any)
     .from("usage_quotas_v2")
     .select("counters_json")
     .eq("user_id", userId)
@@ -101,7 +101,7 @@ async function incrementUsage(userId: string, feature: FeatureKey, amount: numbe
   const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
 
   // Upsert current period
-  const { data: existing } = await supabase
+  const { data: existing } = await (supabase as any)
     .from("usage_quotas_v2")
     .select("id, counters_json")
     .eq("user_id", userId)
@@ -111,12 +111,12 @@ async function incrementUsage(userId: string, feature: FeatureKey, amount: numbe
   if (existing) {
     const counters = existing.counters_json as Record<string, number>;
     counters[feature] = (counters[feature] ?? 0) + amount;
-    await supabase
+    await (supabase as any)
       .from("usage_quotas_v2")
       .update({ counters_json: counters, updated_at: now.toISOString() })
       .eq("id", existing.id);
   } else {
-    await supabase.from("usage_quotas_v2").insert({
+    await (supabase as any).from("usage_quotas_v2").insert({
       user_id: userId,
       billing_period_start: periodStart,
       billing_period_end: periodEnd,
@@ -130,7 +130,7 @@ async function incrementUsage(userId: string, feature: FeatureKey, amount: numbe
 
 async function getAllCurrentUsage(userId: string): Promise<Partial<Record<FeatureKey, number>>> {
   const now = new Date().toISOString();
-  const { data } = await supabase
+  const { data } = await (supabase as any)
     .from("usage_quotas_v2")
     .select("counters_json")
     .eq("user_id", userId)
@@ -148,7 +148,7 @@ async function getAllCurrentUsage(userId: string): Promise<Partial<Record<Featur
 
 async function getCreditBalance(userId: string, feature: FeatureKey): Promise<number> {
   const now = new Date().toISOString();
-  const { data } = await supabase
+  const { data } = await (supabase as any)
     .from("user_credit_balances")
     .select("remaining")
     .eq("user_id", userId)
@@ -163,7 +163,7 @@ async function getCreditBalance(userId: string, feature: FeatureKey): Promise<nu
 
 async function decrementCredits(userId: string, feature: FeatureKey, amount: number): Promise<void> {
   const now = new Date().toISOString();
-  const { data } = await supabase
+  const { data } = await (supabase as any)
     .from("user_credit_balances")
     .select("id, remaining")
     .eq("user_id", userId)
@@ -178,7 +178,7 @@ async function decrementCredits(userId: string, feature: FeatureKey, amount: num
   for (const row of data) {
     if (toConsume <= 0) break;
     const consume = Math.min(toConsume, row.remaining);
-    await supabase
+    await (supabase as any)
       .from("user_credit_balances")
       .update({ remaining: row.remaining - consume, updated_at: now })
       .eq("id", row.id);
@@ -193,7 +193,7 @@ export async function getUserUsageSummary(
   plan: PlanKey,
 ): Promise<Record<FeatureKey, { used: number; limit: number; credits: number; flex: number }>> {
   const now = new Date().toISOString();
-  const { data: quotaData } = await supabase
+  const { data: quotaData } = await (supabase as any)
     .from("usage_quotas_v2")
     .select("counters_json")
     .eq("user_id", userId)
@@ -205,7 +205,7 @@ export async function getUserUsageSummary(
 
   const counters = (quotaData?.counters_json as Record<string, number>) ?? {};
 
-  const { data: creditData } = await supabase
+  const { data: creditData } = await (supabase as any)
     .from("user_credit_balances")
     .select("credit_type, remaining")
     .eq("user_id", userId)

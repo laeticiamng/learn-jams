@@ -178,7 +178,7 @@ export async function persistFormatDecision(
   courseProfileId: string,
   userId: string
 ): Promise<string> {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("format_decisions")
     .insert({
       id: output.decision_id,
@@ -205,7 +205,7 @@ export async function persistFormatDecision(
 }
 
 export async function getFormatDecision(architectureId: string): Promise<M4_Output | null> {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("format_decisions")
     .select("*")
     .eq("architecture_id", architectureId)

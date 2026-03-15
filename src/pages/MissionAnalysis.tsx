@@ -46,7 +46,7 @@ export default function MissionAnalysis() {
       setLoading(true);
       try {
         // Load source document
-        const { data: doc, error: docError } = await supabase
+        const { data: doc, error: docError } = await (supabase as any)
           .from("source_documents")
           .select("*")
           .eq("id", id)
@@ -58,7 +58,7 @@ export default function MissionAnalysis() {
         }
 
         // Load segments
-        const { data: segments } = await supabase
+        const { data: segments } = await (supabase as any)
           .from("document_segments")
           .select("*")
           .eq("document_id", id)
@@ -87,7 +87,7 @@ export default function MissionAnalysis() {
         setM1Output(m1);
 
         // Load course profile
-        const { data: profile } = await supabase
+        const { data: profile } = await (supabase as any)
           .from("course_profiles")
           .select("*")
           .eq("document_id", id)
@@ -97,19 +97,19 @@ export default function MissionAnalysis() {
 
         if (profile) {
           // Load concepts
-          const { data: concepts } = await supabase
+          const { data: concepts } = await (supabase as any)
             .from("concepts")
             .select("*")
             .eq("course_profile_id", profile.id)
             .order("criticality");
 
           // Load confusion pairs
-          const { data: pairs } = await supabase
+          const { data: pairs } = await (supabase as any)
             .from("confusion_pairs")
             .select("*")
             .eq("course_profile_id", profile.id);
 
-          const keyConcepts: AnalyzedConcept[] = (concepts ?? []).map((c: Record<string, unknown>) => ({
+          const keyConcepts = (concepts ?? []).map((c: Record<string, unknown>) => ({
             stable_key: c.stable_key as string,
             label: c.label as string,
             definition: (c.definition as string) ?? "",
@@ -165,7 +165,7 @@ export default function MissionAnalysis() {
           setM2Output(m2);
 
           // Load memory architecture (M3)
-          const { data: arch } = await supabase
+          const { data: arch } = await (supabase as any)
             .from("memory_architectures")
             .select("*")
             .eq("document_id", id)
@@ -194,7 +194,7 @@ export default function MissionAnalysis() {
             setM3Output(m3);
 
             // Load format decision (M4)
-            const { data: decision } = await supabase
+            const { data: decision } = await (supabase as any)
               .from("format_decisions")
               .select("*")
               .eq("architecture_id", arch.id)

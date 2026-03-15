@@ -7,7 +7,7 @@ import type { UpdateMemoryInput, UpdateMemoryOutput } from "@/domain/cognitio/co
 import type { LearnerProfile, LearnerKnowledgeNode, MasteryStatus } from "@/domain/cognitio/types";
 
 export async function getOrCreateLearnerProfile(userId: string): Promise<LearnerProfile> {
-  const { data: existing } = await supabase
+  const { data: existing } = await (supabase as any)
     .from("learner_profiles")
     .select("*")
     .eq("user_id", userId)
@@ -15,7 +15,7 @@ export async function getOrCreateLearnerProfile(userId: string): Promise<Learner
 
   if (existing) return existing as unknown as LearnerProfile;
 
-  const { data: created, error } = await supabase
+  const { data: created, error } = await (supabase as any)
     .from("learner_profiles")
     .insert({
       user_id: userId,
@@ -39,7 +39,7 @@ export async function updateLearnerProfile(
   userId: string,
   updates: Partial<Pick<LearnerProfile, "profile_status" | "level_declared" | "session_count" | "calibration_sessions_count">>
 ) {
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from("learner_profiles")
     .update({ ...updates, updated_at: new Date().toISOString() })
     .eq("user_id", userId);
@@ -55,7 +55,7 @@ export async function updateKnowledgeGraph(
 
   for (const result of results) {
     // Upsert knowledge node
-    const { data: existing } = await supabase
+    const { data: existing } = await (supabase as any)
       .from("learner_knowledge_graph")
       .select("*")
       .eq("user_id", user_id)
@@ -78,7 +78,7 @@ export async function updateKnowledgeGraph(
     const nextReview = computeNextReview(newScore, test_type);
 
     if (existing) {
-      await supabase
+      await (supabase as any)
         .from("learner_knowledge_graph")
         .update({
           mastery_score: newScore,
@@ -91,7 +91,7 @@ export async function updateKnowledgeGraph(
         })
         .eq("id", (existing as Record<string, unknown>).id);
     } else {
-      await supabase
+      await (supabase as any)
         .from("learner_knowledge_graph")
         .insert({
           user_id,
@@ -115,7 +115,7 @@ export async function updateKnowledgeGraph(
   }
 
   // Update session count
-  await supabase
+  await (supabase as any)
     .from("learner_profiles")
     .update({
       session_count: supabase.rpc ? undefined : undefined, // Will use raw increment
@@ -158,7 +158,7 @@ function computeNextReview(score: number, testType: string): string | null {
 }
 
 export async function getKnowledgeGraph(userId: string) {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("learner_knowledge_graph")
     .select("*")
     .eq("user_id", userId)
@@ -170,7 +170,7 @@ export async function getKnowledgeGraph(userId: string) {
 }
 
 export async function getFragileConcepts(userId: string) {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("learner_knowledge_graph")
     .select("*")
     .eq("user_id", userId)
@@ -184,7 +184,7 @@ export async function getFragileConcepts(userId: string) {
 
 export async function getDueReviews(userId: string) {
   const now = new Date().toISOString();
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("learner_knowledge_graph")
     .select("*")
     .eq("user_id", userId)

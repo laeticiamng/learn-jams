@@ -252,7 +252,7 @@ export async function consumeFlexCredit(
   };
 
   // Upsert adaptive credit balance
-  const { data: existing } = await supabase
+  const { data: existing } = await (supabase as any)
     .from("adaptive_credit_balances")
     .select("id, consumed_flex_credits_json, reallocation_log_json")
     .eq("user_id", userId)
@@ -265,7 +265,7 @@ export async function consumeFlexCredit(
     const log = existing.reallocation_log_json as ReallocationEntry[];
     log.push(entry);
 
-    await supabase
+    await (supabase as any)
       .from("adaptive_credit_balances")
       .update({
         consumed_flex_credits_json: consumed,
@@ -274,7 +274,7 @@ export async function consumeFlexCredit(
       })
       .eq("id", existing.id);
   } else {
-    await supabase.from("adaptive_credit_balances").insert({
+    await (supabase as any).from("adaptive_credit_balances").insert({
       user_id: userId,
       billing_period_start: periodStart,
       billing_period_end: periodEnd,

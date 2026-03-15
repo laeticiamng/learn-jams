@@ -73,7 +73,7 @@ export function generateMissionLocally(
   const boss = includesBoss ? buildBoss(input) : undefined;
 
   const mission_json: MissionContent = {
-    title: `Mission: ${input.concepts[0]?.category ?? "Apprentissage"}`,
+    title: `Mission: ${input.concepts[0]?.type ?? "Apprentissage"}`,
     narrative_intro: buildNarrativeIntro(input, qualityBand),
     rooms,
     boss,
@@ -92,7 +92,7 @@ export function generateMissionLocally(
 }
 
 function buildNarrativeIntro(input: GenerateExperienceInput, qualityBand: QualityBand): string {
-  const topic = input.concepts[0]?.category ?? "ce sujet";
+  const topic = input.concepts[0]?.type ?? "ce sujet";
   const base = `Bienvenue dans le service d'urgence pédagogique. Vous êtes confronté à un cas complexe portant sur ${topic}. Chaque salle vous mettra face à une épreuve cognitive.`;
 
   if (qualityBand === "medium") {
@@ -209,7 +209,7 @@ function buildPrompt(brick: BrickType, concept: GenerateExperienceInput["concept
     case "SEQUENCE":
       return `Placez "${concept.label}" dans la séquence correcte`;
     case "ELIMINATION":
-      return `Parmi ces éléments liés à "${concept.category}", lequel est l'intrus ?`;
+      return `Parmi ces éléments liés à "${concept.type}", lequel est l'intrus ?`;
     case "DECISION":
       return `Face à ce cas clinique, quelle est la bonne approche concernant "${concept.label}" ?`;
   }
@@ -266,7 +266,7 @@ function buildBoss(input: GenerateExperienceInput): MissionBossRoom {
 
 function buildSynthesisOnly(input: GenerateExperienceInput): MissionContent {
   return {
-    title: `Synthèse: ${input.concepts[0]?.category ?? "Contenu"}`,
+    title: `Synthèse: ${input.concepts[0]?.type ?? "Contenu"}`,
     narrative_intro: "La qualité du contenu source ne permet pas de générer une mission interactive complète. Voici une synthèse des concepts identifiés.",
     rooms: [],
     learning_contract: input.learning_contract,
@@ -278,7 +278,7 @@ async function saveMission(
   input: GenerateExperienceInput,
   result: GenerateExperienceOutput
 ) {
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from("generated_missions")
     .insert({
       id: result.mission_id,
@@ -301,7 +301,7 @@ async function saveMission(
 }
 
 export async function getMission(missionId: string) {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("generated_missions")
     .select("*")
     .eq("id", missionId)
@@ -312,7 +312,7 @@ export async function getMission(missionId: string) {
 }
 
 export async function getUserMissions(userId: string) {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("generated_missions")
     .select("*")
     .eq("user_id", userId)

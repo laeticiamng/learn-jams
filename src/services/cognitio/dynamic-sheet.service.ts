@@ -666,7 +666,7 @@ export async function persistTransformation(
   userId: string
 ): Promise<string> {
   // 1. Insert transformation
-  const { data: transform, error: tErr } = await supabase
+  const { data: transform, error: tErr } = await (supabase as any)
     .from("transformations")
     .insert({
       id: output.transformation_id,
@@ -687,7 +687,7 @@ export async function persistTransformation(
   if (tErr) throw new Error(`Failed to persist transformation: ${tErr.message}`);
 
   // 2. Insert generated content
-  const { error: cErr } = await supabase
+  const { error: cErr } = await (supabase as any)
     .from("generated_contents")
     .insert({
       transformation_id: output.transformation_id,
@@ -703,7 +703,7 @@ export async function persistTransformation(
 
   // 3. Insert final test
   const bloomLevels = new Set(output.final_test.map(q => q.bloom_level));
-  const { error: ftErr } = await supabase
+  const { error: ftErr } = await (supabase as any)
     .from("final_tests")
     .insert({
       transformation_id: output.transformation_id,
@@ -720,7 +720,7 @@ export async function persistTransformation(
 // ---------- Getters ----------
 
 export async function getTransformation(transformationId: string): Promise<M5_Output | null> {
-  const { data: t } = await supabase
+  const { data: t } = await (supabase as any)
     .from("transformations")
     .select("*")
     .eq("id", transformationId)
@@ -728,7 +728,7 @@ export async function getTransformation(transformationId: string): Promise<M5_Ou
 
   if (!t) return null;
 
-  const { data: gc } = await supabase
+  const { data: gc } = await (supabase as any)
     .from("generated_contents")
     .select("*")
     .eq("transformation_id", transformationId)
@@ -736,7 +736,7 @@ export async function getTransformation(transformationId: string): Promise<M5_Ou
     .limit(1)
     .single();
 
-  const { data: ft } = await supabase
+  const { data: ft } = await (supabase as any)
     .from("final_tests")
     .select("*")
     .eq("transformation_id", transformationId)
@@ -765,7 +765,7 @@ export async function getTransformation(transformationId: string): Promise<M5_Ou
 }
 
 export async function getUserTransformations(userId: string) {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("transformations")
     .select("id, document_id, format, published_status, estimated_duration_sec, created_at")
     .eq("user_id", userId)

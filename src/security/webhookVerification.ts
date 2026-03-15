@@ -172,7 +172,7 @@ export async function markWebhookProcessed(
 ): Promise<void> {
   if (!externalEventId) return;
 
-  await supabase.from("webhook_replay_protection").insert({
+  await (supabase as any).from("webhook_replay_protection").insert({
     provider_key: providerKey,
     external_event_id: externalEventId,
   }).onConflict("provider_key,external_event_id").ignore();

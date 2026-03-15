@@ -30,7 +30,7 @@ export async function computeMarginReport(
     created_at: new Date().toISOString(),
   };
 
-  await supabase.from("margin_reports").upsert(report, { onConflict: "period_key,plan_key" });
+  await (supabase as any).from("margin_reports").upsert(report, { onConflict: "period_key,plan_key" });
   return report;
 }
 
@@ -70,14 +70,14 @@ export function evaluateMarginAlerts(reports: MarginReport[]): MarginAlert[] {
 // ---------- Get latest margin reports ----------
 
 export async function getLatestMarginReports(): Promise<MarginReport[]> {
-  const { data } = await supabase
+  const { data } = await (supabase as any)
     .from("margin_reports")
     .select("*")
     .neq("period_key", "config")
     .order("created_at", { ascending: false })
     .limit(20);
 
-  return (data ?? []) as MarginReport[];
+  return (data ?? []) as unknown as MarginReport[];
 }
 
 // ---------- Anomaly thresholds ----------

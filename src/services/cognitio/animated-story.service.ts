@@ -734,7 +734,7 @@ export async function persistStoryTransformation(
   output: M5B_Output,
   userId: string,
 ): Promise<string> {
-  const { data: transform, error: tErr } = await supabase
+  const { data: transform, error: tErr } = await (supabase as any)
     .from("transformations")
     .insert({
       id: output.transformation_id,
@@ -754,7 +754,7 @@ export async function persistStoryTransformation(
 
   if (tErr) throw new Error(`Failed to persist story transformation: ${tErr.message}`);
 
-  const { error: cErr } = await supabase
+  const { error: cErr } = await (supabase as any)
     .from("generated_contents")
     .insert({
       transformation_id: output.transformation_id,

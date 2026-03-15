@@ -42,7 +42,7 @@ export async function uploadDocument(
     storagePath = fileName;
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("source_documents")
     .insert({
       user_id: userId,
@@ -170,7 +170,7 @@ export async function runLocalIngestion(
         ? "docx"
         : "pasted_text";
 
-    await supabase.from("source_documents").update({
+    await (supabase as any).from("source_documents").update({
       ingestion_status: "parsed",
       quality_score: result.confidence_level,
       source_type: sourceType,
@@ -183,7 +183,7 @@ export async function runLocalIngestion(
     }).eq("id", documentId);
 
     if (result.segments.length > 0) {
-      await supabase.from("document_segments").insert(
+      await (supabase as any).from("document_segments").insert(
         result.segments.map((s) => ({
           document_id: documentId,
           segment_index: s.segment_index,
@@ -343,7 +343,7 @@ function computeConfidence(wordCount: number, structure: DetectedStructureType, 
 // ---------- Getters ----------
 
 export async function getDocument(documentId: string): Promise<SourceDocument | null> {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("source_documents")
     .select("*")
     .eq("id", documentId)
@@ -353,7 +353,7 @@ export async function getDocument(documentId: string): Promise<SourceDocument | 
 }
 
 export async function getUserDocuments(userId: string): Promise<SourceDocument[]> {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("source_documents")
     .select("*")
     .eq("user_id", userId)
@@ -367,5 +367,5 @@ export async function updateIngestionStatus(
   status: string,
   extra?: Record<string, unknown>
 ) {
-  await supabase.from("source_documents").update({ ingestion_status: status, ...extra }).eq("id", documentId);
+  await (supabase as any).from("source_documents").update({ ingestion_status: status, ...extra }).eq("id", documentId);
 }

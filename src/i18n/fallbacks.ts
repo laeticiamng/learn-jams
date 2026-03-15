@@ -29,11 +29,11 @@ export function resolveLocale(raw: string): string {
   if (isSupportedLocale(raw)) return raw;
 
   // Try base language (e.g. "fr-FR" → "fr")
-  const base = raw.split("-")[0];
+  const base = String(raw).split("-")[0];
   if (isSupportedLocale(base)) return base;
 
   // Special case: zh-Hans → zh
-  if (raw.startsWith("zh")) return "zh";
+  if (String(raw).startsWith("zh")) return "zh";
 
   return FALLBACK_LOCALE;
 }

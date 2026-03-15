@@ -39,7 +39,7 @@ export default function CognitioLibrary() {
     async function load() {
       setLoading(true);
       const data = await getUserTransformations(session!.user.id);
-      setItems(data as TransformationSummary[]);
+      setItems(data as unknown as TransformationSummary[]);
       setLoading(false);
     }
 

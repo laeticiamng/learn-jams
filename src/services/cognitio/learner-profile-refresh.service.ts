@@ -177,7 +177,7 @@ export async function persistProfileRefresh(
   snapshot: Omit<ProgressSnapshot, "id" | "created_at">,
 ): Promise<void> {
   // Update profile
-  const { error: profileErr } = await supabase
+  const { error: profileErr } = await (supabase as any)
     .from("learner_profiles")
     .update({
       profile_status: updates.profile_status,
@@ -193,7 +193,7 @@ export async function persistProfileRefresh(
   if (profileErr) throw new Error(`Profile refresh failed: ${profileErr.message}`);
 
   // Upsert snapshot (one per day)
-  const { error: snapErr } = await supabase
+  const { error: snapErr } = await (supabase as any)
     .from("learner_progress_snapshots")
     .upsert({
       user_id: snapshot.user_id,
@@ -213,7 +213,7 @@ export async function getProgressSnapshots(
   userId: string,
   limit = 30,
 ): Promise<ProgressSnapshot[]> {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("learner_progress_snapshots")
     .select("*")
     .eq("user_id", userId)

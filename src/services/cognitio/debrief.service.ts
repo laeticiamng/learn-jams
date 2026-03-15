@@ -147,7 +147,7 @@ export async function persistDebrief(
   debrief: DebriefReport,
   userId: string,
 ): Promise<string> {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("debrief_reports")
     .insert({
       id: debrief.id,

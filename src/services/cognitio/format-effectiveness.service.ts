@@ -62,7 +62,7 @@ export async function upsertFormatEffectiveness(
   calibrationGap: number,
 ): Promise<FormatEffectivenessRecord> {
   // Fetch existing
-  const { data: existing } = await supabase
+  const { data: existing } = await (supabase as any)
     .from("learner_format_effectiveness")
     .select("*")
     .eq("user_id", userId)
@@ -78,7 +78,7 @@ export async function upsertFormatEffectiveness(
   );
 
   if (existing) {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("learner_format_effectiveness")
       .update({ ...updates, updated_at: new Date().toISOString() })
       .eq("id", (existing as Record<string, unknown>).id)
@@ -87,7 +87,7 @@ export async function upsertFormatEffectiveness(
     if (error) throw new Error(`Format effectiveness update failed: ${error.message}`);
     return data as unknown as FormatEffectivenessRecord;
   } else {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("learner_format_effectiveness")
       .insert({
         user_id: userId,
@@ -104,7 +104,7 @@ export async function upsertFormatEffectiveness(
 }
 
 export async function getFormatEffectiveness(userId: string): Promise<FormatEffectivenessRecord[]> {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("learner_format_effectiveness")
     .select("*")
     .eq("user_id", userId)

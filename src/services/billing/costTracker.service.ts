@@ -9,7 +9,7 @@ import { ESTIMATED_UNIT_COSTS } from "@/domain/billing/pricing.types";
 // ---------- Record a cost event ----------
 
 export async function recordCostEvent(event: CostEvent): Promise<void> {
-  await supabase.from("cost_events").insert({
+  await (supabase as any).from("cost_events").insert({
     user_id: event.user_id,
     transformation_id: event.transformation_id,
     feature_key: event.feature_key,
@@ -48,7 +48,7 @@ export async function getCostSummary(
   since: string,
   until?: string,
 ): Promise<{ feature_key: string; provider_key: string; total_estimated: number; total_actual: number; count: number }[]> {
-  let query = supabase
+  let query = (supabase as any)
     .from("cost_events")
     .select("feature_key, provider_key, estimated_cost_usd, actual_cost_usd")
     .gte("created_at", since);
@@ -79,7 +79,7 @@ export async function getUserCostForPeriod(
   userId: string,
   since: string,
 ): Promise<number> {
-  const { data } = await supabase
+  const { data } = await (supabase as any)
     .from("cost_events")
     .select("estimated_cost_usd, actual_cost_usd")
     .eq("user_id", userId)
