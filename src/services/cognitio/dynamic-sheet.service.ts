@@ -666,7 +666,7 @@ export async function persistTransformation(
   userId: string
 ): Promise<string> {
   // 1. Insert transformation
-  const { data: transform, error: tErr } = await supabase
+  const { data: transform, error: tErr } = await (supabase as any)
     .from("transformations")
     .insert({
       id: output.transformation_id,
