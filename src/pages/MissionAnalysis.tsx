@@ -104,7 +104,7 @@ export default function MissionAnalysis() {
             .order("criticality");
 
           // Load confusion pairs
-          const { data: pairs } = await supabase
+          const { data: pairs } = await (supabase as any)
             .from("confusion_pairs")
             .select("*")
             .eq("course_profile_id", profile.id);
