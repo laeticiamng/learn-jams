@@ -37,13 +37,27 @@ export async function runAnalysis(input: M2_Input): Promise<M2_Output> {
   // P0: Pre-normalize input text for noisy R2C/academic documents
   const preNormalized = preNormalizeForM2(input);
 
+  // P0 AUDIT: Compare before/after pre-normalization
+  const prenormDelta = input.clean_text.length - preNormalized.clean_text.length;
+  const prenormRatio = preNormalized.clean_text.length / Math.max(1, input.clean_text.length);
   console.info(
-    `[COGNITIO][M2] Starting analysis: ` +
-    `m2_input_length=${input.clean_text.length}, ` +
-    `m2_input_after_prenorm=${preNormalized.clean_text.length}, ` +
-    `m2_input_preview="${preNormalized.clean_text.slice(0, 150)}…", ` +
-    `m2_segments=${preNormalized.segments.length}`
+    `[COGNITIO][M2] Starting analysis:\n` +
+    `  m2_input_length=${input.clean_text.length}\n` +
+    `  m2_input_after_prenorm=${preNormalized.clean_text.length}\n` +
+    `  m2_prenorm_delta=${prenormDelta} chars removed (${(100 - prenormRatio * 100).toFixed(1)}%)\n` +
+    `  m2_segments=${preNormalized.segments.length}\n` +
+    `  m2_input_preview_BEFORE="${input.clean_text.slice(0, 200)}…"\n` +
+    `  m2_input_preview_AFTER="${preNormalized.clean_text.slice(0, 200)}…"`
   );
+
+  // P0 AUDIT: Warn if pre-normalization removed too much
+  if (prenormRatio < 0.3 && input.clean_text.length > 1000) {
+    console.warn(
+      `[COGNITIO][M2][ANOMALY] Pre-normalization removed ${(100 - prenormRatio * 100).toFixed(1)}% of text! ` +
+      `Original=${input.clean_text.length}, After=${preNormalized.clean_text.length}. ` +
+      `This may destroy useful content.`
+    );
+  }
 
   try {
     const { data, error } = await supabase.functions.invoke("cognitio-analyze", {
@@ -130,16 +144,31 @@ function preNormalizeForM2(input: M2_Input): M2_Input {
     title: seg.title ? cleanMainTopic(seg.title) || seg.title : seg.title,
   }));
 
+  const cleanedLength = filterResult.cleaned_text_length;
+  const rawLength = filterResult.raw_text_length;
+  const retentionRatio = cleanedLength / Math.max(1, rawLength);
+
   console.info(
-    `[COGNITIO][M2] Pre-normalization: ` +
-    `raw=${filterResult.raw_text_length} chars → cleaned=${filterResult.cleaned_text_length} chars, ` +
-    `removed_lines=${filterResult.removed_lines_count}, ` +
-    `removed_types=[${filterResult.removed_patterns.slice(0, 5).map(p => p.type).join(", ")}${filterResult.removed_patterns.length > 5 ? "…" : ""}]`
+    `[COGNITIO][M2] Pre-normalization:\n` +
+    `  raw=${rawLength} chars → cleaned=${cleanedLength} chars (${(retentionRatio * 100).toFixed(1)}% retained)\n` +
+    `  removed_lines=${filterResult.removed_lines_count}\n` +
+    `  removed_types=[${filterResult.removed_patterns.slice(0, 8).map(p => p.type).join(", ")}${filterResult.removed_patterns.length > 8 ? "…" : ""}]`
   );
+
+  // P0 SAFEGUARD: If pre-normalization removed more than 80% of text,
+  // it probably destroyed useful content. Use original text instead.
+  let finalCleanedText = filterResult.cleaned_text;
+  if (!finalCleanedText || (retentionRatio < 0.2 && rawLength > 1000)) {
+    console.warn(
+      `[COGNITIO][M2][SAFEGUARD] Pre-normalization too aggressive (${(retentionRatio * 100).toFixed(1)}% retained). ` +
+      `Reverting to original text to preserve content.`
+    );
+    finalCleanedText = input.clean_text;
+  }
 
   return {
     ...input,
-    clean_text: filterResult.cleaned_text || input.clean_text, // Preserve original if filter removed everything
+    clean_text: finalCleanedText,
     segments: cleanedSegments,
   };
 }
@@ -152,17 +181,32 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
   // Apply semantic cleaning before extraction
   const cleanedText = cleanSourceNoise(clean_text);
 
+  // P0 AUDIT: Detect if cleanSourceNoise destroyed too much content
+  const cleanDelta = clean_text.length - cleanedText.length;
+  const cleanRatio = cleanedText.length / Math.max(1, clean_text.length);
+
   // P0 debug counters
   let _dbg_sentences_extracted = 0;
   let _dbg_fallback_level = "none";
+  let _dbg_sentences_too_short = 0;
+  let _dbg_chapters_with_no_sentences = 0;
 
   console.info(
-    `[COGNITIO][M2] runLocalAnalysis: ` +
-    `m2_input_length=${clean_text.length}, ` +
-    `m2_cleaned_length=${cleanedText.length}, ` +
-    `m2_segments_count=${segments.length}, ` +
-    `m2_input_preview="${cleanedText.slice(0, 150)}…"`
+    `[COGNITIO][M2] runLocalAnalysis:\n` +
+    `  m2_input_length=${clean_text.length}\n` +
+    `  m2_cleaned_length=${cleanedText.length}\n` +
+    `  m2_clean_delta=${cleanDelta} chars removed (${(100 - cleanRatio * 100).toFixed(1)}%)\n` +
+    `  m2_segments_count=${segments.length}\n` +
+    `  m2_input_preview_raw="${clean_text.slice(0, 200)}…"\n` +
+    `  m2_input_preview_cleaned="${cleanedText.slice(0, 200)}…"`
   );
+
+  if (cleanRatio < 0.3 && clean_text.length > 1000) {
+    console.warn(
+      `[COGNITIO][M2][ANOMALY] cleanSourceNoise removed ${(100 - cleanRatio * 100).toFixed(1)}% of text! ` +
+      `This is the second cleaning pass (after preNormalize). Combined effect may be destructive.`
+    );
+  }
 
   // === Level 1: Extract clean main topic ===
   const mainTopic = extractCleanMainTopic(segments);
@@ -179,11 +223,39 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
   for (let chapterIdx = 0; chapterIdx < chapters.length; chapterIdx++) {
     const chapter = chapters[chapterIdx];
     const chapterContent = cleanSourceNoise(chapter.content);
-    // P0 FIX: Split on sentence boundaries only, NOT on newlines (which fragment bullet-point text)
-    const sentences = chapterContent
-      .replace(/\n+/g, " ")
+
+    // P0 AUDIT FIX: Multi-strategy sentence splitting for bullet-point medical text
+    // Strategy 1: Standard sentence boundary split
+    const joinedContent = chapterContent.replace(/\n+/g, " ").replace(/\s{2,}/g, " ").trim();
+    let sentences = joinedContent
       .split(/(?<=[.!?])\s+/)
-      .filter(s => s.trim().length > 20);
+      .filter(s => s.trim().length > 15); // lowered from 20 to 15
+
+    // Strategy 2: If sentence split yields too few, try line-based extraction
+    // (medical polycopiés are often structured as bullet lines without terminal punctuation)
+    if (sentences.length < 2 && chapterContent.length > 50) {
+      const lineSentences = chapterContent
+        .split(/\n/)
+        .map(l => l.trim())
+        .filter(l => l.length > 10 && /[a-zA-ZÀ-ÿ]/.test(l));
+      if (lineSentences.length > sentences.length) {
+        sentences = lineSentences;
+        console.info(`[COGNITIO][M2] Chapter "${chapter.title}": sentence split failed (${joinedContent.length} chars joined → only ${sentences.length} sentences). Using line-based split: ${lineSentences.length} lines.`);
+      }
+    }
+
+    // Strategy 3: If still nothing, try splitting on colons/semicolons
+    if (sentences.length === 0 && chapterContent.length > 30) {
+      sentences = chapterContent
+        .split(/[;:]+/)
+        .map(s => s.trim())
+        .filter(s => s.length > 10 && /[a-zA-ZÀ-ÿ]/.test(s));
+    }
+
+    const tooShortCount = chapterContent.split(/\n/).filter(l => l.trim().length > 0 && l.trim().length <= 15).length;
+    _dbg_sentences_too_short += tooShortCount;
+    if (sentences.length === 0) _dbg_chapters_with_no_sentences++;
+
     _dbg_sentences_extracted += sentences.length;
     const chapterType = chapter.title;
 
@@ -252,18 +324,41 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
   // If no chapters detected, fall back to sentence-based extraction
   if (rawConcepts.length === 0) {
     _dbg_fallback_level = "sentence_based";
-    // P0 FIX: Join lines into paragraphs before splitting on sentence boundaries
-    // to avoid fragmenting bullet-point medical text
-    const joinedText = cleanedText.replace(/\n+/g, " ").replace(/\s{2,}/g, " ");
-    const sentences = joinedText.split(/(?<=[.!?])\s+/).filter(s => s.trim().length > 20);
-    _dbg_sentences_extracted += sentences.length;
+    console.info(
+      `[COGNITIO][M2] No concepts from chapter extraction (${chapters.length} chapters, ${_dbg_chapters_with_no_sentences} with no sentences, ${_dbg_sentences_too_short} lines too short). ` +
+      `Falling back to sentence-based extraction on ${cleanedText.length}-char text.`
+    );
 
-    // If no sentence-boundary splits worked, try splitting on any whitespace-heavy breaks
-    const effectiveSentences = sentences.length > 0 ? sentences
-      : cleanedText.split(/\n\s*\n/).flatMap(p => {
-          const trimmed = p.trim();
-          return trimmed.length > 20 ? [trimmed] : [];
-        });
+    // P0 FIX: Multi-strategy sentence extraction (same as chapter-level)
+    // Strategy 1: Standard sentence boundary
+    const joinedText = cleanedText.replace(/\n+/g, " ").replace(/\s{2,}/g, " ");
+    let effectiveSentences = joinedText.split(/(?<=[.!?])\s+/).filter(s => s.trim().length > 15);
+
+    // Strategy 2: Line-based (for bullet-point text)
+    if (effectiveSentences.length < 3 && cleanedText.length > 100) {
+      const lineSentences = cleanedText
+        .split(/\n/)
+        .map(l => l.trim())
+        .filter(l => l.length > 10 && /[a-zA-ZÀ-ÿ]/.test(l));
+      if (lineSentences.length > effectiveSentences.length) {
+        effectiveSentences = lineSentences;
+        console.info(`[COGNITIO][M2] Sentence split insufficient. Using line-based: ${lineSentences.length} lines.`);
+      }
+    }
+
+    // Strategy 3: Paragraph split
+    if (effectiveSentences.length < 3 && cleanedText.length > 100) {
+      const paragraphs = cleanedText.split(/\n\s*\n/).flatMap(p => {
+        const trimmed = p.trim();
+        return trimmed.length > 10 ? [trimmed] : [];
+      });
+      if (paragraphs.length > effectiveSentences.length) {
+        effectiveSentences = paragraphs;
+        console.info(`[COGNITIO][M2] Line split insufficient. Using paragraph-based: ${paragraphs.length} paragraphs.`);
+      }
+    }
+
+    _dbg_sentences_extracted += effectiveSentences.length;
 
     for (let i = 0; i < Math.min(20, effectiveSentences.length); i++) {
       const sentence = effectiveSentences[i].trim();
@@ -292,14 +387,27 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
 
   // Filter out artifact concepts and deduplicate
   const rejectReasons: Record<string, number> = {};
+  const rejectedLabels: string[] = [];
   const filteredConcepts = rawConcepts.filter(c => {
     const { rejected, reason } = rejectConceptArtifact(c);
     if (rejected && reason) {
       rejectReasons[reason] = (rejectReasons[reason] || 0) + 1;
+      if (rejectedLabels.length < 10) rejectedLabels.push(`"${c.label}" (${reason})`);
     }
     return !rejected;
   });
   let concepts = mergeDuplicateOrNoisyConcepts(filteredConcepts);
+
+  // P0 AUDIT: Log filter results with rejected label samples
+  console.info(
+    `[COGNITIO][M2] Filter results:\n` +
+    `  m2_raw_concepts=${rawConcepts.length}\n` +
+    `  m2_after_filter=${filteredConcepts.length}\n` +
+    `  m2_after_dedup=${concepts.length}\n` +
+    `  m2_rejected=${rawConcepts.length - filteredConcepts.length}\n` +
+    `  m2_reject_reasons=${JSON.stringify(rejectReasons)}\n` +
+    `  m2_rejected_samples=[${rejectedLabels.join(", ")}]`
+  );
 
   // P0 FIX: If all concepts were rejected but we have non-empty text,
   // force-extract minimal concepts so downstream never sees 0 without cause.
@@ -311,25 +419,38 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
       `Applying emergency fallback extraction on ${cleanedText.length}-char text.`
     );
 
-    // P0 FIX: Emergency extraction — join text into continuous prose first,
-    // then split on sentence boundaries only (NOT on newlines which fragment
-    // bullet-point medical text into too-short chunks).
+    // P0 FIX: Emergency extraction — multi-strategy, same as above
     const continuousText = cleanedText.replace(/\n+/g, " ").replace(/\s{2,}/g, " ").trim();
+
+    // Strategy 1: sentence boundary
     let emergencySentences = continuousText
       .split(/(?<=[.!?])\s+/)
       .map(s => s.trim())
-      .filter(s => s.length > 20 && /[a-zA-ZÀ-ÿ]/.test(s));
+      .filter(s => s.length > 15 && /[a-zA-ZÀ-ÿ]/.test(s));
 
-    // If still no sentences (text has no punctuation), split on arbitrary chunks
-    if (emergencySentences.length === 0 && continuousText.length > 30) {
-      // Split on comma or semicolon as last resort
-      emergencySentences = continuousText
-        .split(/[,;]+/)
-        .map(s => s.trim())
-        .filter(s => s.length > 15 && /[a-zA-ZÀ-ÿ]/.test(s));
+    // Strategy 2: line-based (bullet-point text)
+    if (emergencySentences.length < 3 && cleanedText.length > 50) {
+      const lineSentences = cleanedText
+        .split(/\n/)
+        .map(l => l.trim())
+        .filter(l => l.length > 8 && /[a-zA-ZÀ-ÿ]/.test(l));
+      if (lineSentences.length > emergencySentences.length) {
+        emergencySentences = lineSentences;
+      }
     }
 
-    // Absolute last resort: take word chunks from the text
+    // Strategy 3: comma/semicolon split
+    if (emergencySentences.length < 3 && continuousText.length > 30) {
+      const clauseSentences = continuousText
+        .split(/[,;:]+/)
+        .map(s => s.trim())
+        .filter(s => s.length > 10 && /[a-zA-ZÀ-ÿ]/.test(s));
+      if (clauseSentences.length > emergencySentences.length) {
+        emergencySentences = clauseSentences;
+      }
+    }
+
+    // Strategy 4: word chunks as absolute last resort
     if (emergencySentences.length === 0 && continuousText.length > 30) {
       const words = continuousText.split(/\s+/);
       for (let i = 0; i < words.length; i += 10) {
@@ -369,6 +490,48 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
     console.info(`[COGNITIO][M2] Emergency fallback produced ${concepts.length} concepts from ${emergencySentences.length} candidate sentences.`);
   }
 
+  // ============================================================
+  // P0 GUARD: HEURISTIC LAST-RESORT FALLBACK
+  // If we STILL have 0 concepts from a substantial document,
+  // extract from segment titles + headings heuristically.
+  // This should NEVER let 18k chars produce 0 concepts.
+  // ============================================================
+  if (concepts.length === 0 && clean_text.length > 500) {
+    _dbg_fallback_level = "heuristic_secours";
+    console.warn(
+      `[COGNITIO][M2][ANOMALY] CRITICAL: ${clean_text.length}-char document → 0 concepts after ALL fallbacks!\n` +
+      `  m2_chapters=${chapters.length}, m2_raw_concepts=${rawConcepts.length}, m2_reject_reasons=${JSON.stringify(rejectReasons)}\n` +
+      `  Activating HEURISTIC LAST-RESORT extraction.`
+    );
+
+    const heuristicConcepts = extractHeuristicConcepts(clean_text, segments);
+    concepts.push(...heuristicConcepts);
+
+    console.info(
+      `[COGNITIO][M2] Heuristic last-resort produced ${heuristicConcepts.length} concepts.`
+    );
+  }
+
+  // P0 ANOMALY GUARD: Final check — log detailed anomaly if still 0
+  if (concepts.length === 0 && clean_text.length > 5000) {
+    console.error(
+      `[COGNITIO][M2][CRITICAL_ANOMALY] ${clean_text.length}-char document produced 0 concepts!\n` +
+      `  DIAGNOSTIC DUMP:\n` +
+      `  - Original text length: ${clean_text.length}\n` +
+      `  - After cleanSourceNoise: ${cleanedText.length}\n` +
+      `  - Chapters detected: ${chapters.length}\n` +
+      `  - Sentences extracted: ${_dbg_sentences_extracted}\n` +
+      `  - Sentences too short (<=15 chars): ${_dbg_sentences_too_short}\n` +
+      `  - Chapters with 0 sentences: ${_dbg_chapters_with_no_sentences}\n` +
+      `  - Raw concepts before filter: ${rawConcepts.length}\n` +
+      `  - Rejection breakdown: ${JSON.stringify(rejectReasons)}\n` +
+      `  - Rejected samples: [${rejectedLabels.join(", ")}]\n` +
+      `  - Fallback level reached: ${_dbg_fallback_level}\n` +
+      `  - Text first 500 chars: "${clean_text.slice(0, 500)}"\n` +
+      `  - Text last 500 chars: "${clean_text.slice(-500)}"`
+    );
+  }
+
   // P0: If topic is "Sujet non identifié" but we have concepts, try to derive topic from first concept
   let finalTopic = mainTopic;
   if ((mainTopic === "Sujet non identifié" || mainTopic.length < 3) && concepts.length > 0) {
@@ -381,18 +544,20 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
 
   // P0 comprehensive debug logging
   console.info(
-    `[COGNITIO][M2] FINAL: ` +
-    `m2_input_length=${clean_text.length}, ` +
-    `m2_cleaned_length=${cleanedText.length}, ` +
-    `m2_chapters_detected=${chapters.length}, ` +
-    `m2_sentences_extracted=${_dbg_sentences_extracted}, ` +
-    `m2_candidate_concepts_count=${rawConcepts.length}, ` +
-    `m2_filtered_concepts_count=${filteredConcepts.length}, ` +
-    `m2_final_concepts_count=${concepts.length}, ` +
-    `m2_rejected_count=${rawConcepts.length - filteredConcepts.length}, ` +
-    `m2_reject_reasons=${JSON.stringify(rejectReasons)}, ` +
-    `m2_fallback_used=${_dbg_fallback_level}, ` +
-    `m2_final_topic="${finalTopic}"`
+    `[COGNITIO][M2] FINAL SUMMARY:\n` +
+    `  m2_input_length=${clean_text.length}\n` +
+    `  m2_cleaned_length=${cleanedText.length}\n` +
+    `  m2_chapters_detected=${chapters.length}\n` +
+    `  m2_sentences_extracted=${_dbg_sentences_extracted}\n` +
+    `  m2_sentences_too_short=${_dbg_sentences_too_short}\n` +
+    `  m2_chapters_with_no_sentences=${_dbg_chapters_with_no_sentences}\n` +
+    `  m2_candidate_concepts_count=${rawConcepts.length}\n` +
+    `  m2_filtered_concepts_count=${filteredConcepts.length}\n` +
+    `  m2_final_concepts_count=${concepts.length}\n` +
+    `  m2_rejected_count=${rawConcepts.length - filteredConcepts.length}\n` +
+    `  m2_reject_reasons=${JSON.stringify(rejectReasons)}\n` +
+    `  m2_fallback_level=${_dbg_fallback_level}\n` +
+    `  m2_final_topic="${finalTopic}"`
   );
 
   // Detect reasoning type
@@ -458,6 +623,7 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
     source_issues: [
       { code: "FALLBACK_ANALYSIS", message: "Analyse locale heuristique (LLM non disponible)", severity: "warning" },
       ...(_dbg_fallback_level === "emergency" ? [{ code: "EMERGENCY_EXTRACTION" as const, message: `Extraction de secours utilisée — ${Object.entries(rejectReasons).map(([r, c]) => `${r}:${c}`).join(", ")}`, severity: "warning" as const }] : []),
+      ...(_dbg_fallback_level === "heuristic_secours" ? [{ code: "HEURISTIC_LAST_RESORT" as const, message: `Mode secours heuristique activé — toutes les méthodes standard ont échoué sur ${clean_text.length} caractères`, severity: "error" as const }] : []),
     ],
     total_concepts: concepts.length,
     critical_count: concepts.filter((c) => c.criticality === 1).length,
@@ -467,6 +633,138 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
     audience_mismatch_risk: mismatch?.risk_level ?? 0,
     audience_mismatch_message: mismatch?.message,
   };
+}
+
+// ---------- Heuristic Last-Resort Extraction ----------
+
+/**
+ * P0 GUARD: Heuristic last-resort concept extraction.
+ * When ALL other methods fail (chapter, sentence, emergency), this function
+ * extracts concepts from:
+ * 1. Segment titles and headings (probable chapter/section names)
+ * 2. Salient lines (lines that look like definitions, key terms, or bullet headers)
+ * 3. Frequent noun-phrase patterns
+ *
+ * This guarantees a minimum of 3-10 concepts for any document > 500 chars.
+ */
+function extractHeuristicConcepts(
+  rawText: string,
+  segments: SegmentOutput[],
+): AnalyzedConcept[] {
+  const concepts: AnalyzedConcept[] = [];
+  const seenLabels = new Set<string>();
+
+  function addConcept(label: string, definition: string, criticality: 1 | 2 | 3 | 4, source: string) {
+    const cleanLabel = label.trim().replace(/\s{2,}/g, " ");
+    if (cleanLabel.length < 3) return;
+    const key = cleanLabel.toLowerCase().replace(/[^a-zà-ÿ0-9]/g, "");
+    if (seenLabels.has(key)) return;
+    seenLabels.add(key);
+
+    const effectiveDef = definition.trim().length >= 10
+      ? definition.trim().slice(0, 250)
+      : `Concept extrait du document : ${cleanLabel}`;
+
+    concepts.push({
+      stable_key: `concept_heuristic_${concepts.length}`,
+      label: cleanLabel,
+      definition: effectiveDef,
+      type: "general",
+      criticality,
+      criticality_score: criticality === 1 ? 1 : criticality === 2 ? 0.7 : criticality === 3 ? 0.4 : 0.2,
+      bloom_target: "remember",
+      relations: [],
+      prerequisites: [],
+      source_confidence: 0.25,
+      source_trace: [{ segment_index: 0, excerpt: `[heuristic:${source}] ${cleanLabel}` }],
+      uncertain: true,
+    });
+  }
+
+  // === Strategy 1: Extract from segment titles ===
+  for (const seg of segments) {
+    if (!seg.title || seg.title.trim().length < 3) continue;
+    const cleaned = cleanMainTopic(seg.title);
+    if (cleaned.length >= 3 && !/^(?:Introduction|Conclusion|Résumé|Bibliographie)\s*$/i.test(cleaned)) {
+      // Use first sentence of content as definition
+      const firstSentence = seg.content
+        .split(/[.!?\n]/)
+        .map(s => s.trim())
+        .find(s => s.length > 15) || seg.content.slice(0, 200);
+      addConcept(cleaned, firstSentence, concepts.length < 3 ? 1 : 2, "segment_title");
+    }
+    if (concepts.length >= 10) break;
+  }
+
+  // === Strategy 2: Extract salient lines from raw text ===
+  // Lines that look like headings, definitions, or key terms
+  if (concepts.length < 5) {
+    const lines = rawText.split(/\n/).map(l => l.trim()).filter(l => l.length > 5);
+
+    for (const line of lines) {
+      if (concepts.length >= 10) break;
+
+      // Detect heading-like lines (short, capitalized, no trailing punctuation)
+      const isHeading = line.length >= 5 && line.length <= 100
+        && /^[A-ZÀ-Ÿ]/.test(line)
+        && !/[.!?;,]$/.test(line)
+        && !isEditorialArtifactForHeuristic(line);
+
+      // Detect definition-like lines ("X est/sont/désigne...")
+      const isDefinition = /^.{3,60}\s+(?:est|sont|désigne|signifie|correspond|se définit)\s/i.test(line);
+
+      // Detect bold/emphasized patterns (often key terms in PDFs)
+      const isKeyTerm = /^[A-ZÀ-Ÿ][A-ZÀ-Ÿa-zà-ÿ\s\-–—]{2,50}\s*:/.test(line);
+
+      if (isHeading || isDefinition || isKeyTerm) {
+        const label = isDefinition
+          ? (line.match(/^(.{3,60}?)\s+(?:est|sont|désigne|signifie|correspond|se définit)/i)?.[1] || line.slice(0, 60))
+          : isKeyTerm
+            ? (line.match(/^([^:]{3,50})/)?.[1]?.trim() || line.slice(0, 60))
+            : line.slice(0, 80);
+        const definition = isDefinition || isKeyTerm ? line : `Section ou concept clé identifié : ${line.slice(0, 150)}`;
+        addConcept(label, definition, concepts.length < 3 ? 2 : 3, isDefinition ? "definition_line" : isKeyTerm ? "key_term" : "heading_line");
+      }
+    }
+  }
+
+  // === Strategy 3: Force-extract from first N substantive lines ===
+  if (concepts.length < 3) {
+    const substantiveLines = rawText
+      .split(/\n/)
+      .map(l => l.trim())
+      .filter(l => l.length > 15 && /[a-zA-ZÀ-ÿ]{3,}/.test(l) && !isEditorialArtifactForHeuristic(l));
+
+    for (let i = 0; i < Math.min(10, substantiveLines.length) && concepts.length < 5; i++) {
+      const line = substantiveLines[i];
+      const words = line.split(/\s+/);
+      const label = words.slice(0, 6).join(" ");
+      addConcept(label, line.slice(0, 250), concepts.length < 2 ? 2 : 3, "substantive_line");
+    }
+  }
+
+  console.info(
+    `[COGNITIO][M2] Heuristic extraction detail:\n` +
+    `  from_segment_titles=${[...seenLabels].length}\n` +
+    `  total_heuristic_concepts=${concepts.length}\n` +
+    `  labels=[${concepts.map(c => `"${c.label}"`).join(", ")}]`
+  );
+
+  return concepts;
+}
+
+/**
+ * Quick editorial artifact check for heuristic extraction.
+ * Less aggressive than the main filter — we want to keep as much as possible.
+ */
+function isEditorialArtifactForHeuristic(line: string): boolean {
+  return /^(?:COM\s+)?R2C\s*:/i.test(line)
+    || /^(?:Rang|Item|UE|DFGSM|ECN|EDN)\s+\d/i.test(line)
+    || /^(?:Page|Version)\s+\d/i.test(line)
+    || /^(?:Université|Faculté|Institut|École)\s/i.test(line)
+    || /^en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS)\s*$/i.test(line)
+    || /^©\s/.test(line)
+    || /^\d+\s*[\/\-–]\s*\d+\s*$/.test(line);
 }
 
 // ---------- Concept Label Builder ----------
