@@ -187,7 +187,7 @@ export async function analyzeAndPersist(input: M2_Input): Promise<M2_Output> {
 // ---------- Getters ----------
 
 export async function getCourseProfile(documentId: string): Promise<CourseProfile | null> {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("course_profiles")
     .select("*")
     .eq("document_id", documentId)
