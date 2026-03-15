@@ -197,7 +197,7 @@ async function upsertConceptNode(
     const { data, error } = await (supabase as any)
       .from("learner_knowledge_graph")
       .update(nodeData)
-      .eq("id", (existing as Record<string, unknown>).id)
+      .eq("id", (existing as Record<string, unknown>).id as string)
       .select("*")
       .single();
     if (error) throw new Error(`Knowledge graph update failed: ${error.message}`);
