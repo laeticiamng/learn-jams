@@ -136,7 +136,7 @@ export async function persistAnalysis(
 
   const { data: profile, error: profileError } = await supabase
     .from("course_profiles")
-    .insert(profileRow)
+    .insert([profileRow])
     .select("id")
     .single();
 

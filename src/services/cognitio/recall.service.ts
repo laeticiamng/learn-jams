@@ -109,12 +109,12 @@ export async function saveRecallTest(
 ) {
   const { data, error } = await supabase
     .from("recall_tests")
-    .insert({
+    .insert([{
       user_id: userId,
       transformation_id: transformationId,
       test_type: testType,
       questions_json: questions as unknown as Json,
-    })
+    }])
     .select("id")
     .single();
 
@@ -156,9 +156,9 @@ export async function getPendingRetests(userId: string) {
 
   const existingByTransformation = new Map<string, Set<string>>();
   for (const test of existingTests ?? []) {
-    const set = existingByTransformation.get(test.transformation_id) ?? new Set();
-    set.add(test.test_type);
-    existingByTransformation.set(test.transformation_id, set);
+    const set = existingByTransformation.get(test.transformation_id ?? '') ?? new Set();
+    set.add(test.test_type ?? '');
+    existingByTransformation.set(test.transformation_id ?? '', set);
   }
 
   const pending: { mission_run_id: string; mission_id: string; test_type: TestType; due_since: string }[] = [];

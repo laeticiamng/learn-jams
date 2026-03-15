@@ -31,12 +31,11 @@ export async function assignExperiment(input: AssignExperimentInput): Promise<Ex
 
   const { data, error } = await supabase
     .from("experiment_assignments")
-    .insert({
-      user_id: input.user_id ?? null,
-      anonymous_id: input.anonymous_id ?? null,
+    .insert([{
+      user_id: input.user_id ?? '',
       experiment_key: input.experiment_key,
       variant,
-    })
+    }])
     .select("*")
     .single();
 
@@ -50,11 +49,12 @@ export async function startExperimentRun(
 ): Promise<ExperimentRun> {
   const { data, error } = await supabase
     .from("experiment_runs")
-    .insert({
+    .insert([{
       assignment_id: assignmentId,
+      experiment_key: '',
       transformation_id: transformationId ?? null,
       status: "started",
-    })
+    }])
     .select("*")
     .single();
 
@@ -70,14 +70,16 @@ export async function completeExperimentRun(runId: string): Promise<void> {
 }
 
 export async function recordMeasurement(input: RecordMeasurementInput): Promise<void> {
+  const row: Record<string, unknown> = {
+    experiment_run_id: input.experiment_run_id,
+    experiment_key: (input as unknown as Record<string, unknown>).experiment_key ?? '',
+    metric_key: input.measure_key ?? '',
+    measure_value_numeric: input.value_numeric ?? null,
+    measure_value_text: input.value_text ?? null,
+  };
   const { error } = await supabase
     .from("experiment_measurements")
-    .insert({
-      experiment_run_id: input.experiment_run_id,
-      measure_key: input.measure_key,
-      measure_value_numeric: input.value_numeric ?? null,
-      measure_value_text: input.value_text ?? null,
-    });
+    .insert([row] as any);
 
   if (error) throw new Error(`Measurement recording failed: ${error.message}`);
 }

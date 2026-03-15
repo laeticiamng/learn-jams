@@ -218,12 +218,12 @@ export async function getFormatDecision(architectureId: string): Promise<M4_Outp
 
   return {
     decision_id: data.id,
-    architecture_id: data.architecture_id,
+    architecture_id: data.architecture_id ?? '',
     chosen_format: data.chosen_format as unknown as ChosenFormat,
-    justification: data.justification,
-    matrix_reasoning: data.matrix_reasoning,
-    estimated_duration_sec: data.estimated_duration_sec,
-    needs_split: data.needs_split,
+    justification: data.justification ?? '',
+    matrix_reasoning: data.matrix_reasoning ?? '',
+    estimated_duration_sec: data.estimated_duration_sec ?? 0,
+    needs_split: data.needs_split ?? false,
     split_count: data.split_count ?? undefined,
     modules: data.modules_json as unknown as FormatDecisionModule[] | undefined,
     overrides_applied: data.overrides_applied_json as unknown as FormatOverride[],

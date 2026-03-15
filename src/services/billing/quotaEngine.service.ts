@@ -158,7 +158,7 @@ async function getCreditBalance(userId: string, feature: FeatureKey): Promise<nu
     .order("created_at", { ascending: true });
 
   if (!data) return 0;
-  return data.reduce((sum, row) => sum + row.remaining, 0);
+  return data.reduce((sum, row) => sum + (row.remaining ?? 0), 0);
 }
 
 async function decrementCredits(userId: string, feature: FeatureKey, amount: number): Promise<void> {
@@ -177,10 +177,11 @@ async function decrementCredits(userId: string, feature: FeatureKey, amount: num
   let toConsume = amount;
   for (const row of data) {
     if (toConsume <= 0) break;
-    const consume = Math.min(toConsume, row.remaining);
+    const rowRemaining = row.remaining ?? 0;
+    const consume = Math.min(toConsume, rowRemaining);
     await supabase
       .from("user_credit_balances")
-      .update({ remaining: row.remaining - consume, updated_at: now })
+      .update({ remaining: rowRemaining - consume, updated_at: now })
       .eq("id", row.id);
     toConsume -= consume;
   }
@@ -215,7 +216,8 @@ export async function getUserUsageSummary(
   const creditMap: Record<string, number> = {};
   if (creditData) {
     for (const row of creditData) {
-      creditMap[row.credit_type] = (creditMap[row.credit_type] ?? 0) + row.remaining;
+      const ct = row.credit_type ?? 'standard';
+      creditMap[ct] = (creditMap[ct] ?? 0) + (row.remaining ?? 0);
     }
   }
 

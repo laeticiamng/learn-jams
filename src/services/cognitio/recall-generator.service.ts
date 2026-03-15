@@ -350,14 +350,14 @@ export async function persistRecallTest(
 ): Promise<string> {
   const { data, error } = await supabase
     .from("recall_tests")
-    .insert({
+    .insert([{
       id: output.test_id,
       user_id: userId,
       transformation_id: transformationId,
       test_type: output.test_type,
       questions_json: output.items as unknown as Json,
       generated_from_version: 1,
-    })
+    }])
     .select("id")
     .single();
 
