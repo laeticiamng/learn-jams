@@ -256,13 +256,13 @@ describe("validateM5Input", () => {
     expect(result.errors.some(e => e.code === "NO_CONCEPTS")).toBe(true);
   });
 
-  it("rejects when no segments", () => {
+  it("warns when no segments (fallback segment will be created)", () => {
     const input = makeM5Input({
       m3_output: makeM3Output({ segments: [] }),
     });
     const result = validateM5Input(input);
-    expect(result.valid).toBe(false);
-    expect(result.errors.some(e => e.code === "NO_SEGMENTS")).toBe(true);
+    expect(result.valid).toBe(true);
+    expect(result.warnings.some(e => e.code === "NO_SEGMENTS")).toBe(true);
   });
 });
 

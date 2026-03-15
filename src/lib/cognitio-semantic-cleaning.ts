@@ -373,13 +373,16 @@ export function compressDefinition(rawDefinition: string, maxLength: number = 20
 export function cleanMainTopic(rawTopic: string): string {
   let topic = rawTopic.trim();
 
+  // Remove full "R2C : Rang A en noir - Rang B en ..." classification blocks (aggressive)
+  topic = topic.replace(/R2C\s*:?\s*(?:Rang\s+[A-Z]\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS)?\s*[-–—]?\s*)+/gi, "").trim();
+
   // Remove COM R2C metadata
   topic = topic.replace(/\bCOM\s+R2C\s*:\s*/gi, "");
-  topic = topic.replace(/\s*[-–—]\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS)\b/gi, "");
-  topic = topic.replace(/\s*en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS)\b/gi, "");
+  topic = topic.replace(/\s*[-–—]\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS)\b.*/gi, "");
+  topic = topic.replace(/\s*en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS)\b.*/gi, "");
 
-  // Remove Rang labels
-  topic = topic.replace(/\s*\(?\s*Rang\s+[A-Z]\s*\)?\s*/gi, "");
+  // Remove Rang labels (including "Rang A en noir" patterns)
+  topic = topic.replace(/\s*\(?\s*Rang\s+[A-Z]\s*(?:en\s+\w+)?\s*\)?\s*/gi, "");
   topic = topic.replace(/\s*R2C[^,)]*\s*/gi, "");
 
   // Remove Item/UE/N° prefixes
@@ -397,7 +400,12 @@ export function cleanMainTopic(rawTopic: string): string {
   // Remove trailing punctuation
   topic = topic.replace(/\s*[-–—:;,]\s*$/, "").trim();
 
-  return topic || rawTopic.trim();
+  // P0: If cleaning left a very short or empty string, the topic was pure noise
+  if (topic.length < 3) {
+    return "";
+  }
+
+  return topic;
 }
 
 /**
@@ -405,12 +413,17 @@ export function cleanMainTopic(rawTopic: string): string {
  * Uses the first meaningful heading, skipping editorial headers.
  */
 export function extractCleanMainTopic(segments: { title: string | null; content: string; hierarchy_level: number }[]): string {
+  const rejectedTopics: string[] = [];
+
   // Try finding the first level-1 heading that isn't noise
   for (const seg of segments) {
     if (!seg.title || seg.hierarchy_level > 1) continue;
     const cleaned = cleanMainTopic(seg.title);
     if (cleaned.length >= 5 && !isEditorialArtifact(cleaned)) {
       return cleaned;
+    }
+    if (seg.title.trim().length > 0) {
+      rejectedTopics.push(seg.title.trim());
     }
   }
 
@@ -423,14 +436,25 @@ export function extractCleanMainTopic(segments: { title: string | null; content:
     }
   }
 
-  // Fallback: first substantial content
+  // Fallback: first substantial content sentence
   for (const seg of segments) {
     if (seg.content.length < 30) continue;
     const firstSentence = seg.content.split(/[.!?]/)[0]?.trim();
     if (firstSentence && firstSentence.length >= 10) {
       const words = firstSentence.split(/\s+/).slice(0, 10).join(" ");
-      return cleanMainTopic(words);
+      const cleaned = cleanMainTopic(words);
+      if (cleaned.length >= 5) {
+        return cleaned;
+      }
     }
+  }
+
+  // P0: Log when all topic candidates were rejected
+  if (rejectedTopics.length > 0) {
+    console.warn(
+      `[COGNITIO][P0] All topic candidates rejected: ${JSON.stringify(rejectedTopics)}. ` +
+      `Using "Sujet non identifié".`
+    );
   }
 
   return "Sujet non identifié";

@@ -50,10 +50,17 @@ export async function runDynamicSheetGeneration(input: M5_Input): Promise<M5_Out
 // ---------- Local Generator ----------
 
 export function generateDynamicSheetLocally(input: M5_Input): M5_Output {
-  // Validate input — now non-fatal for empty concepts/segments
+  // Validate input — fatal errors now block generation
   const inputValidation = validateM5Input(input);
-  if (inputValidation.errors.length > 0) {
-    console.warn(`[COGNITIO][M5] Validation warnings: ${inputValidation.errors.map(e => e.message).join(", ")}`);
+  if (!inputValidation.valid) {
+    const fatalErrors = inputValidation.errors.filter(e => e.severity === "fatal" || e.severity === "error");
+    if (fatalErrors.length > 0) {
+      console.error(`[COGNITIO][M5] Input validation FAILED: ${fatalErrors.map(e => e.message).join(", ")}`);
+      throw new Error(fatalErrors.map(e => e.message).join(". "));
+    }
+  }
+  if (inputValidation.warnings.length > 0) {
+    console.warn(`[COGNITIO][M5] Validation warnings: ${inputValidation.warnings.map(e => e.message).join(", ")}`);
   }
 
   const { m2_output, m3_output, m4_output, source_document, user_objective } = input;

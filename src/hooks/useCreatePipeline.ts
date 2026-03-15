@@ -23,6 +23,7 @@ import type { M7_Input } from "@/domain/cognitio/qa.contracts";
 import type { M5_Output } from "@/domain/cognitio/generation.contracts";
 import type { M5B_Output } from "@/domain/cognitio/story.contracts";
 import type { CreateFormat } from "@/lib/create-format-config";
+import { validateGenerationNotEmpty } from "@/domain/cognitio/generation.validators";
 
 export type PipelinePhase =
   | "import"
@@ -99,6 +100,8 @@ export function useCreatePipeline() {
         raw_text_length: 0,
         cleaned_text_length: 0,
         detected_sections_count: 0,
+        raw_topic: "",
+        cleaned_topic: "",
         extracted_concepts_raw_count: 0,
         extracted_concepts_after_filter_count: 0,
         rejected_concepts_count: 0,
@@ -112,6 +115,7 @@ export function useCreatePipeline() {
         format_override_applied: false,
         generator_called: "",
         generation_success: false,
+        final_generation_status: "pending",
       };
 
       // === M1: Ingestion ===
@@ -165,8 +169,11 @@ export function useCreatePipeline() {
       }
 
       // P0: Populate M2 counters
+      counters.raw_topic = m2Result.main_topic;
+      counters.cleaned_topic = m2Result.main_topic;
       counters.extracted_concepts_after_filter_count = m2Result.key_concepts.length;
       counters.extracted_concepts_raw_count = m2Result.total_concepts; // after dedup, but best we have here
+      counters.rejected_concepts_count = m2Result.total_concepts - m2Result.key_concepts.length;
       console.info(
         `[COGNITIO][P0] M2 done: concepts=${m2Result.key_concepts.length}, ` +
         `critical=${m2Result.critical_count}, density=${m2Result.density}, ` +
@@ -313,6 +320,34 @@ export function useCreatePipeline() {
         }
       }
 
+      // === P0 VALIDATION GATE: Reject empty generations ===
+      if (m5Result) {
+        const gate = validateGenerationNotEmpty(m5Result);
+        if (!gate.passed) {
+          counters.generation_success = false;
+          counters.final_generation_status = "empty_generation";
+          counters.success_gate_reason = gate.reason;
+          counters.generation_error = gate.reason;
+          setPipelineError({
+            source: "generation",
+            message: `Le document a été importé, mais le moteur n'a pas réussi à extraire suffisamment de concepts exploitables pour générer ce format. ${gate.reason}`,
+            phase: "generating",
+          });
+          setDebugCounters(counters);
+          console.error(
+            `[COGNITIO][P0] EMPTY GENERATION GATE FAILED. ` +
+            `reason="${gate.reason}", counters=${JSON.stringify(gate.counters)}, ` +
+            `full_debug=${JSON.stringify(counters, null, 2)}`
+          );
+          setPhase("result");
+          return;
+        }
+        console.info(
+          `[COGNITIO][P0] Generation gate PASSED: ${gate.reason}, ` +
+          `counters=${JSON.stringify(gate.counters)}`
+        );
+      }
+
       // === M6+M7: Recall + QA (non-blocking) ===
       const generationOutput = m5Result || m5bResult;
       if (generationOutput) {
@@ -350,6 +385,8 @@ export function useCreatePipeline() {
 
       // P0: Final debug counters
       counters.generation_success = true;
+      counters.final_generation_status = "success";
+      counters.success_gate_reason = "All gates passed";
       setDebugCounters(counters);
       console.info("[COGNITIO][P0] Pipeline complete. Debug counters:", JSON.stringify(counters, null, 2));
 

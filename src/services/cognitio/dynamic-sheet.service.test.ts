@@ -203,14 +203,16 @@ describe("generateDynamicSheetLocally", () => {
     const input = makeInput({
       m2_output: makeM2({ key_concepts: [] }),
     });
-    expect(() => generateDynamicSheetLocally(input)).toThrow(/concepts/i);
+    expect(() => generateDynamicSheetLocally(input)).toThrow(/concept/i);
   });
 
-  it("rejects empty segments", () => {
+  it("uses fallback segment when segments are empty", () => {
     const input = makeInput({
       m3_output: makeM3({ segments: [] }),
     });
-    expect(() => generateDynamicSheetLocally(input)).toThrow(/segments/i);
+    // Should NOT throw — fallback segment is created
+    const output = generateDynamicSheetLocally(input);
+    expect(output.content_blocks.length).toBeGreaterThan(0);
   });
 
   it("creates visual anchors for pedagogical blocks with critical concepts", () => {

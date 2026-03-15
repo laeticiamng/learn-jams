@@ -346,6 +346,8 @@ export interface PipelineDebugCounters {
   detected_sections_count: number;
 
   // M2 — Analysis
+  raw_topic: string;
+  cleaned_topic: string;
   extracted_concepts_raw_count: number;
   extracted_concepts_after_filter_count: number;
   rejected_concepts_count: number;
@@ -367,6 +369,10 @@ export interface PipelineDebugCounters {
   generator_called: string;
   generation_success: boolean;
   generation_error?: string;
+
+  // Validation gate
+  final_generation_status: "success" | "empty_generation" | "error" | "pending";
+  success_gate_reason?: string;
 }
 
 // ---------- M9: Ops Metrics ----------
