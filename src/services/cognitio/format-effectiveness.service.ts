@@ -78,7 +78,7 @@ export async function upsertFormatEffectiveness(
   );
 
   if (existing) {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("learner_format_effectiveness")
       .update({ ...updates, updated_at: new Date().toISOString() })
       .eq("id", (existing as Record<string, unknown>).id)
