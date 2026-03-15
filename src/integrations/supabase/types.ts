@@ -209,28 +209,37 @@ export type Database = {
         Row: {
           consent_type: string
           created_at: string
+          event_type: string | null
           granted: boolean | null
+          guardian_id: string | null
           id: string
           ip_address: string | null
           metadata_json: Json | null
+          user_agent: string | null
           user_id: string
         }
         Insert: {
           consent_type: string
           created_at?: string
+          event_type?: string | null
           granted?: boolean | null
+          guardian_id?: string | null
           id?: string
           ip_address?: string | null
           metadata_json?: Json | null
+          user_agent?: string | null
           user_id: string
         }
         Update: {
           consent_type?: string
           created_at?: string
+          event_type?: string | null
           granted?: boolean | null
+          guardian_id?: string | null
           id?: string
           ip_address?: string | null
           metadata_json?: Json | null
+          user_agent?: string | null
           user_id?: string
         }
         Relationships: []
@@ -447,6 +456,7 @@ export type Database = {
       }
       experiment_assignments: {
         Row: {
+          anonymous_id: string | null
           created_at: string
           experiment_key: string
           id: string
@@ -454,6 +464,7 @@ export type Database = {
           variant: string
         }
         Insert: {
+          anonymous_id?: string | null
           created_at?: string
           experiment_key: string
           id?: string
@@ -461,6 +472,7 @@ export type Database = {
           variant?: string
         }
         Update: {
+          anonymous_id?: string | null
           created_at?: string
           experiment_key?: string
           id?: string
@@ -473,7 +485,11 @@ export type Database = {
         Row: {
           created_at: string
           experiment_key: string
+          experiment_run_id: string | null
           id: string
+          measure_key: string | null
+          measure_value_numeric: number | null
+          measure_value_text: string | null
           metadata_json: Json | null
           metric_key: string
           metric_value: number | null
@@ -483,7 +499,11 @@ export type Database = {
         Insert: {
           created_at?: string
           experiment_key: string
+          experiment_run_id?: string | null
           id?: string
+          measure_key?: string | null
+          measure_value_numeric?: number | null
+          measure_value_text?: string | null
           metadata_json?: Json | null
           metric_key: string
           metric_value?: number | null
@@ -493,7 +513,11 @@ export type Database = {
         Update: {
           created_at?: string
           experiment_key?: string
+          experiment_run_id?: string | null
           id?: string
+          measure_key?: string | null
+          measure_value_numeric?: number | null
+          measure_value_text?: string | null
           metadata_json?: Json | null
           metric_key?: string
           metric_value?: number | null
@@ -504,6 +528,8 @@ export type Database = {
       }
       experiment_runs: {
         Row: {
+          assignment_id: string | null
+          completed_at: string | null
           config_json: Json | null
           created_at: string
           ended_at: string | null
@@ -511,8 +537,11 @@ export type Database = {
           id: string
           started_at: string | null
           status: string | null
+          transformation_id: string | null
         }
         Insert: {
+          assignment_id?: string | null
+          completed_at?: string | null
           config_json?: Json | null
           created_at?: string
           ended_at?: string | null
@@ -520,8 +549,11 @@ export type Database = {
           id?: string
           started_at?: string | null
           status?: string | null
+          transformation_id?: string | null
         }
         Update: {
+          assignment_id?: string | null
+          completed_at?: string | null
           config_json?: Json | null
           created_at?: string
           ended_at?: string | null
@@ -529,6 +561,7 @@ export type Database = {
           id?: string
           started_at?: string | null
           status?: string | null
+          transformation_id?: string | null
         }
         Relationships: []
       }
@@ -1143,6 +1176,7 @@ export type Database = {
       }
       learner_format_effectiveness: {
         Row: {
+          attempts_count: number | null
           created_at: string
           engagement_score: number | null
           format: string
@@ -1155,6 +1189,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          attempts_count?: number | null
           created_at?: string
           engagement_score?: number | null
           format?: string
@@ -1167,6 +1202,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          attempts_count?: number | null
           created_at?: string
           engagement_score?: number | null
           format?: string
@@ -1604,6 +1640,69 @@ export type Database = {
         }
         Relationships: []
       }
+      provider_routes: {
+        Row: {
+          capability: string
+          config_json: Json | null
+          created_at: string
+          domain: string
+          enabled: boolean | null
+          id: string
+          priority: number | null
+          provider_key: string
+        }
+        Insert: {
+          capability: string
+          config_json?: Json | null
+          created_at?: string
+          domain: string
+          enabled?: boolean | null
+          id?: string
+          priority?: number | null
+          provider_key: string
+        }
+        Update: {
+          capability?: string
+          config_json?: Json | null
+          created_at?: string
+          domain?: string
+          enabled?: boolean | null
+          id?: string
+          priority?: number | null
+          provider_key?: string
+        }
+        Relationships: []
+      }
+      providers: {
+        Row: {
+          config_json: Json | null
+          created_at: string
+          display_name: string | null
+          enabled: boolean | null
+          id: string
+          provider_key: string
+          provider_type: string | null
+        }
+        Insert: {
+          config_json?: Json | null
+          created_at?: string
+          display_name?: string | null
+          enabled?: boolean | null
+          id?: string
+          provider_key: string
+          provider_type?: string | null
+        }
+        Update: {
+          config_json?: Json | null
+          created_at?: string
+          display_name?: string | null
+          enabled?: boolean | null
+          id?: string
+          provider_key?: string
+          provider_type?: string | null
+        }
+        Relationships: []
+      }
       publish_decisions: {
         Row: {
           created_at: string
@@ -1840,6 +1939,8 @@ export type Database = {
           event_type: string
           id: string
           ip_address: string | null
+          ip_hash: string | null
+          metadata_json: Json | null
           severity: string
           user_id: string | null
         }
@@ -1849,6 +1950,8 @@ export type Database = {
           event_type: string
           id?: string
           ip_address?: string | null
+          ip_hash?: string | null
+          metadata_json?: Json | null
           severity?: string
           user_id?: string | null
         }
@@ -1858,8 +1961,46 @@ export type Database = {
           event_type?: string
           id?: string
           ip_address?: string | null
+          ip_hash?: string | null
+          metadata_json?: Json | null
           severity?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      seed_transformations: {
+        Row: {
+          created_at: string
+          difficulty: string | null
+          format: string | null
+          id: string
+          is_featured: boolean | null
+          recall_tests_json: Json | null
+          subject: string | null
+          title: string | null
+          transformation_json: Json | null
+        }
+        Insert: {
+          created_at?: string
+          difficulty?: string | null
+          format?: string | null
+          id?: string
+          is_featured?: boolean | null
+          recall_tests_json?: Json | null
+          subject?: string | null
+          title?: string | null
+          transformation_json?: Json | null
+        }
+        Update: {
+          created_at?: string
+          difficulty?: string | null
+          format?: string | null
+          id?: string
+          is_featured?: boolean | null
+          recall_tests_json?: Json | null
+          subject?: string | null
+          title?: string | null
+          transformation_json?: Json | null
         }
         Relationships: []
       }
@@ -2104,6 +2245,7 @@ export type Database = {
           resolution_note: string | null
           resolved_at: string | null
           status: string
+          updated_at: string | null
           user_id: string | null
         }
         Insert: {
@@ -2114,6 +2256,7 @@ export type Database = {
           resolution_note?: string | null
           resolved_at?: string | null
           status?: string
+          updated_at?: string | null
           user_id?: string | null
         }
         Update: {
@@ -2124,6 +2267,7 @@ export type Database = {
           resolution_note?: string | null
           resolved_at?: string | null
           status?: string
+          updated_at?: string | null
           user_id?: string | null
         }
         Relationships: []
@@ -2420,6 +2564,42 @@ export type Database = {
           rolling_30d_usage_json?: Json | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      video_assets: {
+        Row: {
+          asset_type: string | null
+          created_at: string
+          id: string
+          metadata_json: Json | null
+          project_id: string | null
+          status: string | null
+          storage_path: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          asset_type?: string | null
+          created_at?: string
+          id?: string
+          metadata_json?: Json | null
+          project_id?: string | null
+          status?: string | null
+          storage_path?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          asset_type?: string | null
+          created_at?: string
+          id?: string
+          metadata_json?: Json | null
+          project_id?: string | null
+          status?: string | null
+          storage_path?: string | null
+          updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }

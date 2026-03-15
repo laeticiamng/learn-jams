@@ -9,14 +9,15 @@ import type { ConsentEvent, ConsentEventInput } from "@/domain/guardian/consent.
 export async function recordConsentEvent(input: ConsentEventInput): Promise<ConsentEvent> {
   const { data, error } = await supabase
     .from("consent_events")
-    .insert({
+    .insert([{
       user_id: input.user_id,
       guardian_id: input.guardian_id ?? null,
       event_type: input.event_type,
+      consent_type: input.event_type,
       metadata_json: (input.metadata_json ?? {}) as Json,
       ip_address: input.ip_address ?? null,
       user_agent: input.user_agent ?? null,
-    })
+    }])
     .select("*")
     .single();
 

@@ -72,12 +72,13 @@ export async function completeExperimentRun(runId: string): Promise<void> {
 export async function recordMeasurement(input: RecordMeasurementInput): Promise<void> {
   const { error } = await supabase
     .from("experiment_measurements")
-    .insert({
+    .insert([{
       experiment_run_id: input.experiment_run_id,
-      measure_key: input.measure_key,
+      experiment_key: input.experiment_key ?? '',
+      metric_key: input.measure_key ?? input.metric_key ?? '',
       measure_value_numeric: input.value_numeric ?? null,
       measure_value_text: input.value_text ?? null,
-    });
+    }]);
 
   if (error) throw new Error(`Measurement recording failed: ${error.message}`);
 }

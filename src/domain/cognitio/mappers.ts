@@ -154,7 +154,7 @@ export function m2OutputToCourseProfileRow(documentId: string, output: M2_Output
     main_topic: output.main_topic,
     learning_objectives_json: output.learning_objectives as unknown as Json,
     reasoning_type: output.reasoning_type,
-    density: output.density === "high" ? 3 : output.density === "medium" ? 2 : 1,
+    density: output.density,
     recommended_template: output.recommended_template,
     concepts_confidence: output.confidence.concepts,
     logic_confidence: output.confidence.logic,

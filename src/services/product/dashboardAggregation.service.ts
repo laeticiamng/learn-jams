@@ -86,7 +86,7 @@ export async function getPedagogicalMetrics(since: string): Promise<PedagogicalM
   // Format effectiveness from learner_format_effectiveness
   const { data: formatData } = await supabase
     .from("learner_format_effectiveness")
-    .select("format, retention_signal, attempts_count");
+    .select("format, retention_signal");
 
   const formatMap = new Map<string, { total: number; count: number }>();
   for (const row of (formatData ?? []) as Record<string, unknown>[]) {
