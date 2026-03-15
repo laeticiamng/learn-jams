@@ -200,7 +200,7 @@ export async function getCourseProfile(documentId: string): Promise<CourseProfil
 }
 
 export async function getConcepts(courseProfileId: string): Promise<Concept[]> {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("concepts")
     .select("*")
     .eq("course_profile_id", courseProfileId)
