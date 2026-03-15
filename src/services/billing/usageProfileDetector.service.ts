@@ -73,7 +73,7 @@ export async function persistUsageProfile(
   const profile = detectUsageProfile(usage);
   const now = new Date().toISOString();
 
-  const { data: existing } = await supabase
+  const { data: existing } = await (supabase as any)
     .from("user_usage_profiles")
     .select("id")
     .eq("user_id", userId)
