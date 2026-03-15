@@ -135,11 +135,18 @@ export function useMissionGeneration() {
         // Step 5: Format Selection
         updateStep("format_selection", { status: "running", message: "Choix du format optimal..." });
         const formatResult = selectFormatLocally({
+          architecture_id: memoryResult.architecture_id,
           course_profile_id: analysisResult.course_profile_id,
+          document_id: document_id,
           total_concepts: analysisResult.total_concepts,
           critical_count: analysisResult.critical_count,
-          knowledge_type: "factual",
+          segment_count: memoryResult.segments.length,
+          total_duration_sec: memoryResult.total_duration_sec,
+          needs_splitting: memoryResult.needs_splitting,
+          reasoning_type: analysisResult.reasoning_type,
+          density: analysisResult.density,
           estimated_complexity: analysisResult.estimated_complexity,
+          structure_type: analysisResult.structure_type,
           quality_score: ingestionResult.confidence_level,
           objective: input.objective,
         });
