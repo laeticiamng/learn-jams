@@ -15,34 +15,33 @@ import type {
 } from "@/domain/cognitio/types";
 import { computeCalibrationGap } from "@/domain/cognitio/validators";
 
+type MissionPhase = "loading" | "intro" | "playing" | "completed";
+
 interface MissionPlayState {
   currentRoomIndex: number;
   currentItemIndex: number;
   isBoss: boolean;
   events: RoomEvent[];
   hintsUsed: Set<string>;
-  isCompleted: boolean;
   runId: string | null;
 }
 
 export function useMissionPlay(missionId: string, userId: string) {
   const [mission, setMission] = useState<MissionContent | null>(null);
+  const [phase, setPhase] = useState<MissionPhase>("loading");
   const [state, setState] = useState<MissionPlayState>({
     currentRoomIndex: 0,
     currentItemIndex: 0,
     isBoss: false,
     events: [],
     hintsUsed: new Set(),
-    isCompleted: false,
     runId: null,
   });
-  const [loading, setLoading] = useState(true);
   const [timerEnabled, setTimerEnabled] = useState(true);
 
   const loadMission = useCallback(async () => {
-    setLoading(true);
+    setPhase("loading");
     try {
-      // Use any-typed query to bypass missing table types
       const { data, error } = await supabase
         .from("generated_missions")
         .select("mission_json")
@@ -56,8 +55,15 @@ export function useMissionPlay(missionId: string, userId: string) {
         : data.mission_json) as MissionContent;
 
       setMission(missionContent);
+      setPhase("intro");
+    } catch (err) {
+      console.error("Failed to load mission:", err);
+      setPhase("loading");
+    }
+  }, [missionId]);
 
-      // Create mission run
+  const startMission = useCallback(async () => {
+    try {
       const { data: run, error: runError } = await supabase
         .from("mission_runs")
         .insert({
@@ -69,17 +75,24 @@ export function useMissionPlay(missionId: string, userId: string) {
         .single();
 
       if (runError) throw runError;
-      setState((prev) => ({ ...prev, runId: run.id }));
+
+      setState({
+        currentRoomIndex: 0,
+        currentItemIndex: 0,
+        isBoss: false,
+        events: [],
+        hintsUsed: new Set(),
+        runId: run.id,
+      });
+      setPhase("playing");
     } catch (err) {
-      console.error("Failed to load mission:", err);
-    } finally {
-      setLoading(false);
+      console.error("Failed to start mission run:", err);
     }
   }, [missionId, userId]);
 
   const currentRoom: MissionRoom | null = useMemo(() => {
     if (!mission) return null;
-    if (state.isBoss && mission.boss) return null; // Boss handled separately
+    if (state.isBoss && mission.boss) return null;
     return mission.rooms[state.currentRoomIndex] ?? null;
   }, [mission, state.currentRoomIndex, state.isBoss]);
 
@@ -153,38 +166,6 @@ export function useMissionPlay(missionId: string, userId: string) {
     return null;
   }, [currentItem, currentRoom, mission, state.isBoss, state.hintsUsed]);
 
-  const nextItem = useCallback(() => {
-    if (!mission) return;
-
-    const items = state.isBoss
-      ? mission.boss?.items ?? []
-      : currentRoom?.items ?? [];
-
-    if (state.currentItemIndex < items.length - 1) {
-      setState((prev) => ({
-        ...prev,
-        currentItemIndex: prev.currentItemIndex + 1,
-      }));
-    } else if (!state.isBoss && state.currentRoomIndex < mission.rooms.length - 1) {
-      // Next room
-      setState((prev) => ({
-        ...prev,
-        currentRoomIndex: prev.currentRoomIndex + 1,
-        currentItemIndex: 0,
-      }));
-    } else if (!state.isBoss && mission.boss) {
-      // Move to boss
-      setState((prev) => ({
-        ...prev,
-        isBoss: true,
-        currentItemIndex: 0,
-      }));
-    } else {
-      // Mission complete
-      completeMission();
-    }
-  }, [mission, currentRoom, state]);
-
   const completeMission = useCallback(async () => {
     if (!state.runId) return;
 
@@ -202,21 +183,52 @@ export function useMissionPlay(missionId: string, userId: string) {
       })
       .eq("id", state.runId);
 
-    setState((prev) => ({ ...prev, isCompleted: true }));
+    setPhase("completed");
   }, [state.runId, state.events, mission]);
+
+  const nextItem = useCallback(() => {
+    if (!mission) return;
+
+    const items = state.isBoss
+      ? mission.boss?.items ?? []
+      : currentRoom?.items ?? [];
+
+    if (state.currentItemIndex < items.length - 1) {
+      setState((prev) => ({
+        ...prev,
+        currentItemIndex: prev.currentItemIndex + 1,
+      }));
+    } else if (!state.isBoss && state.currentRoomIndex < mission.rooms.length - 1) {
+      setState((prev) => ({
+        ...prev,
+        currentRoomIndex: prev.currentRoomIndex + 1,
+        currentItemIndex: 0,
+      }));
+    } else if (!state.isBoss && mission.boss) {
+      setState((prev) => ({
+        ...prev,
+        isBoss: true,
+        currentItemIndex: 0,
+      }));
+    } else {
+      completeMission();
+    }
+  }, [mission, currentRoom, state, completeMission]);
 
   const toggleTimer = useCallback(() => setTimerEnabled((prev) => !prev), []);
 
   return {
     mission,
+    phase,
     state,
     currentRoom,
     currentItem,
     totalRooms,
     progress,
-    loading,
+    loading: phase === "loading",
     timerEnabled,
     loadMission,
+    startMission,
     submitAnswer,
     useHint,
     nextItem,

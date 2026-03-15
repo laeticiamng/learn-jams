@@ -275,7 +275,7 @@ function buildSynthesisOnly(input: GenerateExperienceInput): MissionContent {
   };
 }
 
-async function saveMission(
+export async function saveMission(
   input: GenerateExperienceInput,
   result: GenerateExperienceOutput
 ) {

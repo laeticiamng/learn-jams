@@ -15,7 +15,7 @@ import { useAnimatedStoryGeneration } from "@/hooks/useAnimatedStoryGeneration";
 import { useQAStatus } from "@/hooks/useQAStatus";
 import { useProductTracking } from "@/hooks/useProductTracking";
 import { generateRecallSuiteLocally } from "@/services/cognitio/recall-generator.service";
-import { generateMissionLocally } from "@/services/cognitio/experience-generator.service";
+import { generateMissionLocally, saveMission } from "@/services/cognitio/experience-generator.service";
 import type { IngestInput, GenerateExperienceOutput } from "@/domain/cognitio/contracts";
 import type { LearningObjective, ChosenFormat } from "@/domain/cognitio/types";
 import type { LearnerAudienceProfile } from "@/domain/cognitio/learner-profile.types";
@@ -218,6 +218,26 @@ export function useCreatePipeline() {
             objective: currentObjective,
           });
           setMissionResult(m5cResult);
+          // Persist mission to database so the player can load it
+          await saveMission(
+            {
+              document_id: m1Result.document_id,
+              course_profile_id: m2Result.course_profile_id,
+              user_id: session?.user?.id ?? "",
+              chosen_format: "mission_interactive",
+              learning_contract: m3Result.pedagogical_contract as any,
+              concepts: m2Result.key_concepts,
+              confusion_pairs: m2Result.confusion_pairs,
+              visual_anchors: m3Result.visual_anchors.map((va) => ({
+                concept_key: va.concept_key,
+                anchor_type: va.anchor_type as "metaphor" | "comparison" | "mnemonic" | "image_desc",
+                content: va.content,
+              })),
+              quality_score: m1Result.confidence_level,
+              objective: currentObjective,
+            },
+            m5cResult
+          );
         } catch (missionErr) {
           const errMsg = missionErr instanceof Error ? missionErr.message : "Échec de la génération de la mission";
           setPipelineError({ source: "generation", message: errMsg, phase: "generating" });
