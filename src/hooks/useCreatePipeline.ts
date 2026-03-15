@@ -263,10 +263,15 @@ export function useCreatePipeline() {
         detail: `concepts_from_segment_0=${conceptsFromSeg0}, concepts_from_body=${conceptsFromBody}, ` +
           `front_matter=${m2Result._diag_front_matter_detected ?? false}, ` +
           `seg0_quarantined=${m2Result._diag_segment_0_quarantined ?? false}, ` +
+          `seg0_quarantined_retroactive=${m2Result._diag_segment_0_quarantined_retroactive ?? false}, ` +
+          `body_pass_trigger_condition_met=${m2Result._diag_body_pass_trigger_condition_met ?? false}, ` +
           `body_pass=${m2Result._diag_body_only_second_pass_triggered ?? false}, ` +
-          `body_concepts=${m2Result._diag_body_only_second_pass_concepts_count ?? 0}`,
+          `body_pass_reason_if_not=${m2Result._diag_body_pass_reason_if_not_triggered ?? "n/a"}, ` +
+          `body_concepts=${m2Result._diag_body_only_second_pass_concepts_count ?? 0}, ` +
+          `secondary_topic="${m2Result._diag_secondary_pass_topic ?? "n/a"}", ` +
+          `secondary_concepts=${m2Result._diag_secondary_pass_concepts_count ?? 0}`,
         warning: conceptsFromSeg0 > 0 && conceptsFromBody === 0 && m1Result.segments.length > 1
-          ? `All concepts from segment 0 — body segments ignored`
+          ? `WARNING: All concepts from segment 0 — body segments ignored`
           : undefined,
       });
 

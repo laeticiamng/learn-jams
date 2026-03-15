@@ -132,12 +132,15 @@ export interface M2_Output {
   // P0: Body extraction diagnostic — tells pipeline hook whether body-only pass was attempted
   _diag_front_matter_detected?: boolean;
   _diag_segment_0_quarantined?: boolean;
+  _diag_segment_0_quarantined_retroactive?: boolean; // true if quarantine was applied retroactively (not by isSegment0Noisy)
   _diag_artifact_only_first_pass?: boolean;
   _diag_body_only_second_pass_triggered?: boolean;
   _diag_body_only_second_pass_concepts_count?: number;
   _diag_segment_0_noise_score?: number;
   _diag_front_matter_lines_count?: number;
   _diag_front_matter_chars_count?: number;
+  _diag_body_pass_trigger_condition_met?: boolean;
+  _diag_body_pass_reason_if_not_triggered?: string;
   // P0: Secondary pass diagnostics
   _diag_secondary_pass_topic?: string;
   _diag_secondary_pass_concepts_count?: number;
@@ -412,9 +415,12 @@ export interface PipelineDebugCounters {
   // P0: Body extraction pipeline diagnostic
   front_matter_detected?: boolean;
   segment_0_quarantined?: boolean;
+  segment_0_quarantined_retroactive?: boolean;
   artifact_only_first_pass?: boolean;
   body_only_second_pass_triggered?: boolean;
   body_only_second_pass_concepts_count?: number;
+  body_pass_trigger_condition_met?: boolean;
+  body_pass_reason_if_not_triggered?: string;
 
   // P0: Secondary pass detailed diagnostics
   secondary_pass_topic?: string;
