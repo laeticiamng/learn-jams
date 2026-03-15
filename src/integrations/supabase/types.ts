@@ -445,6 +445,93 @@ export type Database = {
           },
         ]
       }
+      experiment_assignments: {
+        Row: {
+          created_at: string
+          experiment_key: string
+          id: string
+          user_id: string
+          variant: string
+        }
+        Insert: {
+          created_at?: string
+          experiment_key: string
+          id?: string
+          user_id: string
+          variant?: string
+        }
+        Update: {
+          created_at?: string
+          experiment_key?: string
+          id?: string
+          user_id?: string
+          variant?: string
+        }
+        Relationships: []
+      }
+      experiment_measurements: {
+        Row: {
+          created_at: string
+          experiment_key: string
+          id: string
+          metadata_json: Json | null
+          metric_key: string
+          metric_value: number | null
+          user_id: string | null
+          variant: string | null
+        }
+        Insert: {
+          created_at?: string
+          experiment_key: string
+          id?: string
+          metadata_json?: Json | null
+          metric_key: string
+          metric_value?: number | null
+          user_id?: string | null
+          variant?: string | null
+        }
+        Update: {
+          created_at?: string
+          experiment_key?: string
+          id?: string
+          metadata_json?: Json | null
+          metric_key?: string
+          metric_value?: number | null
+          user_id?: string | null
+          variant?: string | null
+        }
+        Relationships: []
+      }
+      experiment_runs: {
+        Row: {
+          config_json: Json | null
+          created_at: string
+          ended_at: string | null
+          experiment_key: string
+          id: string
+          started_at: string | null
+          status: string | null
+        }
+        Insert: {
+          config_json?: Json | null
+          created_at?: string
+          ended_at?: string | null
+          experiment_key: string
+          id?: string
+          started_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          config_json?: Json | null
+          created_at?: string
+          ended_at?: string | null
+          experiment_key?: string
+          id?: string
+          started_at?: string | null
+          status?: string | null
+        }
+        Relationships: []
+      }
       favorites: {
         Row: {
           created_at: string
@@ -871,6 +958,88 @@ export type Database = {
           },
         ]
       }
+      guardian_notification_preferences: {
+        Row: {
+          channel: string | null
+          created_at: string
+          enabled: boolean | null
+          frequency: string | null
+          guardian_id: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          channel?: string | null
+          created_at?: string
+          enabled?: boolean | null
+          frequency?: string | null
+          guardian_id: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          channel?: string | null
+          created_at?: string
+          enabled?: boolean | null
+          frequency?: string | null
+          guardian_id?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guardian_notification_preferences_guardian_id_fkey"
+            columns: ["guardian_id"]
+            isOneToOne: false
+            referencedRelation: "guardians"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      guardian_notifications: {
+        Row: {
+          created_at: string
+          guardian_id: string
+          id: string
+          is_read: boolean | null
+          message: string | null
+          metadata_json: Json | null
+          notification_type: string
+          title: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          guardian_id: string
+          id?: string
+          is_read?: boolean | null
+          message?: string | null
+          metadata_json?: Json | null
+          notification_type?: string
+          title?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          guardian_id?: string
+          id?: string
+          is_read?: boolean | null
+          message?: string | null
+          metadata_json?: Json | null
+          notification_type?: string
+          title?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guardian_notifications_guardian_id_fkey"
+            columns: ["guardian_id"]
+            isOneToOne: false
+            referencedRelation: "guardians"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       guardians: {
         Row: {
           created_at: string
@@ -980,6 +1149,7 @@ export type Database = {
           id: string
           metadata_json: Json | null
           retention_rate: number | null
+          retention_signal: number | null
           sessions_count: number | null
           updated_at: string
           user_id: string
@@ -991,6 +1161,7 @@ export type Database = {
           id?: string
           metadata_json?: Json | null
           retention_rate?: number | null
+          retention_signal?: number | null
           sessions_count?: number | null
           updated_at?: string
           user_id: string
@@ -1002,6 +1173,7 @@ export type Database = {
           id?: string
           metadata_json?: Json | null
           retention_rate?: number | null
+          retention_signal?: number | null
           sessions_count?: number | null
           updated_at?: string
           user_id?: string

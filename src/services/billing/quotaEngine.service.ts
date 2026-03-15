@@ -216,7 +216,8 @@ export async function getUserUsageSummary(
   const creditMap: Record<string, number> = {};
   if (creditData) {
     for (const row of creditData) {
-      creditMap[row.credit_type] = (creditMap[row.credit_type] ?? 0) + row.remaining;
+      const ct = row.credit_type ?? 'standard';
+      creditMap[ct] = (creditMap[ct] ?? 0) + (row.remaining ?? 0);
     }
   }
 

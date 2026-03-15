@@ -206,12 +206,12 @@ export default function MissionAnalysis() {
             if (decision) {
               const m4: M4_Output = {
                 decision_id: decision.id,
-                architecture_id: decision.architecture_id,
+                architecture_id: decision.architecture_id ?? '',
                 chosen_format: decision.chosen_format as unknown as ChosenFormat,
-                justification: decision.justification,
-                matrix_reasoning: decision.matrix_reasoning,
-                estimated_duration_sec: decision.estimated_duration_sec,
-                needs_split: decision.needs_split,
+                justification: decision.justification ?? '',
+                matrix_reasoning: decision.matrix_reasoning ?? '',
+                estimated_duration_sec: decision.estimated_duration_sec ?? 0,
+                needs_split: decision.needs_split ?? false,
                 split_count: decision.split_count ?? undefined,
                 modules: decision.modules_json as unknown as FormatDecisionModule[] | undefined,
                 overrides_applied: decision.overrides_applied_json as unknown as FormatOverride[],

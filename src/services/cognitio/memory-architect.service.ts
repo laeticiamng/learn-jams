@@ -437,8 +437,8 @@ export async function getMemoryArchitecture(documentId: string): Promise<M3_Outp
 
   return {
     architecture_id: data.id,
-    document_id: data.document_id,
-    course_profile_id: data.course_profile_id,
+    document_id: data.document_id ?? '',
+    course_profile_id: data.course_profile_id ?? '',
     segments: data.segments_json as unknown as M3_Output["segments"],
     concept_order: data.concept_order_json as unknown as string[],
     repetition_plan: data.repetition_plan_json as unknown as M3_Output["repetition_plan"],
@@ -446,8 +446,8 @@ export async function getMemoryArchitecture(documentId: string): Promise<M3_Outp
     visual_anchors: data.visual_anchors_json as unknown as M3_Output["visual_anchors"],
     cognitive_budget: data.cognitive_budget_json as unknown as M3_Output["cognitive_budget"],
     pedagogical_contract: data.pedagogical_contract_json as unknown as M3_Output["pedagogical_contract"],
-    total_duration_sec: data.total_duration_sec,
-    needs_splitting: data.needs_splitting,
+    total_duration_sec: data.total_duration_sec ?? 0,
+    needs_splitting: data.needs_splitting ?? false,
     split_modules: data.split_modules_json as unknown as M3_Output["split_modules"],
     reasoning_type: data.reasoning_type as M3_Output["reasoning_type"],
     objective: data.objective as M3_Output["objective"],
