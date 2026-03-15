@@ -203,7 +203,7 @@ async function upsertConceptNode(
     if (error) throw new Error(`Knowledge graph update failed: ${error.message}`);
     savedNode = data as unknown as ConceptMemoryNode;
   } else {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("learner_knowledge_graph")
       .insert({
         user_id: userId,
