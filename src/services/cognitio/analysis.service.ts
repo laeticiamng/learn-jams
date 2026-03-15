@@ -39,7 +39,24 @@ export async function runAnalysis(input: M2_Input): Promise<M2_Output> {
     });
 
     if (error) throw error;
-    return data as M2_Output;
+
+    const result = data as M2_Output;
+
+    // P0 FIX: If edge function returned 0 concepts but we have non-empty text,
+    // the remote result is suspect — fall back to local extraction which has
+    // emergency concept generation. This prevents the silent 0-concept pipeline.
+    if (
+      result.key_concepts.length === 0 &&
+      input.clean_text.length > 50
+    ) {
+      console.warn(
+        `[COGNITIO][P0] Edge function returned 0 concepts from ${input.clean_text.length}-char text. ` +
+        `Falling back to local analysis with emergency extraction.`
+      );
+      return runLocalAnalysis(input);
+    }
+
+    return result;
   } catch (err) {
     console.warn("Edge function failed, falling back to local analysis:", err);
     return runLocalAnalysis(input);
