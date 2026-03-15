@@ -301,7 +301,7 @@ async function saveMission(
 }
 
 export async function getMission(missionId: string) {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("generated_missions")
     .select("*")
     .eq("id", missionId)
