@@ -32,8 +32,7 @@ export async function assignExperiment(input: AssignExperimentInput): Promise<Ex
   const { data, error } = await supabase
     .from("experiment_assignments")
     .insert([{
-      user_id: input.user_id ?? null,
-      anonymous_id: input.anonymous_id ?? null,
+      user_id: input.user_id ?? '',
       experiment_key: input.experiment_key,
       variant,
     }])
