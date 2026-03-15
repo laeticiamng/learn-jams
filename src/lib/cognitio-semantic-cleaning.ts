@@ -724,6 +724,12 @@ const HEADER_COMPOSITE_PATTERNS: RegExp[] = [
   /^(?:CODEX|S[\s-]*ECN)[.:;,\s]+/i,
   /\bRévision\s+\d[\d\/]*/i,
   /\biKB\b.*\bR2C\b/i,
+  // P0: Additional composite patterns
+  /\bR2C\b.*\bRang\b/i,
+  /\bRang\s+[A-Z]\b.*\bRang\s+[A-Z]\b/i, // Multiple Rang labels
+  /\bRang\s+[A-Z]\s+en\s+(?:noir|bleu|rouge|vert|gris)\b/i,
+  /(?:NOIR|BLEU|ROUGE|VERT|GRIS)\s*[-–—]\s*(?:NOIR|BLEU|ROUGE|VERT|GRIS)/i,
+  /\bR2C\b.*(?:NOIR|BLEU|ROUGE)/i,
 ];
 
 export interface ConceptCandidateScores {
@@ -849,9 +855,10 @@ export function scoreConceptCandidate(label: string, definition: string, lenient
 
   let reject_reason: string | null = null;
 
-  // In lenient mode (emergency/heuristic), only reject the most obvious artifacts
-  const headerThreshold = lenient ? 0.8 : 0.5;
-  const editorialThreshold = lenient ? 0.85 : 0.6;
+  // P0: Tightened thresholds — in normal mode, be more aggressive about rejecting
+  // editorial artifacts to prevent header concepts from passing through
+  const headerThreshold = lenient ? 0.8 : 0.4;
+  const editorialThreshold = lenient ? 0.85 : 0.5;
   const validityThreshold = lenient ? 0.05 : 0.2;
 
   // Rejection rules

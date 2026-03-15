@@ -222,10 +222,32 @@ export function useCreatePipeline() {
           ? `CRITICAL: 0 concepts from ${m1Result.word_count}-word document`
           : undefined,
       });
+
+      // P0: Compute segment distribution for debug counters
+      const conceptsFromSeg0 = m2Result.key_concepts.filter(c =>
+        c.source_trace?.some(t => t.segment_index === 0)
+      ).length;
+      const conceptsFromBody = m2Result.key_concepts.filter(c =>
+        c.source_trace?.some(t => t.segment_index > 0)
+      ).length;
+      counters.concepts_from_segment_0_count = conceptsFromSeg0;
+      counters.concepts_from_body_count = conceptsFromBody;
+      counters.final_topic_clean = m2Result.main_topic;
+      counters.final_concepts_count = m2Result.key_concepts.length;
+
+      counters.pipeline_trace.push({
+        step: "E1_segment_distribution",
+        detail: `concepts_from_segment_0=${conceptsFromSeg0}, concepts_from_body=${conceptsFromBody}`,
+        warning: conceptsFromSeg0 > 0 && conceptsFromBody === 0 && m1Result.segments.length > 1
+          ? `All concepts from segment 0 — body segments ignored`
+          : undefined,
+      });
+
       console.info(
         `[COGNITIO][P0] M2 done: concepts=${m2Result.key_concepts.length}, ` +
         `critical=${m2Result.critical_count}, density=${m2Result.density}, ` +
-        `reasoning=${m2Result.reasoning_type}, topic="${m2Result.main_topic}"`
+        `reasoning=${m2Result.reasoning_type}, topic="${m2Result.main_topic}", ` +
+        `from_seg0=${conceptsFromSeg0}, from_body=${conceptsFromBody}`
       );
 
       // P0 VALIDATION GATE: If 0 concepts from non-empty doc, this is a pipeline failure.
