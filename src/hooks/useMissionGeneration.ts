@@ -61,7 +61,7 @@ export function useMissionGeneration() {
       try {
         // Step 1: Upload
         updateStep("upload", { status: "running", message: "Upload du document..." });
-        const { document_id } = await uploadDocument(user.id, input);
+        const { document_id } = await uploadDocument(user.id, input) as { document_id: string };
         updateStep("upload", { status: "completed" });
 
         // Step 2: Ingestion
