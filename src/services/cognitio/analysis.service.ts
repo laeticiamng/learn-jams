@@ -41,7 +41,23 @@ export async function runAnalysis(input: M2_Input): Promise<M2_Output> {
   // P0: Pre-normalize input text for noisy R2C/academic documents
   const preNormalized = preNormalizeForM2(input);
 
-  // P0 AUDIT: Compare before/after pre-normalization
+  // === DIAGNOSTIC TRACE (requested trace format) ===
+  const trace: M2DiagnosticTrace = {
+    m2_input_length: input.clean_text.length,
+    m2_input_preview: input.clean_text.slice(0, 300),
+    m2_prompt_version: "m2-analyze-v2.0",
+    remote_call_started: false,
+    remote_call_status: "not_attempted",
+    remote_raw_response_preview: "",
+    remote_parse_status: "not_attempted",
+    local_fallback_triggered: false,
+    local_raw_candidates_count: 0,
+    local_filtered_candidates_count: 0,
+    local_reject_reasons: {},
+    final_topic: "",
+    final_concepts_count: 0,
+  };
+
   const prenormDelta = input.clean_text.length - preNormalized.clean_text.length;
   const prenormRatio = preNormalized.clean_text.length / Math.max(1, input.clean_text.length);
   console.info(
@@ -54,7 +70,6 @@ export async function runAnalysis(input: M2_Input): Promise<M2_Output> {
     `  m2_input_preview_AFTER="${preNormalized.clean_text.slice(0, 200)}…"`
   );
 
-  // P0 AUDIT: Warn if pre-normalization removed too much
   if (prenormRatio < 0.3 && input.clean_text.length > 1000) {
     console.warn(
       `[COGNITIO][M2][ANOMALY] Pre-normalization removed ${(100 - prenormRatio * 100).toFixed(1)}% of text! ` +
@@ -64,39 +79,51 @@ export async function runAnalysis(input: M2_Input): Promise<M2_Output> {
   }
 
   try {
+    trace.remote_call_started = true;
     const { data, error } = await supabase.functions.invoke("cognitio-analyze", {
       body: preNormalized,
     });
 
     if (error) {
-      console.warn(
-        `[COGNITIO][M2] m2_remote_call_status=ERROR, error=${error}`
-      );
+      trace.remote_call_status = "ERROR";
+      console.warn(`[COGNITIO][M2] m2_remote_call_status=ERROR, error=${error}`);
       throw error;
     }
 
-    // P0: Validate remote response shape
     if (!data || typeof data !== "object") {
+      trace.remote_call_status = "INVALID_SHAPE";
+      trace.remote_raw_response_preview = JSON.stringify(data).slice(0, 300);
+      trace.remote_parse_status = "REJECTED";
       console.warn(
         `[COGNITIO][M2] m2_remote_call_status=INVALID_SHAPE, ` +
-        `m2_raw_response_preview="${JSON.stringify(data).slice(0, 200)}", ` +
+        `m2_raw_response_preview="${trace.remote_raw_response_preview}", ` +
         `m2_parse_status=REJECTED (null or non-object)`
       );
-      return runLocalAnalysis(preNormalized);
+      trace.local_fallback_triggered = true;
+      const localResult = runLocalAnalysis(preNormalized);
+      emitDiagnosticTrace(trace, localResult);
+      return localResult;
     }
 
     const result = data as M2_Output;
+    trace.remote_raw_response_preview = JSON.stringify(data).slice(0, 300);
 
-    // P0: Validate key_concepts exists and is an array
     if (!Array.isArray(result?.key_concepts)) {
+      trace.remote_call_status = "OK";
+      trace.remote_parse_status = "MALFORMED";
       console.warn(
         `[COGNITIO][M2] m2_remote_call_status=OK, m2_parse_status=MALFORMED ` +
         `(key_concepts is ${typeof result?.key_concepts}, not array). ` +
-        `m2_raw_response_preview="${JSON.stringify(data).slice(0, 300)}". ` +
         `Falling back to local analysis.`
       );
-      return runLocalAnalysis(preNormalized);
+      trace.local_fallback_triggered = true;
+      const localResult = runLocalAnalysis(preNormalized);
+      emitDiagnosticTrace(trace, localResult);
+      return localResult;
     }
+
+    trace.remote_call_status = "OK";
+    trace.remote_parse_status = "OK";
 
     console.info(
       `[COGNITIO][M2] m2_remote_call_status=OK, ` +
@@ -105,28 +132,73 @@ export async function runAnalysis(input: M2_Input): Promise<M2_Output> {
     );
 
     // P0 FIX: If edge function returned 0 concepts but we have non-empty text,
-    // the remote result is suspect — fall back to local extraction which has
-    // emergency concept generation. This prevents the silent 0-concept pipeline.
-    if (
-      result.key_concepts.length === 0 &&
-      preNormalized.clean_text.length > 50
-    ) {
+    // fall back to local extraction with emergency concept generation.
+    if (result.key_concepts.length === 0 && preNormalized.clean_text.length > 50) {
       console.warn(
         `[COGNITIO][M2] m2_remote_call_status=OK but 0 concepts from ` +
         `${preNormalized.clean_text.length}-char text. ` +
         `m2_fallback_used=yes (local analysis with emergency extraction).`
       );
-      return runLocalAnalysis(preNormalized);
+      trace.local_fallback_triggered = true;
+      const localResult = runLocalAnalysis(preNormalized);
+      emitDiagnosticTrace(trace, localResult);
+      return localResult;
     }
 
+    trace.final_topic = result.main_topic;
+    trace.final_concepts_count = result.key_concepts.length;
+    emitDiagnosticTrace(trace, result);
     return result;
   } catch (err) {
-    console.warn(
-      `[COGNITIO][M2] m2_remote_call_status=EXCEPTION, ` +
-      `m2_fallback_used=yes, error=`,
-      err
+    trace.remote_call_status = "EXCEPTION";
+    trace.local_fallback_triggered = true;
+    console.warn(`[COGNITIO][M2] m2_remote_call_status=EXCEPTION, m2_fallback_used=yes, error=`, err);
+    const localResult = runLocalAnalysis(preNormalized);
+    emitDiagnosticTrace(trace, localResult);
+    return localResult;
+  }
+}
+
+// === Diagnostic Trace Types & Emitter ===
+
+interface M2DiagnosticTrace {
+  m2_input_length: number;
+  m2_input_preview: string;
+  m2_prompt_version: string;
+  remote_call_started: boolean;
+  remote_call_status: string;
+  remote_raw_response_preview: string;
+  remote_parse_status: string;
+  local_fallback_triggered: boolean;
+  local_raw_candidates_count: number;
+  local_filtered_candidates_count: number;
+  local_reject_reasons: Record<string, number>;
+  final_topic: string;
+  final_concepts_count: number;
+}
+
+function emitDiagnosticTrace(trace: M2DiagnosticTrace, result: M2_Output): void {
+  trace.final_topic = result.main_topic;
+  trace.final_concepts_count = result.key_concepts?.length ?? 0;
+
+  console.info(
+    `[COGNITIO][M2][DIAGNOSTIC_TRACE]\n` +
+    JSON.stringify(trace, null, 2)
+  );
+
+  // P0 PRODUCT RULE: If clean_text > 5000 and concepts = 0, log critical anomaly
+  if (trace.m2_input_length > 5000 && trace.final_concepts_count === 0) {
+    console.error(
+      `[COGNITIO][M2][PRODUCT_RULE_VIOLATION] ` +
+      `clean_text_length=${trace.m2_input_length} > 5000 AND concepts_count=0!\n` +
+      `  CAUSE: remote_call_status=${trace.remote_call_status}, ` +
+      `remote_parse_status=${trace.remote_parse_status}, ` +
+      `local_fallback_triggered=${trace.local_fallback_triggered}, ` +
+      `local_raw_candidates=${trace.local_raw_candidates_count}, ` +
+      `local_filtered_candidates=${trace.local_filtered_candidates_count}, ` +
+      `local_reject_reasons=${JSON.stringify(trace.local_reject_reasons)}\n` +
+      `  ACTION: This should NEVER happen. Check scoring thresholds and emergency fallback logic.`
     );
-    return runLocalAnalysis(preNormalized);
   }
 }
 
@@ -138,23 +210,26 @@ export async function runAnalysis(input: M2_Input): Promise<M2_Output> {
  * and other noise that confuses concept extraction.
  */
 function preNormalizeForM2(input: M2_Input): M2_Input {
-  const filterResult = filterEditorialNoise(input.clean_text);
+  // Step 1: Apply deep R2C/revision-specific cleaning BEFORE generic editorial filter
+  const r2cCleaned = cleanR2CRevisionArtifacts(input.clean_text);
+
+  // Step 2: Apply generic editorial noise filter
+  const filterResult = filterEditorialNoise(r2cCleaned);
 
   // Also clean segment content
   const cleanedSegments = input.segments.map(seg => ({
     ...seg,
-    content: filterEditorialNoise(seg.content).cleaned_text,
-    // Clean segment titles too
+    content: filterEditorialNoise(cleanR2CRevisionArtifacts(seg.content)).cleaned_text,
     title: seg.title ? cleanMainTopic(seg.title) || seg.title : seg.title,
   }));
 
   const cleanedLength = filterResult.cleaned_text_length;
-  const rawLength = filterResult.raw_text_length;
+  const rawLength = input.clean_text.length; // Use original length for ratio
   const retentionRatio = cleanedLength / Math.max(1, rawLength);
 
   console.info(
     `[COGNITIO][M2] Pre-normalization:\n` +
-    `  raw=${rawLength} chars → cleaned=${cleanedLength} chars (${(retentionRatio * 100).toFixed(1)}% retained)\n` +
+    `  raw=${rawLength} chars → after_r2c=${r2cCleaned.length} → cleaned=${cleanedLength} chars (${(retentionRatio * 100).toFixed(1)}% retained)\n` +
     `  removed_lines=${filterResult.removed_lines_count}\n` +
     `  removed_types=[${filterResult.removed_patterns.slice(0, 8).map(p => p.type).join(", ")}${filterResult.removed_patterns.length > 8 ? "…" : ""}]`
   );
@@ -175,6 +250,108 @@ function preNormalizeForM2(input: M2_Input): M2_Input {
     clean_text: finalCleanedText,
     segments: cleanedSegments,
   };
+}
+
+// ---------- R2C Revision Document Deep Cleaning ----------
+
+/**
+ * P0: Deep pre-normalization specifically for R2C polycopiés de révision.
+ * Removes/deprioritizes:
+ * - R2C classification labels (inline and standalone)
+ * - Rang A/B/C annotations
+ * - CODEX, S-ECN, MED-LINE branding
+ * - Révision/ITEM/en-têtes markers
+ * - Editorial dates and version metadata
+ * Preserves:
+ * - Real section titles (detected by structure, not just capitalization)
+ * - Medical content and definitions
+ * - Clinical data and procedures
+ */
+function cleanR2CRevisionArtifacts(text: string): string {
+  const lines = text.split("\n");
+  const cleaned: string[] = [];
+
+  // Patterns for full-line removal (standalone editorial lines)
+  const STANDALONE_R2C_PATTERNS: RegExp[] = [
+    // R2C / Rang standalone lines
+    /^\s*(?:COM\s+)?R2C\s*:\s*/i,
+    /^\s*Rang\s+[A-Z]\s*(?:[-–—:]\s*)?$/i,
+    /^\s*en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS)\s*$/i,
+    /^\s*(?:Rang\s+[A-Z]\s*[-–—]\s*)+\s*$/i,
+    // Branding standalone lines
+    /^\s*CODEX\s*[.:;,]?\s*$/i,
+    /^\s*S[\s-]*ECN(?:\.COM)?\s*$/i,
+    /^\s*MED[\s-]*LINE\s*$/i,
+    /^\s*iKB\s*$/i,
+    /^\s*PREP['']?ECN\s*$/i,
+    /^\s*ELLIPSES\s*$/i,
+    /^\s*VERNAZOBRES[\s-]*GREGO?\s*$/i,
+    // Revision / version lines
+    /^\s*Révision\s+\d/i,
+    /^\s*ITEM\s+\d+\s*[-–—:]?\s*$/i,
+    /^\s*(?:Dernière\s+)?(?:mise\s+à\s+jour|MAJ)\s*[:—–\-]/i,
+    // Date-only lines
+    /^\s*\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4}\s*$/,
+    // Composite branding headers
+    /^\s*CODEX\b.*\bS[\s-]*ECN\b/i,
+    /^\s*KB\s*[\/|]\s*iKB\b/i,
+    // Item + Rang composite
+    /^\s*ITEM\s+\d+.*Rang\s+[A-Z]/i,
+    // En-têtes with multiple R2C annotations
+    /^.*(?:Rang\s+[A-Z].*){2,}/i,
+  ];
+
+  // Inline patterns to strip (preserve line, clean content)
+  const INLINE_R2C_PATTERNS: { pattern: RegExp; replacement: string }[] = [
+    // Rang annotations inline
+    { pattern: /\s*\(?\s*Rang\s+[A-Z]\s*\)?\s*/gi, replacement: " " },
+    { pattern: /\s*[-–—]\s*Rang\s+[A-Z]\s*/gi, replacement: " " },
+    { pattern: /\s*\(?\s*R2C\s*:\s*Rang\s+[A-Z]\s*\)?\s*/gi, replacement: " " },
+    // Color annotations inline
+    { pattern: /\s*\(?\s*en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS)\s*\)?\s*/gi, replacement: " " },
+    { pattern: /\s*[-–—]\s*en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS)\s*/gi, replacement: " " },
+    // Branding inline
+    { pattern: /\bCODEX\b[.:;,]?\s*/gi, replacement: "" },
+    { pattern: /\bS[\s-]*ECN(?:\.COM)?\b[.:;,]?\s*/gi, replacement: "" },
+    { pattern: /\bMED[\s-]*LINE\b\s*/gi, replacement: "" },
+    { pattern: /\biKB\b\s*/gi, replacement: "" },
+    { pattern: /\bPREP['']?ECN\b\s*/gi, replacement: "" },
+    // ITEM numbers inline
+    { pattern: /\bITEM\s+\d+\s*[-–—:]?\s*/gi, replacement: "" },
+    // R2C revision markers inline
+    { pattern: /\bR2C\s+Révision\s+\d[\d\/]*\b\s*/gi, replacement: "" },
+    // Trailing COM R2C
+    { pattern: /\s*COM\s+R2C\s*:\s*/gi, replacement: " " },
+  ];
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+
+    // Preserve blank lines for structure
+    if (trimmed.length === 0) {
+      cleaned.push("");
+      continue;
+    }
+
+    // Check standalone removal patterns
+    if (STANDALONE_R2C_PATTERNS.some(p => p.test(trimmed))) {
+      continue; // Drop the line entirely
+    }
+
+    // Apply inline cleaning
+    let cleanedLine = trimmed;
+    for (const { pattern, replacement } of INLINE_R2C_PATTERNS) {
+      cleanedLine = cleanedLine.replace(pattern, replacement);
+    }
+    cleanedLine = cleanedLine.replace(/\s{2,}/g, " ").trim();
+
+    // Skip if cleaning left nothing meaningful
+    if (cleanedLine.length < 3) continue;
+
+    cleaned.push(cleanedLine);
+  }
+
+  return cleaned.join("\n").replace(/\n{3,}/g, "\n\n").trim();
 }
 
 // ---------- Local Analysis Fallback ----------
@@ -423,7 +600,6 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
       `Applying emergency fallback extraction on ${cleanedText.length}-char text.`
     );
 
-    // P0 FIX: Emergency extraction — multi-strategy, same as above
     const continuousText = cleanedText.replace(/\n+/g, " ").replace(/\s{2,}/g, " ").trim();
 
     // Strategy 1: sentence boundary
@@ -469,10 +645,8 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
     for (let i = 0; i < Math.min(10, emergencySentences.length); i++) {
       const sentence = emergencySentences[i];
       const words = sentence.split(/\s+/);
-      // Use buildConceptLabel for better label extraction even in emergency mode
       const label = buildConceptLabel(sentence, "") || words.slice(0, 6).join(" ");
       const definition = compressDefinition(sentence, 200);
-      // Skip if definition would be too short (but don't reject — emergency mode)
       const effectiveDef = definition.length >= 10 ? definition : sentence.slice(0, 200);
 
       concepts.push({
@@ -516,13 +690,17 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
     );
   }
 
-  // P0: Post-heuristic scoring — reject remaining concepts that are still noisy
+  // P0 FIX: Post-heuristic scoring — use LENIENT mode for emergency/heuristic concepts
+  // to prevent total concept destruction. Only reject the most obvious artifacts.
+  const isEmergencyMode = _dbg_fallback_level === "emergency" || _dbg_fallback_level === "heuristic_secours";
   if (concepts.length > 0) {
+    const conceptCountBeforeScoring = concepts.length;
     const scoredConcepts = concepts.filter(c => {
-      const scores = scoreConceptCandidate(c.label, c.definition);
+      // Use lenient scoring for emergency/heuristic concepts
+      const scores = scoreConceptCandidate(c.label, c.definition, isEmergencyMode);
       if (!scores.accepted) {
         console.warn(
-          `[COGNITIO][M2][POST_SCORE] Rejecting concept "${c.label}" after scoring:\n` +
+          `[COGNITIO][M2][POST_SCORE] Rejecting concept "${c.label}" after scoring (lenient=${isEmergencyMode}):\n` +
           `  editorial=${scores.editorial_artifact_score}, header=${scores.header_noise_score}, ` +
           `validity=${scores.concept_semantic_validity_score}, reason="${scores.reject_reason}"`
         );
@@ -536,14 +714,40 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
         `[COGNITIO][M2][POST_SCORE] Removed ${concepts.length - scoredConcepts.length} noisy concepts after scoring. ` +
         `${scoredConcepts.length} remain.`
       );
+    }
+
+    // P0 CRITICAL FIX: NEVER let post-scoring reduce to 0 on a substantial document.
+    // If scoring would eliminate ALL concepts, keep the top N by semantic validity.
+    if (scoredConcepts.length === 0 && clean_text.length > 500 && conceptCountBeforeScoring > 0) {
+      console.warn(
+        `[COGNITIO][M2][SAFEGUARD] Post-scoring would eliminate ALL ${conceptCountBeforeScoring} concepts! ` +
+        `Keeping top ${Math.min(5, conceptCountBeforeScoring)} by semantic validity to prevent total destruction.`
+      );
+      // Sort by semantic validity (descending) and keep at least 3
+      const rankedConcepts = concepts
+        .map(c => ({ concept: c, validity: scoreConceptCandidate(c.label, c.definition, true).concept_semantic_validity_score }))
+        .sort((a, b) => b.validity - a.validity);
+      concepts = rankedConcepts.slice(0, Math.max(3, Math.min(5, conceptCountBeforeScoring))).map(r => ({
+        ...r.concept,
+        uncertain: true, // Mark as uncertain since they failed scoring
+        source_confidence: Math.min(r.concept.source_confidence, 0.3),
+      }));
+      console.info(`[COGNITIO][M2][SAFEGUARD] Preserved ${concepts.length} concepts from destruction.`);
+    } else {
       concepts = scoredConcepts;
     }
   }
 
-  // P0 ANOMALY GUARD: Final check — log detailed anomaly if still 0
+  // ============================================================
+  // P0 ABSOLUTE LAST RESORT: If we STILL have 0 concepts from a
+  // 5000+ char document, force-extract from raw text directly.
+  // This is the final safety net — never let a real document through
+  // with 0 concepts without exhausting every option.
+  // ============================================================
   if (concepts.length === 0 && clean_text.length > 5000) {
+    _dbg_fallback_level = "absolute_last_resort";
     console.error(
-      `[COGNITIO][M2][CRITICAL_ANOMALY] ${clean_text.length}-char document produced 0 concepts!\n` +
+      `[COGNITIO][M2][CRITICAL_ANOMALY] ${clean_text.length}-char document produced 0 concepts after ALL filters!\n` +
       `  DIAGNOSTIC DUMP:\n` +
       `  - Original text length: ${clean_text.length}\n` +
       `  - After cleanSourceNoise: ${cleanedText.length}\n` +
@@ -556,8 +760,46 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
       `  - Rejected samples: [${rejectedLabels.join(", ")}]\n` +
       `  - Fallback level reached: ${_dbg_fallback_level}\n` +
       `  - Text first 500 chars: "${clean_text.slice(0, 500)}"\n` +
-      `  - Text last 500 chars: "${clean_text.slice(-500)}"`
+      `  - Text last 500 chars: "${clean_text.slice(-500)}"\n` +
+      `  Activating ABSOLUTE LAST RESORT: raw text chunking with NO scoring.`
     );
+
+    // Extract directly from raw text — NO scoring, NO filtering
+    // Just grab substantive lines and force them into concepts
+    const substantiveLines = clean_text
+      .split(/\n/)
+      .map(l => l.trim())
+      .filter(l => l.length > 20 && /[a-zA-ZÀ-ÿ]{3,}/.test(l))
+      // Quick filter: skip lines that are ONLY editorial (>90% noise tokens)
+      .filter(l => {
+        const words = l.split(/\s+/);
+        const editorialWords = words.filter(w =>
+          /^(?:R2C|Rang|CODEX|S-ECN|ECN|ITEM|iKB|MAJ|NOIR|BLEU|ROUGE|VERT|GRIS)$/i.test(w)
+        ).length;
+        return editorialWords / words.length < 0.5; // Allow lines with <50% editorial words
+      });
+
+    for (let i = 0; i < Math.min(10, substantiveLines.length); i++) {
+      const line = substantiveLines[i];
+      const words = line.split(/\s+/);
+      const label = words.slice(0, 7).join(" ");
+      concepts.push({
+        stable_key: `concept_absolute_${i}`,
+        label,
+        definition: line.slice(0, 250),
+        type: "general",
+        criticality: (i < 2 ? 1 : i < 5 ? 2 : 3) as 1 | 2 | 3 | 4,
+        criticality_score: i < 2 ? 0.8 : i < 5 ? 0.5 : 0.3,
+        bloom_target: "remember",
+        relations: [],
+        prerequisites: [],
+        source_confidence: 0.2,
+        source_trace: [{ segment_index: 0, excerpt: line.slice(0, 120) }],
+        uncertain: true,
+      });
+    }
+
+    console.info(`[COGNITIO][M2] Absolute last resort produced ${concepts.length} concepts from ${substantiveLines.length} substantive lines.`);
   }
 
   // P0: If topic is "Sujet non identifié" but we have concepts, try to derive topic from first concept
@@ -652,6 +894,7 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
       { code: "FALLBACK_ANALYSIS", message: "Analyse locale heuristique (LLM non disponible)", severity: "warning" },
       ...(_dbg_fallback_level === "emergency" ? [{ code: "EMERGENCY_EXTRACTION" as const, message: `Extraction de secours utilisée — ${Object.entries(rejectReasons).map(([r, c]) => `${r}:${c}`).join(", ")}`, severity: "warning" as const }] : []),
       ...(_dbg_fallback_level === "heuristic_secours" ? [{ code: "HEURISTIC_LAST_RESORT" as const, message: `Mode secours heuristique activé — toutes les méthodes standard ont échoué sur ${clean_text.length} caractères`, severity: "error" as const }] : []),
+      ...(_dbg_fallback_level === "absolute_last_resort" ? [{ code: "ABSOLUTE_LAST_RESORT" as const, message: `Mode secours absolu activé — extraction brute sans scoring sur ${clean_text.length} caractères. Vérifier la qualité des concepts.`, severity: "error" as const }] : []),
       ...(concepts.length === 0 && clean_text.length > 50 ? [{ code: "ALL_CONCEPTS_REJECTED" as const, message: `Tous les concepts candidats ont été rejetés (bruit éditorial). Aucune fiche exploitable ne peut être produite.`, severity: "blocking" as const }] : []),
       ...(concepts.length === 1 && concepts[0]?.uncertain ? [{ code: "SINGLE_UNCERTAIN_CONCEPT" as const, message: `Un seul concept incertain détecté — qualité insuffisante pour une fiche standard.`, severity: "warning" as const }] : []),
     ],
@@ -692,8 +935,10 @@ function extractHeuristicConcepts(
     const key = cleanLabel.toLowerCase().replace(/[^a-zà-ÿ0-9]/g, "");
     if (seenLabels.has(key)) return;
 
-    // P0: Score candidate before promoting
-    const scores = scoreConceptCandidate(cleanLabel, definition);
+    // P0 FIX: Use LENIENT scoring in heuristic mode — this is a last-resort
+    // extraction, so we must not apply the same strict thresholds that
+    // already rejected everything in the normal pipeline.
+    const scores = scoreConceptCandidate(cleanLabel, definition, true);
     debugEntries.push({
       label: cleanLabel,
       scores,
@@ -703,7 +948,7 @@ function extractHeuristicConcepts(
 
     if (!scores.accepted) {
       console.info(
-        `[COGNITIO][M2][HEURISTIC] REJECTED concept candidate: "${cleanLabel}"\n` +
+        `[COGNITIO][M2][HEURISTIC] REJECTED concept candidate (lenient mode): "${cleanLabel}"\n` +
         `  editorial_artifact_score=${scores.editorial_artifact_score}\n` +
         `  header_noise_score=${scores.header_noise_score}\n` +
         `  concept_semantic_validity_score=${scores.concept_semantic_validity_score}\n` +

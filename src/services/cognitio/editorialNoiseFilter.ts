@@ -91,6 +91,14 @@ const NOISE_PATTERNS: { type: EditorialNoiseType; pattern: RegExp }[] = [
   { type: "branding", pattern: /\biKB\b.*\bR2C\b/i },
   { type: "branding", pattern: /^(?:KB|iKB)\s*[\/|]\s*/i },
   { type: "branding", pattern: /\bCODEX\b[.;]\s*\bS[\s-]*ECN\b/i },
+
+  // P0: Enhanced R2C revision document patterns
+  { type: "rang_classification", pattern: /^.*(?:Rang\s+[A-Z]\s*[-–—]\s*){2,}/i }, // Multiple Rang annotations on one line
+  { type: "rang_classification", pattern: /^\s*ITEM\s+\d+\s*[-–—:]\s*(?:Rang|R2C)/i }, // ITEM + Rang composite
+  { type: "rang_classification", pattern: /^\s*(?:Rang\s+[A-Z]\s*,?\s*)+$/i }, // Lists of Rang labels
+  { type: "branding", pattern: /^(?:CODEX|S[\s-]*ECN|iKB)\b[^a-zA-ZÀ-ÿ]*$/i }, // Branding-only lines with trailing punctuation
+  { type: "date_metadata", pattern: /^\s*(?:Dernière\s+)?révision\s/i }, // "Révision" standalone
+  { type: "header_repetitive", pattern: /^\s*[-–—=_]{3,}\s*$/ }, // Separator lines
 ];
 
 // Inline noise patterns to strip from within lines
