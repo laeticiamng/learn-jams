@@ -765,7 +765,7 @@ export async function getTransformation(transformationId: string): Promise<M5_Ou
 }
 
 export async function getUserTransformations(userId: string) {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("transformations")
     .select("id, document_id, format, published_status, estimated_duration_sec, created_at")
     .eq("user_id", userId)

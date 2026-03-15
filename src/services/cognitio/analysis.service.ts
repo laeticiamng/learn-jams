@@ -216,7 +216,7 @@ export async function getAnalyzedConcepts(courseProfileId: string): Promise<Anal
 }
 
 export async function getConfusionPairs(courseProfileId: string): Promise<ConfusionPair[]> {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("confusion_pairs")
     .select("*")
     .eq("course_profile_id", courseProfileId);

@@ -210,7 +210,7 @@ export async function getReviewQueue(userId: string): Promise<ReviewQueueItem[]>
 }
 
 export async function markReviewCompleted(reviewId: string): Promise<void> {
-  await supabase
+  await (supabase as any)
     .from("review_queue")
     .update({ status: "completed", updated_at: new Date().toISOString() })
     .eq("id", reviewId);
