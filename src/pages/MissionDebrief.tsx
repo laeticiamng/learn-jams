@@ -30,7 +30,7 @@ export default function MissionDebrief() {
     const fetch = async () => {
       setLoading(true);
       try {
-        const { data: runData } = await supabase
+        const { data: runData } = await (supabase as any)
           .from("mission_runs")
           .select("*, generated_missions (fallback_mode, quality_band, qa_score)")
           .eq("id", id)

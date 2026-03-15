@@ -79,7 +79,7 @@ export async function getUserCostForPeriod(
   userId: string,
   since: string,
 ): Promise<number> {
-  const { data } = await supabase
+  const { data } = await (supabase as any)
     .from("cost_events")
     .select("estimated_cost_usd, actual_cost_usd")
     .eq("user_id", userId)

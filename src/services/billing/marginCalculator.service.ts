@@ -77,7 +77,7 @@ export async function getLatestMarginReports(): Promise<MarginReport[]> {
     .order("created_at", { ascending: false })
     .limit(20);
 
-  return (data ?? []) as MarginReport[];
+  return (data ?? []) as unknown as MarginReport[];
 }
 
 // ---------- Anomaly thresholds ----------

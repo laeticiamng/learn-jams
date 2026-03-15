@@ -60,7 +60,7 @@ export default function Player() {
     if (!id || !user) return;
     const fetchSong = async () => {
       const { data } = await supabase.from("songs").select("*").eq("id", id).single();
-      if (data) setSong(data as Song);
+      if (data) setSong(data as unknown as Song);
       const { data: favData } = await supabase.from("favorites").select("id").eq("user_id", user.id).eq("song_id", id);
       setIsFav((favData?.length ?? 0) > 0);
       setLoading(false);
