@@ -720,7 +720,7 @@ export async function persistTransformation(
 // ---------- Getters ----------
 
 export async function getTransformation(transformationId: string): Promise<M5_Output | null> {
-  const { data: t } = await supabase
+  const { data: t } = await (supabase as any)
     .from("transformations")
     .select("*")
     .eq("id", transformationId)
