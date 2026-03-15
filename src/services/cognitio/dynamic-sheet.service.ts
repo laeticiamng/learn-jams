@@ -728,7 +728,7 @@ export async function getTransformation(transformationId: string): Promise<M5_Ou
 
   if (!t) return null;
 
-  const { data: gc } = await supabase
+  const { data: gc } = await (supabase as any)
     .from("generated_contents")
     .select("*")
     .eq("transformation_id", transformationId)
