@@ -736,7 +736,7 @@ export async function getTransformation(transformationId: string): Promise<M5_Ou
     .limit(1)
     .single();
 
-  const { data: ft } = await supabase
+  const { data: ft } = await (supabase as any)
     .from("final_tests")
     .select("*")
     .eq("transformation_id", transformationId)
