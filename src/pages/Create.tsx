@@ -17,6 +17,7 @@ import IngestionStatus from "@/components/cognitio/IngestionStatus";
 import ImportDebugPanel from "@/components/cognitio/ImportDebugPanel";
 import { DocumentQualityPanel } from "@/components/cognitio/DocumentQualityPanel";
 import { DocumentPreview } from "@/components/cognitio/DocumentPreview";
+import { PipelineVisualization } from "@/components/cognitio/PipelineVisualization";
 import { ConceptList } from "@/components/cognitio/ConceptList";
 import { ConfusionPairsCard } from "@/components/cognitio/ConfusionPairsCard";
 import AmbiguityWarning from "@/components/cognitio/AmbiguityWarning";
@@ -272,6 +273,12 @@ export default function Create() {
               exit={{ opacity: 0, y: -20 }}
               className="space-y-6"
             >
+              <PipelineVisualization
+                phase={pipeline.phase}
+                debugCounters={pipeline.debugCounters}
+                hasError={!!pipeline.pipelineError}
+              />
+
               <IngestionStatus
                 steps={pipeline.allSteps}
                 title={phaseTitle}
@@ -315,6 +322,12 @@ export default function Create() {
               animate={{ opacity: 1, y: 0 }}
               className="space-y-6"
             >
+              <PipelineVisualization
+                phase={pipeline.phase}
+                debugCounters={pipeline.debugCounters}
+                hasError={!!pipeline.pipelineError}
+              />
+
               {/* Error in result phase */}
               {pipeline.pipelineError && (
                 <PipelineErrorCard
