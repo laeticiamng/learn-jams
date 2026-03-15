@@ -193,7 +193,7 @@ export async function getUserUsageSummary(
   plan: PlanKey,
 ): Promise<Record<FeatureKey, { used: number; limit: number; credits: number; flex: number }>> {
   const now = new Date().toISOString();
-  const { data: quotaData } = await supabase
+  const { data: quotaData } = await (supabase as any)
     .from("usage_quotas_v2")
     .select("counters_json")
     .eq("user_id", userId)
