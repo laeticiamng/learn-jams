@@ -10,6 +10,7 @@ import type {
   EscapeBrickType,
 } from "@/domain/cognitio/escapeGame.types";
 import type { BloomLevel } from "@/domain/cognitio/types";
+import { detectDocumentNoise, computeNoiseScore, DOCUMENT_NOISE_BLACKLIST } from "@/lib/cognitio-semantic-cleaning";
 
 // ---------- QA Checklist ----------
 
@@ -32,6 +33,10 @@ export function runMissionQA(
     checkNotQuizDisguised(mission),
     checkBloomDiversity(mission),
     checkDuration(mission),
+    // P0: Document noise / artifact leak checks
+    checkNoDocumentArtifactLeak(mission),
+    checkItemNoiseCleanliness(mission),
+    checkPedagogicalValidity(mission),
   ];
 
   const blockingViolations = checks
@@ -325,5 +330,154 @@ function checkDuration(m: EscapeGameMission): MissionQACheck {
     details: passed
       ? `Estimated ${Math.round(totalMinutes)} minutes`
       : `Estimated ${Math.round(totalMinutes)} minutes — ${totalMinutes < 5 ? "too short" : "too long"}`,
+  };
+}
+
+// ---------- P0: Document Artifact / Noise QA Checks ----------
+
+/**
+ * BLOCKING: Check that no puzzle text (prompts, options, explanations) contains
+ * document artifacts like CODEX, S-ECN, R2C, revision dates, branding, etc.
+ */
+function checkNoDocumentArtifactLeak(m: EscapeGameMission): MissionQACheck {
+  const allPuzzles = m.stages.flatMap((s) => s.puzzles);
+  const finalPuzzles = m.final_challenge?.puzzles ?? [];
+  const allItems = [...allPuzzles, ...finalPuzzles];
+
+  const leaks: string[] = [];
+
+  for (const item of allItems) {
+    // Check prompt
+    const promptNoise = detectDocumentNoise(item.prompt_text ?? "");
+    if (promptNoise.noisy) {
+      leaks.push(`Prompt: "${(item.prompt_text ?? "").slice(0, 50)}..." → ${promptNoise.matches.join(", ")}`);
+    }
+
+    // Check all options/choices
+    const choices = item.choices ?? item.options ?? [];
+    for (const choice of choices) {
+      const choiceText = typeof choice === "string" ? choice : choice.label ?? "";
+      const choiceNoise = detectDocumentNoise(choiceText);
+      if (choiceNoise.noisy) {
+        leaks.push(`Option: "${choiceText.slice(0, 50)}..." → ${choiceNoise.matches.join(", ")}`);
+      }
+    }
+
+    // Check explanation
+    const explanation = item.explanation ?? "";
+    if (explanation.length > 0) {
+      const explNoise = detectDocumentNoise(explanation);
+      if (explNoise.noisy) {
+        leaks.push(`Explanation: "${explanation.slice(0, 50)}..." → ${explNoise.matches.join(", ")}`);
+      }
+    }
+
+    // Check concept_key
+    if (item.concept_key) {
+      const keyNoise = detectDocumentNoise(item.concept_key);
+      if (keyNoise.noisy) {
+        leaks.push(`Concept key: "${item.concept_key}" → ${keyNoise.matches.join(", ")}`);
+      }
+    }
+  }
+
+  const passed = leaks.length === 0;
+  return {
+    check_id: "no_document_artifact_leak",
+    check_name: "No document artifact in mission items",
+    passed,
+    severity: "blocking",
+    details: passed
+      ? "No document artifacts detected in mission items"
+      : `${leaks.length} document artifact leak(s) found: ${leaks.slice(0, 3).join("; ")}${leaks.length > 3 ? ` (+${leaks.length - 3} more)` : ""}`,
+  };
+}
+
+/**
+ * WARNING: Check item cleanliness scores — items with high noise ratios
+ * indicate poor content quality even if no blacklisted keyword is found.
+ */
+function checkItemNoiseCleanliness(m: EscapeGameMission): MissionQACheck {
+  const allPuzzles = m.stages.flatMap((s) => s.puzzles);
+  const finalPuzzles = m.final_challenge?.puzzles ?? [];
+  const allItems = [...allPuzzles, ...finalPuzzles];
+
+  let dirtyCount = 0;
+  let totalScore = 0;
+
+  for (const item of allItems) {
+    const promptText = item.prompt_text ?? "";
+    const choices = (item.choices ?? item.options ?? []).map(
+      (c: string | { label?: string }) => typeof c === "string" ? c : c.label ?? ""
+    );
+    const allText = [promptText, ...choices, item.explanation ?? ""].join(" ");
+    const score = computeNoiseScore(allText);
+    totalScore += score;
+
+    if (score > 0.2) {
+      dirtyCount++;
+    }
+  }
+
+  const avgScore = allItems.length > 0 ? totalScore / allItems.length : 0;
+  const passed = dirtyCount === 0 && avgScore < 0.1;
+
+  return {
+    check_id: "item_noise_cleanliness",
+    check_name: "Item content cleanliness",
+    passed,
+    severity: "warning",
+    details: passed
+      ? `All items clean (avg noise score: ${avgScore.toFixed(3)})`
+      : `${dirtyCount} item(s) have elevated noise scores (avg: ${avgScore.toFixed(3)})`,
+  };
+}
+
+/**
+ * BLOCKING: Check pedagogical validity — each item must have:
+ * - A meaningful prompt (not just noise/metadata)
+ * - At least 2 valid options
+ * - A correct answer that is a real concept
+ */
+function checkPedagogicalValidity(m: EscapeGameMission): MissionQACheck {
+  const allPuzzles = m.stages.flatMap((s) => s.puzzles);
+  const finalPuzzles = m.final_challenge?.puzzles ?? [];
+  const allItems = [...allPuzzles, ...finalPuzzles];
+
+  const issues: string[] = [];
+
+  for (const item of allItems) {
+    const promptText = item.prompt_text ?? "";
+    const choices = (item.choices ?? item.options ?? []).map(
+      (c: string | { label?: string }) => typeof c === "string" ? c : c.label ?? ""
+    );
+
+    // Prompt must have pedagogical content (not just structural labels)
+    if (promptText.length < 10) {
+      issues.push(`Item has too-short prompt: "${promptText}"`);
+    }
+
+    // Must have at least 2 meaningful options
+    const meaningfulOptions = choices.filter((o: string) => o.length >= 3 && /[a-zA-ZÀ-ÿ]{3,}/.test(o));
+    if (meaningfulOptions.length < 2) {
+      issues.push(`Item has fewer than 2 meaningful options`);
+    }
+
+    // Correct answer must be identifiable and clean
+    const correctAnswer = item.correct_answer ?? item.correct_option ?? "";
+    if (typeof correctAnswer === "string" && correctAnswer.length < 3) {
+      issues.push(`Correct answer too short: "${correctAnswer}"`);
+    }
+  }
+
+  const passed = issues.length === 0;
+  return {
+    check_id: "pedagogical_validity",
+    check_name: "Pedagogical validity of items",
+    passed,
+    severity: "blocking",
+    details: passed
+      ? `All ${allItems.length} items are pedagogically valid`
+      : `${issues.length} pedagogical issue(s): ${issues.slice(0, 3).join("; ")}${issues.length > 3 ? ` (+${issues.length - 3} more)` : ""}`,
   };
 }

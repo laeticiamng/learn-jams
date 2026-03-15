@@ -3,6 +3,126 @@
 // normalization, and artifact filtering
 // ============================================================
 
+// ---------- Document Noise Blacklist ----------
+
+/**
+ * Centralized blacklist of document artifact keywords/patterns.
+ * Any concept, label, definition, option, or prompt containing these
+ * should be rejected or cleaned before reaching the mission player.
+ */
+export const DOCUMENT_NOISE_BLACKLIST: RegExp[] = [
+  // Branding / Platform names
+  /\bCODEX\b/i,
+  /\bS[\s-]*ECN\b/i,
+  /\bECN\.COM\b/i,
+  /\bS-ECN\.COM\b/i,
+  /\bMED-LINE\b/i,
+  /\bELLIPSES\b/i,
+  /\bVERNAZOBRES[\s-]*GREGO\b/i,
+  /\bKB\s*\/\s*iKB\b/i,
+  /\biKB\b/,
+  /\bPREP['']?ECN\b/i,
+
+  // Classification / Rang metadata
+  /\bR2C\b/,
+  /\bRang\s+[A-Z]\b/i,
+  /\bRang\s+[ABC]\s+en\s+/i,
+  /\ben\s+(?:NOIR|BLEU|ROUGE)\b/i,
+  /\bCOM\s+R2C\b/i,
+
+  // Revision / version markers
+  /\bRévision\s+\d/i,
+  /\bmise\s+à\s+jour\b/i,
+  /\bMAJ\s*[:—–\-]\s*\d/i,
+  /\bVersion\s+\d/i,
+
+  // Item / document structure labels
+  /\bITEM\s+\d+/i,
+  /\bN°\s*\d+\b/,
+  /\bObjectif\s+\d+/i,
+
+  // Institutional / course metadata
+  /\bUE\s*\d+/i,
+  /\bDFGSM\b/i,
+  /\bDFASM\b/i,
+  /\biECN\b/,
+  /\bEDN\b/,
+
+  // PDF / typographic residues
+  /\b\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4}\b/, // dates like 4/1/2024
+  /\bPage\s+\d+/i,
+  /\b\d+\s*\/\s*\d+\s*$/,
+
+  // Generic branding fragments
+  /\bCollège\s+(?:national|des)\b/i,
+  /\bRéférentiel\b/i,
+  /\bwww\.\S+/i,
+  /\bhttps?:\/\/\S+/i,
+];
+
+/**
+ * Check if a string contains document noise from the blacklist.
+ * Returns the first matching pattern description or null if clean.
+ */
+export function detectDocumentNoise(text: string): { noisy: boolean; matches: string[] } {
+  const matches: string[] = [];
+  for (const pattern of DOCUMENT_NOISE_BLACKLIST) {
+    if (pattern.test(text)) {
+      matches.push(pattern.source);
+    }
+  }
+  return { noisy: matches.length > 0, matches };
+}
+
+/**
+ * Compute a noise score for a text string (0 = clean, 1 = pure noise).
+ * Used for mission item QA.
+ */
+export function computeNoiseScore(text: string): number {
+  if (!text || text.trim().length === 0) return 1;
+
+  const words = text.trim().split(/\s+/);
+  if (words.length === 0) return 1;
+
+  let noiseWordCount = 0;
+  for (const word of words) {
+    for (const pattern of DOCUMENT_NOISE_BLACKLIST) {
+      if (pattern.test(word)) {
+        noiseWordCount++;
+        break;
+      }
+    }
+  }
+
+  // Also check for punctuation-heavy fragments
+  const alphaChars = (text.match(/[a-zA-ZÀ-ÿ]/g) || []).length;
+  const punctRatio = 1 - alphaChars / Math.max(1, text.length);
+  const wordNoiseRatio = noiseWordCount / words.length;
+
+  // Combined score: word noise + punctuation heaviness
+  return Math.min(1, wordNoiseRatio * 0.7 + (punctRatio > 0.6 ? 0.3 : 0));
+}
+
+/**
+ * Strip document noise from a text string, keeping only pedagogical content.
+ */
+export function stripDocumentNoise(text: string): string {
+  let cleaned = text;
+
+  // Remove blacklisted fragments
+  for (const pattern of DOCUMENT_NOISE_BLACKLIST) {
+    cleaned = cleaned.replace(new RegExp(pattern.source, pattern.flags + (pattern.flags.includes('g') ? '' : 'g')), ' ');
+  }
+
+  // Collapse whitespace
+  cleaned = cleaned.replace(/\s{2,}/g, ' ').trim();
+
+  // Remove leading/trailing punctuation artifacts
+  cleaned = cleaned.replace(/^[\s;:.,\-–—•]+/, '').replace(/[\s;:.,\-–—•]+$/, '').trim();
+
+  return cleaned;
+}
+
 // ---------- Source Noise Patterns ----------
 
 /** Patterns that indicate editorial/administrative artifacts in medical/academic documents */
@@ -51,6 +171,15 @@ const EDITORIAL_ARTIFACT_PATTERNS: RegExp[] = [
   /^(?:www\.|http|mailto)/i,
   /^\d+\s*[-–—]\s*\d+\s*$/,
   /^(?:Source|Adapté de|D'après)\s*:/i,
+
+  // Platform branding / editorial artifacts (P0 fix)
+  /^(?:CODEX|S[\s-]*ECN|ECN\.COM|MED-LINE|ELLIPSES)\b/i,
+  /\bCODEX\b.*\bS[\s-]*ECN\b/i,
+  /\bS[\s-]*ECN\.COM\b/i,
+  /\bPREP['']?ECN\b/i,
+  /\bVERNAZOBRES/i,
+  /\biKB\b.*\bR2C\b/i,
+  /^(?:KB|iKB)\s*[\/|]\s*/i,
 ];
 
 /** Patterns for noise that should be stripped from concept labels */
@@ -338,6 +467,9 @@ export function compressDefinition(rawDefinition: string, maxLength: number = 20
   // Remove inline editorial markers
   def = def.replace(/\s*\(Rang\s+[A-Z]\)\s*/gi, " ");
   def = def.replace(/\s*\(R2C[^)]*\)\s*/gi, " ");
+
+  // P0: Strip document noise blacklist items from definitions
+  def = stripDocumentNoise(def);
 
   // Collapse whitespace
   def = def.replace(/\s{2,}/g, " ").trim();
