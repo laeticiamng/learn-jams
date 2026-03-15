@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
-import { Music, Gamepad2, FileText, BookOpen, Video, Lock } from "lucide-react";
+import { Music, Gamepad2, FileText, BookOpen, Video, Lock, Clock } from "lucide-react";
 import type { CreateFormat } from "@/lib/create-format-config";
+import { isFormatComingSoon } from "@/lib/create-format-config";
 
 const ICON_MAP: Record<string, typeof Music> = {
   Music, Gamepad2, FileText, BookOpen, Video,
@@ -42,8 +43,10 @@ export function FormatCard({
 }: FormatCardProps) {
   const { t } = useTranslation();
   const Icon = ICON_MAP[icon] ?? FileText;
+  const comingSoon = isFormatComingSoon(format);
 
   const handleClick = () => {
+    if (comingSoon) return;
     if (locked) {
       onLockedClick?.();
     } else {
@@ -55,14 +58,22 @@ export function FormatCard({
     <button
       onClick={handleClick}
       className={`relative flex flex-col items-start gap-2 p-4 rounded-xl border-2 transition-all text-left w-full ${
-        locked
+        comingSoon
+          ? "opacity-40 border-border/20 cursor-default"
+          : locked
           ? "opacity-50 border-border/20 cursor-not-allowed"
           : selected
           ? COLOR_MAP[color] ?? ""
           : `border-border/30 text-muted-foreground ${COLOR_MAP_INACTIVE[color] ?? ""} hover:bg-muted/20`
       }`}
     >
-      {locked && (
+      {comingSoon && (
+        <div className="absolute top-2 right-2 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-muted/50 text-[9px] font-semibold text-muted-foreground">
+          <Clock className="w-2.5 h-2.5" />
+          {t("format.coming_soon", { defaultValue: "Bientôt" })}
+        </div>
+      )}
+      {locked && !comingSoon && (
         <div className="absolute top-2 right-2">
           <Lock className="w-3.5 h-3.5 text-muted-foreground" />
         </div>
