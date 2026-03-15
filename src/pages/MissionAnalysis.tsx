@@ -165,7 +165,7 @@ export default function MissionAnalysis() {
           setM2Output(m2);
 
           // Load memory architecture (M3)
-          const { data: arch } = await supabase
+          const { data: arch } = await (supabase as any)
             .from("memory_architectures")
             .select("*")
             .eq("document_id", id)
