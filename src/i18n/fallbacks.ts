@@ -26,14 +26,15 @@ export function buildFallbackConfig(): Record<string, string[]> & { default: str
  * Handles browser locale strings like "fr-FR", "zh-Hans-CN", etc.
  */
 export function resolveLocale(raw: string): string {
-  if (isSupportedLocale(raw)) return raw;
+  const rawStr: string = raw;
+  if (isSupportedLocale(rawStr)) return rawStr;
 
   // Try base language (e.g. "fr-FR" → "fr")
-  const base = raw.split("-")[0];
+  const base = rawStr.split("-")[0];
   if (isSupportedLocale(base)) return base;
 
   // Special case: zh-Hans → zh
-  if (raw.startsWith("zh")) return "zh";
+  if (rawStr.startsWith("zh")) return "zh";
 
   return FALLBACK_LOCALE;
 }

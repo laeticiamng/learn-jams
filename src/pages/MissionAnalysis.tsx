@@ -194,7 +194,7 @@ export default function MissionAnalysis() {
             setM3Output(m3);
 
             // Load format decision (M4)
-            const { data: decision } = await supabase
+            const { data: decision } = await (supabase as any)
               .from("format_decisions")
               .select("*")
               .eq("architecture_id", arch.id)

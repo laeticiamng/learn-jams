@@ -162,7 +162,7 @@ export function useMissionGeneration() {
           course_profile_id: analysisResult.course_profile_id,
           user_id: user.id,
           chosen_format: formatResult.chosen_format,
-          learning_contract: memoryResult.learning_contract,
+          learning_contract: memoryResult.pedagogical_contract as any,
           concepts: analysisResult.key_concepts,
           confusion_pairs: analysisResult.confusion_pairs,
           visual_anchors: memoryResult.visual_anchors.map((va) => ({
