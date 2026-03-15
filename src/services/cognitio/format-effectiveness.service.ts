@@ -104,7 +104,7 @@ export async function upsertFormatEffectiveness(
 }
 
 export async function getFormatEffectiveness(userId: string): Promise<FormatEffectivenessRecord[]> {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("learner_format_effectiveness")
     .select("*")
     .eq("user_id", userId)
