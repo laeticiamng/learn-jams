@@ -260,7 +260,7 @@ async function updateConfusionEdges(
           severity_score: severity,
           updated_at: now,
         })
-        .eq("id", (existing as Record<string, unknown>).id)
+        .eq("id", (existing as Record<string, unknown>).id as string)
         .select("*")
         .single();
 
