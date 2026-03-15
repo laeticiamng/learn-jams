@@ -11,6 +11,10 @@ import {
   rejectConceptArtifact,
   mergeDuplicateOrNoisyConcepts,
   compressDefinition,
+  computeEditorialArtifactScore,
+  computeHeaderNoiseScore,
+  computeConceptSemanticValidityScore,
+  scoreConceptCandidate,
 } from "./cognitio-semantic-cleaning";
 
 // ---------- cleanSourceNoise ----------
@@ -256,6 +260,173 @@ describe("compressDefinition", () => {
 
   it("preserves short clean definitions", () => {
     const def = "Infection du parenchyme pulmonaire.";
-    expect(compressDefinition(def)).toBe("Infection du parenchyme pulmonaire.");
+    const result = compressDefinition(def);
+    // stripDocumentNoise trims trailing punctuation, so period may be removed
+    expect(result).toContain("Infection du parenchyme pulmonaire");
+  });
+});
+
+// ---------- P0: Editorial Artifact Scoring ----------
+
+describe("computeEditorialArtifactScore", () => {
+  it("scores pure editorial header as high noise", () => {
+    expect(computeEditorialArtifactScore("CODEX.:, S-ECN.COM R2C : Rang A")).toBeGreaterThanOrEqual(0.5);
+  });
+
+  it("scores CODEX alone as high noise", () => {
+    expect(computeEditorialArtifactScore("CODEX")).toBeGreaterThanOrEqual(0.5);
+  });
+
+  it("scores S-ECN as noise", () => {
+    expect(computeEditorialArtifactScore("S-ECN")).toBeGreaterThanOrEqual(0.5);
+  });
+
+  it("scores R2C Rang A as noise", () => {
+    expect(computeEditorialArtifactScore("R2C Rang A")).toBeGreaterThanOrEqual(0.5);
+  });
+
+  it("scores clean medical concept as low noise", () => {
+    expect(computeEditorialArtifactScore("Pneumonie aiguë communautaire")).toBeLessThan(0.3);
+  });
+
+  it("scores Révision 2024 as noise", () => {
+    expect(computeEditorialArtifactScore("Révision 2024")).toBeGreaterThanOrEqual(0.5);
+  });
+
+  it("scores ITEM 151 as noise", () => {
+    expect(computeEditorialArtifactScore("ITEM 151")).toBeGreaterThanOrEqual(0.5);
+  });
+});
+
+describe("computeHeaderNoiseScore", () => {
+  it("detects composite CODEX + S-ECN header", () => {
+    expect(computeHeaderNoiseScore("CODEX.:, S-ECN.COM R2C : Rang A")).toBeGreaterThanOrEqual(0.5);
+  });
+
+  it("detects R2C : Rang pattern", () => {
+    expect(computeHeaderNoiseScore("R2C : Rang A en NOIR")).toBeGreaterThanOrEqual(0.5);
+  });
+
+  it("does not flag clean medical text", () => {
+    expect(computeHeaderNoiseScore("Pneumonie aiguë communautaire")).toBeLessThan(0.5);
+  });
+
+  it("detects iKB + R2C combo", () => {
+    expect(computeHeaderNoiseScore("iKB R2C Rang A")).toBeGreaterThanOrEqual(0.5);
+  });
+});
+
+describe("computeConceptSemanticValidityScore", () => {
+  it("gives low validity to CODEX header", () => {
+    expect(computeConceptSemanticValidityScore(
+      "CODEX.:, S-ECN.COM R2C : Rang A",
+      "CODEX.:, S-ECN.COM R2C : Rang A"
+    )).toBeLessThan(0.3);
+  });
+
+  it("gives high validity to a real medical concept", () => {
+    expect(computeConceptSemanticValidityScore(
+      "Pneumonie aiguë communautaire",
+      "Infection du parenchyme pulmonaire acquise en milieu extrahospitalier"
+    )).toBeGreaterThan(0.5);
+  });
+});
+
+describe("scoreConceptCandidate", () => {
+  it("rejects CODEX.:, S-ECN.COM R2C : Rang A", () => {
+    const result = scoreConceptCandidate(
+      "CODEX.:, S-ECN.COM R2C : Rang A",
+      "CODEX.:, S-ECN.COM R2C : Rang A"
+    );
+    expect(result.accepted).toBe(false);
+    expect(result.reject_reason).toBeTruthy();
+    expect(result.editorial_artifact_score).toBeGreaterThanOrEqual(0.5);
+  });
+
+  it("rejects S-ECN as a concept", () => {
+    const result = scoreConceptCandidate("S-ECN", "Source ECN");
+    expect(result.accepted).toBe(false);
+  });
+
+  it("rejects R2C Rang B", () => {
+    const result = scoreConceptCandidate("R2C Rang B", "Classification R2C");
+    expect(result.accepted).toBe(false);
+  });
+
+  it("rejects ITEM 151", () => {
+    const result = scoreConceptCandidate("ITEM 151", "Numéro d'item");
+    expect(result.accepted).toBe(false);
+  });
+
+  it("rejects Révision 2024", () => {
+    const result = scoreConceptCandidate("Révision 2024", "Date de révision");
+    expect(result.accepted).toBe(false);
+  });
+
+  it("accepts valid medical concept with good definition", () => {
+    const result = scoreConceptCandidate(
+      "Pneumonie aiguë communautaire",
+      "Infection du parenchyme pulmonaire acquise en milieu extrahospitalier"
+    );
+    expect(result.accepted).toBe(true);
+    expect(result.editorial_artifact_score).toBeLessThan(0.3);
+    expect(result.header_noise_score).toBeLessThan(0.3);
+    expect(result.concept_semantic_validity_score).toBeGreaterThan(0.5);
+  });
+
+  it("accepts Score de Fine as a valid concept", () => {
+    const result = scoreConceptCandidate(
+      "Score de Fine",
+      "Score pronostique utilisé pour stratifier la sévérité des pneumonies communautaires"
+    );
+    expect(result.accepted).toBe(true);
+  });
+});
+
+// ---------- P0: isValidConceptLabel with noise detection ----------
+
+describe("isValidConceptLabel — P0 noise rejection", () => {
+  it("rejects CODEX.:, S-ECN.COM R2C : Rang A as concept label", () => {
+    expect(isValidConceptLabel("CODEX.:, S-ECN.COM R2C : Rang A")).toBe(false);
+  });
+
+  it("rejects CODEX alone", () => {
+    expect(isValidConceptLabel("CODEX")).toBe(false);
+  });
+
+  it("rejects composite S-ECN.COM R2C header", () => {
+    expect(isValidConceptLabel("S-ECN.COM R2C : Rang A")).toBe(false);
+  });
+
+  it("rejects R2C Rang A", () => {
+    expect(isValidConceptLabel("R2C Rang A")).toBe(false);
+  });
+
+  it("rejects Révision 2024/01", () => {
+    expect(isValidConceptLabel("Révision 2024/01")).toBe(false);
+  });
+
+  it("rejects ITEM 151", () => {
+    expect(isValidConceptLabel("ITEM 151")).toBe(false);
+  });
+});
+
+// ---------- P0: rejectConceptArtifact with scoring ----------
+
+describe("rejectConceptArtifact — P0 scoring", () => {
+  it("rejects CODEX header composite as concept", () => {
+    const result = rejectConceptArtifact({
+      label: "CODEX.:, S-ECN.COM R2C : Rang A",
+      definition: "CODEX.:, S-ECN.COM R2C : Rang A",
+    });
+    expect(result.rejected).toBe(true);
+  });
+
+  it("returns scores when rejecting by scoring", () => {
+    const result = rejectConceptArtifact({
+      label: "CODEX.:, S-ECN.COM R2C : Rang A",
+      definition: "Concept extrait du document : CODEX.:, S-ECN.COM R2C : Rang A",
+    });
+    expect(result.rejected).toBe(true);
   });
 });

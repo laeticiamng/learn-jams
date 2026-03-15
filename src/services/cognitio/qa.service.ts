@@ -14,6 +14,10 @@ import {
   isValidConceptLabel,
   cleanMainTopic,
   isEditorialArtifact,
+  scoreConceptCandidate,
+  computeEditorialArtifactScore,
+  computeHeaderNoiseScore,
+  detectDocumentNoise,
 } from "@/lib/cognitio-semantic-cleaning";
 
 export async function runQA(input: QAInput): Promise<QAOutput> {
@@ -262,6 +266,40 @@ export function runLocalQA(input: QAInput): QAOutput {
     details: themeFit.details,
   });
 
+  // Check 17: P0 — Editorial artifact score (no noisy concept promoted)
+  const editorialCheck = assessEditorialArtifactPresence(concepts);
+  checklist.push({
+    check_id: "no_editorial_artifacts",
+    label: "Pas d'artefacts éditoriaux promus",
+    passed: editorialCheck.score >= 0.7,
+    weight: 12,
+    details: `${Math.round(editorialCheck.score * 100)}% propres — ${editorialCheck.noisyConcepts.length} artefact(s)`,
+  });
+  if (editorialCheck.noisyConcepts.length > 0) {
+    violations.push({
+      violation_type: "editorial_artifact_promoted",
+      severity: editorialCheck.score < 0.3 ? "blocking" : "warning",
+      message: `Artefacts éditoriaux détectés comme concepts : ${editorialCheck.noisyConcepts.slice(0, 3).join(", ")}`,
+    });
+  }
+
+  // Check 18: P0 — Product guard: single uncertain concept check
+  const singleUncertainCheck = assessSingleUncertainConcept(concepts);
+  if (!singleUncertainCheck.passed) {
+    checklist.push({
+      check_id: "single_uncertain_concept_guard",
+      label: "Garde concept unique incertain",
+      passed: false,
+      weight: 15,
+      details: singleUncertainCheck.details,
+    });
+    violations.push({
+      violation_type: "single_uncertain_concept",
+      severity: "blocking",
+      message: singleUncertainCheck.details,
+    });
+  }
+
   // Compute total score
   const totalWeight = checklist.reduce((s, c) => s + c.weight, 0);
   const passedWeight = checklist.filter(c => c.passed).reduce((s, c) => s + c.weight, 0);
@@ -291,18 +329,28 @@ function assessConceptLabelCleanliness(concepts: { label: string; stable_key: st
   let cleanCount = 0;
 
   for (const c of concepts) {
-    const { rejected, reason } = rejectConceptArtifact({
-      label: c.label,
-      definition: "placeholder for label check",
-      source_trace: [],
-    });
-
-    // We only check label validity here, not definition
+    // P0: Multi-layer cleanliness check
+    // 1. Basic structural validity
     if (!isValidConceptLabel(c.label)) {
-      issues.push(`"${c.label}"`);
-    } else {
-      cleanCount++;
+      issues.push(`"${c.label}" (invalid label)`);
+      continue;
     }
+
+    // 2. Document noise blacklist check
+    const noiseCheck = detectDocumentNoise(c.label);
+    if (noiseCheck.noisy) {
+      issues.push(`"${c.label}" (document noise: ${noiseCheck.matches.slice(0, 2).join(", ")})`);
+      continue;
+    }
+
+    // 3. Editorial artifact scoring
+    const scores = scoreConceptCandidate(c.label, "");
+    if (scores.editorial_artifact_score >= 0.5 || scores.header_noise_score >= 0.5) {
+      issues.push(`"${c.label}" (editorial artifact: editorial=${scores.editorial_artifact_score}, header=${scores.header_noise_score})`);
+      continue;
+    }
+
+    cleanCount++;
   }
 
   return {
@@ -469,6 +517,55 @@ function assessConceptNormalization(concepts: { label: string; definition: strin
     fragmentCount,
     tooLiteralCount,
   };
+}
+
+function assessEditorialArtifactPresence(concepts: { label: string; definition: string }[]): {
+  score: number;
+  noisyConcepts: string[];
+} {
+  if (concepts.length === 0) return { score: 1, noisyConcepts: [] };
+
+  const noisyConcepts: string[] = [];
+  let cleanCount = 0;
+
+  for (const c of concepts) {
+    const scores = scoreConceptCandidate(c.label, c.definition);
+    if (!scores.accepted || scores.editorial_artifact_score >= 0.5 || scores.header_noise_score >= 0.5) {
+      noisyConcepts.push(`"${c.label}" (ed=${scores.editorial_artifact_score}, hdr=${scores.header_noise_score})`);
+    } else {
+      cleanCount++;
+    }
+  }
+
+  return {
+    score: concepts.length > 0 ? cleanCount / concepts.length : 1,
+    noisyConcepts,
+  };
+}
+
+function assessSingleUncertainConcept(concepts: { label: string; definition: string; uncertain?: boolean; source_confidence?: number }[]): {
+  passed: boolean;
+  details: string;
+} {
+  if (concepts.length !== 1) return { passed: true, details: "Multiple concepts or no concepts" };
+
+  const concept = concepts[0];
+  const scores = scoreConceptCandidate(concept.label, concept.definition);
+
+  const isUncertain = concept.uncertain === true || (concept.source_confidence ?? 1) < 0.4;
+  const isNoisy = scores.editorial_artifact_score >= 0.4 || scores.header_noise_score >= 0.4 || !scores.accepted;
+
+  if (isUncertain && isNoisy) {
+    return {
+      passed: false,
+      details: `Concept unique incertain et bruité : "${concept.label}" ` +
+        `(editorial=${scores.editorial_artifact_score}, header=${scores.header_noise_score}, ` +
+        `validity=${scores.concept_semantic_validity_score}). ` +
+        `Pas de fiche standard possible.`,
+    };
+  }
+
+  return { passed: true, details: "Single concept is valid" };
 }
 
 function assessThemeCoherence(mission: MissionContent): {

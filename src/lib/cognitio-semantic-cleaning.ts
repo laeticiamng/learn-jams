@@ -379,7 +379,21 @@ export function isValidConceptLabel(label: string): boolean {
     /^Sujet\s+principal\s*:/i,
   ];
 
-  return !rejectPatterns.some(p => p.test(normalized));
+  if (rejectPatterns.some(p => p.test(normalized))) return false;
+
+  // P0: Reject labels that are composite editorial headers / document noise
+  // This catches cases like "CODEX.:, S-ECN.COM R2C : Rang A"
+  const headerScore = computeHeaderNoiseScore(normalized);
+  if (headerScore >= 0.5) return false;
+
+  const editorialScore = computeEditorialArtifactScore(normalized);
+  if (editorialScore >= 0.6) return false;
+
+  // Reject if majority of tokens are in DOCUMENT_NOISE_BLACKLIST
+  const noiseDetection = detectDocumentNoise(normalized);
+  if (noiseDetection.noisy && noiseDetection.matches.length >= 2) return false;
+
+  return true;
 }
 
 /**
@@ -389,7 +403,7 @@ export function rejectConceptArtifact(concept: {
   label: string;
   definition: string;
   source_trace?: { excerpt: string }[];
-}): { rejected: boolean; reason?: string } {
+}): { rejected: boolean; reason?: string; scores?: ConceptCandidateScores } {
   // Check label
   const normalizedLabel = normalizeConceptLabel(concept.label);
   if (!normalizedLabel) {
@@ -410,7 +424,13 @@ export function rejectConceptArtifact(concept: {
     return { rejected: true, reason: "Definition is just the label" };
   }
 
-  return { rejected: false };
+  // P0: Score-based rejection for noisy concepts that pass basic structural checks
+  const scores = scoreConceptCandidate(concept.label, concept.definition);
+  if (!scores.accepted) {
+    return { rejected: true, reason: scores.reject_reason ?? "Failed scoring", scores };
+  }
+
+  return { rejected: false, scores };
 }
 
 /**
@@ -655,6 +675,194 @@ export function reconstructChapterHierarchy(
   }
 
   return chapters;
+}
+
+// ---------- Editorial Artifact Scoring ----------
+
+/**
+ * Tokens that indicate editorial/document noise rather than pedagogical content.
+ * Used for scoring concept candidates.
+ */
+const EDITORIAL_TOKENS: RegExp[] = [
+  /\bCODEX\b/i,
+  /\bS[\s-]*ECN\b/i,
+  /\bECN\.COM\b/i,
+  /\bS-ECN\.COM\b/i,
+  /\bR2C\b/i,
+  /\bRang\b/i,
+  /\bRévision\b/i,
+  /\bITEM\b/i,
+  /\bMED-LINE\b/i,
+  /\biKB\b/,
+  /\bPREP['']?ECN\b/i,
+  /\bVERNAZOBRES/i,
+  /\bELLIPSES\b/i,
+  /\bDFGSM\b/i,
+  /\bDFASM\b/i,
+  /\biECN\b/,
+  /\bEDN\b/,
+  /\bCOM\s+R2C\b/i,
+  /\ben\s+(?:NOIR|BLEU|ROUGE)\b/i,
+  /\bPage\s+\d+/i,
+  /\bMAJ\b/i,
+  /\bVersion\s+\d/i,
+  /\bUE\s*\d+/i,
+  /\bN°\s*\d+/,
+];
+
+/**
+ * Header-like composite patterns — these are multi-token editorial headers
+ * that should never become concept labels.
+ */
+const HEADER_COMPOSITE_PATTERNS: RegExp[] = [
+  /CODEX\b.*\bS[\s-]*ECN/i,
+  /S[\s-]*ECN\.COM\b.*\bR2C/i,
+  /R2C\s*:\s*Rang/i,
+  /Rang\s+[A-Z]\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE)/i,
+  /ITEM\s+\d+\s*[-–—:]/i,
+  /COM\s+R2C\s*:/i,
+  /^(?:CODEX|S[\s-]*ECN)[.:;,\s]+/i,
+  /\bRévision\s+\d[\d\/]*/i,
+  /\biKB\b.*\bR2C\b/i,
+];
+
+export interface ConceptCandidateScores {
+  editorial_artifact_score: number;  // 0-1: proportion of editorial tokens
+  header_noise_score: number;        // 0-1: matches composite header patterns
+  concept_semantic_validity_score: number; // 0-1: likelihood of being a real concept
+  accepted: boolean;
+  reject_reason: string | null;
+}
+
+/**
+ * Compute an editorial artifact score for a text string.
+ * 0 = completely clean, 1 = pure editorial noise.
+ */
+export function computeEditorialArtifactScore(text: string): number {
+  if (!text || text.trim().length === 0) return 1;
+
+  const trimmed = text.trim();
+  const words = trimmed.split(/\s+/);
+  if (words.length === 0) return 1;
+
+  // First: check if the full text matches any editorial token pattern
+  // (handles multi-word patterns like "ITEM 151", "Rang A", "R2C Rang A")
+  let fullMatchCount = 0;
+  for (const pattern of EDITORIAL_TOKENS) {
+    if (pattern.test(trimmed)) fullMatchCount++;
+  }
+
+  // Per-word editorial detection
+  let editorialWordCount = 0;
+  for (const word of words) {
+    for (const pattern of EDITORIAL_TOKENS) {
+      if (pattern.test(word)) {
+        editorialWordCount++;
+        break;
+      }
+    }
+  }
+
+  // Also count punctuation-heavy tokens as editorial
+  const punctTokens = words.filter(w => /^[^a-zA-ZÀ-ÿ]*$/.test(w)).length;
+
+  // Combine: full-text pattern matches weigh heavily
+  const wordRatio = (editorialWordCount + punctTokens * 0.5) / words.length;
+  const fullMatchBoost = Math.min(0.5, fullMatchCount * 0.2);
+
+  return Math.min(1, wordRatio + fullMatchBoost);
+}
+
+/**
+ * Compute a header noise score for a text string.
+ * 0 = not a header, 1 = clearly a composite document header.
+ */
+export function computeHeaderNoiseScore(text: string): number {
+  if (!text || text.trim().length === 0) return 0;
+
+  let matchCount = 0;
+  for (const pattern of HEADER_COMPOSITE_PATTERNS) {
+    if (pattern.test(text)) matchCount++;
+  }
+
+  // If it matches any composite header pattern, it's very likely noise
+  if (matchCount > 0) return Math.min(1, 0.5 + matchCount * 0.25);
+
+  // Check token-level editorial content
+  const editorialScore = computeEditorialArtifactScore(text);
+  if (editorialScore > 0.5) return editorialScore * 0.8;
+
+  return 0;
+}
+
+/**
+ * Compute semantic validity score for a concept candidate.
+ * 0 = not a valid concept, 1 = clearly a real pedagogical concept.
+ */
+export function computeConceptSemanticValidityScore(label: string, definition: string): number {
+  if (!label || label.trim().length < 3) return 0;
+
+  let score = 0.5;
+
+  // Penalize editorial content in label
+  const labelEditorial = computeEditorialArtifactScore(label);
+  score -= labelEditorial * 0.5;
+
+  // Penalize header patterns in label
+  const labelHeader = computeHeaderNoiseScore(label);
+  score -= labelHeader * 0.4;
+
+  // Penalize if label contains DOCUMENT_NOISE_BLACKLIST matches
+  const labelNoise = detectDocumentNoise(label);
+  if (labelNoise.noisy) {
+    score -= 0.3 * Math.min(1, labelNoise.matches.length / 2);
+  }
+
+  // Reward: label looks like a real concept (starts with capital letter, reasonable length)
+  if (/^[A-ZÀ-Ÿ]/.test(label) && label.length >= 5 && label.length <= 80) score += 0.15;
+
+  // Reward: definition is substantive and not just noise
+  if (definition && definition.trim().length >= 30) {
+    const defEditorial = computeEditorialArtifactScore(definition);
+    if (defEditorial < 0.3) score += 0.2;
+    else score -= defEditorial * 0.2;
+  }
+
+  // Reward: label does not contain excessive punctuation
+  const alphaChars = (label.match(/[a-zA-ZÀ-ÿ]/g) || []).length;
+  const alphaRatio = alphaChars / Math.max(1, label.length);
+  if (alphaRatio > 0.7) score += 0.1;
+  if (alphaRatio < 0.4) score -= 0.2;
+
+  return Math.max(0, Math.min(1, score));
+}
+
+/**
+ * Full scoring for a concept candidate. Returns all scores plus accept/reject decision.
+ */
+export function scoreConceptCandidate(label: string, definition: string): ConceptCandidateScores {
+  const editorial_artifact_score = computeEditorialArtifactScore(label);
+  const header_noise_score = computeHeaderNoiseScore(label);
+  const concept_semantic_validity_score = computeConceptSemanticValidityScore(label, definition);
+
+  let reject_reason: string | null = null;
+
+  // Rejection rules
+  if (header_noise_score >= 0.5) {
+    reject_reason = `Header noise too high (${header_noise_score.toFixed(2)}): label resembles a document header`;
+  } else if (editorial_artifact_score >= 0.6) {
+    reject_reason = `Editorial artifact score too high (${editorial_artifact_score.toFixed(2)}): label is mostly editorial tokens`;
+  } else if (concept_semantic_validity_score < 0.2) {
+    reject_reason = `Semantic validity too low (${concept_semantic_validity_score.toFixed(2)}): not a pedagogical concept`;
+  }
+
+  return {
+    editorial_artifact_score: Math.round(editorial_artifact_score * 100) / 100,
+    header_noise_score: Math.round(header_noise_score * 100) / 100,
+    concept_semantic_validity_score: Math.round(concept_semantic_validity_score * 100) / 100,
+    accepted: reject_reason === null,
+    reject_reason,
+  };
 }
 
 // ---------- Helpers ----------
