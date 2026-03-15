@@ -58,7 +58,11 @@ export function runDocumentUnderstanding(
   const trapsOrConfusions = detectTrapsAndConfusions(cleanText);
 
   // === Step 7: Classify domain ===
-  const domainClassification = classifyDomain(cleanText, trueTopic);
+  // P0 FIX: Use body text (after front matter removal) for domain classification
+  // to prevent front matter editorial noise from biasing the domain classifier.
+  const fm = detectFrontMatter(cleanText);
+  const textForDomain = fm.has_front_matter ? fm.body_text : cleanText;
+  const domainClassification = classifyDomain(textForDomain, trueTopic);
 
   // === Step 8: Detect dominant reasoning ===
   const dominantReasoning = detectDominantReasoning(cleanText);
@@ -464,6 +468,13 @@ function detectTrapsAndConfusions(text: string): string[] {
 }
 
 // ---------- Internal: Domain Classification ----------
+
+/**
+ * P0 FIX: Exported as classifyDomainFromText for domain recalculation after body pass.
+ */
+export function classifyDomainFromText(text: string, topic: string): DocumentDomain {
+  return classifyDomain(text, topic);
+}
 
 function classifyDomain(text: string, topic: string): DocumentDomain {
   const combined = (text.slice(0, 3000) + " " + topic).toLowerCase();
