@@ -30,7 +30,7 @@ export async function computeMarginReport(
     created_at: new Date().toISOString(),
   };
 
-  await supabase.from("margin_reports").upsert(report, { onConflict: "period_key,plan_key" });
+  await (supabase as any).from("margin_reports").upsert(report, { onConflict: "period_key,plan_key" });
   return report;
 }
 
