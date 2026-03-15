@@ -42,7 +42,7 @@ export async function uploadDocument(
     storagePath = fileName;
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("source_documents")
     .insert({
       user_id: userId,
