@@ -177,7 +177,7 @@ export async function persistProfileRefresh(
   snapshot: Omit<ProgressSnapshot, "id" | "created_at">,
 ): Promise<void> {
   // Update profile
-  const { error: profileErr } = await supabase
+  const { error: profileErr } = await (supabase as any)
     .from("learner_profiles")
     .update({
       profile_status: updates.profile_status,
