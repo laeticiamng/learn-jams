@@ -35,6 +35,31 @@ import {
 } from "@/lib/cognitio-semantic-cleaning";
 import { filterEditorialNoise, detectFrontMatter, computeSegmentNoiseScore } from "./editorialNoiseFilter";
 import { runDocumentUnderstanding, deriveMissionUniverseHint } from "./documentUnderstandingLayer";
+import { extractAndCleanTopic, validateTopic, cleanTopicString } from "./topicCleaner";
+
+// ---------- Body-Only Topic Extraction Helper ----------
+
+/**
+ * P0 FIX: Extract a clean topic from body-only segments.
+ * Used after body-only second pass to recompute the main topic.
+ */
+function extractAndCleanTopicFromSegments(
+  segments: { title: string | null; content: string; hierarchy_level: number }[]
+): string | null {
+  const result = extractAndCleanTopic(segments);
+  if (result.confidence >= 0.4 && result.clean_topic !== "Sujet non identifié") {
+    return result.clean_topic;
+  }
+  // Try segment titles directly
+  for (const seg of segments) {
+    if (!seg.title) continue;
+    const cleaned = cleanTopicString(seg.title);
+    if (cleaned.length >= 5 && !validateTopic(cleaned)) {
+      return cleaned;
+    }
+  }
+  return null;
+}
 
 // ---------- Run Analysis (Edge Function) ----------
 
@@ -436,7 +461,8 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
   // === Level 1: Extract clean main topic ===
   // Use understanding layer's true topic if it's better than raw extraction
   const rawMainTopic = extractCleanMainTopic(segments);
-  const mainTopic = docUnderstanding.true_topic !== "Sujet non identifié"
+  // P0 FIX: Use let — mainTopic may be recomputed after body-only second pass
+  let mainTopic = docUnderstanding.true_topic !== "Sujet non identifié"
     && docUnderstanding.comprehension_confidence > 0.4
     ? docUnderstanding.true_topic
     : rawMainTopic;
@@ -640,6 +666,17 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
   const rejectReasons: Record<string, number> = {};
   const rejectedLabels: string[] = [];
   let _dbg_rejected_editorial_artifacts_count = 0;
+
+  // P0 DEFINITIVE FIX: Track RAW concept segment distribution BEFORE filtering.
+  // This is critical because the body-pass trigger must use pre-filter counts,
+  // not post-filter counts (which may be 0 after artifact rejection).
+  const rawConceptsFromSegment0Count = rawConcepts.filter(c =>
+    c.source_trace.some(t => t.segment_index === 0)
+  ).length;
+  const rawConceptsFromBodyCount = rawConcepts.filter(c =>
+    c.source_trace.some(t => t.segment_index > 0)
+  ).length;
+
   const filteredConcepts = rawConcepts.filter(c => {
     const { rejected, reason } = rejectConceptArtifact(c);
     if (rejected && reason) {
@@ -656,7 +693,7 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
   });
   let concepts = mergeDuplicateOrNoisyConcepts(filteredConcepts);
 
-  // P0: Compute segment distribution metrics
+  // Compute POST-filter segment distribution metrics
   const conceptsFromSegment0Count = concepts.filter(c =>
     c.source_trace.some(t => t.segment_index === 0)
   ).length;
@@ -669,11 +706,16 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
   let _dbg_artifact_only_first_pass = false;
   let _dbg_body_only_second_pass_triggered = false;
   let _dbg_body_only_second_pass_concepts_count = 0;
+  let _dbg_secondary_pass_raw_concepts_count = 0;
+  let _dbg_secondary_pass_filtered_concepts_count = 0;
+  let _dbg_secondary_pass_body_concepts_count = 0;
 
   // P0 AUDIT: Log filter results with rejected label samples
   console.info(
     `[COGNITIO][M2] Filter results:\n` +
     `  m2_raw_concepts=${rawConcepts.length}\n` +
+    `  m2_raw_concepts_from_seg0=${rawConceptsFromSegment0Count}\n` +
+    `  m2_raw_concepts_from_body=${rawConceptsFromBodyCount}\n` +
     `  m2_after_filter=${filteredConcepts.length}\n` +
     `  m2_after_dedup=${concepts.length}\n` +
     `  m2_rejected=${rawConcepts.length - filteredConcepts.length}\n` +
@@ -685,70 +727,96 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
   );
 
   // ============================================================
-  // P0 CRITICAL FIX: FRONT MATTER + ALL-FROM-SEG0 → QUARANTINE + BODY PASS
-  // If front matter is detected AND all concepts come from segment 0
-  // AND 0 concepts from body → retroactively quarantine segment 0 and
-  // force a body-only second pass. This is the MANDATORY corrective action.
+  // P0 DEFINITIVE FIX: CHECK TOPIC + COMPUTE ARTIFACT DIAGNOSTICS
+  // Must happen BEFORE body-pass decision.
   // ============================================================
-  const seg0QuarantineBefore = segment0Quarantined;
-  if (localFrontMatter.has_front_matter &&
-      conceptsFromSegment0Count > 0 &&
-      conceptsFromBodyCount === 0 &&
-      segments.length > 1 &&
-      !segment0Quarantined) {
-    segment0Quarantined = true;
-    console.warn(
-      `[COGNITIO][M2] P0_PROTECTION_APPLIED: front_matter=true + concepts_from_seg0=${conceptsFromSegment0Count} + ` +
-      `concepts_from_body=0 → RETROACTIVE QUARANTINE of segment 0.\n` +
-      `  seg0_quarantined_before=${seg0QuarantineBefore} → seg0_quarantined_after=true\n` +
-      `  Clearing ${concepts.length} seg0-only concepts. Will trigger body-only second pass.`
-    );
-    // Clear concepts from segment 0 — they are unreliable (front matter contamination)
-    concepts = concepts.filter(c =>
-      c.source_trace.some(t => t.segment_index > 0)
-    );
-    _dbg_artifact_only_first_pass = true;
-  }
+  const mainTopicIsEditorialArtifact = (() => {
+    const cleanedT = cleanMainTopic(mainTopic);
+    if (cleanedT.length < 3) return true;
+    if (/^R2C\b|^Rang\s+[A-Z]|^COM\s+R2C|^CODEX\b|^S[\s-]*ECN\b|^ITEM\s+\d|^Révision\s+\d/i.test(cleanedT)) return true;
+    const artScore = computeEditorialArtifactScore(mainTopic);
+    return artScore >= 0.4;
+  })();
 
-  // ============================================================
-  // P0 GUARD RAIL: ARTIFACT-ONLY FIRST PASS → BODY-ONLY SECOND PASS
-  // If ALL concepts from first pass are editorial artifacts OR
-  // all concepts come from segment 0, trigger a body-only second pass.
-  // Logic: artifact_only_first_pass → body_only_second_pass → final_decision
-  // P0 FIX: Also trigger when front matter quarantine cleared all concepts.
-  // ============================================================
   const allConceptsAreArtifacts = concepts.length > 0 && concepts.every(c => {
     const scores = scoreConceptCandidate(c.label, c.definition);
     return !scores.accepted || scores.editorial_artifact_score >= 0.4 || scores.header_noise_score >= 0.4;
   });
 
-  // P0 FIX: Added condition for front-matter-quarantine clearing all concepts
-  const frontMatterQuarantineCleared = seg0QuarantineBefore === false && segment0Quarantined === true && concepts.length === 0;
+  const allConceptsAreUncertain = concepts.length > 0 && concepts.every(c =>
+    c.uncertain === true || c.source_confidence < 0.4
+  );
 
-  if ((concepts.length === 0 && rawConcepts.length > 0 && segments.length > 1) ||
-      (allConceptsAreArtifacts && segments.length > 1) ||
-      (frontMatterQuarantineCleared && segments.length > 1)) {
-    _dbg_fallback_level = "secondary_body_pass";
-    _dbg_secondary_pass_triggered = true;
-    _dbg_artifact_only_first_pass = true;
-    _dbg_body_only_second_pass_triggered = true;
+  const artifactRatio = rawConcepts.length > 0
+    ? _dbg_rejected_editorial_artifacts_count / rawConcepts.length
+    : (concepts.length === 0 ? 1 : 0);
 
-    if (allConceptsAreArtifacts && concepts.length > 0) {
+  // ============================================================
+  // P0 DEFINITIVE FIX: SINGLE SOURCE OF TRUTH FOR BODY-ONLY PASS
+  // Use shouldTriggerBodyOnlySecondPass() — the centralized decision.
+  // This replaces ALL previous ad-hoc trigger conditions.
+  // ============================================================
+  const seg0QuarantineBefore = segment0Quarantined;
+  const bodyPassDecision = shouldTriggerBodyOnlySecondPass({
+    front_matter_detected: localFrontMatter.has_front_matter,
+    concepts_from_segment_0: conceptsFromSegment0Count,
+    raw_concepts_from_segment_0: rawConceptsFromSegment0Count,
+    concepts_from_body: conceptsFromBodyCount,
+    main_topic_is_editorial_artifact: mainTopicIsEditorialArtifact,
+    artifact_ratio: artifactRatio,
+    all_concepts_uncertain: allConceptsAreUncertain,
+    raw_concepts_count: rawConcepts.length,
+    filtered_concepts_count: filteredConcepts.length,
+    segments_count: segments.length,
+  });
+
+  console.info(
+    `[COGNITIO][M2] BODY_PASS_DECISION:\n` +
+    `  trigger=${bodyPassDecision.trigger}\n` +
+    `  reason=${bodyPassDecision.reason}\n` +
+    `  front_matter=${localFrontMatter.has_front_matter}\n` +
+    `  raw_concepts_from_seg0=${rawConceptsFromSegment0Count}\n` +
+    `  filtered_concepts_from_seg0=${conceptsFromSegment0Count}\n` +
+    `  concepts_from_body=${conceptsFromBodyCount}\n` +
+    `  main_topic_is_editorial_artifact=${mainTopicIsEditorialArtifact}\n` +
+    `  artifact_ratio=${artifactRatio.toFixed(2)}\n` +
+    `  all_concepts_artifacts=${allConceptsAreArtifacts}\n` +
+    `  all_concepts_uncertain=${allConceptsAreUncertain}`
+  );
+
+  if (bodyPassDecision.trigger) {
+    // STEP E: Quarantine segment 0 (retroactive if not already done)
+    if (!segment0Quarantined) {
+      segment0Quarantined = true;
       console.warn(
-        `[COGNITIO][M2] ARTIFACT_ONLY_FIRST_PASS: All ${concepts.length} concepts are editorial artifacts. ` +
-        `Clearing and relaunching body-only second pass (segments 1-${segments.length - 1}).`
-      );
-      concepts = []; // Clear artifact concepts
-    } else {
-      console.warn(
-        `[COGNITIO][M2] SECONDARY_BODY_PASS: All ${rawConcepts.length} concepts rejected as artifacts. ` +
-        `Relaunching extraction on body segments only (segments 1-${segments.length - 1}).`
+        `[COGNITIO][M2] RETROACTIVE QUARANTINE: seg0_quarantined_before=false → seg0_quarantined_after=true\n` +
+        `  reason: ${bodyPassDecision.reason}`
       );
     }
 
-    // KEY FIX: Use ORIGINAL input segments (not the pre-cleaned ones which may
-    // have been stripped too aggressively). Apply only light cleaning (front matter
-    // strip + editorial noise filter) to preserve real pedagogical content.
+    // Clear segment 0 concepts (unreliable)
+    const conceptsBeforeClear = concepts.length;
+    concepts = concepts.filter(c =>
+      c.source_trace.some(t => t.segment_index > 0)
+    );
+    if (conceptsBeforeClear > concepts.length) {
+      console.info(
+        `[COGNITIO][M2] Cleared ${conceptsBeforeClear - concepts.length} seg0-only concepts.`
+      );
+    }
+
+    _dbg_fallback_level = "secondary_body_pass";
+    _dbg_secondary_pass_triggered = true;
+    _dbg_artifact_only_first_pass = allConceptsAreArtifacts || artifactRatio >= 0.8;
+    _dbg_body_only_second_pass_triggered = true;
+
+    console.warn(
+      `[COGNITIO][M2] BODY_ONLY_SECOND_PASS TRIGGERED: reason=${bodyPassDecision.reason}\n` +
+      `  Relaunching extraction on body segments only (segments 1-${segments.length - 1}).`
+    );
+
+    // STEP F: Body-only extraction
+    // Use ORIGINAL input segments (not pre-cleaned) to preserve real content
     const bodySegmentsOriginal = originalSegments.slice(1);
     const bodyText = bodySegmentsOriginal.map(s => s.content).join("\n\n");
     const bodyFrontMatter = detectFrontMatter(bodyText);
@@ -764,8 +832,8 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
     if (cleanedBodyText.length > 50) {
       _dbg_body_first_pass_triggered = true;
       const bodyConcepts = extractConceptsFromText(cleanedBodyText, bodySegmentsOriginal, globalIdx);
-      // P0 FIX: Offset segment indices — body segments start at index 1 in the original
-      // document, but extractConceptsFromText assigns indices relative to the passed array.
+      _dbg_secondary_pass_raw_concepts_count += bodyConcepts.length;
+      // Offset segment indices — body segments start at index 1 in the original document
       for (const bc of bodyConcepts) {
         for (const trace of bc.source_trace) {
           if (trace.segment_index === 0) {
@@ -780,6 +848,8 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
           globalIdx++;
           _dbg_secondary_pass_concepts_count++;
           _dbg_body_only_second_pass_concepts_count++;
+          _dbg_secondary_pass_filtered_concepts_count++;
+          _dbg_secondary_pass_body_concepts_count++;
         }
       }
       console.info(
@@ -788,8 +858,7 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
       );
     }
 
-    // If body-only second pass STILL produced 0 concepts, try per-segment extraction
-    // on original segments to maximize chances of finding real content.
+    // Per-segment fallback if joined body extraction failed
     if (concepts.length === 0 && originalSegments.length > 1) {
       console.warn(
         `[COGNITIO][M2] BODY_ONLY_SECOND_PASS: Joined body extraction failed. ` +
@@ -801,14 +870,16 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
         const segCleaned = filterEditorialNoise(seg.content).cleaned_text;
         if (segCleaned.length < 20) continue;
         const segConcepts = extractConceptsFromText(segCleaned, [seg], globalIdx);
+        _dbg_secondary_pass_raw_concepts_count += segConcepts.length;
         for (const sc of segConcepts) {
           const { rejected } = rejectConceptArtifact(sc);
           if (!rejected) {
-            // Fix source_trace to reflect actual segment index
             sc.source_trace = [{ segment_index: si, excerpt: sc.source_trace[0]?.excerpt || "" }];
             concepts.push(sc);
             globalIdx++;
             _dbg_body_only_second_pass_concepts_count++;
+            _dbg_secondary_pass_filtered_concepts_count++;
+            _dbg_secondary_pass_body_concepts_count++;
           }
         }
       }
@@ -816,12 +887,38 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
         `[COGNITIO][M2] Per-segment body extraction: ${_dbg_body_only_second_pass_concepts_count} total concepts extracted.`
       );
     }
+
+    // STEP F (cont): Recompute topic from body-only segments
+    if (_dbg_body_only_second_pass_triggered) {
+      const bodyOnlySegments = segments.slice(1);
+      if (bodyOnlySegments.length > 0) {
+        const bodyTopicResult = extractAndCleanTopicFromSegments(bodyOnlySegments);
+        if (bodyTopicResult && bodyTopicResult.length >= 5) {
+          console.info(
+            `[COGNITIO][M2] TOPIC RECOMPUTED from body: "${mainTopic}" → "${bodyTopicResult}"`
+          );
+          mainTopic = bodyTopicResult;
+        } else if (concepts.length > 0) {
+          // Derive topic from first body concept
+          const firstBodyConcept = concepts.find(c =>
+            c.source_trace.some(t => t.segment_index > 0)
+          ) || concepts[0];
+          if (firstBodyConcept?.label && firstBodyConcept.label.length >= 5) {
+            console.info(
+              `[COGNITIO][M2] TOPIC DERIVED from first body concept: "${mainTopic}" → "${firstBodyConcept.label}"`
+            );
+            mainTopic = firstBodyConcept.label;
+          }
+        }
+      }
+    }
   }
 
   // P0 GUARD RAIL: MULTI-SEGMENT CONCEPT DIVERSITY CHECK
   // If all accepted concepts come from segment 0 and we have more segments,
   // force extraction from later segments to ensure concept diversity.
-  if (concepts.length > 0 && segments.length > 1 && !_dbg_secondary_pass_triggered) {
+  // Only runs if body-only second pass was NOT already triggered.
+  if (concepts.length > 0 && segments.length > 1 && !_dbg_body_only_second_pass_triggered) {
     const allFromSeg0 = concepts.every(c =>
       c.source_trace.every(t => t.segment_index === 0)
     );
@@ -831,7 +928,7 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
         `Forcing extraction from body segments for diversity.`
       );
       _dbg_body_first_pass_triggered = true;
-      _dbg_body_only_second_pass_triggered = true; // P0 FIX: set flag so downstream knows
+      _dbg_body_only_second_pass_triggered = true;
       // Use original input segments for diversity extraction
       const divBodySegments = originalSegments.slice(1);
       const divBodyText = divBodySegments.map(s => s.content).join("\n\n");
@@ -841,7 +938,6 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
         const diversityConcepts = extractConceptsFromText(cleanedDivBodyText, divBodySegments, globalIdx);
         let diversityAccepted = 0;
         for (const dc of diversityConcepts) {
-          // P0 FIX: Offset segment indices — body segments start at index 1
           for (const trace of dc.source_trace) {
             if (trace.segment_index === 0) {
               trace.segment_index = 1;
@@ -855,6 +951,7 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
             globalIdx++;
             diversityAccepted++;
             _dbg_body_only_second_pass_concepts_count++;
+            _dbg_secondary_pass_body_concepts_count++;
           }
         }
         console.info(
@@ -867,15 +964,26 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
 
   // P0 FIX: If all concepts were rejected but we have non-empty text,
   // force-extract minimal concepts so downstream never sees 0 without cause.
+  // P0 DEFINITIVE FIX: Use BODY-ONLY text if segment 0 is quarantined,
+  // and assign segment indices based on actual position.
   if (concepts.length === 0 && cleanedText.length > 50) {
     _dbg_fallback_level = "emergency";
+
+    // P0 FIX: Prefer body-only text for emergency extraction when seg0 is quarantined
+    const emergencySourceText = (segment0Quarantined && originalSegments.length > 1)
+      ? filterEditorialNoise(originalSegments.slice(1).map(s => s.content).join("\n\n")).cleaned_text
+      : cleanedText;
+    // Minimum segment index for emergency concepts (skip seg0 if quarantined)
+    const emergencyMinSegIndex = segment0Quarantined ? 1 : 0;
+
     console.warn(
       `[COGNITIO][M2] m2_fallback_used=EMERGENCY: All ${rawConcepts.length} raw concepts rejected! ` +
       `m2_reject_reasons=${JSON.stringify(rejectReasons)}. ` +
-      `Applying emergency fallback extraction on ${cleanedText.length}-char text.`
+      `Applying emergency fallback extraction on ${emergencySourceText.length}-char text ` +
+      `(source=${segment0Quarantined ? "body_only" : "full_text"}).`
     );
 
-    const continuousText = cleanedText.replace(/\n+/g, " ").replace(/\s{2,}/g, " ").trim();
+    const continuousText = emergencySourceText.replace(/\n+/g, " ").replace(/\s{2,}/g, " ").trim();
 
     // Strategy 1: sentence boundary
     let emergencySentences = continuousText
@@ -924,6 +1032,13 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
       const definition = compressDefinition(sentence, 200);
       const effectiveDef = definition.length >= 10 ? definition : sentence.slice(0, 200);
 
+      // P0 FIX: Assign segment_index based on actual position, not always 0.
+      // Use emergencyMinSegIndex to skip seg0 if quarantined.
+      const segIdx = Math.min(
+        emergencyMinSegIndex + Math.floor(i * Math.max(1, originalSegments.length - emergencyMinSegIndex) / Math.max(1, emergencySentences.length)),
+        Math.max(0, originalSegments.length - 1)
+      );
+
       concepts.push({
         stable_key: `concept_emergency_${i}`,
         label,
@@ -935,29 +1050,46 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
         relations: [],
         prerequisites: [],
         source_confidence: 0.35,
-        source_trace: [{ segment_index: 0, excerpt: sentence.slice(0, 120) }],
+        source_trace: [{ segment_index: segIdx, excerpt: sentence.slice(0, 120) }],
         uncertain: true,
       });
     }
 
-    console.info(`[COGNITIO][M2] Emergency fallback produced ${concepts.length} concepts from ${emergencySentences.length} candidate sentences.`);
+    console.info(`[COGNITIO][M2] Emergency fallback produced ${concepts.length} concepts from ${emergencySentences.length} candidate sentences (min_seg_idx=${emergencyMinSegIndex}).`);
   }
 
   // ============================================================
   // P0 GUARD: HEURISTIC LAST-RESORT FALLBACK
   // If we STILL have 0 concepts from a substantial document,
   // extract from segment titles + headings heuristically.
-  // This should NEVER let 18k chars produce 0 concepts.
+  // P0 FIX: Use body-only segments if seg0 is quarantined.
   // ============================================================
   if (concepts.length === 0 && clean_text.length > 500) {
     _dbg_fallback_level = "heuristic_secours";
     console.warn(
       `[COGNITIO][M2][ANOMALY] CRITICAL: ${clean_text.length}-char document → 0 concepts after ALL fallbacks!\n` +
       `  m2_chapters=${chapters.length}, m2_raw_concepts=${rawConcepts.length}, m2_reject_reasons=${JSON.stringify(rejectReasons)}\n` +
+      `  seg0_quarantined=${segment0Quarantined}\n` +
       `  Activating HEURISTIC LAST-RESORT extraction.`
     );
 
-    const heuristicConcepts = extractHeuristicConcepts(clean_text, segments);
+    // P0 FIX: Use body-only text/segments if seg0 is quarantined
+    const heuristicText = (segment0Quarantined && originalSegments.length > 1)
+      ? originalSegments.slice(1).map(s => s.content).join("\n\n")
+      : clean_text;
+    const heuristicSegments = (segment0Quarantined && originalSegments.length > 1)
+      ? originalSegments.slice(1)
+      : segments;
+    const heuristicConcepts = extractHeuristicConcepts(heuristicText, heuristicSegments);
+    // P0 FIX: Offset segment indices if using body-only segments
+    if (segment0Quarantined && originalSegments.length > 1) {
+      for (const hc of heuristicConcepts) {
+        for (const trace of hc.source_trace) {
+          trace.segment_index = Math.min(trace.segment_index + 1, originalSegments.length - 1);
+          if (trace.segment_index === 0) trace.segment_index = 1;
+        }
+      }
+    }
     concepts.push(...heuristicConcepts);
 
     console.info(
@@ -1015,14 +1147,9 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
 
   // ============================================================
   // P0 POST-SCORING BODY-ONLY SECOND PASS
-  // After all scoring, check if concepts are STILL all artifacts or
-  // all from segment 0 only. If so, and body-only second pass was
-  // NOT already triggered, trigger it now with LENIENT scoring.
-  // This catches cases where:
-  //  - The first pass produced some non-artifact concepts that survived
-  //    initial filtering, but post-scoring killed them all
-  //  - The body-only pass was never triggered because concepts.length > 0
-  //    before post-scoring
+  // After all scoring, re-evaluate using shouldTriggerBodyOnlySecondPass.
+  // If body pass was NOT already triggered and conditions now warrant it
+  // (e.g., post-scoring killed all good concepts), trigger it with LENIENT scoring.
   // ============================================================
   if (concepts.length > 0 && originalSegments.length > 1 && !_dbg_body_only_second_pass_triggered) {
     const postScoringAllArtifacts = concepts.every(c => {
@@ -1036,16 +1163,32 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
       c.source_trace.some(t => t.segment_index > 0)
     );
 
-    if (postScoringAllArtifacts || (postScoringAllFromSeg0 && postScoringNoBodyConcepts)) {
+    // Re-evaluate using shouldTriggerBodyOnlySecondPass with updated metrics
+    const postScoringArtifactRatio = postScoringAllArtifacts ? 1 : artifactRatio;
+    const postScoringDecision = shouldTriggerBodyOnlySecondPass({
+      front_matter_detected: localFrontMatter.has_front_matter,
+      concepts_from_segment_0: postScoringAllFromSeg0 ? concepts.length : conceptsFromSegment0Count,
+      raw_concepts_from_segment_0: rawConceptsFromSegment0Count,
+      concepts_from_body: postScoringNoBodyConcepts ? 0 : conceptsFromBodyCount,
+      main_topic_is_editorial_artifact: mainTopicIsEditorialArtifact,
+      artifact_ratio: postScoringArtifactRatio,
+      all_concepts_uncertain: concepts.every(c => c.uncertain || c.source_confidence < 0.4),
+      raw_concepts_count: rawConcepts.length,
+      filtered_concepts_count: concepts.length,
+      segments_count: segments.length,
+    });
+
+    if (postScoringDecision.trigger) {
       console.warn(
-        `[COGNITIO][M2] POST_SCORING_BODY_PASS: After post-scoring, ` +
-        `all_artifacts=${postScoringAllArtifacts}, all_from_seg0=${postScoringAllFromSeg0}, ` +
-        `no_body_concepts=${postScoringNoBodyConcepts}. ` +
-        `Triggering body-only second pass (not yet attempted).`
+        `[COGNITIO][M2] POST_SCORING_BODY_PASS: After post-scoring, body pass triggered.\n` +
+        `  reason=${postScoringDecision.reason}\n` +
+        `  all_artifacts=${postScoringAllArtifacts}, all_from_seg0=${postScoringAllFromSeg0}, ` +
+        `no_body_concepts=${postScoringNoBodyConcepts}.`
       );
 
       _dbg_body_only_second_pass_triggered = true;
       _dbg_artifact_only_first_pass = postScoringAllArtifacts;
+      segment0Quarantined = true;
 
       // Clear artifact-only concepts to make room for body concepts
       if (postScoringAllArtifacts) {
@@ -1067,7 +1210,6 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
       if (cleanedBodyRetry.length > 50) {
         const retryConcepts = extractConceptsFromText(cleanedBodyRetry, bodySegmentsForRetry, globalIdx);
         for (const rc of retryConcepts) {
-          // Offset segment indices for body segments
           for (const trace of rc.source_trace) {
             trace.segment_index = Math.min(trace.segment_index + 1, originalSegments.length - 1);
             if (trace.segment_index === 0) trace.segment_index = 1;
@@ -1118,11 +1260,17 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
   // ============================================================
   // P0 ABSOLUTE LAST RESORT: If we STILL have 0 concepts from a
   // 5000+ char document, force-extract from raw text directly.
-  // This is the final safety net — never let a real document through
-  // with 0 concepts without exhausting every option.
+  // P0 FIX: Use body-only text if seg0 quarantined, fix segment attribution.
   // ============================================================
   if (concepts.length === 0 && clean_text.length > 5000) {
     _dbg_fallback_level = "absolute_last_resort";
+
+    // P0 FIX: Use body-only text if segment 0 is quarantined
+    const absoluteSourceText = (segment0Quarantined && originalSegments.length > 1)
+      ? originalSegments.slice(1).map(s => s.content).join("\n\n")
+      : clean_text;
+    const absoluteMinSegIdx = segment0Quarantined ? 1 : 0;
+
     console.error(
       `[COGNITIO][M2][CRITICAL_ANOMALY] ${clean_text.length}-char document produced 0 concepts after ALL filters!\n` +
       `  DIAGNOSTIC DUMP:\n` +
@@ -1136,30 +1284,32 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
       `  - Rejection breakdown: ${JSON.stringify(rejectReasons)}\n` +
       `  - Rejected samples: [${rejectedLabels.join(", ")}]\n` +
       `  - Fallback level reached: ${_dbg_fallback_level}\n` +
-      `  - Text first 500 chars: "${clean_text.slice(0, 500)}"\n` +
-      `  - Text last 500 chars: "${clean_text.slice(-500)}"\n` +
+      `  - seg0_quarantined: ${segment0Quarantined}\n` +
+      `  - source: ${segment0Quarantined ? "body_only" : "full_text"} (${absoluteSourceText.length} chars)\n` +
       `  Activating ABSOLUTE LAST RESORT: raw text chunking with NO scoring.`
     );
 
-    // Extract directly from raw text — NO scoring, NO filtering
-    // Just grab substantive lines and force them into concepts
-    const substantiveLines = clean_text
+    const substantiveLines = absoluteSourceText
       .split(/\n/)
       .map(l => l.trim())
       .filter(l => l.length > 20 && /[a-zA-ZÀ-ÿ]{3,}/.test(l))
-      // Quick filter: skip lines that are ONLY editorial (>90% noise tokens)
       .filter(l => {
         const words = l.split(/\s+/);
         const editorialWords = words.filter(w =>
           /^(?:R2C|Rang|CODEX|S-ECN|ECN|ITEM|iKB|MAJ|NOIR|BLEU|ROUGE|VERT|GRIS)$/i.test(w)
         ).length;
-        return editorialWords / words.length < 0.5; // Allow lines with <50% editorial words
+        return editorialWords / words.length < 0.5;
       });
 
     for (let i = 0; i < Math.min(10, substantiveLines.length); i++) {
       const line = substantiveLines[i];
       const words = line.split(/\s+/);
       const label = words.slice(0, 7).join(" ");
+      // P0 FIX: Assign body segment indices, not segment 0
+      const segIdx = Math.min(
+        absoluteMinSegIdx + Math.floor(i * Math.max(1, originalSegments.length - absoluteMinSegIdx) / Math.max(1, substantiveLines.length)),
+        Math.max(0, originalSegments.length - 1)
+      );
       concepts.push({
         stable_key: `concept_absolute_${i}`,
         label,
@@ -1171,21 +1321,30 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
         relations: [],
         prerequisites: [],
         source_confidence: 0.2,
-        source_trace: [{ segment_index: 0, excerpt: line.slice(0, 120) }],
+        source_trace: [{ segment_index: segIdx, excerpt: line.slice(0, 120) }],
         uncertain: true,
       });
     }
 
-    console.info(`[COGNITIO][M2] Absolute last resort produced ${concepts.length} concepts from ${substantiveLines.length} substantive lines.`);
+    console.info(`[COGNITIO][M2] Absolute last resort produced ${concepts.length} concepts from ${substantiveLines.length} substantive lines (min_seg_idx=${absoluteMinSegIdx}).`);
   }
 
-  // P0: If topic is "Sujet non identifié" but we have concepts, try to derive topic from first concept
+  // P0: If topic is "Sujet non identifié" or editorial artifact but we have concepts, derive from concepts
   let finalTopic = mainTopic;
-  if ((mainTopic === "Sujet non identifié" || mainTopic.length < 3) && concepts.length > 0) {
-    const firstCritical = concepts.find(c => c.criticality <= 2) || concepts[0];
-    if (firstCritical?.label && firstCritical.label.length >= 5) {
-      finalTopic = firstCritical.label;
-      console.info(`[COGNITIO][M2] Topic derived from first concept: "${finalTopic}"`);
+  const finalTopicIsEditorial = (() => {
+    const ct = cleanMainTopic(finalTopic);
+    return ct.length < 3 || /^R2C\b|^Rang\s+[A-Z]|^COM\s+R2C|^CODEX\b|^S[\s-]*ECN\b|^ITEM\s+\d|^Révision\s+\d/i.test(ct) ||
+      computeEditorialArtifactScore(finalTopic) >= 0.4;
+  })();
+
+  if ((finalTopic === "Sujet non identifié" || finalTopic.length < 3 || finalTopicIsEditorial) && concepts.length > 0) {
+    // Prefer body concepts for topic derivation
+    const bodyConceptForTopic = concepts.find(c =>
+      c.source_trace.some(t => t.segment_index > 0) && c.criticality <= 2
+    ) || concepts.find(c => c.criticality <= 2) || concepts[0];
+    if (bodyConceptForTopic?.label && bodyConceptForTopic.label.length >= 5) {
+      console.info(`[COGNITIO][M2] Topic derived from concept: "${finalTopic}" → "${bodyConceptForTopic.label}" (was_editorial=${finalTopicIsEditorial})`);
+      finalTopic = bodyConceptForTopic.label;
     }
   }
 
@@ -1202,54 +1361,50 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
     ? computeSegmentNoiseScore(segments[0].content)
     : 0;
 
-  // P0 comprehensive debug logging with ALL requested metrics
-  // Includes all protection flag diagnostics requested in P0 spec
-  const bodyPassTriggerConditionMet = localFrontMatter.has_front_matter &&
-    conceptsFromSegment0Count > 0 && conceptsFromBodyCount === 0 && segments.length > 1;
-  const bodyPassReasonIfNotTriggered = !_dbg_body_only_second_pass_triggered
-    ? (!localFrontMatter.has_front_matter ? "no_front_matter"
-      : conceptsFromSegment0Count === 0 ? "no_seg0_concepts"
-      : conceptsFromBodyCount > 0 ? "body_concepts_already_present"
-      : segments.length <= 1 ? "single_segment"
-      : "unknown")
-    : "n/a_triggered";
+  // P0 DEFINITIVE FIX: Use the centralized decision for trigger condition display.
+  // bodyPassDecision was computed above using shouldTriggerBodyOnlySecondPass().
+  const bodyPassTriggerConditionMet = bodyPassDecision.trigger;
+  const bodyPassTriggerReason = bodyPassDecision.reason;
 
   console.info(
     `[COGNITIO][M2] FINAL SUMMARY:\n` +
-    `  m2_input_length=${clean_text.length}\n` +
-    `  m2_cleaned_length=${cleanedText.length}\n` +
-    `  m2_chapters_detected=${chapters.length}\n` +
-    `  m2_sentences_extracted=${_dbg_sentences_extracted}\n` +
-    `  m2_sentences_too_short=${_dbg_sentences_too_short}\n` +
-    `  m2_chapters_with_no_sentences=${_dbg_chapters_with_no_sentences}\n` +
-    `  m2_candidate_concepts_count=${rawConcepts.length}\n` +
-    `  m2_filtered_concepts_count=${filteredConcepts.length}\n` +
-    `  m2_final_concepts_count=${concepts.length}\n` +
-    `  m2_rejected_count=${rawConcepts.length - filteredConcepts.length}\n` +
-    `  m2_rejected_editorial_artifacts_count=${_dbg_rejected_editorial_artifacts_count}\n` +
-    `  --- P0 PROTECTION FLAGS ---\n` +
+    `  --- IMPORT / CLEANING ---\n` +
+    `  raw_text_length=${clean_text.length}\n` +
+    `  clean_text_length=${cleanedText.length}\n` +
     `  front_matter_detected=${localFrontMatter.has_front_matter}\n` +
+    `  front_matter_score=${localFrontMatter.segment_0_noise_score}\n` +
+    `  front_matter_lines_removed=${localFrontMatter.front_matter_lines_detected}\n` +
+    `  front_matter_chars_removed=${localFrontMatter.front_matter_chars_removed}\n` +
     `  segment_0_noise_score=${seg0NoiseScore.toFixed(2)}\n` +
-    `  concepts_from_segment_0=${finalConceptsFromSeg0}\n` +
-    `  concepts_from_body=${finalConceptsFromBody}\n` +
+    `  --- PRIMARY PASS ---\n` +
+    `  primary_topic="${mainTopic}"\n` +
+    `  primary_concepts_count=${rawConcepts.length}\n` +
+    `  primary_concepts_from_seg0=${rawConceptsFromSegment0Count}\n` +
+    `  primary_concepts_from_body=${rawConceptsFromBodyCount}\n` +
+    `  primary_filtered_count=${filteredConcepts.length}\n` +
+    `  primary_artifact_ratio=${artifactRatio.toFixed(2)}\n` +
+    `  main_topic_is_editorial_artifact=${mainTopicIsEditorialArtifact}\n` +
+    `  --- BODY-ONLY SECOND PASS ---\n` +
+    `  body_pass_trigger_condition_met=${bodyPassTriggerConditionMet}\n` +
+    `  body_pass_trigger_reason=${bodyPassTriggerReason}\n` +
+    `  body_pass_triggered=${_dbg_body_only_second_pass_triggered}\n` +
     `  seg0_quarantined_before=${seg0QuarantineBefore}\n` +
     `  seg0_quarantined_after=${segment0Quarantined}\n` +
-    `  body_pass_trigger_condition_met=${bodyPassTriggerConditionMet}\n` +
-    `  body_pass_triggered=${_dbg_body_only_second_pass_triggered}\n` +
-    `  body_pass_reason_if_not_triggered=${bodyPassReasonIfNotTriggered}\n` +
-    `  secondary_topic="${_dbg_body_only_second_pass_triggered ? (concepts.find(c => c.source_trace.some(t => t.segment_index > 0))?.label || finalTopic) : "n/a"}"\n` +
-    `  secondary_concepts_count=${_dbg_body_only_second_pass_concepts_count}\n` +
-    `  --- OTHER METRICS ---\n` +
-    `  m2_body_first_pass_triggered=${_dbg_body_first_pass_triggered}\n` +
-    `  m2_secondary_pass_triggered=${_dbg_secondary_pass_triggered}\n` +
-    `  m2_secondary_pass_concepts_count=${_dbg_secondary_pass_concepts_count}\n` +
-    `  m2_artifact_only_first_pass=${_dbg_artifact_only_first_pass}\n` +
-    `  m2_body_only_second_pass_triggered=${_dbg_body_only_second_pass_triggered}\n` +
-    `  m2_body_only_second_pass_concepts_count=${_dbg_body_only_second_pass_concepts_count}\n` +
-    `  m2_reject_reasons=${JSON.stringify(rejectReasons)}\n` +
-    `  m2_fallback_level=${_dbg_fallback_level}\n` +
-    `  m2_final_topic="${finalTopic}"\n` +
-    `  m2_final_concepts_count=${concepts.length}`
+    `  secondary_input_length=${_dbg_body_only_second_pass_triggered ? originalSegments.slice(1).map(s => s.content).join("").length : 0}\n` +
+    `  secondary_topic="${_dbg_body_only_second_pass_triggered ? finalTopic : "n/a"}"\n` +
+    `  secondary_raw_concepts_count=${_dbg_secondary_pass_raw_concepts_count}\n` +
+    `  secondary_filtered_concepts_count=${_dbg_secondary_pass_filtered_concepts_count}\n` +
+    `  secondary_body_concepts_count=${_dbg_secondary_pass_body_concepts_count}\n` +
+    `  --- FINAL SEMANTIC GATE ---\n` +
+    `  valid_concepts_count=${concepts.filter(c => !c.uncertain && c.source_confidence >= 0.4).length}\n` +
+    `  uncertain_concepts_count=${concepts.filter(c => c.uncertain || c.source_confidence < 0.4).length}\n` +
+    `  artifact_ratio=${artifactRatio.toFixed(2)}\n` +
+    `  final_concepts_from_seg0=${finalConceptsFromSeg0}\n` +
+    `  final_concepts_from_body=${finalConceptsFromBody}\n` +
+    `  final_concepts_count=${concepts.length}\n` +
+    `  final_topic="${finalTopic}"\n` +
+    `  fallback_level=${_dbg_fallback_level}\n` +
+    `  reject_reasons=${JSON.stringify(rejectReasons)}`
   );
 
   // Detect reasoning type
@@ -1330,7 +1485,7 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
     // Document Understanding Layer output
     document_understanding: docUnderstanding,
     mission_universe_hint: missionUniverseHint,
-    // P0: Diagnostic metadata for pipeline hook
+    // P0 DEFINITIVE: Diagnostic metadata for pipeline hook
     _diag_front_matter_detected: localFrontMatter.has_front_matter,
     _diag_segment_0_quarantined: segment0Quarantined,
     _diag_segment_0_quarantined_retroactive: seg0QuarantineBefore === false && segment0Quarantined === true,
@@ -1341,11 +1496,9 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
     _diag_front_matter_lines_count: localFrontMatter.front_matter_lines_detected,
     _diag_front_matter_chars_count: localFrontMatter.front_matter_chars_removed,
     _diag_body_pass_trigger_condition_met: bodyPassTriggerConditionMet,
-    _diag_body_pass_reason_if_not_triggered: bodyPassReasonIfNotTriggered,
-    // P0: Secondary pass topic — derived from body concepts if second pass was triggered
-    _diag_secondary_pass_topic: _dbg_body_only_second_pass_triggered
-      ? (concepts.find(c => c.source_trace.some(t => t.segment_index > 0))?.label || finalTopic)
-      : undefined,
+    _diag_body_pass_reason_if_not_triggered: bodyPassTriggerReason,
+    // P0: Secondary pass diagnostics
+    _diag_secondary_pass_topic: _dbg_body_only_second_pass_triggered ? finalTopic : undefined,
     _diag_secondary_pass_concepts_count: _dbg_body_only_second_pass_concepts_count,
   };
 }
@@ -1550,6 +1703,68 @@ function isEditorialArtifactForHeuristic(line: string): boolean {
 }
 
 // ---------- Concept Label Builder ----------
+
+// ---------- Body-Only Second Pass Trigger — SINGLE SOURCE OF TRUTH ----------
+
+/**
+ * P0 DEFINITIVE FIX: Centralized decision function for triggering
+ * the body-only second pass. This is the SINGLE source of truth.
+ *
+ * Returns { trigger: true, reason } if any of these conditions hold:
+ * A. front_matter + concepts from seg0 (raw OR filtered) + none from body
+ * B. main topic is an editorial artifact
+ * C. artifact ratio >= 0.8
+ * D. all concepts uncertain + raw concepts exist
+ */
+export function shouldTriggerBodyOnlySecondPass(diag: {
+  front_matter_detected: boolean;
+  concepts_from_segment_0: number;       // post-filter count
+  raw_concepts_from_segment_0: number;   // PRE-filter count (before artifact rejection)
+  concepts_from_body: number;
+  main_topic_is_editorial_artifact: boolean;
+  artifact_ratio: number;
+  all_concepts_uncertain: boolean;
+  raw_concepts_count: number;
+  filtered_concepts_count: number;
+  segments_count: number;
+}): { trigger: boolean; reason: string } {
+  // Cannot do body-only pass with a single segment
+  if (diag.segments_count <= 1) {
+    return { trigger: false, reason: "single_segment" };
+  }
+
+  // Condition A: front matter detected + concepts come from seg0 (raw OR filtered) + none from body
+  // P0 CRITICAL FIX: Use raw_concepts_from_segment_0 (pre-filter), NOT just post-filter count.
+  // This fixes the case where seg0 concepts are all rejected as artifacts but
+  // the trigger condition sees 0 because it only checks post-filter counts.
+  if (diag.front_matter_detected &&
+      (diag.concepts_from_segment_0 > 0 || diag.raw_concepts_from_segment_0 > 0) &&
+      diag.concepts_from_body === 0) {
+    return { trigger: true, reason: "front_matter_with_seg0_only_concepts" };
+  }
+
+  // Condition B: main topic is an editorial artifact
+  if (diag.main_topic_is_editorial_artifact) {
+    return { trigger: true, reason: "editorial_artifact_topic" };
+  }
+
+  // Condition C: high artifact ratio (>= 80%)
+  if (diag.artifact_ratio >= 0.8 && diag.raw_concepts_count > 0) {
+    return { trigger: true, reason: "high_artifact_ratio" };
+  }
+
+  // Condition D: all concepts uncertain + some raw concepts exist
+  if (diag.all_concepts_uncertain && diag.raw_concepts_count > 0) {
+    return { trigger: true, reason: "all_concepts_uncertain" };
+  }
+
+  // Condition E: all raw concepts rejected + some existed
+  if (diag.filtered_concepts_count === 0 && diag.raw_concepts_count > 0) {
+    return { trigger: true, reason: "all_concepts_rejected" };
+  }
+
+  return { trigger: false, reason: "conditions_not_met" };
+}
 
 // ---------- Segment 0 Quarantine ----------
 
