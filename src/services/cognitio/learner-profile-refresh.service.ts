@@ -193,7 +193,7 @@ export async function persistProfileRefresh(
   if (profileErr) throw new Error(`Profile refresh failed: ${profileErr.message}`);
 
   // Upsert snapshot (one per day)
-  const { error: snapErr } = await supabase
+  const { error: snapErr } = await (supabase as any)
     .from("learner_progress_snapshots")
     .upsert({
       user_id: snapshot.user_id,
