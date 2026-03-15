@@ -158,7 +158,7 @@ async function getCreditBalance(userId: string, feature: FeatureKey): Promise<nu
     .order("created_at", { ascending: true });
 
   if (!data) return 0;
-  return data.reduce((sum, row) => sum + row.remaining, 0);
+  return data.reduce((sum, row) => sum + (row.remaining ?? 0), 0);
 }
 
 async function decrementCredits(userId: string, feature: FeatureKey, amount: number): Promise<void> {
