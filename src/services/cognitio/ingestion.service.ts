@@ -9,6 +9,7 @@ import type { DetailedSourceType, DetectedStructureType, SourceDocument } from "
 import { validateWordCount, WORD_COUNT_THRESHOLDS } from "@/domain/cognitio/validators";
 import { createCognitioError } from "@/lib/cognitio-errors";
 import { toSourceDocument } from "@/domain/cognitio/mappers";
+import { extractTextFromFile, type ExtractionResult } from "./file-extractor.service";
 
 // ---------- Upload ----------
 
@@ -92,29 +93,65 @@ export async function runIngestion(
   }
 }
 
-// ---------- Local Ingestion Fallback ----------
+// ---------- Client-side text extraction ----------
 
-async function readFileAsText(file: File): Promise<string> {
-  try {
-    return await file.text();
-  } catch (err) {
-    console.error("Failed to read file as text:", err);
-    return "";
+/**
+ * Extract text from a file using proper parsers (pdfjs-dist for PDF, JSZip for DOCX).
+ * This is the PRIMARY extraction path — called before edge function to ensure
+ * text is available regardless of backend status.
+ */
+export async function extractFileText(file: File): Promise<ExtractionResult> {
+  console.info(`[COGNITIO] Extracting text from file: ${file.name} (${file.type}, ${file.size} bytes)`);
+  const result = await extractTextFromFile(file);
+
+  if (result.success) {
+    console.info(`[COGNITIO] Extraction success via ${result.method}: ${result.text.length} chars`);
+  } else {
+    console.error(`[COGNITIO] Extraction failed via ${result.method}: ${result.error}`);
   }
+
+  if (result.warnings.length > 0) {
+    console.warn("[COGNITIO] Extraction warnings:", result.warnings);
+  }
+
+  return result;
 }
+
+// ---------- Local Ingestion Fallback ----------
 
 export async function runLocalIngestion(
   documentId: string,
   input: IngestInput
 ): Promise<M1_Output> {
   let text = input.pasted_text || "";
+  const extraIssues: SourceIssue[] = [];
 
-  // If no pasted text but a file was uploaded, extract text from the file
+  // If no pasted text but a file was uploaded, extract text with proper parsers
   if (!text && input.file) {
-    console.info("[COGNITIO] Local fallback: reading uploaded file as text");
-    text = await readFileAsText(input.file);
-    if (!text) {
-      console.warn("[COGNITIO] Local fallback: file read returned empty content for", input.file.name, input.file.type);
+    console.info("[COGNITIO] Local fallback: extracting text from uploaded file with proper parsers");
+    const extraction = await extractTextFromFile(input.file);
+
+    if (extraction.success && extraction.text.trim().length > 0) {
+      text = extraction.text;
+      // Track warnings from extraction
+      for (const w of extraction.warnings) {
+        extraIssues.push({ code: "EXTRACTION_WARNING", message: w, severity: "info" });
+      }
+      if (extraction.method !== "plain_text") {
+        extraIssues.push({
+          code: "LOCAL_EXTRACTION_USED",
+          message: `Extraction locale (${extraction.method}) — le service distant n'était pas disponible`,
+          severity: "info",
+        });
+      }
+    } else {
+      console.warn("[COGNITIO] Local fallback: extraction failed for", input.file.name, extraction.error);
+      extraIssues.push({
+        code: "FILE_PARSE_FAILED",
+        message: extraction.error || `Impossible de lire le fichier ${input.file.name}`,
+        severity: "blocking",
+        action_required: true,
+      });
     }
   }
 
@@ -123,12 +160,20 @@ export async function runLocalIngestion(
   }
 
   const result = extractAndAnalyzeText(text);
+  // Merge extraction issues
+  result.issues = [...extraIssues, ...result.issues];
 
   try {
+    const sourceType = input.content_type === "application/pdf"
+      ? "pdf_text"
+      : input.content_type?.includes("wordprocessingml")
+        ? "docx"
+        : "pasted_text";
+
     await supabase.from("source_documents").update({
       ingestion_status: "parsed",
       quality_score: result.confidence_level,
-      source_type: "pasted_text",
+      source_type: sourceType,
       detailed_source_type: result.source_type,
       detected_structure: result.detected_structure,
       source_language: result.language,
