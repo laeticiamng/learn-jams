@@ -41,7 +41,7 @@ export async function updateMemoryAfterTest(
               : "mastery_status_changed",
         user_id: input.user_id,
         concept_stable_key: result.concept_key,
-        old_status: node.previousStatus,
+        old_status: node.previousStatus as any,
         new_status: node.updatedNode.mastery_status,
         mastery_score: node.updatedNode.mastery_score,
         transformation_id: input.transformation_id,
