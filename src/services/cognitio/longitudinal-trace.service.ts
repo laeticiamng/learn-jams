@@ -55,7 +55,7 @@ export async function updateKnowledgeGraph(
 
   for (const result of results) {
     // Upsert knowledge node
-    const { data: existing } = await supabase
+    const { data: existing } = await (supabase as any)
       .from("learner_knowledge_graph")
       .select("*")
       .eq("user_id", user_id)
