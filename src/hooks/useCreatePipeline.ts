@@ -18,6 +18,8 @@ import type { IngestInput } from "@/domain/cognitio/contracts";
 import type { LearningObjective } from "@/domain/cognitio/types";
 import type { LearnerAudienceProfile } from "@/domain/cognitio/learner-profile.types";
 import type { M7_Input } from "@/domain/cognitio/qa.contracts";
+import type { M5_Output } from "@/domain/cognitio/generation.contracts";
+import type { M5B_Output } from "@/domain/cognitio/story.contracts";
 
 export type PipelinePhase =
   | "import"
@@ -134,8 +136,8 @@ export function useCreatePipeline() {
 
       // === M5: Generation ===
       setPhase("generating");
-      let m5Result = null;
-      let m5bResult = null;
+      let m5Result: M5_Output | null = null;
+      let m5bResult: M5B_Output | null = null;
 
       if (m4Result.chosen_format === "fiche_dynamique") {
         m5Result = await generation.generate(
@@ -149,7 +151,7 @@ export function useCreatePipeline() {
           m1Result.issues.map((i) => i.message),
           currentObjective,
           currentProfile
-        );
+        ) ?? null;
         if (!m5Result) {
           setPipelineError({ source: "generation", message: generation.error ?? "Generation failed", phase: "generating" });
           setPhase("result");
@@ -167,7 +169,7 @@ export function useCreatePipeline() {
           m1Result.issues.map((i) => i.message),
           currentObjective,
           currentProfile
-        );
+        ) ?? null;
         if (!m5bResult) {
           setPipelineError({ source: "generation", message: storyGeneration.error ?? "Story generation failed", phase: "generating" });
           setPhase("result");

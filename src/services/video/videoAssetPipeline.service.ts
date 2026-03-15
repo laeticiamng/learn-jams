@@ -3,6 +3,7 @@
 // ============================================================
 
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import type { VideoAsset, VideoAssetType } from "@/domain/video/video.types";
 import { supabaseStorageProvider } from "@/services/providers/supabaseStorageProvider";
 
@@ -35,7 +36,7 @@ export async function uploadAsset(
         content_type: file.type,
         size_bytes: file.size,
         ...metadata,
-      },
+      } as Json,
     })
     .select("*")
     .single();
@@ -56,7 +57,7 @@ export async function linkExternalAsset(
       project_id: projectId,
       asset_type: assetType,
       storage_path: storagePath,
-      metadata_json: metadata ?? {},
+      metadata_json: (metadata ?? {}) as Json,
     })
     .select("*")
     .single();

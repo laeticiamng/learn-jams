@@ -128,7 +128,7 @@ describe("buildLocalMemoryArchitect", () => {
   // ---------- Mnemonics ----------
 
   it("generates acronym mnemonic for >= 3 critical concepts", () => {
-    const concepts = [];
+    const concepts: AnalyzedConcept[] = [];
     for (let i = 0; i < 5; i++) {
       concepts.push(makeConcept(`crit_${i}`, 1));
     }
@@ -253,7 +253,7 @@ describe("buildLocalMemoryArchitect", () => {
   // ---------- Confusion pairs affect segment function ----------
 
   it("marks segment with discrimination when confusion pair is present", () => {
-    const concepts = [];
+    const concepts: AnalyzedConcept[] = [];
     for (let i = 0; i < 10; i++) {
       concepts.push(makeConcept(`c${i}`, i < 2 ? 1 : 3));
     }

@@ -3,6 +3,7 @@
 // ============================================================
 
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import type { VideoProject, VideoProviderRun, VideoRunType, VideoRunStatus } from "@/domain/video/video.types";
 import { resolveProvider, executeWithFailover } from "@/services/providers/providerRouter";
 import { getVideoProvider } from "@/services/providers/providerRegistry";
@@ -20,7 +21,7 @@ export async function createProviderRun(
       provider_key: providerKey,
       run_type: runType,
       status: "pending",
-      request_json: requestJson,
+      request_json: requestJson as Json,
     })
     .select("*")
     .single();
@@ -39,8 +40,8 @@ export async function updateProviderRun(
     status,
     updated_at: new Date().toISOString(),
   };
-  if (response) patch.response_json = response;
-  if (errorJson) patch.error_json = errorJson;
+  if (response) patch.response_json = response as Json;
+  if (errorJson) patch.error_json = errorJson as Json;
 
   const { error } = await supabase
     .from("video_provider_runs")

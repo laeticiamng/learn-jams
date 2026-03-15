@@ -14,7 +14,7 @@ import type { AnalyzedConcept, AnalyzedConfusionPair } from "@/domain/cognitio/c
 function makeAnswer(overrides: Partial<RecallAnswer> = {}): RecallAnswer {
   return {
     item_id: crypto.randomUUID(),
-    user_answer: "test",
+    answer: "test",
     is_correct: true,
     confidence: 3,
     concepts_tested: ["c0"],
@@ -28,10 +28,16 @@ function makeConcept(key: string, label?: string): AnalyzedConcept {
     stable_key: key,
     label: label ?? `Concept ${key}`,
     definition: `Definition of ${key}`,
+    type: "general",
     criticality: 1,
+    criticality_score: 0.8,
+    bloom_target: "understand",
+    relations: [],
+    prerequisites: [],
+    source_confidence: 0.8,
+    source_trace: [{ segment_index: 0, excerpt: `About ${key}` }],
     uncertain: false,
-    source_spans: [],
-  } as AnalyzedConcept;
+  };
 }
 
 // ---------- computeRawScore ----------
@@ -261,8 +267,8 @@ describe("computeConfusionMap", () => {
         concept_a_key: "c0",
         concept_b_key: "c1",
         distinction_key: "c0 vs c1",
-        risk_level: "high",
-      } as AnalyzedConfusionPair,
+        frequency: 4,
+      },
     ];
     const map = computeConfusionMap(answers, pairs);
     expect(map).toHaveLength(1);
@@ -278,8 +284,8 @@ describe("computeConfusionMap", () => {
         concept_a_key: "c0",
         concept_b_key: "c1",
         distinction_key: "c0 vs c1",
-        risk_level: "high",
-      } as AnalyzedConfusionPair,
+        frequency: 4,
+      },
     ];
     const map = computeConfusionMap(answers, pairs);
     expect(map).toHaveLength(0);
@@ -292,8 +298,8 @@ describe("computeConfusionMap", () => {
       makeAnswer({ is_correct: false, concepts_tested: ["c2"] }),
     ];
     const pairs: AnalyzedConfusionPair[] = [
-      { concept_a_key: "c0", concept_b_key: "c1", distinction_key: "d1", risk_level: "high" } as AnalyzedConfusionPair,
-      { concept_a_key: "c2", concept_b_key: "c3", distinction_key: "d2", risk_level: "medium" } as AnalyzedConfusionPair,
+      { concept_a_key: "c0", concept_b_key: "c1", distinction_key: "d1", frequency: 1 } as AnalyzedConfusionPair,
+      { concept_a_key: "c2", concept_b_key: "c3", distinction_key: "d2", frequency: 2 },
     ];
     const map = computeConfusionMap(answers, pairs);
     expect(map[0].confusion_count).toBeGreaterThanOrEqual(map[1].confusion_count);

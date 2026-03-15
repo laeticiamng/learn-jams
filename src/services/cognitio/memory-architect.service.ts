@@ -3,6 +3,7 @@
 // ============================================================
 
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import type { M3_Input, M3_Output, SplitModule } from "@/domain/cognitio/memory.contracts";
 import type {
   M3_Segment,
@@ -396,23 +397,23 @@ export async function persistMemoryArchitecture(
   output: M3_Output,
   userId: string
 ): Promise<string> {
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from("memory_architectures")
     .insert({
       id: output.architecture_id,
       document_id: output.document_id,
       course_profile_id: output.course_profile_id,
       user_id: userId,
-      segments_json: output.segments,
-      concept_order_json: output.concept_order,
-      repetition_plan_json: output.repetition_plan,
-      mnemonics_json: output.mnemonics,
-      visual_anchors_json: output.visual_anchors,
-      cognitive_budget_json: output.cognitive_budget,
-      pedagogical_contract_json: output.pedagogical_contract,
+      segments_json: output.segments as unknown as Json,
+      concept_order_json: output.concept_order as unknown as Json,
+      repetition_plan_json: output.repetition_plan as unknown as Json,
+      mnemonics_json: output.mnemonics as unknown as Json,
+      visual_anchors_json: output.visual_anchors as unknown as Json,
+      cognitive_budget_json: output.cognitive_budget as unknown as Json,
+      pedagogical_contract_json: output.pedagogical_contract as unknown as Json,
       total_duration_sec: output.total_duration_sec,
       needs_splitting: output.needs_splitting,
-      split_modules_json: output.split_modules ?? null,
+      split_modules_json: (output.split_modules ?? null) as unknown as Json,
       reasoning_type: output.reasoning_type,
       objective: output.objective,
     })
@@ -424,7 +425,7 @@ export async function persistMemoryArchitecture(
 }
 
 export async function getMemoryArchitecture(documentId: string): Promise<M3_Output | null> {
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from("memory_architectures")
     .select("*")
     .eq("document_id", documentId)
@@ -438,16 +439,16 @@ export async function getMemoryArchitecture(documentId: string): Promise<M3_Outp
     architecture_id: data.id,
     document_id: data.document_id,
     course_profile_id: data.course_profile_id,
-    segments: data.segments_json as M3_Output["segments"],
-    concept_order: data.concept_order_json as string[],
-    repetition_plan: data.repetition_plan_json as M3_Output["repetition_plan"],
-    mnemonics: data.mnemonics_json as M3_Output["mnemonics"],
-    visual_anchors: data.visual_anchors_json as M3_Output["visual_anchors"],
-    cognitive_budget: data.cognitive_budget_json as M3_Output["cognitive_budget"],
-    pedagogical_contract: data.pedagogical_contract_json as M3_Output["pedagogical_contract"],
+    segments: data.segments_json as unknown as M3_Output["segments"],
+    concept_order: data.concept_order_json as unknown as string[],
+    repetition_plan: data.repetition_plan_json as unknown as M3_Output["repetition_plan"],
+    mnemonics: data.mnemonics_json as unknown as M3_Output["mnemonics"],
+    visual_anchors: data.visual_anchors_json as unknown as M3_Output["visual_anchors"],
+    cognitive_budget: data.cognitive_budget_json as unknown as M3_Output["cognitive_budget"],
+    pedagogical_contract: data.pedagogical_contract_json as unknown as M3_Output["pedagogical_contract"],
     total_duration_sec: data.total_duration_sec,
     needs_splitting: data.needs_splitting,
-    split_modules: data.split_modules_json as M3_Output["split_modules"],
+    split_modules: data.split_modules_json as unknown as M3_Output["split_modules"],
     reasoning_type: data.reasoning_type as M3_Output["reasoning_type"],
     objective: data.objective as M3_Output["objective"],
   };

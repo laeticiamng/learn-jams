@@ -12,10 +12,16 @@ function makeConcept(key: string, criticality: 1 | 2 | 3 = 1): AnalyzedConcept {
     stable_key: key,
     label: `Concept ${key}`,
     definition: `Definition of ${key}`,
+    type: "general",
     criticality,
+    criticality_score: 1 - criticality * 0.2,
+    bloom_target: "understand",
+    relations: [],
+    prerequisites: [],
+    source_confidence: 0.8,
+    source_trace: [{ segment_index: 0, excerpt: `About ${key}` }],
     uncertain: false,
-    source_spans: [{ text: "test", start: 0, end: 4 }],
-  } as AnalyzedConcept;
+  };
 }
 
 function makeBlock(type: string, conceptsCovered: string[], opts: Partial<ContentBlock> = {}): ContentBlock {
@@ -52,8 +58,8 @@ function makeM5Output(): M5_Output {
     makeBlock("hook", ["c0"]),
     makeBlock("anchor_map", ["c0", "c1"]),
     makeBlock("pedagogical", ["c0", "c1"], {
-      recall_event: { id: "re1", type: "question", prompt: "What?", answer: "This", concept_key: "c0" },
-    } as Partial<ContentBlock>),
+      recall_event: { type: "question", prompt: "What?", expected_concepts: ["c0"], bloom_level: 2 },
+    }),
     makeBlock("reactivation", ["c0"]),
     makeBlock("clarity_peak", ["c0"]),
     makeBlock("consolidation", ["c0", "c1"]),
@@ -84,9 +90,18 @@ function makeM5Output(): M5_Output {
     },
     internal_summary: {
       learning_objective: "Learn A and B",
-      concept_count: 2,
-      critical_covered: 2,
-      critical_total: 2,
+      dominant_knowledge_type: {
+        dominant: "declaratif",
+        distribution: { declaratif: 1, procedural: 0, conditionnel: 0, causal: 0, metacognitif: 0 },
+      },
+      critical_concepts: ["c0", "c1"],
+      confusions: [],
+      cognitive_structure: "linear",
+      cognitive_budget: { segments: 1, max_new_elements: 5, total_duration_sec: 300 },
+      pedagogical_format: "fiche_dynamique",
+      reactivation_plan: ["c0"],
+      active_recall_plan: ["c0", "c1"],
+      mnemonics: [],
     },
     metadata: {
       document_id: "doc-1",
@@ -102,36 +117,63 @@ function makeM5Output(): M5_Output {
 
 function makeM2Output(): M2_Output {
   return {
-    document_id: "doc-1",
-    key_concepts: [makeConcept("c0", 1), makeConcept("c1", 1)],
-    confusion_pairs: [],
-    traps: [],
-    confidence: { global_score: 0.9, ambiguous_zones: [] },
+    course_profile_id: "cp-1",
+    main_topic: "Test Topic",
     learning_objectives: ["Understand A and B"],
-    bloom_taxonomy: { remember: 2, understand: 2, apply: 0, analyze: 0, evaluate: 0, create: 0 },
-  } as unknown as M2_Output;
+    key_concepts: [makeConcept("c0", 1), makeConcept("c1", 1)],
+    traps: [],
+    confusion_pairs: [],
+    reasoning_type: "declaratif",
+    density: "medium",
+    recommended_template: "fiche_dynamique",
+    confidence: { concepts: 0.9, logic: 0.9, traps: 0.8, structure: 0.9, ambiguous_zones: [] },
+    prerequis: [],
+    structure_type: "prose",
+    source_issues: [],
+    total_concepts: 2,
+    critical_count: 2,
+    estimated_complexity: 4,
+  };
 }
 
 function makeM3Output(): M3_Output {
   return {
+    architecture_id: "arch-1",
     document_id: "doc-1",
-    segments: [{ segment_id: "seg-0", label: "Segment 1", concept_keys: ["c0", "c1"], cognitive_load: 3, ordering: 0 }],
-    cognitive_budget: { total_load: 3, estimated_time_minutes: 10, overload_risk: false },
-    pedagogical_contract: { learning_objective: "Learn A and B", total_concepts: 2, critical_count: 2, estimated_study_time: "10 min", disclaimer_required: false },
+    course_profile_id: "cp-1",
+    segments: [{ segment_index: 0, concept_keys: ["c0", "c1"], new_element_count: 2, reinforcement_keys: [], dominant_function: "encoding", estimated_duration_sec: 120, bloom_targets: ["understand"] }],
+    concept_order: ["c0", "c1"],
     repetition_plan: [],
     mnemonics: [],
     visual_anchors: [],
-  } as unknown as M3_Output;
+    cognitive_budget: { total_concepts: 2, max_per_segment: 5, segment_count: 1, total_new_introductions: 2, total_reinforcements: 0, budget_utilization: 0.4 },
+    pedagogical_contract: { total_concepts: 2, critical_concepts: 2, estimated_duration_sec: 120, segment_count: 1, cognitive_budget: { total_concepts: 2, max_per_segment: 5, segment_count: 1, total_new_introductions: 2, total_reinforcements: 0, budget_utilization: 0.4 }, repetition_summary: { inline_recall_count: 1, final_test_questions: 3, j1_questions: 1, j7_questions: 1 }, guarantees: ["All critical concepts covered"] },
+    total_duration_sec: 120,
+    needs_splitting: false,
+    reasoning_type: "declaratif",
+    objective: "discovery",
+  };
 }
 
 function makeM4Output(): M4_Output {
   return {
-    document_id: "doc-1",
+    decision_id: "dec-1",
+    architecture_id: "arch-1",
     chosen_format: "fiche_dynamique",
-    format_scores: { fiche_dynamique: 0.9, histoire_animee: 0.3 },
-    reasoning: "Best fit",
-    constraints_applied: [],
-  } as unknown as M4_Output;
+    justification: "Best fit",
+    matrix_reasoning: "declaratif -> fiche",
+    estimated_duration_sec: 300,
+    needs_split: false,
+    overrides_applied: [],
+    cost_level: "low",
+    decision_trace: {
+      reasoning_type: "declaratif",
+      objective: "discovery",
+      matrix_result: "fiche_dynamique",
+      overrides_checked: [],
+      final_format: "fiche_dynamique",
+    },
+  };
 }
 
 function makeQAInput(overrides: Partial<M7_Input> = {}): M7_Input {

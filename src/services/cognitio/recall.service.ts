@@ -3,6 +3,7 @@
 // ============================================================
 
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import type { GenerateRecallInput, GenerateRecallOutput } from "@/domain/cognitio/contracts";
 import type { RecallQuestion, TestType, BloomLevel } from "@/domain/cognitio/types";
 import { computeCalibrationGap } from "@/domain/cognitio/validators";
@@ -101,27 +102,18 @@ function buildRecallOptions(
 }
 
 export async function saveRecallTest(
-  missionRunId: string,
+  userId: string,
+  transformationId: string,
   testType: TestType,
   questions: RecallQuestion[],
-  results: { question_id: string; answer_given: string | string[]; is_correct: boolean; confidence: number; time_taken_ms: number }[]
 ) {
-  const rawScore = results.filter(r => r.is_correct).length / results.length;
-  const confidenceScore = results.reduce((s, r) => s + r.confidence, 0) / results.length;
-  const calibrationGap = computeCalibrationGap(
-    results.map(r => ({ confidence: r.confidence, is_correct: r.is_correct }))
-  );
-
   const { data, error } = await supabase
     .from("recall_tests")
     .insert({
-      mission_run_id: missionRunId,
+      user_id: userId,
+      transformation_id: transformationId,
       test_type: testType,
-      questions_json: questions,
-      raw_score: rawScore,
-      confidence_score: confidenceScore,
-      calibration_gap: calibrationGap,
-      results_json: results,
+      questions_json: questions as unknown as Json,
     })
     .select("id")
     .single();
@@ -130,11 +122,11 @@ export async function saveRecallTest(
   return data;
 }
 
-export async function getRecallTests(missionRunId: string) {
+export async function getRecallTests(transformationId: string) {
   const { data, error } = await supabase
     .from("recall_tests")
     .select("*")
-    .eq("mission_run_id", missionRunId)
+    .eq("transformation_id", transformationId)
     .order("created_at", { ascending: true });
 
   if (error) throw new Error(`Recall tests fetch failed: ${error.message}`);
@@ -142,35 +134,42 @@ export async function getRecallTests(missionRunId: string) {
 }
 
 export async function getPendingRetests(userId: string) {
-  // Find missions where J+1 or J+7 retests are due
   const now = new Date();
   const j1Cutoff = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
   const j7Cutoff = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
-  const { data, error } = await supabase
+  // Get completed mission runs
+  const { data: runs, error: runsError } = await supabase
     .from("mission_runs")
-    .select(`
-      id,
-      mission_id,
-      started_at,
-      completed_at,
-      recall_tests (test_type)
-    `)
+    .select("id, mission_id, started_at, completed_at")
     .eq("user_id", userId)
     .eq("completion_status", "completed")
     .order("completed_at", { ascending: false });
 
-  if (error) return [];
+  if (runsError || !runs) return [];
+
+  // Get existing recall tests for this user
+  const { data: existingTests } = await supabase
+    .from("recall_tests")
+    .select("test_type, transformation_id")
+    .eq("user_id", userId);
+
+  const existingByTransformation = new Map<string, Set<string>>();
+  for (const test of existingTests ?? []) {
+    const set = existingByTransformation.get(test.transformation_id) ?? new Set();
+    set.add(test.test_type);
+    existingByTransformation.set(test.transformation_id, set);
+  }
 
   const pending: { mission_run_id: string; mission_id: string; test_type: TestType; due_since: string }[] = [];
 
-  for (const run of data ?? []) {
+  for (const run of runs) {
     const completedAt = run.completed_at ? new Date(run.completed_at) : null;
     if (!completedAt) continue;
 
-    const existingTypes = new Set((run.recall_tests ?? []).map((t: { test_type: string }) => t.test_type));
+    // Use mission_id as a proxy for transformation context
+    const existingTypes = existingByTransformation.get(run.mission_id) ?? new Set();
 
-    // Check J+1
     if (completedAt.toISOString() <= j1Cutoff && !existingTypes.has("j1")) {
       pending.push({
         mission_run_id: run.id,
@@ -180,7 +179,6 @@ export async function getPendingRetests(userId: string) {
       });
     }
 
-    // Check J+7
     if (completedAt.toISOString() <= j7Cutoff && !existingTypes.has("j7")) {
       pending.push({
         mission_run_id: run.id,

@@ -3,6 +3,7 @@
 // ============================================================
 
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import type { TrackEventInput, ProductEventName } from "@/domain/product/events.types";
 import { isValidEventName } from "@/domain/product/validators";
 
@@ -30,14 +31,14 @@ export async function trackEvent(
   if (!isValidEventName(input.event_name)) return;
 
   try {
-    await (supabase as any).from("product_events").insert({
+    await supabase.from("product_events").insert({
       user_id: userId ?? null,
       anonymous_id: userId ? null : getAnonymousId(),
       transformation_id: input.transformation_id ?? null,
       event_name: input.event_name,
       audience_level: input.audience_level ?? null,
       format: input.format ?? null,
-      metadata_json: input.metadata ?? {},
+      metadata_json: (input.metadata ?? {}) as unknown as Json,
     });
   } catch {
     // Event tracking must never break the app
@@ -59,9 +60,9 @@ export async function trackEventBatch(
       event_name: e.event_name,
       audience_level: e.audience_level ?? null,
       format: e.format ?? null,
-      metadata_json: e.metadata ?? {},
+      metadata_json: (e.metadata ?? {}) as unknown as Json,
     }));
-    await (supabase as any).from("product_events").insert(rows);
+    await supabase.from("product_events").insert(rows);
   } catch {
     // Non-blocking
   }

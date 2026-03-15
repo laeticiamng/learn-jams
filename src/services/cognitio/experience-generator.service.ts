@@ -3,6 +3,7 @@
 // ============================================================
 
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import type { GenerateExperienceInput, GenerateExperienceOutput } from "@/domain/cognitio/contracts";
 import type {
   BrickType,
@@ -278,7 +279,7 @@ async function saveMission(
   input: GenerateExperienceInput,
   result: GenerateExperienceOutput
 ) {
-  const { error } = await (supabase as any)
+  const { error } = await supabase
     .from("generated_missions")
     .insert({
       id: result.mission_id,
@@ -293,7 +294,7 @@ async function saveMission(
       fallback_mode: result.fallback_mode,
       quality_band: result.quality_band,
       qa_score: 0,
-      mission_json: result.mission_json,
+      mission_json: result.mission_json as unknown as Json,
       published_status: "draft",
     });
 
@@ -301,7 +302,7 @@ async function saveMission(
 }
 
 export async function getMission(missionId: string) {
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from("generated_missions")
     .select("*")
     .eq("id", missionId)
@@ -312,7 +313,7 @@ export async function getMission(missionId: string) {
 }
 
 export async function getUserMissions(userId: string) {
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from("generated_missions")
     .select("*")
     .eq("user_id", userId)

@@ -7,7 +7,7 @@ import type { AnalyzedConcept, AnalyzedConfusionPair } from "@/domain/cognitio/c
 function makeAnswer(overrides: Partial<RecallAnswer> = {}): RecallAnswer {
   return {
     item_id: crypto.randomUUID(),
-    user_answer: "test",
+    answer: "test",
     is_correct: true,
     confidence: 3,
     concepts_tested: ["c0"],
@@ -21,14 +21,21 @@ function makeConcept(key: string): AnalyzedConcept {
     stable_key: key,
     label: `Concept ${key}`,
     definition: `Definition of ${key}`,
+    type: "general",
     criticality: 1,
+    criticality_score: 0.8,
+    bloom_target: "understand",
+    relations: [],
+    prerequisites: [],
+    source_confidence: 0.8,
+    source_trace: [{ segment_index: 0, excerpt: `About ${key}` }],
     uncertain: false,
-    source_spans: [],
-  } as AnalyzedConcept;
+  };
 }
 
 function makeInput(overrides: Partial<M6_GradeInput> = {}): M6_GradeInput {
   return {
+    recall_test_id: "test-1",
     answers: [
       makeAnswer({ is_correct: true, confidence: 4, concepts_tested: ["c0"] }),
       makeAnswer({ is_correct: false, confidence: 2, concepts_tested: ["c1"] }),
@@ -77,7 +84,7 @@ describe("gradeRecallLocally", () => {
         makeAnswer({ is_correct: false, concepts_tested: ["c0"] }),
       ],
       confusion_pairs: [
-        { concept_a_key: "c0", concept_b_key: "c1", distinction_key: "test", risk_level: "high" } as AnalyzedConfusionPair,
+        { concept_a_key: "c0", concept_b_key: "c1", distinction_key: "test", frequency: 4 },
       ],
     }));
     expect(result.confusion_map.length).toBeGreaterThanOrEqual(1);

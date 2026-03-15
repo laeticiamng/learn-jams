@@ -4,6 +4,7 @@
 
 import { useState, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import type {
   MissionContent,
   MissionRoom,
@@ -42,7 +43,7 @@ export function useMissionPlay(missionId: string, userId: string) {
     setLoading(true);
     try {
       // Use any-typed query to bypass missing table types
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("generated_missions")
         .select("mission_json")
         .eq("id", missionId)
@@ -57,7 +58,7 @@ export function useMissionPlay(missionId: string, userId: string) {
       setMission(missionContent);
 
       // Create mission run
-      const { data: run, error: runError } = await (supabase as any)
+      const { data: run, error: runError } = await supabase
         .from("mission_runs")
         .insert({
           mission_id: missionId,
@@ -190,14 +191,14 @@ export function useMissionPlay(missionId: string, userId: string) {
     const score = computeCompositeScore(state.events);
     const debrief = computeDebrief(state.events, mission);
 
-    await (supabase as any)
+    await supabase
       .from("mission_runs")
       .update({
         completed_at: new Date().toISOString(),
         completion_status: "completed",
-        room_events_json: state.events,
-        score_composite_json: score,
-        debrief_json: debrief,
+        room_events_json: state.events as unknown as Json,
+        score_composite_json: score as unknown as Json,
+        debrief_json: debrief as unknown as Json,
       })
       .eq("id", state.runId);
 

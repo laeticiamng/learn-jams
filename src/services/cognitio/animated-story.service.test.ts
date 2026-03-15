@@ -3,6 +3,7 @@ import { generateAnimatedStoryLocally } from "./animated-story.service";
 import type { M5B_Input } from "@/domain/cognitio/story.contracts";
 import type { AnalyzedConcept, AnalyzedConfusionPair, M2_Output } from "@/domain/cognitio/contracts";
 import type { M3_Output } from "@/domain/cognitio/memory.contracts";
+import type { M3_Segment } from "@/domain/cognitio/memory.types";
 import type { M4_Output } from "@/domain/cognitio/format.contracts";
 import type { LearnerAudienceProfile } from "@/domain/cognitio/learner-profile.types";
 import { MANDATORY_SCENE_TYPES } from "@/domain/cognitio/story.types";
@@ -34,7 +35,7 @@ function makeInput(conceptCount: number = 6, overrides: Partial<M5B_Input> = {})
   }
 
   const segmentCount = Math.max(1, Math.ceil(conceptCount / 3));
-  const segments = [];
+  const segments: M3_Segment[] = [];
   for (let s = 0; s < segmentCount; s++) {
     const start = s * 3;
     const end = Math.min(start + 3, conceptCount);
@@ -45,6 +46,7 @@ function makeInput(conceptCount: number = 6, overrides: Partial<M5B_Input> = {})
       reinforcement_keys: [],
       dominant_function: "encoding" as const,
       estimated_duration_sec: 60,
+      bloom_targets: ["understand"],
     });
   }
 
@@ -61,7 +63,7 @@ function makeInput(conceptCount: number = 6, overrides: Partial<M5B_Input> = {})
       recommended_template: "histoire_animee",
       confidence: { concepts: 0.8, logic: 0.8, traps: 0.7, structure: 0.8, ambiguous_zones: [] },
       prerequis: [],
-      structure_type: "chapitres",
+      structure_type: "mixed",
       source_issues: [],
       total_concepts: concepts.length,
       critical_count: concepts.filter(c => c.criticality === 1).length,
@@ -80,6 +82,8 @@ function makeInput(conceptCount: number = 6, overrides: Partial<M5B_Input> = {})
         total_concepts: concepts.length,
         max_per_segment: 4,
         segment_count: segments.length,
+        total_new_introductions: concepts.length,
+        total_reinforcements: 0,
         budget_utilization: 0.5,
       },
       pedagogical_contract: {
@@ -87,6 +91,14 @@ function makeInput(conceptCount: number = 6, overrides: Partial<M5B_Input> = {})
         critical_concepts: 2,
         estimated_duration_sec: 120,
         segment_count: segments.length,
+        cognitive_budget: {
+          total_concepts: concepts.length,
+          max_per_segment: 4,
+          segment_count: segments.length,
+          total_new_introductions: concepts.length,
+          total_reinforcements: 0,
+          budget_utilization: 0.5,
+        },
         guarantees: ["All critical concepts covered"],
         repetition_summary: { inline_recall_count: 1, final_test_questions: 3, j1_questions: 1, j7_questions: 1 },
       },

@@ -3,6 +3,7 @@
 // ============================================================
 
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import type { GenerationJob, GenerationArtifact, CreateJobInput, JobStatus } from "@/domain/providers/job.types";
 
 export async function createJob(input: CreateJobInput): Promise<GenerationJob> {
@@ -14,7 +15,7 @@ export async function createJob(input: CreateJobInput): Promise<GenerationJob> {
       job_type: input.job_type,
       status: "pending",
       preferred_provider_key: input.preferred_provider_key ?? null,
-      input_json: input.input_json,
+      input_json: input.input_json as Json,
       max_retries: input.max_retries ?? 3,
     })
     .select("*")
@@ -38,8 +39,8 @@ export async function updateJobStatus(
   if (status === "running") patch.started_at = new Date().toISOString();
   if (status === "completed" || status === "failed") patch.finished_at = new Date().toISOString();
   if (updates?.actual_provider_key) patch.actual_provider_key = updates.actual_provider_key;
-  if (updates?.output_json) patch.output_json = updates.output_json;
-  if (updates?.error_json) patch.error_json = updates.error_json;
+  if (updates?.output_json) patch.output_json = updates.output_json as Json;
+  if (updates?.error_json) patch.error_json = updates.error_json as Json;
 
   const { error } = await supabase
     .from("generation_jobs")
@@ -119,7 +120,7 @@ export async function addArtifact(
       job_id: jobId,
       artifact_type: artifactType,
       storage_path: storagePath,
-      metadata_json: metadata ?? {},
+      metadata_json: (metadata ?? {}) as Json,
     })
     .select("*")
     .single();
@@ -150,7 +151,7 @@ export async function logWebhookEvent(
     .insert({
       provider_key: providerKey,
       event_type: eventType,
-      payload_json: payload,
+      payload_json: payload as Json,
     })
     .select("id")
     .single();

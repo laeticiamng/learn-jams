@@ -37,7 +37,10 @@ export function getQualityBandBg(band: QualityBand): string {
 export function getMasteryStatusLabel(status: MasteryStatus): string {
   switch (status) {
     case "mastered": return "Maîtrisé";
+    case "strong": return "Solide";
+    case "stable": return "Stable";
     case "learning": return "En cours";
+    case "emerging": return "Émergent";
     case "fragile": return "Fragile";
     case "aging": return "Vieillissant";
     case "unknown": return "Inconnu";
@@ -47,7 +50,10 @@ export function getMasteryStatusLabel(status: MasteryStatus): string {
 export function getMasteryStatusColor(status: MasteryStatus): string {
   switch (status) {
     case "mastered": return "text-green-500";
+    case "strong": return "text-emerald-500";
+    case "stable": return "text-teal-500";
     case "learning": return "text-blue-500";
+    case "emerging": return "text-sky-500";
     case "fragile": return "text-orange-500";
     case "aging": return "text-yellow-500";
     case "unknown": return "text-muted-foreground";

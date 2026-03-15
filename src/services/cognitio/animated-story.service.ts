@@ -4,6 +4,7 @@
 // ============================================================
 
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import type { M5B_Input, M5B_Output } from "@/domain/cognitio/story.contracts";
 import type {
   StoryScene,
@@ -734,7 +735,7 @@ export async function persistStoryTransformation(
   output: M5B_Output,
   userId: string,
 ): Promise<string> {
-  const { data: transform, error: tErr } = await (supabase as any)
+  const { data: transform, error: tErr } = await supabase
     .from("transformations")
     .insert({
       id: output.transformation_id,
@@ -754,26 +755,26 @@ export async function persistStoryTransformation(
 
   if (tErr) throw new Error(`Failed to persist story transformation: ${tErr.message}`);
 
-  const { error: cErr } = await (supabase as any)
+  const { error: cErr } = await supabase
     .from("generated_contents")
     .insert({
       transformation_id: output.transformation_id,
       version: 1,
-      content_json: output.scenes,
-      source_disclaimer_json: output.disclaimer,
+      content_json: output.scenes as unknown as Json,
+      source_disclaimer_json: output.disclaimer as unknown as Json,
       coverage_json: {
         critical_total: output.metadata.quality_flags.includes("full_critical_coverage") ? 1 : 0,
         critical_covered: output.metadata.quality_flags.includes("full_critical_coverage") ? 1 : 0,
         major_total: 0,
         major_covered: 0,
-      },
-      generation_flags_json: output.metadata.quality_flags,
+      } as unknown as Json,
+      generation_flags_json: output.metadata.quality_flags as unknown as Json,
       internal_summary_json: {
         render_mode: output.render_mode,
         scene_count: output.scenes.length,
         narrative_necessity: output.narrative_necessity,
         audience_adaptation: output.audience_adaptation,
-      },
+      } as unknown as Json,
     });
 
   if (cErr) throw new Error(`Failed to persist story content: ${cErr.message}`);

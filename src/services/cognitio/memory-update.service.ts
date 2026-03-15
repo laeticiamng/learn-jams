@@ -14,6 +14,7 @@ import type {
   ConceptTestResult,
 } from "@/domain/cognitio/longitudinal.contracts";
 import type { ConfusionMapEntry } from "@/domain/cognitio/recall.types";
+import type { FormatEffectivenessRecord } from "@/domain/cognitio/longitudinal.types";
 import { applyTestResultToNode } from "./mastery-engine.service";
 import { upsertFormatEffectiveness } from "./format-effectiveness.service";
 
@@ -60,7 +61,7 @@ export async function updateMemoryAfterTest(
   }
 
   // 3. Update format effectiveness
-  let formatRecord = null;
+  let formatRecord: FormatEffectivenessRecord | null = null;
   try {
     formatRecord = await upsertFormatEffectiveness(
       input.user_id,
@@ -166,7 +167,7 @@ async function upsertConceptNode(
   const now = new Date().toISOString();
 
   // Fetch existing
-  const { data: existing } = await (supabase as any)
+  const { data: existing } = await supabase
     .from("learner_knowledge_graph")
     .select("*")
     .eq("user_id", userId)
@@ -194,7 +195,7 @@ async function upsertConceptNode(
   let savedNode: ConceptMemoryNode;
 
   if (existing) {
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from("learner_knowledge_graph")
       .update(nodeData)
       .eq("id", (existing as Record<string, unknown>).id as string)
@@ -203,7 +204,7 @@ async function upsertConceptNode(
     if (error) throw new Error(`Knowledge graph update failed: ${error.message}`);
     savedNode = data as unknown as ConceptMemoryNode;
   } else {
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from("learner_knowledge_graph")
       .insert({
         user_id: userId,
@@ -237,7 +238,7 @@ async function updateConfusionEdges(
     // Normalize key order for consistent lookups
     const [keyA, keyB] = [entry.concept_a, entry.concept_b].sort();
 
-    const { data: existing } = await (supabase as any)
+    const { data: existing } = await supabase
       .from("learner_confusion_edges")
       .select("*")
       .eq("user_id", userId)
@@ -252,7 +253,7 @@ async function updateConfusionEdges(
       const newHits = currentHits + entry.confusion_count;
       const severity = Math.min(1, newHits / 10);
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("learner_confusion_edges")
         .update({
           hits_count: newHits,
@@ -268,7 +269,7 @@ async function updateConfusionEdges(
     } else {
       const severity = Math.min(1, entry.confusion_count / 10);
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("learner_confusion_edges")
         .insert({
           user_id: userId,

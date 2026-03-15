@@ -22,10 +22,11 @@ import { CognitiveBudgetCard } from "@/components/cognitio/CognitiveBudgetCard";
 import { FormatDecisionCard } from "@/components/cognitio/FormatDecisionCard";
 import { PedagogicalContractCard } from "@/components/cognitio/PedagogicalContractCard";
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import type { M1_Output, M2_Output, AnalyzedConcept, AnalyzedConfusionPair, AnalyzedTrap, AnalysisConfidence, SegmentOutput } from "@/domain/cognitio/contracts";
 import type { M3_Output } from "@/domain/cognitio/memory.contracts";
 import type { M4_Output } from "@/domain/cognitio/format.contracts";
-import type { AmbiguousZone } from "@/domain/cognitio/types";
+import type { AmbiguousZone, DetailedSourceType, DetectedStructureType } from "@/domain/cognitio/types";
 import type { FormatOverride, FormatDecisionModule, CostLevel } from "@/domain/cognitio/format.types";
 import type { ChosenFormat } from "@/domain/cognitio/types";
 
@@ -46,10 +47,10 @@ export default function MissionAnalysis() {
       setLoading(true);
       try {
         // Load source document
-        const { data: doc, error: docError } = await (supabase as any)
+        const { data: doc, error: docError } = await supabase
           .from("source_documents")
           .select("*")
-          .eq("id", id)
+          .eq("id", id!)
           .single();
 
         if (docError || !doc) {
@@ -58,10 +59,10 @@ export default function MissionAnalysis() {
         }
 
         // Load segments
-        const { data: segments } = await (supabase as any)
+        const { data: segments } = await supabase
           .from("document_segments")
           .select("*")
-          .eq("document_id", id)
+          .eq("document_id", id!)
           .order("segment_index");
 
         // Build M1 output from stored data
@@ -70,10 +71,10 @@ export default function MissionAnalysis() {
           clean_text: "",
           word_count: doc.word_count ?? 0,
           language: doc.detected_language ?? doc.source_language ?? "unknown",
-          source_type: doc.detailed_source_type ?? "unknown",
+          source_type: (doc.detailed_source_type ?? "unknown") as DetailedSourceType,
           confidence_level: doc.quality_score ?? 0,
-          detected_structure: doc.detected_structure ?? "minimal",
-          issues: doc.warnings_json ?? [],
+          detected_structure: (doc.detected_structure ?? "minimal") as DetectedStructureType,
+          issues: (doc.warnings_json ?? []) as unknown as M1_Output["issues"],
           segments: (segments ?? []).map((s: Record<string, unknown>) => ({
             segment_index: s.segment_index as number,
             title: s.title as string | null,
@@ -87,40 +88,40 @@ export default function MissionAnalysis() {
         setM1Output(m1);
 
         // Load course profile
-        const { data: profile } = await (supabase as any)
+        const { data: profile } = await supabase
           .from("course_profiles")
           .select("*")
-          .eq("document_id", id)
+          .eq("document_id", id!)
           .order("created_at", { ascending: false })
           .limit(1)
           .single();
 
         if (profile) {
           // Load concepts
-          const { data: concepts } = await (supabase as any)
+          const { data: concepts } = await supabase
             .from("concepts")
             .select("*")
             .eq("course_profile_id", profile.id)
             .order("criticality");
 
           // Load confusion pairs
-          const { data: pairs } = await (supabase as any)
+          const { data: pairs } = await supabase
             .from("confusion_pairs")
             .select("*")
             .eq("course_profile_id", profile.id);
 
-          const keyConcepts = (concepts ?? []).map((c: Record<string, unknown>) => ({
+          const keyConcepts: AnalyzedConcept[] = (concepts ?? []).map((c: Record<string, unknown>) => ({
             stable_key: c.stable_key as string,
             label: c.label as string,
             definition: (c.definition as string) ?? "",
-            type: (c.concept_type as string) ?? (c.category as string) ?? "general",
-            criticality: (c.criticality as number) ?? 3,
+            type: ((c.concept_type as string) ?? (c.category as string) ?? "general") as AnalyzedConcept["type"],
+            criticality: ((c.criticality as number) ?? 3) as AnalyzedConcept["criticality"],
             criticality_score: (c.criticality_score as number) ?? 0.5,
-            bloom_target: (c.bloom_target as string) ?? "remember",
-            relations: Array.isArray(c.relations_json) ? c.relations_json as AnalyzedConcept["relations"] : [],
-            prerequisites: Array.isArray(c.prerequisites_json) ? c.prerequisites_json as string[] : [],
+            bloom_target: ((c.bloom_target as string) ?? "remember") as AnalyzedConcept["bloom_target"],
+            relations: Array.isArray(c.relations_json) ? c.relations_json as unknown as AnalyzedConcept["relations"] : [],
+            prerequisites: Array.isArray(c.prerequisites_json) ? c.prerequisites_json as unknown as string[] : [],
             source_confidence: (c.source_confidence as number) ?? 0.5,
-            source_trace: Array.isArray(c.source_trace_json) ? c.source_trace_json as AnalyzedConcept["source_trace"] : [],
+            source_trace: Array.isArray(c.source_trace_json) ? c.source_trace_json as unknown as AnalyzedConcept["source_trace"] : [],
             uncertain: (c.uncertain as boolean) ?? false,
           }));
 
@@ -132,7 +133,7 @@ export default function MissionAnalysis() {
           }));
 
           const traps: AnalyzedTrap[] = Array.isArray(profile.traps_json)
-            ? (profile.traps_json as AnalyzedTrap[])
+            ? (profile.traps_json as unknown as AnalyzedTrap[])
             : [];
 
           const confidence: AnalysisConfidence = {
@@ -140,23 +141,23 @@ export default function MissionAnalysis() {
             logic: (profile.logic_confidence as number) ?? 0,
             traps: (profile.traps_confidence as number) ?? 0,
             structure: (profile.structure_confidence as number) ?? 0,
-            ambiguous_zones: Array.isArray(profile.ambiguous_zones_json) ? profile.ambiguous_zones_json as AmbiguousZone[] : [],
+            ambiguous_zones: Array.isArray(profile.ambiguous_zones_json) ? profile.ambiguous_zones_json as unknown as AmbiguousZone[] : [],
           };
 
           const m2: M2_Output = {
             course_profile_id: profile.id,
             main_topic: (profile.main_topic as string) ?? "",
-            learning_objectives: Array.isArray(profile.learning_objectives_json) ? profile.learning_objectives_json as string[] : [],
+            learning_objectives: Array.isArray(profile.learning_objectives_json) ? profile.learning_objectives_json as unknown as string[] : [],
             key_concepts: keyConcepts,
             traps,
             confusion_pairs: confusionPairs,
             reasoning_type: (profile.reasoning_type as M2_Output["reasoning_type"]) ?? "declaratif",
-            density: (profile.density as M2_Output["density"]) ?? "medium",
+            density: ((profile.density ?? "medium") as unknown as M2_Output["density"]),
             recommended_template: (profile.recommended_template as M2_Output["recommended_template"]) ?? "fiche_dynamique",
             confidence,
-            prerequis: Array.isArray(profile.prerequis_json) ? profile.prerequis_json as string[] : [],
+            prerequis: Array.isArray(profile.prerequis_json) ? profile.prerequis_json as unknown as string[] : [],
             structure_type: m1.detected_structure as M2_Output["structure_type"],
-            source_issues: Array.isArray(profile.source_issues_json) ? profile.source_issues_json as M2_Output["source_issues"] : [],
+            source_issues: Array.isArray(profile.source_issues_json) ? profile.source_issues_json as unknown as M2_Output["source_issues"] : [],
             total_concepts: keyConcepts.length,
             critical_count: keyConcepts.filter((c) => c.criticality === 1).length,
             estimated_complexity: (profile.estimated_complexity as number) ?? 5,
@@ -165,10 +166,10 @@ export default function MissionAnalysis() {
           setM2Output(m2);
 
           // Load memory architecture (M3)
-          const { data: arch } = await (supabase as any)
+          const { data: arch } = await supabase
             .from("memory_architectures")
             .select("*")
-            .eq("document_id", id)
+            .eq("document_id", id!)
             .order("created_at", { ascending: false })
             .limit(1)
             .single();
@@ -178,23 +179,23 @@ export default function MissionAnalysis() {
               architecture_id: arch.id,
               document_id: arch.document_id,
               course_profile_id: arch.course_profile_id,
-              segments: arch.segments_json as M3_Output["segments"],
-              concept_order: arch.concept_order_json as string[],
-              repetition_plan: arch.repetition_plan_json as M3_Output["repetition_plan"],
-              mnemonics: arch.mnemonics_json as M3_Output["mnemonics"],
-              visual_anchors: arch.visual_anchors_json as M3_Output["visual_anchors"],
-              cognitive_budget: arch.cognitive_budget_json as M3_Output["cognitive_budget"],
-              pedagogical_contract: arch.pedagogical_contract_json as M3_Output["pedagogical_contract"],
+              segments: arch.segments_json as unknown as M3_Output["segments"],
+              concept_order: arch.concept_order_json as unknown as string[],
+              repetition_plan: arch.repetition_plan_json as unknown as M3_Output["repetition_plan"],
+              mnemonics: arch.mnemonics_json as unknown as M3_Output["mnemonics"],
+              visual_anchors: arch.visual_anchors_json as unknown as M3_Output["visual_anchors"],
+              cognitive_budget: arch.cognitive_budget_json as unknown as M3_Output["cognitive_budget"],
+              pedagogical_contract: arch.pedagogical_contract_json as unknown as M3_Output["pedagogical_contract"],
               total_duration_sec: arch.total_duration_sec,
               needs_splitting: arch.needs_splitting,
-              split_modules: arch.split_modules_json as M3_Output["split_modules"],
+              split_modules: arch.split_modules_json as unknown as M3_Output["split_modules"],
               reasoning_type: arch.reasoning_type as M3_Output["reasoning_type"],
               objective: arch.objective as M3_Output["objective"],
             };
             setM3Output(m3);
 
             // Load format decision (M4)
-            const { data: decision } = await (supabase as any)
+            const { data: decision } = await supabase
               .from("format_decisions")
               .select("*")
               .eq("architecture_id", arch.id)
@@ -206,16 +207,16 @@ export default function MissionAnalysis() {
               const m4: M4_Output = {
                 decision_id: decision.id,
                 architecture_id: decision.architecture_id,
-                chosen_format: decision.chosen_format as ChosenFormat,
+                chosen_format: decision.chosen_format as unknown as ChosenFormat,
                 justification: decision.justification,
                 matrix_reasoning: decision.matrix_reasoning,
                 estimated_duration_sec: decision.estimated_duration_sec,
                 needs_split: decision.needs_split,
                 split_count: decision.split_count ?? undefined,
-                modules: decision.modules_json as FormatDecisionModule[] | undefined,
-                overrides_applied: decision.overrides_applied_json as FormatOverride[],
-                cost_level: decision.cost_level as CostLevel,
-                decision_trace: decision.decision_trace_json as M4_Output["decision_trace"],
+                modules: decision.modules_json as unknown as FormatDecisionModule[] | undefined,
+                overrides_applied: decision.overrides_applied_json as unknown as FormatOverride[],
+                cost_level: decision.cost_level as unknown as CostLevel,
+                decision_trace: decision.decision_trace_json as unknown as M4_Output["decision_trace"],
               };
               setM4Output(m4);
             }

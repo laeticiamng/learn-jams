@@ -4,6 +4,7 @@
 // ============================================================
 
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import type { M5_Input, M5_Output } from "@/domain/cognitio/generation.contracts";
 import type {
   ContentBlock,
@@ -666,7 +667,7 @@ export async function persistTransformation(
   userId: string
 ): Promise<string> {
   // 1. Insert transformation
-  const { data: transform, error: tErr } = await (supabase as any)
+  const { data: transform, error: tErr } = await supabase
     .from("transformations")
     .insert({
       id: output.transformation_id,
@@ -687,27 +688,27 @@ export async function persistTransformation(
   if (tErr) throw new Error(`Failed to persist transformation: ${tErr.message}`);
 
   // 2. Insert generated content
-  const { error: cErr } = await (supabase as any)
+  const { error: cErr } = await supabase
     .from("generated_contents")
     .insert({
       transformation_id: output.transformation_id,
       version: 1,
-      content_json: output.content_blocks,
-      source_disclaimer_json: output.source_disclaimer,
-      coverage_json: output.metadata.coverage,
-      generation_flags_json: output.metadata.quality_flags,
-      internal_summary_json: output.internal_summary,
+      content_json: output.content_blocks as unknown as Json,
+      source_disclaimer_json: output.source_disclaimer as unknown as Json,
+      coverage_json: output.metadata.coverage as unknown as Json,
+      generation_flags_json: output.metadata.quality_flags as unknown as Json,
+      internal_summary_json: output.internal_summary as unknown as Json,
     });
 
   if (cErr) throw new Error(`Failed to persist generated content: ${cErr.message}`);
 
   // 3. Insert final test
   const bloomLevels = new Set(output.final_test.map(q => q.bloom_level));
-  const { error: ftErr } = await (supabase as any)
+  const { error: ftErr } = await supabase
     .from("final_tests")
     .insert({
       transformation_id: output.transformation_id,
-      questions_json: output.final_test,
+      questions_json: output.final_test as unknown as Json,
       bloom_levels_count: bloomLevels.size,
       question_count: output.final_test.length,
     });
@@ -720,7 +721,7 @@ export async function persistTransformation(
 // ---------- Getters ----------
 
 export async function getTransformation(transformationId: string): Promise<M5_Output | null> {
-  const { data: t } = await (supabase as any)
+  const { data: t } = await supabase
     .from("transformations")
     .select("*")
     .eq("id", transformationId)
@@ -728,7 +729,7 @@ export async function getTransformation(transformationId: string): Promise<M5_Ou
 
   if (!t) return null;
 
-  const { data: gc } = await (supabase as any)
+  const { data: gc } = await supabase
     .from("generated_contents")
     .select("*")
     .eq("transformation_id", transformationId)
@@ -736,7 +737,7 @@ export async function getTransformation(transformationId: string): Promise<M5_Ou
     .limit(1)
     .single();
 
-  const { data: ft } = await (supabase as any)
+  const { data: ft } = await supabase
     .from("final_tests")
     .select("*")
     .eq("transformation_id", transformationId)
@@ -754,18 +755,18 @@ export async function getTransformation(transformationId: string): Promise<M5_Ou
       memory_architecture_id: t.memory_architecture_id,
       format_decision_id: t.format_decision_id,
       estimated_duration_sec: t.estimated_duration_sec,
-      quality_flags: gc.generation_flags_json as QualityFlag[],
-      coverage: gc.coverage_json as M5_Output["metadata"]["coverage"],
+      quality_flags: gc.generation_flags_json as unknown as QualityFlag[],
+      coverage: gc.coverage_json as unknown as M5_Output["metadata"]["coverage"],
     },
-    internal_summary: gc.internal_summary_json as InternalSummary,
-    content_blocks: gc.content_json as ContentBlock[],
-    final_test: ft ? ft.questions_json as FinalTestItem[] : [],
-    source_disclaimer: gc.source_disclaimer_json as SourceDisclaimer,
+    internal_summary: gc.internal_summary_json as unknown as InternalSummary,
+    content_blocks: gc.content_json as unknown as ContentBlock[],
+    final_test: ft ? ft.questions_json as unknown as FinalTestItem[] : [],
+    source_disclaimer: gc.source_disclaimer_json as unknown as SourceDisclaimer,
   };
 }
 
 export async function getUserTransformations(userId: string) {
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from("transformations")
     .select("id, document_id, format, published_status, estimated_duration_sec, created_at")
     .eq("user_id", userId)

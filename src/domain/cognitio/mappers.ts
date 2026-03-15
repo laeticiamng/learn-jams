@@ -25,6 +25,7 @@ import type {
   DetectedStructureType,
   ReasoningType,
 } from "./contracts";
+import type { Json } from "@/integrations/supabase/types";
 
 // ---------- Safe JSON parsing ----------
 
@@ -129,7 +130,7 @@ export function m1OutputToDocumentUpdate(output: M1_Output) {
     source_type: output.source_type,
     source_language: output.language,
     quality_score: output.confidence_level,
-    warnings_json: output.issues,
+    warnings_json: output.issues as unknown as Json,
   };
 }
 
@@ -151,15 +152,15 @@ export function m2OutputToCourseProfileRow(documentId: string, output: M2_Output
   return {
     document_id: documentId,
     main_topic: output.main_topic,
-    learning_objectives_json: output.learning_objectives,
+    learning_objectives_json: output.learning_objectives as unknown as Json,
     reasoning_type: output.reasoning_type,
-    density: output.density,
+    density: output.density === "high" ? 3 : output.density === "medium" ? 2 : 1,
     recommended_template: output.recommended_template,
     concepts_confidence: output.confidence.concepts,
     logic_confidence: output.confidence.logic,
     traps_confidence: output.confidence.traps,
     structure_confidence: output.confidence.structure,
-    ambiguous_zones_json: output.confidence.ambiguous_zones,
+    ambiguous_zones_json: output.confidence.ambiguous_zones as unknown as Json,
   };
 }
 
@@ -172,9 +173,9 @@ export function analyzedConceptToRow(courseProfileId: string, concept: AnalyzedC
     criticality: concept.criticality,
     bloom_target: concept.bloom_target,
     category: concept.type,
-    prerequisites_json: concept.prerequisites,
+    prerequisites_json: concept.prerequisites as unknown as Json,
     source_confidence: concept.source_confidence,
-    source_trace_json: concept.source_trace,
+    source_trace_json: concept.source_trace as unknown as Json,
   };
 }
 
