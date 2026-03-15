@@ -50,11 +50,11 @@ export async function startExperimentRun(
 ): Promise<ExperimentRun> {
   const { data, error } = await supabase
     .from("experiment_runs")
-    .insert({
+    .insert([{
       assignment_id: assignmentId,
       transformation_id: transformationId ?? null,
       status: "started",
-    })
+    }])
     .select("*")
     .single();
 
