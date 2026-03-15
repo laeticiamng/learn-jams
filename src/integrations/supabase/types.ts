@@ -477,6 +477,7 @@ export type Database = {
       final_tests: {
         Row: {
           bloom_level: number | null
+          bloom_levels_count: number | null
           choices_json: Json | null
           concepts_tested_json: Json | null
           created_at: string
@@ -484,11 +485,14 @@ export type Database = {
           id: string
           item_type: string | null
           prompt: string | null
+          question_count: number | null
+          questions_json: Json | null
           test_item_id: string | null
           transformation_id: string | null
         }
         Insert: {
           bloom_level?: number | null
+          bloom_levels_count?: number | null
           choices_json?: Json | null
           concepts_tested_json?: Json | null
           created_at?: string
@@ -496,11 +500,14 @@ export type Database = {
           id?: string
           item_type?: string | null
           prompt?: string | null
+          question_count?: number | null
+          questions_json?: Json | null
           test_item_id?: string | null
           transformation_id?: string | null
         }
         Update: {
           bloom_level?: number | null
+          bloom_levels_count?: number | null
           choices_json?: Json | null
           concepts_tested_json?: Json | null
           created_at?: string
@@ -508,6 +515,8 @@ export type Database = {
           id?: string
           item_type?: string | null
           prompt?: string | null
+          question_count?: number | null
+          questions_json?: Json | null
           test_item_id?: string | null
           transformation_id?: string | null
         }
@@ -591,6 +600,7 @@ export type Database = {
           recall_event_json: Json | null
           title: string | null
           transformation_id: string | null
+          version: number | null
           visual_anchor_json: Json | null
         }
         Insert: {
@@ -606,6 +616,7 @@ export type Database = {
           recall_event_json?: Json | null
           title?: string | null
           transformation_id?: string | null
+          version?: number | null
           visual_anchor_json?: Json | null
         }
         Update: {
@@ -621,6 +632,7 @@ export type Database = {
           recall_event_json?: Json | null
           title?: string | null
           transformation_id?: string | null
+          version?: number | null
           visual_anchor_json?: Json | null
         }
         Relationships: [
@@ -1032,6 +1044,30 @@ export type Database = {
         }
         Relationships: []
       }
+      learner_progress_snapshots: {
+        Row: {
+          created_at: string
+          id: string
+          metrics_json: Json | null
+          snapshot_type: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          metrics_json?: Json | null
+          snapshot_type?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          metrics_json?: Json | null
+          snapshot_type?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       margin_reports: {
         Row: {
           created_at: string
@@ -1397,34 +1433,43 @@ export type Database = {
           calibration_gap: number | null
           confidence_score: number | null
           created_at: string
+          generated_from_version: number | null
           id: string
           mission_run_id: string
           questions_json: Json | null
           raw_score: number | null
           results_json: Json | null
           test_type: string
+          transformation_id: string | null
+          user_id: string | null
         }
         Insert: {
           calibration_gap?: number | null
           confidence_score?: number | null
           created_at?: string
+          generated_from_version?: number | null
           id?: string
           mission_run_id: string
           questions_json?: Json | null
           raw_score?: number | null
           results_json?: Json | null
           test_type?: string
+          transformation_id?: string | null
+          user_id?: string | null
         }
         Update: {
           calibration_gap?: number | null
           confidence_score?: number | null
           created_at?: string
+          generated_from_version?: number | null
           id?: string
           mission_run_id?: string
           questions_json?: Json | null
           raw_score?: number | null
           results_json?: Json | null
           test_type?: string
+          transformation_id?: string | null
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -1434,7 +1479,53 @@ export type Database = {
             referencedRelation: "mission_runs"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "recall_tests_transformation_id_fkey"
+            columns: ["transformation_id"]
+            isOneToOne: false
+            referencedRelation: "transformations"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      review_queue: {
+        Row: {
+          completed_at: string | null
+          concept_stable_key: string
+          created_at: string
+          due_at: string | null
+          id: string
+          metadata_json: Json | null
+          priority: number | null
+          review_type: string | null
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          concept_stable_key: string
+          created_at?: string
+          due_at?: string | null
+          id?: string
+          metadata_json?: Json | null
+          priority?: number | null
+          review_type?: string | null
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          concept_stable_key?: string
+          created_at?: string
+          due_at?: string | null
+          id?: string
+          metadata_json?: Json | null
+          priority?: number | null
+          review_type?: string | null
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       security_audit_events: {
         Row: {
@@ -1891,6 +1982,7 @@ export type Database = {
           balance: number
           created_at: string
           credit_type: string | null
+          expires_at: string | null
           id: string
           lifetime_earned: number | null
           lifetime_spent: number | null
@@ -1902,6 +1994,7 @@ export type Database = {
           balance?: number
           created_at?: string
           credit_type?: string | null
+          expires_at?: string | null
           id?: string
           lifetime_earned?: number | null
           lifetime_spent?: number | null
@@ -1913,6 +2006,7 @@ export type Database = {
           balance?: number
           created_at?: string
           credit_type?: string | null
+          expires_at?: string | null
           id?: string
           lifetime_earned?: number | null
           lifetime_spent?: number | null
