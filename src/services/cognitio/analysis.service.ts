@@ -134,7 +134,7 @@ export async function persistAnalysis(
 ): Promise<{ courseProfileId: string; conceptIds: Record<string, string> }> {
   const profileRow = m2OutputToCourseProfileRow(documentId, output);
 
-  const { data: profile, error: profileError } = await supabase
+  const { data: profile, error: profileError } = await (supabase as any)
     .from("course_profiles")
     .insert(profileRow)
     .select("id")
