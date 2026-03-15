@@ -31,12 +31,12 @@ export async function assignExperiment(input: AssignExperimentInput): Promise<Ex
 
   const { data, error } = await supabase
     .from("experiment_assignments")
-    .insert({
+    .insert([{
       user_id: input.user_id ?? null,
       anonymous_id: input.anonymous_id ?? null,
       experiment_key: input.experiment_key,
       variant,
-    })
+    }])
     .select("*")
     .single();
 
