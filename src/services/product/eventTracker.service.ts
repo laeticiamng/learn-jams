@@ -30,7 +30,7 @@ export async function trackEvent(
   if (!isValidEventName(input.event_name)) return;
 
   try {
-    await supabase.from("product_events").insert({
+    await (supabase as any).from("product_events").insert({
       user_id: userId ?? null,
       anonymous_id: userId ? null : getAnonymousId(),
       transformation_id: input.transformation_id ?? null,
