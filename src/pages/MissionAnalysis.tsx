@@ -46,7 +46,7 @@ export default function MissionAnalysis() {
       setLoading(true);
       try {
         // Load source document
-        const { data: doc, error: docError } = await supabase
+        const { data: doc, error: docError } = await (supabase as any)
           .from("source_documents")
           .select("*")
           .eq("id", id)
