@@ -341,13 +341,19 @@ export interface UpdateMemoryOutput {
  */
 export interface PipelineDebugCounters {
   // M1 — Ingestion
+  /** Length of the text BEFORE M1 cleaning (extracted from file or pasted) */
   raw_text_length: number;
+  /** Length of M1 clean_text — the canonical_semantic_text for the pipeline */
   cleaned_text_length: number;
+  /** Preview of the canonical text (first 200 chars) for debug */
+  canonical_text_preview: string;
   detected_sections_count: number;
 
   // M2 — Analysis
   raw_topic: string;
   cleaned_topic: string;
+  /** Text length fed to M2 concept extraction (after semantic cleaning) */
+  m2_input_text_length: number;
   extracted_concepts_raw_count: number;
   extracted_concepts_after_filter_count: number;
   rejected_concepts_count: number;
@@ -373,6 +379,21 @@ export interface PipelineDebugCounters {
   // Validation gate
   final_generation_status: "success" | "empty_generation" | "error" | "pending";
   success_gate_reason?: string;
+
+  // Pipeline trace — root-cause diagnostic
+  pipeline_trace: PipelineTraceEntry[];
+}
+
+/** Structured trace entry for each pipeline step */
+export interface PipelineTraceEntry {
+  step: "A_import" | "B_cleaning" | "C_topic" | "D_concept_extraction" | "E_concept_filtering" | "F_memory" | "G_generation";
+  input_length?: number;
+  output_length?: number;
+  input_count?: number;
+  output_count?: number;
+  preview?: string;
+  detail?: string;
+  warning?: string;
 }
 
 // ---------- M9: Ops Metrics ----------

@@ -16,7 +16,7 @@ import { useQAStatus } from "@/hooks/useQAStatus";
 import { useProductTracking } from "@/hooks/useProductTracking";
 import { generateRecallSuiteLocally } from "@/services/cognitio/recall-generator.service";
 import { generateMissionLocally, saveMission } from "@/services/cognitio/experience-generator.service";
-import type { IngestInput, GenerateExperienceOutput, PipelineDebugCounters } from "@/domain/cognitio/contracts";
+import type { IngestInput, GenerateExperienceOutput, PipelineDebugCounters, PipelineTraceEntry } from "@/domain/cognitio/contracts";
 import type { LearningObjective, ChosenFormat } from "@/domain/cognitio/types";
 import type { LearnerAudienceProfile } from "@/domain/cognitio/learner-profile.types";
 import type { M7_Input } from "@/domain/cognitio/qa.contracts";
@@ -99,9 +99,11 @@ export function useCreatePipeline() {
       const counters: PipelineDebugCounters = {
         raw_text_length: 0,
         cleaned_text_length: 0,
+        canonical_text_preview: "",
         detected_sections_count: 0,
         raw_topic: "",
         cleaned_topic: "",
+        m2_input_text_length: 0,
         extracted_concepts_raw_count: 0,
         extracted_concepts_after_filter_count: 0,
         rejected_concepts_count: 0,
@@ -116,6 +118,7 @@ export function useCreatePipeline() {
         generator_called: "",
         generation_success: false,
         final_generation_status: "pending",
+        pipeline_trace: [],
       };
 
       // === M1: Ingestion ===
@@ -141,12 +144,34 @@ export function useCreatePipeline() {
       }
 
       // P0: Populate M1 counters
-      counters.raw_text_length = input.pasted_text?.length ?? 0;
-      counters.cleaned_text_length = m1Result.clean_text.length;
+      // CRITICAL FIX: raw_text_length must reflect the ACTUAL text that entered the pipeline,
+      // not input.pasted_text (which is undefined for file uploads — the extracted text
+      // is injected as enrichedInput.pasted_text inside useDocumentIngestion).
+      // The canonical_semantic_text for the entire pipeline is m1Result.clean_text.
+      const canonicalSemanticText = m1Result.clean_text;
+      // Best estimate for raw text: for file uploads, the word_count * ~6 is a proxy.
+      // But clean_text segments concatenated is the real source text that entered cleaning.
+      const rawTextEstimate = m1Result.segments.reduce((sum, s) => sum + s.content.length, 0) || m1Result.clean_text.length;
+      counters.raw_text_length = rawTextEstimate;
+      counters.cleaned_text_length = canonicalSemanticText.length;
+      counters.canonical_text_preview = canonicalSemanticText.slice(0, 200);
       counters.detected_sections_count = m1Result.segments.length;
+      counters.pipeline_trace.push({
+        step: "A_import",
+        input_length: rawTextEstimate,
+        output_length: canonicalSemanticText.length,
+        preview: canonicalSemanticText.slice(0, 100),
+        detail: `words=${m1Result.word_count}, segments=${m1Result.segments.length}, confidence=${m1Result.confidence_level.toFixed(2)}`,
+      });
+      counters.pipeline_trace.push({
+        step: "B_cleaning",
+        input_length: rawTextEstimate,
+        output_length: canonicalSemanticText.length,
+        detail: `noise_removed=${rawTextEstimate - canonicalSemanticText.length} chars`,
+      });
       console.info(
         `[COGNITIO][P0] M1 done: raw_text=${counters.raw_text_length}, ` +
-        `cleaned_text=${counters.cleaned_text_length}, ` +
+        `cleaned_text(canonical)=${counters.cleaned_text_length}, ` +
         `sections=${counters.detected_sections_count}, ` +
         `words=${m1Result.word_count}, confidence=${m1Result.confidence_level.toFixed(2)}`
       );
@@ -171,21 +196,58 @@ export function useCreatePipeline() {
       // P0: Populate M2 counters
       counters.raw_topic = m2Result.main_topic;
       counters.cleaned_topic = m2Result.main_topic;
+      counters.m2_input_text_length = canonicalSemanticText.length;
       counters.extracted_concepts_after_filter_count = m2Result.key_concepts.length;
-      counters.extracted_concepts_raw_count = m2Result.total_concepts; // after dedup, but best we have here
+      counters.extracted_concepts_raw_count = m2Result.total_concepts;
       counters.rejected_concepts_count = m2Result.total_concepts - m2Result.key_concepts.length;
+      counters.pipeline_trace.push({
+        step: "C_topic",
+        input_length: canonicalSemanticText.length,
+        detail: `detected_topic="${m2Result.main_topic}"`,
+      });
+      counters.pipeline_trace.push({
+        step: "D_concept_extraction",
+        input_length: canonicalSemanticText.length,
+        input_count: m2Result.total_concepts,
+        output_count: m2Result.key_concepts.length,
+        detail: `raw=${m2Result.total_concepts}, critical=${m2Result.critical_count}, density=${m2Result.density}`,
+      });
+      counters.pipeline_trace.push({
+        step: "E_concept_filtering",
+        input_count: m2Result.total_concepts,
+        output_count: m2Result.key_concepts.length,
+        detail: `rejected=${m2Result.total_concepts - m2Result.key_concepts.length}`,
+        warning: m2Result.key_concepts.length === 0 && canonicalSemanticText.length > 50
+          ? `CRITICAL: 0 concepts from ${m1Result.word_count}-word document`
+          : undefined,
+      });
       console.info(
         `[COGNITIO][P0] M2 done: concepts=${m2Result.key_concepts.length}, ` +
         `critical=${m2Result.critical_count}, density=${m2Result.density}, ` +
         `reasoning=${m2Result.reasoning_type}, topic="${m2Result.main_topic}"`
       );
 
-      // P0: Warn explicitly if 0 concepts from non-empty doc
-      if (m2Result.key_concepts.length === 0 && m1Result.clean_text.length > 50) {
+      // P0 VALIDATION GATE: If 0 concepts from non-empty doc, this is a pipeline failure.
+      // Block continuation and show explicit root cause instead of producing empty generation.
+      if (m2Result.key_concepts.length === 0 && canonicalSemanticText.length > 50) {
+        const rootCause = `Le moteur d'analyse (M2) n'a extrait aucun concept exploitable à partir de ${m1Result.word_count} mots. ` +
+          `Cela peut indiquer que le texte est dans un format non reconnu, ou que le service d'analyse distant a renvoyé un résultat vide. ` +
+          `Texte canonique disponible: ${canonicalSemanticText.length} car.`;
         console.error(
-          `[COGNITIO][P0] ALERT: 0 concepts extracted from ${m1Result.word_count}-word document! ` +
-          `This should not happen after emergency fallback. Check M2 extraction.`
+          `[COGNITIO][P0] PIPELINE BLOCKED: 0 concepts from ${m1Result.word_count}-word document. ` +
+          `canonical_text=${canonicalSemanticText.length} chars. This is a data contract violation.`
         );
+        counters.final_generation_status = "error";
+        counters.success_gate_reason = "0 concepts extracted from non-empty document — pipeline blocked";
+        counters.generation_error = rootCause;
+        setDebugCounters(counters);
+        setPipelineError({
+          source: "analysis",
+          message: rootCause,
+          phase: "analyzing",
+        });
+        setPhase("result");
+        return;
       }
 
       // === M3: Memory Architecture ===
@@ -202,6 +264,12 @@ export function useCreatePipeline() {
       counters.concepts_persisted_count = m2Result.key_concepts.length;
       counters.concepts_reloaded_count = m3Result.concept_order.length;
       counters.memory_segments_generated_count = m3Result.segments.length;
+      counters.pipeline_trace.push({
+        step: "F_memory",
+        input_count: m2Result.key_concepts.length,
+        output_count: m3Result.segments.length,
+        detail: `concept_order=${m3Result.concept_order.length}, duration=${m3Result.total_duration_sec}s, needs_split=${m3Result.needs_splitting}`,
+      });
       console.info(
         `[COGNITIO][P0] M3 done: memory_segments=${m3Result.segments.length}, ` +
         `concept_order=${m3Result.concept_order.length}, ` +
@@ -387,6 +455,11 @@ export function useCreatePipeline() {
       counters.generation_success = true;
       counters.final_generation_status = "success";
       counters.success_gate_reason = "All gates passed";
+      counters.pipeline_trace.push({
+        step: "G_generation",
+        input_count: m2Result.key_concepts.length,
+        detail: `format=${generationFormat}, status=success`,
+      });
       setDebugCounters(counters);
       console.info("[COGNITIO][P0] Pipeline complete. Debug counters:", JSON.stringify(counters, null, 2));
 

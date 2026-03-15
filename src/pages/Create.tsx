@@ -329,18 +329,56 @@ export default function Create() {
               {/* P0: Debug counters summary (always visible when available) */}
               {pipeline.debugCounters && (
                 <div className="border rounded-lg p-3 bg-muted/20 text-xs font-mono space-y-1">
-                  <p className="font-semibold text-muted-foreground mb-1">Diagnostic</p>
-                  <p>Texte brut : {pipeline.debugCounters.raw_text_length} car. | Nettoyé : {pipeline.debugCounters.cleaned_text_length} car.</p>
-                  <p>Sujet : "{pipeline.debugCounters.cleaned_topic || pipeline.debugCounters.raw_topic || "—"}"</p>
+                  <p className="font-semibold text-muted-foreground mb-1">Diagnostic pipeline</p>
+
+                  {/* M1 — Text */}
+                  <p className="text-muted-foreground font-semibold mt-1">STEP A-B — Import + Nettoyage</p>
+                  <p>Texte source (segments concat.) : {pipeline.debugCounters.raw_text_length} car.</p>
+                  <p>Texte canonique (m1.clean_text) : {pipeline.debugCounters.cleaned_text_length} car.</p>
+                  {pipeline.debugCounters.canonical_text_preview && (
+                    <p className="text-muted-foreground truncate max-w-full">Aperçu : "{pipeline.debugCounters.canonical_text_preview.slice(0, 120)}..."</p>
+                  )}
+                  <p>Sections M1 : {pipeline.debugCounters.detected_sections_count}</p>
+
+                  {/* M2 — Topic + Concepts */}
+                  <p className="text-muted-foreground font-semibold mt-1">STEP C-E — Analyse + Concepts</p>
+                  <p>Texte envoyé à M2 : {pipeline.debugCounters.m2_input_text_length} car.</p>
+                  <p>Sujet détecté : "{pipeline.debugCounters.cleaned_topic || pipeline.debugCounters.raw_topic || "—"}"</p>
                   <p>Concepts : {pipeline.debugCounters.extracted_concepts_raw_count} bruts → {pipeline.debugCounters.extracted_concepts_after_filter_count} après filtre ({pipeline.debugCounters.rejected_concepts_count} rejetés)</p>
-                  <p>Segments mémoire : {pipeline.debugCounters.memory_segments_generated_count}</p>
+                  {pipeline.debugCounters.extracted_concepts_after_filter_count === 0 && pipeline.debugCounters.cleaned_text_length > 50 && (
+                    <p className="text-red-600 font-semibold">ANOMALIE : 0 concepts malgré {pipeline.debugCounters.cleaned_text_length} car. de texte canonique</p>
+                  )}
+
+                  {/* M3 — Memory */}
+                  <p className="text-muted-foreground font-semibold mt-1">STEP F — Architecture mémoire</p>
+                  <p>Concepts en entrée : {pipeline.debugCounters.concepts_persisted_count} | Segments mémoire : {pipeline.debugCounters.memory_segments_generated_count}</p>
+
+                  {/* M4-M5 — Format + Generation */}
+                  <p className="text-muted-foreground font-semibold mt-1">STEP G — Génération</p>
                   <p>Format : {pipeline.debugCounters.final_format_decision || "—"} | Générateur : {pipeline.debugCounters.generator_called || "—"}</p>
                   <p>Statut final : <span className={pipeline.debugCounters.final_generation_status === "success" ? "text-green-600" : "text-red-600"}>{pipeline.debugCounters.final_generation_status}</span></p>
                   {pipeline.debugCounters.success_gate_reason && (
                     <p>Raison : {pipeline.debugCounters.success_gate_reason}</p>
                   )}
+                  {pipeline.debugCounters.generation_error && (
+                    <p className="text-red-500">Erreur : {pipeline.debugCounters.generation_error}</p>
+                  )}
                   {pipeline.debugCounters.reject_reasons.length > 0 && (
-                    <p>Raisons de rejet : {pipeline.debugCounters.reject_reasons.map(r => `${r.reason}(${r.count})`).join(", ")}</p>
+                    <p>Raisons de rejet concepts : {pipeline.debugCounters.reject_reasons.map(r => `${r.reason}(${r.count})`).join(", ")}</p>
+                  )}
+
+                  {/* Pipeline trace */}
+                  {pipeline.debugCounters.pipeline_trace.length > 0 && (
+                    <details className="mt-2">
+                      <summary className="text-muted-foreground cursor-pointer font-semibold">Trace détaillée ({pipeline.debugCounters.pipeline_trace.length} étapes)</summary>
+                      <div className="pl-2 mt-1 space-y-0.5 text-muted-foreground">
+                        {pipeline.debugCounters.pipeline_trace.map((t, i) => (
+                          <div key={i} className={t.warning ? "text-red-500" : ""}>
+                            [{t.step}] {t.input_length != null && `in=${t.input_length}`} {t.output_length != null && `out=${t.output_length}`} {t.input_count != null && `in_count=${t.input_count}`} {t.output_count != null && `out_count=${t.output_count}`} {t.detail && `| ${t.detail}`} {t.warning && `| WARNING: ${t.warning}`}
+                          </div>
+                        ))}
+                      </div>
+                    </details>
                   )}
                 </div>
               )}
