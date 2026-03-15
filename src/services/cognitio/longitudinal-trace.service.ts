@@ -39,7 +39,7 @@ export async function updateLearnerProfile(
   userId: string,
   updates: Partial<Pick<LearnerProfile, "profile_status" | "level_declared" | "session_count" | "calibration_sessions_count">>
 ) {
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from("learner_profiles")
     .update({ ...updates, updated_at: new Date().toISOString() })
     .eq("user_id", userId);
