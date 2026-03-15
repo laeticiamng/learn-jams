@@ -38,6 +38,7 @@ const MissionDebrief = lazy(() => import("./pages/MissionDebrief"));
 const MissionAnalysis = lazy(() => import("./pages/MissionAnalysis"));
 const TransformationView = lazy(() => import("./pages/TransformationView"));
 const CognitioLibrary = lazy(() => import("./pages/CognitioLibrary"));
+const ReviewHub = lazy(() => import("./pages/ReviewHub"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const GuardianSettings = lazy(() => import("./pages/GuardianSettings"));
 
@@ -67,6 +68,7 @@ const App = () => (
               <Route path="/create" element={<ProtectedRoute><Create /></ProtectedRoute>} />
               <Route path="/library" element={<ProtectedRoute><Library /></ProtectedRoute>} />
               <Route path="/player/:id" element={<ProtectedRoute><Player /></ProtectedRoute>} />
+              <Route path="/quiz" element={<ProtectedRoute><ReviewHub /></ProtectedRoute>} />
               <Route path="/quiz/:id" element={<ProtectedRoute><Quiz /></ProtectedRoute>} />
               <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
               <Route path="/studio" element={<ProtectedRoute><Studio /></ProtectedRoute>} />
