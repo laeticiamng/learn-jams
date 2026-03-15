@@ -205,7 +205,7 @@ export async function getUserUsageSummary(
 
   const counters = (quotaData?.counters_json as Record<string, number>) ?? {};
 
-  const { data: creditData } = await supabase
+  const { data: creditData } = await (supabase as any)
     .from("user_credit_balances")
     .select("credit_type, remaining")
     .eq("user_id", userId)

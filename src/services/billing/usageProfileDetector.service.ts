@@ -106,7 +106,7 @@ export async function persistUsageProfile(
 export async function getStoredUsageProfile(
   userId: string,
 ): Promise<{ profile: UsageProfile; usage: Partial<Record<FeatureKey, number>> } | null> {
-  const { data } = await supabase
+  const { data } = await (supabase as any)
     .from("user_usage_profiles")
     .select("dominant_usage_profile, rolling_30d_usage_json")
     .eq("user_id", userId)

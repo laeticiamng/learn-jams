@@ -367,5 +367,5 @@ export async function updateIngestionStatus(
   status: string,
   extra?: Record<string, unknown>
 ) {
-  await supabase.from("source_documents").update({ ingestion_status: status, ...extra }).eq("id", documentId);
+  await (supabase as any).from("source_documents").update({ ingestion_status: status, ...extra }).eq("id", documentId);
 }

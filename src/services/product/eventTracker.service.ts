@@ -61,7 +61,7 @@ export async function trackEventBatch(
       format: e.format ?? null,
       metadata_json: e.metadata ?? {},
     }));
-    await supabase.from("product_events").insert(rows);
+    await (supabase as any).from("product_events").insert(rows);
   } catch {
     // Non-blocking
   }

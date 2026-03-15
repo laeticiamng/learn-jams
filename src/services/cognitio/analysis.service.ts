@@ -166,7 +166,7 @@ export async function persistAnalysis(
   }
 
   // Update document status
-  await supabase.from("source_documents").update({ ingestion_status: "analyzed" }).eq("id", documentId);
+  await (supabase as any).from("source_documents").update({ ingestion_status: "analyzed" }).eq("id", documentId);
 
   return { courseProfileId, conceptIds };
 }

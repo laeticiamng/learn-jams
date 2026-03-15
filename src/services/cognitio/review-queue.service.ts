@@ -193,7 +193,7 @@ export async function persistReviewQueue(
     status: item.status,
   }));
 
-  const { error } = await supabase.from("review_queue").insert(rows);
+  const { error } = await (supabase as any).from("review_queue").insert(rows);
   if (error) throw new Error(`Review queue persist failed: ${error.message}`);
 }
 
