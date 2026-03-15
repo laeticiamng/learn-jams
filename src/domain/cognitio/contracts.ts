@@ -129,6 +129,15 @@ export interface M2_Output {
   estimated_audience_level?: string;
   audience_mismatch_risk?: number; // 0-1
   audience_mismatch_message?: string;
+  // P0: Body extraction diagnostic — tells pipeline hook whether body-only pass was attempted
+  _diag_front_matter_detected?: boolean;
+  _diag_segment_0_quarantined?: boolean;
+  _diag_artifact_only_first_pass?: boolean;
+  _diag_body_only_second_pass_triggered?: boolean;
+  _diag_body_only_second_pass_concepts_count?: number;
+  _diag_segment_0_noise_score?: number;
+  _diag_front_matter_lines_count?: number;
+  _diag_front_matter_chars_count?: number;
 }
 
 export interface AnalyzedConcept {
@@ -396,6 +405,13 @@ export interface PipelineDebugCounters {
   body_first_pass_triggered?: boolean;
   secondary_pass_triggered?: boolean;
   secondary_pass_concepts_count?: number;
+
+  // P0: Body extraction pipeline diagnostic
+  front_matter_detected?: boolean;
+  segment_0_quarantined?: boolean;
+  artifact_only_first_pass?: boolean;
+  body_only_second_pass_triggered?: boolean;
+  body_only_second_pass_concepts_count?: number;
 
   // P0: Final topic after cleaning
   final_topic_clean?: string;
