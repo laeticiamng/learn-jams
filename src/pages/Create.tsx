@@ -37,6 +37,9 @@ import { CreatePersonalizationStep } from "@/components/cognitio/create/CreatePe
 import { CreatePrimaryCTA } from "@/components/cognitio/create/CreatePrimaryCTA";
 import { CreateProgressHeader } from "@/components/cognitio/create/CreateProgressHeader";
 import { useCreatePipeline } from "@/hooks/useCreatePipeline";
+import { useQuotaGuard } from "@/hooks/useQuotaGuard";
+import { useUserPlan } from "@/hooks/useUserPlan";
+import { Paywall } from "@/components/billing/Paywall";
 import { useSeedLibrary } from "@/hooks/useSeedLibrary";
 import { SeedLibraryGrid } from "@/components/product/SeedLibraryGrid";
 import { FeatureFlagGuard } from "@/components/product/FeatureFlagGuard";
@@ -46,15 +49,19 @@ import type { LearningObjective } from "@/domain/cognitio/types";
 import type { EducationStage, ExplanationStyle } from "@/domain/cognitio/learner-profile.types";
 import { DEFAULT_LEARNER_PROFILE } from "@/domain/cognitio/learner-profile.types";
 import type { AmbiguousZone } from "@/domain/cognitio/types";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Create() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { track } = useProductTracking();
+  const { user } = useAuth();
 
   const pipeline = useCreatePipeline();
   const { seeds, loading: seedsLoading } = useSeedLibrary();
+  const { plan } = useUserPlan(user?.id ?? null);
+  const quotaGuard = useQuotaGuard(user?.id ?? null, plan);
   const [activeSeedId, setActiveSeedId] = useState<string | null>(null);
 
   // Step 1: Format
@@ -91,8 +98,12 @@ export default function Create() {
     setSourceData(null);
   }, []);
 
-  const handleSubmit = useCallback(() => {
+  const handleSubmit = useCallback(async () => {
     if (!sourceData || !selectedFormat) return;
+
+    // P0: Credit guard — check quota before running the pipeline
+    const allowed = await quotaGuard.checkBeforeGenerate(selectedFormat);
+    if (!allowed) return;
 
     const learner_profile = {
       ...DEFAULT_LEARNER_PROFILE,
@@ -110,7 +121,7 @@ export default function Create() {
       },
       selectedFormat,
     );
-  }, [sourceData, selectedFormat, objective, educationStage, explanationStyle, pipeline]);
+  }, [sourceData, selectedFormat, objective, educationStage, explanationStyle, pipeline, quotaGuard]);
 
   const { phase, ingestion, analysis, memory, format, generation, storyGeneration, missionResult, qa } = pipeline;
 
@@ -203,6 +214,23 @@ export default function Create() {
                 </motion.section>
               )}
 
+              {/* P0: Paywall — shown when quota guard blocks generation */}
+              {quotaGuard.guardResult && !quotaGuard.guardResult.allowed && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Paywall
+                    feature={quotaGuard.guardResult.feature}
+                    currentPlan={plan}
+                    upgradeTo={quotaGuard.guardResult.upgrade_to}
+                    reason={quotaGuard.guardResult.reason!}
+                    onBuyCredits={() => navigate("/pricing")}
+                  />
+                </motion.div>
+              )}
+
               {/* CTA — visible once format + source ready */}
               {selectedFormat && hasSource && (
                 <motion.div
@@ -214,6 +242,7 @@ export default function Create() {
                     selectedFormat={selectedFormat}
                     hasSource={hasSource}
                     onClick={handleSubmit}
+                    loading={quotaGuard.checking}
                   />
                 </motion.div>
               )}
