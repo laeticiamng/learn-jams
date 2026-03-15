@@ -51,6 +51,7 @@ export async function startExperimentRun(
     .from("experiment_runs")
     .insert([{
       assignment_id: assignmentId,
+      experiment_key: '',
       transformation_id: transformationId ?? null,
       status: "started",
     }])
