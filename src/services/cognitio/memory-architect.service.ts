@@ -396,7 +396,7 @@ export async function persistMemoryArchitecture(
   output: M3_Output,
   userId: string
 ): Promise<string> {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("memory_architectures")
     .insert({
       id: output.architecture_id,
