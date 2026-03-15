@@ -353,7 +353,7 @@ export async function getDocument(documentId: string): Promise<SourceDocument | 
 }
 
 export async function getUserDocuments(userId: string): Promise<SourceDocument[]> {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("source_documents")
     .select("*")
     .eq("user_id", userId)

@@ -213,7 +213,7 @@ export async function getProgressSnapshots(
   userId: string,
   limit = 30,
 ): Promise<ProgressSnapshot[]> {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("learner_progress_snapshots")
     .select("*")
     .eq("user_id", userId)

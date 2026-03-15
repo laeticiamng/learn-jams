@@ -115,7 +115,7 @@ export async function updateKnowledgeGraph(
   }
 
   // Update session count
-  await supabase
+  await (supabase as any)
     .from("learner_profiles")
     .update({
       session_count: supabase.rpc ? undefined : undefined, // Will use raw increment
