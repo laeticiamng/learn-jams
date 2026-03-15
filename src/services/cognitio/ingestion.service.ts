@@ -183,7 +183,7 @@ export async function runLocalIngestion(
     }).eq("id", documentId);
 
     if (result.segments.length > 0) {
-      await supabase.from("document_segments").insert(
+      await (supabase as any).from("document_segments").insert(
         result.segments.map((s) => ({
           document_id: documentId,
           segment_index: s.segment_index,
