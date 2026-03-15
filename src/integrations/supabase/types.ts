@@ -414,6 +414,62 @@ export type Database = {
         }
         Relationships: []
       }
+      format_decisions: {
+        Row: {
+          architecture_id: string | null
+          chosen_format: string | null
+          cost_level: string | null
+          created_at: string
+          decision_trace_json: Json | null
+          estimated_duration_sec: number | null
+          id: string
+          justification: string | null
+          matrix_reasoning: string | null
+          modules_json: Json | null
+          needs_split: boolean | null
+          overrides_applied_json: Json | null
+          split_count: number | null
+        }
+        Insert: {
+          architecture_id?: string | null
+          chosen_format?: string | null
+          cost_level?: string | null
+          created_at?: string
+          decision_trace_json?: Json | null
+          estimated_duration_sec?: number | null
+          id?: string
+          justification?: string | null
+          matrix_reasoning?: string | null
+          modules_json?: Json | null
+          needs_split?: boolean | null
+          overrides_applied_json?: Json | null
+          split_count?: number | null
+        }
+        Update: {
+          architecture_id?: string | null
+          chosen_format?: string | null
+          cost_level?: string | null
+          created_at?: string
+          decision_trace_json?: Json | null
+          estimated_duration_sec?: number | null
+          id?: string
+          justification?: string | null
+          matrix_reasoning?: string | null
+          modules_json?: Json | null
+          needs_split?: boolean | null
+          overrides_applied_json?: Json | null
+          split_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "format_decisions_architecture_id_fkey"
+            columns: ["architecture_id"]
+            isOneToOne: false
+            referencedRelation: "memory_architectures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       generated_missions: {
         Row: {
           chosen_format: string | null
@@ -812,6 +868,78 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      memory_architectures: {
+        Row: {
+          cognitive_budget_json: Json | null
+          concept_order_json: Json | null
+          course_profile_id: string | null
+          created_at: string
+          document_id: string | null
+          id: string
+          mnemonics_json: Json | null
+          needs_splitting: boolean | null
+          objective: string | null
+          pedagogical_contract_json: Json | null
+          reasoning_type: string | null
+          repetition_plan_json: Json | null
+          segments_json: Json | null
+          split_modules_json: Json | null
+          total_duration_sec: number | null
+          visual_anchors_json: Json | null
+        }
+        Insert: {
+          cognitive_budget_json?: Json | null
+          concept_order_json?: Json | null
+          course_profile_id?: string | null
+          created_at?: string
+          document_id?: string | null
+          id?: string
+          mnemonics_json?: Json | null
+          needs_splitting?: boolean | null
+          objective?: string | null
+          pedagogical_contract_json?: Json | null
+          reasoning_type?: string | null
+          repetition_plan_json?: Json | null
+          segments_json?: Json | null
+          split_modules_json?: Json | null
+          total_duration_sec?: number | null
+          visual_anchors_json?: Json | null
+        }
+        Update: {
+          cognitive_budget_json?: Json | null
+          concept_order_json?: Json | null
+          course_profile_id?: string | null
+          created_at?: string
+          document_id?: string | null
+          id?: string
+          mnemonics_json?: Json | null
+          needs_splitting?: boolean | null
+          objective?: string | null
+          pedagogical_contract_json?: Json | null
+          reasoning_type?: string | null
+          repetition_plan_json?: Json | null
+          segments_json?: Json | null
+          split_modules_json?: Json | null
+          total_duration_sec?: number | null
+          visual_anchors_json?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memory_architectures_course_profile_id_fkey"
+            columns: ["course_profile_id"]
+            isOneToOne: false
+            referencedRelation: "course_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "memory_architectures_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "source_documents"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       mission_runs: {
         Row: {
