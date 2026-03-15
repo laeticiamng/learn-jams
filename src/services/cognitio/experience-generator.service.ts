@@ -278,7 +278,7 @@ async function saveMission(
   input: GenerateExperienceInput,
   result: GenerateExperienceOutput
 ) {
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from("generated_missions")
     .insert({
       id: result.mission_id,
