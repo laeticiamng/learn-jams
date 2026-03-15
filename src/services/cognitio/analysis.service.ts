@@ -100,7 +100,7 @@ export async function runAnalysis(input: M2_Input): Promise<M2_Output> {
         `m2_parse_status=REJECTED (null or non-object)`
       );
       trace.local_fallback_triggered = true;
-      const localResult = runLocalAnalysis(preNormalized);
+      const localResult = runLocalAnalysis(preNormalized, input.segments);
       emitDiagnosticTrace(trace, localResult);
       return localResult;
     }
@@ -117,7 +117,7 @@ export async function runAnalysis(input: M2_Input): Promise<M2_Output> {
         `Falling back to local analysis.`
       );
       trace.local_fallback_triggered = true;
-      const localResult = runLocalAnalysis(preNormalized);
+      const localResult = runLocalAnalysis(preNormalized, input.segments);
       emitDiagnosticTrace(trace, localResult);
       return localResult;
     }
@@ -140,7 +140,7 @@ export async function runAnalysis(input: M2_Input): Promise<M2_Output> {
         `m2_fallback_used=yes (local analysis with emergency extraction).`
       );
       trace.local_fallback_triggered = true;
-      const localResult = runLocalAnalysis(preNormalized);
+      const localResult = runLocalAnalysis(preNormalized, input.segments);
       emitDiagnosticTrace(trace, localResult);
       return localResult;
     }
@@ -153,7 +153,7 @@ export async function runAnalysis(input: M2_Input): Promise<M2_Output> {
     trace.remote_call_status = "EXCEPTION";
     trace.local_fallback_triggered = true;
     console.warn(`[COGNITIO][M2] m2_remote_call_status=EXCEPTION, m2_fallback_used=yes, error=`, err);
-    const localResult = runLocalAnalysis(preNormalized);
+    const localResult = runLocalAnalysis(preNormalized, input.segments);
     emitDiagnosticTrace(trace, localResult);
     return localResult;
   }
@@ -380,8 +380,10 @@ function cleanR2CRevisionArtifacts(text: string): string {
 
 // ---------- Local Analysis Fallback ----------
 
-export function runLocalAnalysis(input: M2_Input): M2_Output {
+export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[]): M2_Output {
   const { document_id, clean_text, segments, confidence_level, user_objective } = input;
+  // rawSegments: original segments before pre-normalization, for body-only second pass
+  const originalSegments = rawSegments || segments;
 
   // Apply semantic cleaning before extraction
   const cleanedText = cleanSourceNoise(clean_text);
@@ -412,6 +414,17 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
       `This is the second cleaning pass (after preNormalize). Combined effect may be destructive.`
     );
   }
+
+  // === Level 0: Front matter detection on original text for diagnostics ===
+  const localFrontMatter = detectFrontMatter(clean_text);
+  console.info(
+    `[COGNITIO][M2] Front matter (local analysis):\n` +
+    `  front_matter_detected=${localFrontMatter.has_front_matter}\n` +
+    `  front_matter_lines_count=${localFrontMatter.front_matter_lines_detected}\n` +
+    `  front_matter_chars_count=${localFrontMatter.front_matter_chars_removed}\n` +
+    `  front_matter_score=${localFrontMatter.segment_0_noise_score}\n` +
+    `  body_start_line=${localFrontMatter.body_start_line}`
+  );
 
   // === Level 1: Extract clean main topic ===
   const mainTopic = extractCleanMainTopic(segments);
@@ -638,6 +651,9 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
   let _dbg_secondary_pass_triggered = false;
   let _dbg_secondary_pass_concepts_count = 0;
   let _dbg_body_first_pass_triggered = false;
+  let _dbg_artifact_only_first_pass = false;
+  let _dbg_body_only_second_pass_triggered = false;
+  let _dbg_body_only_second_pass_concepts_count = 0;
 
   // P0 AUDIT: Log filter results with rejected label samples
   console.info(
@@ -668,6 +684,8 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
       (allConceptsAreArtifacts && segments.length > 1)) {
     _dbg_fallback_level = "secondary_body_pass";
     _dbg_secondary_pass_triggered = true;
+    _dbg_artifact_only_first_pass = true;
+    _dbg_body_only_second_pass_triggered = true;
 
     if (allConceptsAreArtifacts && concepts.length > 0) {
       console.warn(
@@ -682,23 +700,65 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
       );
     }
 
-    const bodySegments = segments.slice(1);
-    const bodyText = bodySegments.map(s => s.content).join("\n\n");
-    const cleanedBodyText = cleanSourceNoise(bodyText);
+    // KEY FIX: Use ORIGINAL input segments (not the pre-cleaned ones which may
+    // have been stripped too aggressively). Apply only light cleaning (front matter
+    // strip + editorial noise filter) to preserve real pedagogical content.
+    const bodySegmentsOriginal = originalSegments.slice(1);
+    const bodyText = bodySegmentsOriginal.map(s => s.content).join("\n\n");
+    const bodyFrontMatter = detectFrontMatter(bodyText);
+    const bodyAfterFM = bodyFrontMatter.has_front_matter ? bodyFrontMatter.body_text : bodyText;
+    const bodyFilterResult = filterEditorialNoise(bodyAfterFM);
+    const cleanedBodyText = bodyFilterResult.cleaned_text;
+
+    console.info(
+      `[COGNITIO][M2] BODY_ONLY_SECOND_PASS: body_text=${bodyText.length} chars → ` +
+      `after_fm_strip=${bodyAfterFM.length} → after_noise_filter=${cleanedBodyText.length}`
+    );
 
     if (cleanedBodyText.length > 50) {
       _dbg_body_first_pass_triggered = true;
-      const bodyConcepts = extractConceptsFromText(cleanedBodyText, bodySegments, globalIdx);
+      const bodyConcepts = extractConceptsFromText(cleanedBodyText, bodySegmentsOriginal, globalIdx);
       for (const bc of bodyConcepts) {
         const { rejected } = rejectConceptArtifact(bc);
         if (!rejected) {
           concepts.push(bc);
           globalIdx++;
           _dbg_secondary_pass_concepts_count++;
+          _dbg_body_only_second_pass_concepts_count++;
         }
       }
       console.info(
-        `[COGNITIO][M2] Secondary body pass: ${cleanedBodyText.length} chars → ${bodyConcepts.length} candidates → ${concepts.length} accepted.`
+        `[COGNITIO][M2] Secondary body pass: ${cleanedBodyText.length} chars → ` +
+        `${bodyConcepts.length} candidates → ${_dbg_body_only_second_pass_concepts_count} accepted.`
+      );
+    }
+
+    // If body-only second pass STILL produced 0 concepts, try per-segment extraction
+    // on original segments to maximize chances of finding real content.
+    if (concepts.length === 0 && originalSegments.length > 1) {
+      console.warn(
+        `[COGNITIO][M2] BODY_ONLY_SECOND_PASS: Joined body extraction failed. ` +
+        `Trying per-segment extraction on ${originalSegments.length - 1} body segments.`
+      );
+      for (let si = 1; si < originalSegments.length && concepts.length < 15; si++) {
+        const seg = originalSegments[si];
+        if (seg.content.length < 30) continue;
+        const segCleaned = filterEditorialNoise(seg.content).cleaned_text;
+        if (segCleaned.length < 20) continue;
+        const segConcepts = extractConceptsFromText(segCleaned, [seg], globalIdx);
+        for (const sc of segConcepts) {
+          const { rejected } = rejectConceptArtifact(sc);
+          if (!rejected) {
+            // Fix source_trace to reflect actual segment index
+            sc.source_trace = [{ segment_index: si, excerpt: sc.source_trace[0]?.excerpt || "" }];
+            concepts.push(sc);
+            globalIdx++;
+            _dbg_body_only_second_pass_concepts_count++;
+          }
+        }
+      }
+      console.info(
+        `[COGNITIO][M2] Per-segment body extraction: ${_dbg_body_only_second_pass_concepts_count} total concepts extracted.`
       );
     }
   }
@@ -716,12 +776,13 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
         `Forcing extraction from body segments for diversity.`
       );
       _dbg_body_first_pass_triggered = true;
-      const bodySegments = segments.slice(1);
-      const bodyText = bodySegments.map(s => s.content).join("\n\n");
-      const cleanedBodyText = cleanSourceNoise(bodyText);
+      // Use original input segments for diversity extraction
+      const divBodySegments = originalSegments.slice(1);
+      const divBodyText = divBodySegments.map(s => s.content).join("\n\n");
+      const cleanedDivBodyText = filterEditorialNoise(divBodyText).cleaned_text;
 
-      if (cleanedBodyText.length > 50) {
-        const diversityConcepts = extractConceptsFromText(cleanedBodyText, bodySegments, globalIdx);
+      if (cleanedDivBodyText.length > 50) {
+        const diversityConcepts = extractConceptsFromText(cleanedDivBodyText, divBodySegments, globalIdx);
         for (const dc of diversityConcepts) {
           const { rejected } = rejectConceptArtifact(dc);
           if (!rejected) {
@@ -992,6 +1053,9 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
     `  m2_body_first_pass_triggered=${_dbg_body_first_pass_triggered}\n` +
     `  m2_secondary_pass_triggered=${_dbg_secondary_pass_triggered}\n` +
     `  m2_secondary_pass_concepts_count=${_dbg_secondary_pass_concepts_count}\n` +
+    `  m2_artifact_only_first_pass=${_dbg_artifact_only_first_pass}\n` +
+    `  m2_body_only_second_pass_triggered=${_dbg_body_only_second_pass_triggered}\n` +
+    `  m2_body_only_second_pass_concepts_count=${_dbg_body_only_second_pass_concepts_count}\n` +
     `  m2_reject_reasons=${JSON.stringify(rejectReasons)}\n` +
     `  m2_fallback_level=${_dbg_fallback_level}\n` +
     `  m2_final_topic="${finalTopic}"\n` +
@@ -1063,7 +1127,7 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
       ...(_dbg_fallback_level === "emergency" ? [{ code: "EMERGENCY_EXTRACTION" as const, message: `Extraction de secours utilisée — ${Object.entries(rejectReasons).map(([r, c]) => `${r}:${c}`).join(", ")}`, severity: "warning" as const }] : []),
       ...(_dbg_fallback_level === "heuristic_secours" ? [{ code: "HEURISTIC_LAST_RESORT" as const, message: `Mode secours heuristique activé — toutes les méthodes standard ont échoué sur ${clean_text.length} caractères`, severity: "error" as const }] : []),
       ...(_dbg_fallback_level === "absolute_last_resort" ? [{ code: "ABSOLUTE_LAST_RESORT" as const, message: `Mode secours absolu activé — extraction brute sans scoring sur ${clean_text.length} caractères. Vérifier la qualité des concepts.`, severity: "error" as const }] : []),
-      ...(concepts.length === 0 && clean_text.length > 50 ? [{ code: "ALL_CONCEPTS_REJECTED" as const, message: `Tous les concepts candidats ont été rejetés (bruit éditorial). Aucune fiche exploitable ne peut être produite.`, severity: "blocking" as const }] : []),
+      ...(concepts.length === 0 && clean_text.length > 50 ? [{ code: "ALL_CONCEPTS_REJECTED" as const, message: `Le moteur d'extraction n'a pas réussi à identifier de concepts pédagogiques après ${_dbg_body_only_second_pass_triggered ? "un second pass sur le corps du document" : "analyse complète"}. Diagnostic : front_matter=${segment0Quarantined}, body_pass=${_dbg_body_only_second_pass_triggered}, body_concepts=${_dbg_body_only_second_pass_concepts_count}.`, severity: "blocking" as const }] : []),
       ...(concepts.length === 1 && concepts[0]?.uncertain ? [{ code: "SINGLE_UNCERTAIN_CONCEPT" as const, message: `Un seul concept incertain détecté — qualité insuffisante pour une fiche standard.`, severity: "warning" as const }] : []),
     ],
     total_concepts: concepts.length,
@@ -1073,6 +1137,15 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
     estimated_audience_level: mismatch?.profile_level,
     audience_mismatch_risk: mismatch?.risk_level ?? 0,
     audience_mismatch_message: mismatch?.message,
+    // P0: Diagnostic metadata for pipeline hook
+    _diag_front_matter_detected: localFrontMatter.has_front_matter,
+    _diag_segment_0_quarantined: segment0Quarantined,
+    _diag_artifact_only_first_pass: _dbg_artifact_only_first_pass,
+    _diag_body_only_second_pass_triggered: _dbg_body_only_second_pass_triggered,
+    _diag_body_only_second_pass_concepts_count: _dbg_body_only_second_pass_concepts_count,
+    _diag_segment_0_noise_score: seg0NoiseScore,
+    _diag_front_matter_lines_count: localFrontMatter.front_matter_lines_detected,
+    _diag_front_matter_chars_count: localFrontMatter.front_matter_chars_removed,
   };
 }
 

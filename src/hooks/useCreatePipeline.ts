@@ -234,10 +234,29 @@ export function useCreatePipeline() {
       counters.concepts_from_body_count = conceptsFromBody;
       counters.final_topic_clean = m2Result.main_topic;
       counters.final_concepts_count = m2Result.key_concepts.length;
+      // P0: Propagate M2 diagnostic fields to pipeline counters
+      counters.front_matter_detected = m2Result._diag_front_matter_detected;
+      counters.segment_0_quarantined = m2Result._diag_segment_0_quarantined;
+      counters.artifact_only_first_pass = m2Result._diag_artifact_only_first_pass;
+      counters.body_only_second_pass_triggered = m2Result._diag_body_only_second_pass_triggered;
+      counters.body_only_second_pass_concepts_count = m2Result._diag_body_only_second_pass_concepts_count;
+      if (m2Result._diag_segment_0_noise_score !== undefined) {
+        counters.segment_0_noise_score = m2Result._diag_segment_0_noise_score;
+      }
+      if (m2Result._diag_front_matter_lines_count !== undefined) {
+        counters.front_matter_lines_detected = m2Result._diag_front_matter_lines_count;
+      }
+      if (m2Result._diag_front_matter_chars_count !== undefined) {
+        counters.front_matter_chars_removed = m2Result._diag_front_matter_chars_count;
+      }
 
       counters.pipeline_trace.push({
         step: "E1_segment_distribution",
-        detail: `concepts_from_segment_0=${conceptsFromSeg0}, concepts_from_body=${conceptsFromBody}`,
+        detail: `concepts_from_segment_0=${conceptsFromSeg0}, concepts_from_body=${conceptsFromBody}, ` +
+          `front_matter=${m2Result._diag_front_matter_detected ?? false}, ` +
+          `seg0_quarantined=${m2Result._diag_segment_0_quarantined ?? false}, ` +
+          `body_pass=${m2Result._diag_body_only_second_pass_triggered ?? false}, ` +
+          `body_concepts=${m2Result._diag_body_only_second_pass_concepts_count ?? 0}`,
         warning: conceptsFromSeg0 > 0 && conceptsFromBody === 0 && m1Result.segments.length > 1
           ? `All concepts from segment 0 — body segments ignored`
           : undefined,
@@ -253,9 +272,12 @@ export function useCreatePipeline() {
       // P0 VALIDATION GATE: If 0 concepts from non-empty doc, this is a pipeline failure.
       // Block continuation and show explicit root cause instead of producing empty generation.
       if (m2Result.key_concepts.length === 0 && canonicalSemanticText.length > 50) {
-        const rootCause = `Le moteur d'analyse (M2) n'a extrait aucun concept exploitable à partir de ${m1Result.word_count} mots. ` +
-          `Cela peut indiquer que le texte est dans un format non reconnu, ou que le service d'analyse distant a renvoyé un résultat vide. ` +
-          `Texte canonique disponible: ${canonicalSemanticText.length} car.`;
+        const rootCause = `Le moteur d'extraction n'a trouvé aucun concept exploitable dans ${m1Result.word_count} mots ` +
+          `malgré toutes les méthodes d'extraction (front matter: ${m2Result._diag_front_matter_detected ?? "n/a"}, ` +
+          `quarantaine segment 0: ${m2Result._diag_segment_0_quarantined ?? "n/a"}, ` +
+          `second pass corps: ${m2Result._diag_body_only_second_pass_triggered ?? "n/a"}, ` +
+          `concepts corps: ${m2Result._diag_body_only_second_pass_concepts_count ?? 0}). ` +
+          `Texte canonique: ${canonicalSemanticText.length} car.`;
         console.error(
           `[COGNITIO][P0] PIPELINE BLOCKED: 0 concepts from ${m1Result.word_count}-word document. ` +
           `canonical_text=${canonicalSemanticText.length} chars. This is a data contract violation.`
@@ -273,7 +295,10 @@ export function useCreatePipeline() {
         return;
       }
 
-      // === P0 PRODUCT GUARD: Reject single uncertain noisy concept ===
+      // === P0 PRODUCT GUARD: Reject only if ALL extraction methods were exhausted ===
+      // PRODUCT RULE: Never blame the user for "noisy text" if front matter detection,
+      // segment 0 quarantine, and body-only second pass have not all been attempted.
+      // The pipeline must exhaust its own extraction capabilities before blocking.
       if (m2Result.key_concepts.length > 0) {
         const allConceptsNoisy = m2Result.key_concepts.every(c => {
           const scores = scoreConceptCandidate(c.label, c.definition);
@@ -281,17 +306,25 @@ export function useCreatePipeline() {
         });
         const allUncertain = m2Result.key_concepts.every(c => c.uncertain === true || c.source_confidence < 0.4);
 
-        if (allConceptsNoisy || (m2Result.key_concepts.length === 1 && allUncertain && allConceptsNoisy)) {
+        // Only block if body-only second pass was already attempted and still failed
+        const bodyPassWasAttempted = m2Result._diag_body_only_second_pass_triggered === true;
+        const frontMatterWasDetected = m2Result._diag_front_matter_detected === true;
+        const seg0WasQuarantined = m2Result._diag_segment_0_quarantined === true;
+        const allSafeguardsExhausted = bodyPassWasAttempted || (frontMatterWasDetected && seg0WasQuarantined);
+
+        if ((allConceptsNoisy || (m2Result.key_concepts.length === 1 && allUncertain && allConceptsNoisy)) && allSafeguardsExhausted) {
           const sampleLabel = m2Result.key_concepts[0]?.label ?? "?";
-          const rootCause = `Le moteur a détecté ${m2Result.key_concepts.length} concept(s) mais ils sont tous des artefacts éditoriaux ` +
-            `(ex: "${sampleLabel}"). Aucune fiche pédagogique exploitable ne peut être produite. ` +
-            `Veuillez fournir un texte plus propre, sans entêtes de polycopié.`;
+          const rootCause = `Le moteur d'extraction a épuisé toutes ses méthodes (détection front matter, quarantaine segment 0, ` +
+            `second pass sur le corps) mais n'a trouvé que des artefacts éditoriaux (ex: "${sampleLabel}"). ` +
+            `Diagnostic : front_matter=${frontMatterWasDetected}, seg0_quarantined=${seg0WasQuarantined}, ` +
+            `body_pass=${bodyPassWasAttempted}, body_concepts=${m2Result._diag_body_only_second_pass_concepts_count ?? 0}.`;
           console.error(
-            `[COGNITIO][P0] PRODUCT GUARD: All ${m2Result.key_concepts.length} concepts are editorial artifacts. ` +
-            `Pipeline blocked. Labels: [${m2Result.key_concepts.map(c => `"${c.label}"`).join(", ")}]`
+            `[COGNITIO][P0] PRODUCT GUARD: All ${m2Result.key_concepts.length} concepts are editorial artifacts ` +
+            `AFTER all safeguards exhausted. Pipeline blocked. ` +
+            `Labels: [${m2Result.key_concepts.map(c => `"${c.label}"`).join(", ")}]`
           );
           counters.final_generation_status = "error";
-          counters.success_gate_reason = "All concepts are editorial artifacts — no standard fiche possible";
+          counters.success_gate_reason = "All concepts are editorial artifacts after exhausting all extraction methods";
           counters.generation_error = rootCause;
           setDebugCounters(counters);
           setPipelineError({
@@ -301,6 +334,15 @@ export function useCreatePipeline() {
           });
           setPhase("result");
           return;
+        } else if (allConceptsNoisy && !allSafeguardsExhausted) {
+          // Safeguards NOT exhausted — log warning but do NOT block.
+          // This should not happen in normal flow (M2 should have triggered body pass),
+          // but if it does, let the pipeline continue with whatever concepts we have.
+          console.warn(
+            `[COGNITIO][P0] PRODUCT GUARD: All concepts appear noisy but safeguards not exhausted ` +
+            `(body_pass=${bodyPassWasAttempted}, fm=${frontMatterWasDetected}, seg0_q=${seg0WasQuarantined}). ` +
+            `Allowing pipeline to continue — not blaming user.`
+          );
         }
       }
 
