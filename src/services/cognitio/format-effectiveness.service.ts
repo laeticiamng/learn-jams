@@ -62,7 +62,7 @@ export async function upsertFormatEffectiveness(
   calibrationGap: number,
 ): Promise<FormatEffectivenessRecord> {
   // Fetch existing
-  const { data: existing } = await supabase
+  const { data: existing } = await (supabase as any)
     .from("learner_format_effectiveness")
     .select("*")
     .eq("user_id", userId)
