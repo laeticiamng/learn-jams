@@ -34,6 +34,7 @@ import {
   type ConceptCandidateScores,
 } from "@/lib/cognitio-semantic-cleaning";
 import { filterEditorialNoise, detectFrontMatter, computeSegmentNoiseScore } from "./editorialNoiseFilter";
+import { runDocumentUnderstanding, deriveMissionUniverseHint } from "./documentUnderstandingLayer";
 
 // ---------- Run Analysis (Edge Function) ----------
 
@@ -426,9 +427,20 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
     `  body_start_line=${localFrontMatter.body_start_line}`
   );
 
+  // === Document Understanding Layer (pre-comprehension) ===
+  // Runs BEFORE concept extraction to build global semantic understanding.
+  // Acts like an expert teacher reading the whole document first.
+  const docUnderstanding = runDocumentUnderstanding(clean_text, segments, input.source_type);
+  const missionUniverseHint = deriveMissionUniverseHint(docUnderstanding);
+
   // === Level 1: Extract clean main topic ===
-  const mainTopic = extractCleanMainTopic(segments);
-  console.info(`[COGNITIO][M2] m2_final_topic="${mainTopic}"`);
+  // Use understanding layer's true topic if it's better than raw extraction
+  const rawMainTopic = extractCleanMainTopic(segments);
+  const mainTopic = docUnderstanding.true_topic !== "Sujet non identifié"
+    && docUnderstanding.comprehension_confidence > 0.4
+    ? docUnderstanding.true_topic
+    : rawMainTopic;
+  console.info(`[COGNITIO][M2] m2_final_topic="${mainTopic}" (understanding_topic="${docUnderstanding.true_topic}", raw_topic="${rawMainTopic}")`);
 
   // === Level 2: Reconstruct chapter hierarchy ===
   const chapters = reconstructChapterHierarchy(segments);
@@ -1315,6 +1327,9 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
     estimated_audience_level: mismatch?.profile_level,
     audience_mismatch_risk: mismatch?.risk_level ?? 0,
     audience_mismatch_message: mismatch?.message,
+    // Document Understanding Layer output
+    document_understanding: docUnderstanding,
+    mission_universe_hint: missionUniverseHint,
     // P0: Diagnostic metadata for pipeline hook
     _diag_front_matter_detected: localFrontMatter.has_front_matter,
     _diag_segment_0_quarantined: segment0Quarantined,

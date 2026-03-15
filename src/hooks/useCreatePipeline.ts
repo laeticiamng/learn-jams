@@ -203,10 +203,29 @@ export function useCreatePipeline() {
       counters.extracted_concepts_after_filter_count = m2Result.key_concepts.length;
       counters.extracted_concepts_raw_count = m2Result.total_concepts;
       counters.rejected_concepts_count = m2Result.total_concepts - m2Result.key_concepts.length;
+      // Document Understanding Layer trace
+      if (m2Result.document_understanding) {
+        const du = m2Result.document_understanding;
+        counters.pipeline_trace.push({
+          step: "B2_understanding",
+          input_length: canonicalSemanticText.length,
+          detail: `true_topic="${du.true_topic}", domain=${du.domain_classification}, ` +
+            `reasoning=${du.dominant_reasoning}, sections=${du.section_map.length}, ` +
+            `learning_core=${du.learning_core.length}, noise_zones=${du.noise_zones.length}, ` +
+            `confidence=${du.comprehension_confidence.toFixed(2)}`,
+          warning: du.noise_zones.length > 3
+            ? `Document fortement bruité : ${du.noise_zones.length} zones de bruit détectées`
+            : undefined,
+        });
+      }
+
       counters.pipeline_trace.push({
         step: "C_topic",
         input_length: canonicalSemanticText.length,
-        detail: `detected_topic="${m2Result.main_topic}"`,
+        detail: `detected_topic="${m2Result.main_topic}"` +
+          (m2Result.document_understanding
+            ? ` (understanding_topic="${m2Result.document_understanding.true_topic}")`
+            : ""),
       });
       counters.pipeline_trace.push({
         step: "D_concept_extraction",

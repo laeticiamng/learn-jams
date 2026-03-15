@@ -129,6 +129,9 @@ export interface M2_Output {
   estimated_audience_level?: string;
   audience_mismatch_risk?: number; // 0-1
   audience_mismatch_message?: string;
+  // Document Understanding Layer output (pre-comprehension)
+  document_understanding?: DocumentUnderstanding;
+  mission_universe_hint?: MissionUniverseHint;
   // P0: Body extraction diagnostic — tells pipeline hook whether body-only pass was attempted
   _diag_front_matter_detected?: boolean;
   _diag_segment_0_quarantined?: boolean;
@@ -144,6 +147,65 @@ export interface M2_Output {
   // P0: Secondary pass diagnostics
   _diag_secondary_pass_topic?: string;
   _diag_secondary_pass_concepts_count?: number;
+}
+
+// ---------- Document Understanding Layer ----------
+
+export interface DocumentUnderstanding {
+  /** True pedagogical topic of the document (3-12 words, never editorial/R2C) */
+  true_topic: string;
+  /** Normalized display title */
+  normalized_title: string;
+  /** Real section map — reconstructed chapter hierarchy */
+  section_map: DocumentSection[];
+  /** Core learning axes (3-8 items) — what the student must truly retain */
+  learning_core: string[];
+  /** Noise zones detected — front matter, headers, footers, OCR artifacts */
+  noise_zones: NoiseZone[];
+  /** Critical concepts identified from comprehension (not yet extracted) */
+  critical_axes: string[];
+  /** Traps or common confusions detected */
+  traps_or_confusions: string[];
+  /** Domain classification for mission universe selection */
+  domain_classification: DocumentDomain;
+  /** Reasoning type dominant in the document */
+  dominant_reasoning: ReasoningType;
+  /** Confidence explanation — why this understanding is reliable or not */
+  confidence_explanation: string;
+  /** Overall comprehension confidence 0-1 */
+  comprehension_confidence: number;
+}
+
+export interface DocumentSection {
+  title: string;
+  level: number;
+  content_summary: string;
+  is_noise: boolean;
+}
+
+export interface NoiseZone {
+  type: "front_matter" | "header_repeat" | "footer" | "ocr_artifact" | "branding" | "classification_label" | "date_metadata" | "typographic_fragment";
+  location: "top" | "inline" | "bottom";
+  description: string;
+}
+
+export type DocumentDomain =
+  | "medical_clinical"
+  | "medical_basic_science"
+  | "public_health"
+  | "law"
+  | "computer_science"
+  | "history"
+  | "fundamental_science"
+  | "engineering"
+  | "humanities"
+  | "general";
+
+/** Mission universe mapping based on document domain and reasoning */
+export interface MissionUniverseHint {
+  domain: DocumentDomain;
+  suggested_universe: string;
+  reasoning_approach: string;
 }
 
 export interface AnalyzedConcept {
@@ -449,7 +511,7 @@ export interface PipelineDebugCounters {
 
 /** Structured trace entry for each pipeline step */
 export interface PipelineTraceEntry {
-  step: "A_import" | "B_cleaning" | "B1_front_matter" | "C_topic" | "D_concept_extraction" | "E_concept_filtering" | "E1_segment_distribution" | "E2_secondary_pass" | "F_memory" | "G_generation";
+  step: "A_import" | "B_cleaning" | "B1_front_matter" | "B2_understanding" | "C_topic" | "D_concept_extraction" | "E_concept_filtering" | "E1_segment_distribution" | "E2_secondary_pass" | "F_memory" | "G_generation";
   input_length?: number;
   output_length?: number;
   input_count?: number;
