@@ -26,6 +26,7 @@ import type { CreateFormat } from "@/lib/create-format-config";
 import { validateGenerationNotEmpty } from "@/domain/cognitio/generation.validators";
 import { scoreConceptCandidate, isEditorialArtifact, cleanMainTopic } from "@/lib/cognitio-semantic-cleaning";
 import { runSemanticSuccessGate, runMissionGate } from "@/domain/cognitio/validators";
+import { runLocalAnalysis } from "@/services/cognitio/analysis.service";
 
 export type PipelinePhase =
   | "import"
@@ -250,6 +251,12 @@ export function useCreatePipeline() {
       if (m2Result._diag_front_matter_chars_count !== undefined) {
         counters.front_matter_chars_removed = m2Result._diag_front_matter_chars_count;
       }
+      if (m2Result._diag_secondary_pass_topic !== undefined) {
+        counters.secondary_pass_topic = m2Result._diag_secondary_pass_topic;
+      }
+      if (m2Result._diag_secondary_pass_concepts_count !== undefined) {
+        counters.secondary_pass_concepts_count = m2Result._diag_secondary_pass_concepts_count;
+      }
 
       counters.pipeline_trace.push({
         step: "E1_segment_distribution",
@@ -390,25 +397,223 @@ export function useCreatePipeline() {
       });
 
       if (!semanticGate.passed) {
-        console.error(
-          `[COGNITIO][P0] SEMANTIC SUCCESS GATE BLOCKED. ` +
-          `Reasons: ${semanticGate.signals.gate_block_reasons.join("; ")}. ` +
-          `Signals: valid=${semanticGate.signals.valid_concepts_count}, ` +
-          `uncertain=${semanticGate.signals.uncertain_concepts_count}, ` +
-          `body=${semanticGate.signals.body_concepts_count}, ` +
-          `artifact_ratio=${semanticGate.signals.editorial_artifact_ratio}`
-        );
-        counters.final_generation_status = "error";
-        counters.success_gate_reason = `Semantic gate failed: ${semanticGate.signals.gate_block_reasons.join("; ")}`;
-        counters.generation_error = semanticGate.display_message;
-        setDebugCounters(counters);
-        setPipelineError({
-          source: "analysis",
-          message: semanticGate.display_message,
-          phase: "analyzing",
-        });
-        setPhase("result");
-        return;
+        // ============================================================
+        // P0 PIPELINE RETRY: If semantic gate failed AND body-only second
+        // pass was NOT triggered in M2, force a re-analysis on body segments.
+        // This is the pipeline-level safety net: even if M2's internal logic
+        // missed the trigger, the pipeline will catch it here.
+        // ============================================================
+        const bodyPassWasTriggered = m2Result._diag_body_only_second_pass_triggered === true;
+        const hasMultipleSegments = m1Result.segments.length > 1;
+
+        if (!bodyPassWasTriggered && hasMultipleSegments) {
+          console.warn(
+            `[COGNITIO][P0] SEMANTIC GATE RETRY: Gate failed but body-only second pass was NOT triggered. ` +
+            `Forcing re-analysis on body segments (segments 1-${m1Result.segments.length - 1}).`
+          );
+
+          // Build body-only M2 input: exclude segment 0, use body text only
+          const bodySegments = m1Result.segments.slice(1);
+          const bodyText = bodySegments.map(s => s.content).join("\n\n");
+
+          if (bodyText.length > 50) {
+            const bodyOnlyInput = {
+              ...({
+                document_id: m1Result.document_id,
+                clean_text: bodyText,
+                segments: bodySegments.map((s, i) => ({ ...s, segment_index: i + 1 })),
+                source_type: m1Result.source_type,
+                confidence_level: m1Result.confidence_level,
+                user_objective: currentObjective as any,
+                learner_profile: currentProfile,
+              }),
+            };
+
+            const retryResult = runLocalAnalysis(bodyOnlyInput, bodySegments.map((s, i) => ({ ...s, segment_index: i + 1 })));
+
+            // Check if retry produced better results
+            if (retryResult.key_concepts.length > 0) {
+              const retryGate = runSemanticSuccessGate({
+                concepts: retryResult.key_concepts.map(c => ({
+                  label: c.label,
+                  definition: c.definition,
+                  uncertain: c.uncertain,
+                  source_confidence: c.source_confidence,
+                  source_trace: c.source_trace.map(t => ({
+                    segment_index: t.segment_index,
+                    excerpt: t.excerpt,
+                  })),
+                })),
+                main_topic: retryResult.main_topic,
+                scoreConceptCandidate,
+                isEditorialArtifact,
+                cleanMainTopic,
+              });
+
+              console.info(
+                `[COGNITIO][P0] SEMANTIC GATE RETRY result: ` +
+                `concepts=${retryResult.key_concepts.length}, ` +
+                `topic="${retryResult.main_topic}", ` +
+                `gate_passed=${retryGate.passed}, ` +
+                `valid=${retryGate.signals.valid_concepts_count}, ` +
+                `body=${retryGate.signals.body_concepts_count}`
+              );
+
+              if (retryGate.passed || retryGate.signals.valid_concepts_count > semanticGate.signals.valid_concepts_count) {
+                // Use the retry result — it's better than what we had
+                // Merge retry concepts into the M2 result
+                const improvedM2 = {
+                  ...m2Result,
+                  key_concepts: retryResult.key_concepts,
+                  main_topic: retryResult.main_topic !== "Sujet non identifié" ? retryResult.main_topic : m2Result.main_topic,
+                  total_concepts: retryResult.total_concepts,
+                  critical_count: retryResult.critical_count,
+                  _diag_body_only_second_pass_triggered: true,
+                  _diag_body_only_second_pass_concepts_count: retryResult.key_concepts.length,
+                };
+
+                // Update counters
+                counters.body_only_second_pass_triggered = true;
+                counters.body_only_second_pass_concepts_count = retryResult.key_concepts.length;
+                counters.secondary_pass_triggered = true;
+                counters.secondary_pass_concepts_count = retryResult.key_concepts.length;
+                counters.final_concepts_count = retryResult.key_concepts.length;
+                counters.final_topic_clean = improvedM2.main_topic;
+
+                // Re-run semantic gate on improved result
+                if (retryGate.passed) {
+                  // Update semantic gate counters
+                  counters.semantic_gate_passed = retryGate.passed;
+                  counters.semantic_gate_status = retryGate.status;
+                  counters.valid_concepts_count = retryGate.signals.valid_concepts_count;
+                  counters.uncertain_concepts_count = retryGate.signals.uncertain_concepts_count;
+                  counters.editorial_artifact_ratio = retryGate.signals.editorial_artifact_ratio;
+                  counters.main_topic_is_editorial_artifact = retryGate.signals.main_topic_is_editorial_artifact;
+                  counters.semantic_generation_allowed = retryGate.signals.semantic_generation_allowed;
+                  counters.semantic_gate_block_reasons = retryGate.signals.gate_block_reasons;
+
+                  counters.pipeline_trace.push({
+                    step: "E2_secondary_pass",
+                    detail: `PIPELINE_RETRY: body-only re-analysis passed. ` +
+                      `concepts=${retryResult.key_concepts.length}, topic="${improvedM2.main_topic}"`,
+                  });
+
+                  // IMPORTANT: Replace m2Result for downstream pipeline
+                  // We need to reassign for the rest of the pipeline to use
+                  Object.assign(m2Result, improvedM2);
+                  // Continue pipeline — do NOT block
+                } else {
+                  // Retry didn't pass either, but update diagnostics
+                  counters.pipeline_trace.push({
+                    step: "E2_secondary_pass",
+                    detail: `PIPELINE_RETRY: body-only re-analysis attempted but gate still failed. ` +
+                      `concepts=${retryResult.key_concepts.length}, valid=${retryGate.signals.valid_concepts_count}`,
+                    warning: `Gate still blocked after body-only retry: ${retryGate.signals.gate_block_reasons.join("; ")}`,
+                  });
+                  // Fall through to the block below
+                }
+
+                if (retryGate.passed) {
+                  // Skip the block — pipeline continues
+                  console.info(`[COGNITIO][P0] SEMANTIC GATE RETRY: Gate now PASSES. Pipeline continues.`);
+                  // goto rest of pipeline — we use a flag-free approach by NOT returning
+                } else {
+                  // Still blocked — fall through to error
+                  console.error(
+                    `[COGNITIO][P0] SEMANTIC GATE RETRY: Gate STILL blocked after body-only retry. ` +
+                    `Reasons: ${retryGate.signals.gate_block_reasons.join("; ")}`
+                  );
+                  counters.final_generation_status = "error";
+                  counters.success_gate_reason = `Semantic gate failed after body-only retry: ${retryGate.signals.gate_block_reasons.join("; ")}`;
+                  counters.generation_error = retryGate.passed ? undefined : semanticGate.display_message;
+                  setDebugCounters(counters);
+                  setPipelineError({
+                    source: "analysis",
+                    message: semanticGate.display_message,
+                    phase: "analyzing",
+                  });
+                  setPhase("result");
+                  return;
+                }
+              } else {
+                // Retry produced worse or equal results — block
+                console.error(
+                  `[COGNITIO][P0] SEMANTIC GATE RETRY: Retry did not improve results. Blocking.`
+                );
+                counters.final_generation_status = "error";
+                counters.success_gate_reason = `Semantic gate failed: ${semanticGate.signals.gate_block_reasons.join("; ")} (body-only retry attempted, no improvement)`;
+                counters.generation_error = semanticGate.display_message;
+                counters.body_only_second_pass_triggered = true;
+                counters.body_only_second_pass_concepts_count = retryResult.key_concepts.length;
+                setDebugCounters(counters);
+                setPipelineError({
+                  source: "analysis",
+                  message: semanticGate.display_message,
+                  phase: "analyzing",
+                });
+                setPhase("result");
+                return;
+              }
+            } else {
+              // Body text too short or no concepts extracted
+              console.error(
+                `[COGNITIO][P0] SEMANTIC GATE RETRY: Body-only re-analysis produced 0 concepts. Blocking.`
+              );
+              counters.final_generation_status = "error";
+              counters.success_gate_reason = `Semantic gate failed: ${semanticGate.signals.gate_block_reasons.join("; ")} (body-only retry: 0 concepts)`;
+              counters.generation_error = semanticGate.display_message;
+              counters.body_only_second_pass_triggered = true;
+              counters.body_only_second_pass_concepts_count = 0;
+              setDebugCounters(counters);
+              setPipelineError({
+                source: "analysis",
+                message: semanticGate.display_message,
+                phase: "analyzing",
+              });
+              setPhase("result");
+              return;
+            }
+          } else {
+            // Body text too short
+            console.error(
+              `[COGNITIO][P0] SEMANTIC GATE: Body text too short for retry (${bodyText.length} chars). Blocking.`
+            );
+            counters.final_generation_status = "error";
+            counters.success_gate_reason = `Semantic gate failed: ${semanticGate.signals.gate_block_reasons.join("; ")}`;
+            counters.generation_error = semanticGate.display_message;
+            setDebugCounters(counters);
+            setPipelineError({
+              source: "analysis",
+              message: semanticGate.display_message,
+              phase: "analyzing",
+            });
+            setPhase("result");
+            return;
+          }
+        } else {
+          // Body-only pass was already attempted or only 1 segment — genuine failure
+          console.error(
+            `[COGNITIO][P0] SEMANTIC SUCCESS GATE BLOCKED. ` +
+            `Reasons: ${semanticGate.signals.gate_block_reasons.join("; ")}. ` +
+            `Signals: valid=${semanticGate.signals.valid_concepts_count}, ` +
+            `uncertain=${semanticGate.signals.uncertain_concepts_count}, ` +
+            `body=${semanticGate.signals.body_concepts_count}, ` +
+            `artifact_ratio=${semanticGate.signals.editorial_artifact_ratio}` +
+            `${bodyPassWasTriggered ? " (body-only second pass WAS triggered)" : ""}` +
+            `${!hasMultipleSegments ? " (single-segment document)" : ""}`
+          );
+          counters.final_generation_status = "error";
+          counters.success_gate_reason = `Semantic gate failed: ${semanticGate.signals.gate_block_reasons.join("; ")}`;
+          counters.generation_error = semanticGate.display_message;
+          setDebugCounters(counters);
+          setPipelineError({
+            source: "analysis",
+            message: semanticGate.display_message,
+            phase: "analyzing",
+          });
+          setPhase("result");
+          return;
+        }
       }
 
       // === P0 MISSION-SPECIFIC GATE (if mission format requested) ===
