@@ -3,6 +3,8 @@
 // clean, pedagogically useful, stable concept labels
 // ============================================================
 
+import { detectDocumentNoise, stripDocumentNoise, computeNoiseScore } from "@/lib/cognitio-semantic-cleaning";
+
 export interface NormalizedConcept {
   original_label: string;
   normalized_label: string;
@@ -40,7 +42,8 @@ export type ConceptRejectionReason =
   | "definition_too_short"
   | "definition_is_label"
   | "non_concept_pattern"
-  | "color_metadata";
+  | "color_metadata"
+  | "document_noise";
 
 export interface NormalizationResult {
   accepted: NormalizedConcept[];
@@ -68,6 +71,19 @@ const REJECT_PATTERNS: { reason: ConceptRejectionReason; pattern: RegExp }[] = [
   { reason: "non_concept_pattern", pattern: /^Sujet\s+principal\s*:/i },
   { reason: "non_concept_pattern", pattern: /^\+{2,}\s*:/ },
   { reason: "editorial_artifact", pattern: /^(?:Introduction|Conclusion|Résumé|Bibliographie|Références?)\s*$/i },
+  // P0: Platform branding / document noise
+  { reason: "document_noise", pattern: /\bCODEX\b/i },
+  { reason: "document_noise", pattern: /\bS[\s-]*ECN\b/i },
+  { reason: "document_noise", pattern: /\bECN\.COM\b/i },
+  { reason: "document_noise", pattern: /\bR2C\s+Révision\b/i },
+  { reason: "document_noise", pattern: /\bMED-LINE\b/i },
+  { reason: "document_noise", pattern: /\bVERNAZOBRES/i },
+  { reason: "document_noise", pattern: /\biKB\b/ },
+  { reason: "document_noise", pattern: /\bPREP['']?ECN\b/i },
+  { reason: "document_noise", pattern: /^(?:www\.|https?:\/\/)/i },
+  { reason: "document_noise", pattern: /\bRévision\s+\d[\d\/]*/i },
+  { reason: "document_noise", pattern: /\bPage\s+\d+/i },
+  { reason: "document_noise", pattern: /^\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4}$/ },
 ];
 
 // Label noise to strip
@@ -234,14 +250,60 @@ function normalizeSingleConcept(raw: {
     };
   }
 
+  // P0: Check label AND definition against document noise blacklist
+  const labelNoise = detectDocumentNoise(label);
+  if (labelNoise.noisy) {
+    return {
+      original_label: raw.label,
+      normalized_label: label,
+      definition: raw.definition,
+      compressed_definition: "",
+      concept_type: "detail",
+      quality_score: 0,
+      rejection: { reason: "document_noise", detail: `Label contains document noise: ${labelNoise.matches.join(", ")}` },
+    };
+  }
+
+  const defNoise = detectDocumentNoise(defTrimmed);
+  const defNoiseScore = computeNoiseScore(defTrimmed);
+  if (defNoiseScore > 0.5) {
+    return {
+      original_label: raw.label,
+      normalized_label: label,
+      definition: raw.definition,
+      compressed_definition: "",
+      concept_type: "detail",
+      quality_score: 0,
+      rejection: { reason: "document_noise", detail: `Definition is mostly noise (score: ${defNoiseScore.toFixed(2)})` },
+    };
+  }
+
+  // Strip any remaining noise from the definition before compressing
+  const cleanedDef = defNoise.noisy ? stripDocumentNoise(defTrimmed) : defTrimmed;
+  if (cleanedDef.length < 10) {
+    return {
+      original_label: raw.label,
+      normalized_label: label,
+      definition: raw.definition,
+      compressed_definition: "",
+      concept_type: "detail",
+      quality_score: 0.1,
+      rejection: { reason: "definition_too_short", detail: `Definition too short after noise removal: ${cleanedDef.length} chars` },
+    };
+  }
+
   // Compress definition
-  const compressed = compressDefinition(defTrimmed);
+  const compressed = compressDefinition(cleanedDef);
 
   // Determine concept type
-  const conceptType = classifyConceptType(label, defTrimmed, raw.criticality);
+  const conceptType = classifyConceptType(label, cleanedDef, raw.criticality);
 
   // Compute quality score
-  const quality = computeConceptQuality(label, defTrimmed, raw.criticality);
+  let quality = computeConceptQuality(label, cleanedDef, raw.criticality);
+  // P0: Penalize quality if definition had noise that was stripped
+  if (defNoise.noisy) {
+    quality = Math.max(0, quality - 0.2);
+  }
 
   return {
     original_label: raw.label,

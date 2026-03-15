@@ -23,6 +23,7 @@ import {
 } from "@/domain/cognitio/validators";
 import type { UniverseSelectionResult } from "./missionUniverseSelector";
 import type { NormalizedConcept } from "./conceptNormalizer";
+import { detectDocumentNoise, computeNoiseScore, stripDocumentNoise } from "@/lib/cognitio-semantic-cleaning";
 
 // ---------- Types ----------
 
@@ -43,9 +44,162 @@ export interface BlueprintOutput {
   room_count: number;
   includes_boss: boolean;
   blueprint_reasoning: string;
+  /** P0: Debug info for each concept used/rejected in mission building */
+  item_debug?: MissionItemDebug[];
+  /** P0: Count of concepts rejected due to document noise */
+  noise_rejected_count?: number;
+  /** P0: Count of items that failed post-build validation */
+  post_validation_issues?: string[];
 }
 
 const BRICK_TYPES: BrickType[] = ["OBSERVATION", "TRI", "SEQUENCE", "ELIMINATION", "DECISION"];
+
+// ---------- P0: Mission Item Noise Validation ----------
+
+export interface MissionItemDebug {
+  concept_source: string;
+  segment_source: string;
+  cleanliness_score: number;
+  rejected: boolean;
+  rejection_reason: string | null;
+  fallback_used: boolean;
+}
+
+/**
+ * Validate that a concept is clean enough to use in a mission item.
+ * Returns null if valid, or a rejection reason string if noisy.
+ */
+function validateConceptForMission(concept: NormalizedConcept): string | null {
+  // Check label
+  const labelNoise = detectDocumentNoise(concept.normalized_label);
+  if (labelNoise.noisy) {
+    return `Label contains document noise: ${labelNoise.matches.join(", ")}`;
+  }
+
+  // Check compressed definition
+  if (concept.compressed_definition) {
+    const defNoise = detectDocumentNoise(concept.compressed_definition);
+    if (defNoise.noisy) {
+      return `Definition contains document noise: ${defNoise.matches.join(", ")}`;
+    }
+    const defNoiseScore = computeNoiseScore(concept.compressed_definition);
+    if (defNoiseScore > 0.3) {
+      return `Definition noise score too high: ${defNoiseScore.toFixed(2)}`;
+    }
+  }
+
+  // Check label is not too short or purely structural
+  if (concept.normalized_label.length < 3) {
+    return "Label too short";
+  }
+
+  return null;
+}
+
+/**
+ * Filter concepts for mission use — only keep clean, pedagogical concepts.
+ * Also attempts to clean borderline concepts before rejecting.
+ */
+function filterConceptsForMission(concepts: NormalizedConcept[]): {
+  clean: NormalizedConcept[];
+  rejected: { concept: NormalizedConcept; reason: string }[];
+  debug: MissionItemDebug[];
+} {
+  const clean: NormalizedConcept[] = [];
+  const rejected: { concept: NormalizedConcept; reason: string }[] = [];
+  const debug: MissionItemDebug[] = [];
+
+  for (const concept of concepts) {
+    const reason = validateConceptForMission(concept);
+
+    if (reason) {
+      // Try to salvage by stripping noise from definition
+      const strippedDef = stripDocumentNoise(concept.compressed_definition || concept.definition);
+      const strippedLabel = stripDocumentNoise(concept.normalized_label);
+      const retryNoise = detectDocumentNoise(strippedLabel);
+
+      if (!retryNoise.noisy && strippedLabel.length >= 3 && strippedDef.length >= 10) {
+        // Salvageable — use cleaned version
+        const salvaged: NormalizedConcept = {
+          ...concept,
+          normalized_label: strippedLabel,
+          compressed_definition: strippedDef,
+          quality_score: Math.max(0, concept.quality_score - 0.2),
+        };
+        clean.push(salvaged);
+        debug.push({
+          concept_source: concept.original_label,
+          segment_source: concept.definition.slice(0, 80),
+          cleanliness_score: 1 - computeNoiseScore(strippedLabel + " " + strippedDef),
+          rejected: false,
+          rejection_reason: null,
+          fallback_used: true,
+        });
+        console.debug(`[MISSION][P0] Salvaged concept "${concept.normalized_label}" → "${strippedLabel}"`);
+      } else {
+        rejected.push({ concept, reason });
+        debug.push({
+          concept_source: concept.original_label,
+          segment_source: concept.definition.slice(0, 80),
+          cleanliness_score: 0,
+          rejected: true,
+          rejection_reason: reason,
+          fallback_used: false,
+        });
+        console.debug(`[MISSION][P0] Rejected concept "${concept.normalized_label}": ${reason}`);
+      }
+    } else {
+      clean.push(concept);
+      debug.push({
+        concept_source: concept.original_label,
+        segment_source: concept.definition.slice(0, 80),
+        cleanliness_score: 1 - computeNoiseScore(concept.normalized_label + " " + (concept.compressed_definition || "")),
+        rejected: false,
+        rejection_reason: null,
+        fallback_used: false,
+      });
+    }
+  }
+
+  return { clean, rejected, debug };
+}
+
+/**
+ * Validate a fully-built mission item to ensure no document noise leaked through.
+ */
+function validateMissionItem(item: MissionItem): { valid: boolean; issues: string[] } {
+  const issues: string[] = [];
+
+  // Check prompt
+  const promptNoise = detectDocumentNoise(item.prompt);
+  if (promptNoise.noisy) {
+    issues.push(`Prompt contains noise: ${promptNoise.matches.join(", ")}`);
+  }
+
+  // Check each option
+  for (const option of item.options) {
+    const optionNoise = detectDocumentNoise(option);
+    if (optionNoise.noisy) {
+      issues.push(`Option "${option.slice(0, 40)}..." contains noise: ${optionNoise.matches.join(", ")}`);
+    }
+  }
+
+  // Check correct answer
+  const answerNoise = detectDocumentNoise(item.correct_answer);
+  if (answerNoise.noisy) {
+    issues.push(`Correct answer contains noise: ${answerNoise.matches.join(", ")}`);
+  }
+
+  // Check explanation
+  if (item.explanation) {
+    const explNoise = detectDocumentNoise(item.explanation);
+    if (explNoise.noisy) {
+      issues.push(`Explanation contains noise: ${explNoise.matches.join(", ")}`);
+    }
+  }
+
+  return { valid: issues.length === 0, issues };
+}
 
 // ---------- Main Builder ----------
 
@@ -71,14 +225,65 @@ export function buildMissionBlueprint(input: BlueprintInput): BlueprintOutput {
     };
   }
 
+  // P0: Filter concepts through noise validation before building mission
+  const { clean: cleanConcepts, rejected: rejectedConcepts, debug: itemDebug } = filterConceptsForMission(concepts);
+
+  if (rejectedConcepts.length > 0) {
+    console.warn(
+      `[MISSION][P0] Rejected ${rejectedConcepts.length}/${concepts.length} concepts due to document noise:`,
+      rejectedConcepts.map(r => `"${r.concept.normalized_label}": ${r.reason}`)
+    );
+  }
+
+  // If too many concepts were rejected, fall back to synthesis
+  if (cleanConcepts.length < 3) {
+    console.warn(`[MISSION][P0] Only ${cleanConcepts.length} clean concepts remain — falling back to synthesis.`);
+    return {
+      mission_json: buildSynthesisOnly(main_topic, input.learning_contract, input.visual_anchors),
+      quality_band: qualityBand,
+      fallback_mode: "synthesis_only",
+      room_count: 0,
+      includes_boss: false,
+      blueprint_reasoning: "Trop de concepts pollués par du bruit documentaire. Synthèse uniquement.",
+      item_debug: itemDebug,
+      noise_rejected_count: rejectedConcepts.length,
+    };
+  }
+
   // Get themed sub-theme
   const subTheme = selectMissionSubTheme(universe.mission_family, main_topic);
 
-  // Build rooms
-  const rooms = buildThemedRooms(concepts, roomCount, subTheme, universe);
+  // Build rooms with clean concepts only
+  const rooms = buildThemedRooms(cleanConcepts, roomCount, subTheme, universe);
 
-  // Build boss
-  const boss = includesBoss ? buildThemedBoss(concepts, input.confusion_pairs, subTheme, universe) : undefined;
+  // Build boss with clean concepts only
+  const boss = includesBoss ? buildThemedBoss(cleanConcepts, input.confusion_pairs, subTheme, universe) : undefined;
+
+  // P0: Post-build validation — check every item in every room
+  const postValidationIssues: string[] = [];
+  for (const room of rooms) {
+    for (let i = 0; i < room.items.length; i++) {
+      const itemValidation = validateMissionItem(room.items[i]);
+      if (!itemValidation.valid) {
+        postValidationIssues.push(`Room "${room.title}" item ${i}: ${itemValidation.issues.join("; ")}`);
+        // Strip noise from the item in-place as last resort
+        room.items[i] = sanitizeMissionItem(room.items[i]);
+      }
+    }
+  }
+  if (boss) {
+    for (let i = 0; i < boss.items.length; i++) {
+      const itemValidation = validateMissionItem(boss.items[i]);
+      if (!itemValidation.valid) {
+        postValidationIssues.push(`Boss item ${i}: ${itemValidation.issues.join("; ")}`);
+        boss.items[i] = sanitizeMissionItem(boss.items[i]);
+      }
+    }
+  }
+
+  if (postValidationIssues.length > 0) {
+    console.warn(`[MISSION][P0] Post-build validation found ${postValidationIssues.length} noisy items (sanitized):`, postValidationIssues);
+  }
 
   // Build narrative intro
   const narrativeIntro = buildNarrativeIntro(main_topic, subTheme, qualityBand, universe);
@@ -99,6 +304,9 @@ export function buildMissionBlueprint(input: BlueprintInput): BlueprintOutput {
     room_count: rooms.length,
     includes_boss: !!boss,
     blueprint_reasoning: universe.selection_reasoning,
+    item_debug: itemDebug,
+    noise_rejected_count: rejectedConcepts.length,
+    post_validation_issues: postValidationIssues.length > 0 ? postValidationIssues : undefined,
   };
 }
 
@@ -279,6 +487,21 @@ function buildNarrativeIntro(
   }
 
   return intro;
+}
+
+// ---------- P0: Item Sanitization ----------
+
+/**
+ * Last-resort sanitization: strip document noise from a built mission item.
+ */
+function sanitizeMissionItem(item: MissionItem): MissionItem {
+  return {
+    ...item,
+    prompt: stripDocumentNoise(item.prompt),
+    options: item.options.map(o => stripDocumentNoise(o)).filter(o => o.length >= 2),
+    correct_answer: stripDocumentNoise(item.correct_answer),
+    explanation: item.explanation ? stripDocumentNoise(item.explanation) : item.explanation,
+  };
 }
 
 // ---------- Helpers ----------

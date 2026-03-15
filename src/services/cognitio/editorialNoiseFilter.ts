@@ -81,6 +81,16 @@ const NOISE_PATTERNS: { type: EditorialNoiseType; pattern: RegExp }[] = [
   { type: "editorial_tag", pattern: /^(?:NB|PS|Note)\s*:\s*$/i },
   { type: "editorial_tag", pattern: /^(?:Suite|Fin|Début)\s*$/i },
   { type: "editorial_tag", pattern: /^(?:Voir|Cf\.?)\s+(?:tableau|figure|annexe|page|chapitre)\s/i },
+
+  // P0: Platform branding / editorial residues
+  { type: "branding", pattern: /^(?:CODEX|S[\s-]*ECN|ECN\.COM|MED-LINE|ELLIPSES)\b/i },
+  { type: "branding", pattern: /\bCODEX\b.*\bS[\s-]*ECN\b/i },
+  { type: "branding", pattern: /\bS[\s-]*ECN\.COM\b/i },
+  { type: "branding", pattern: /\bPREP['']?ECN\b/i },
+  { type: "branding", pattern: /\bVERNAZOBRES/i },
+  { type: "branding", pattern: /\biKB\b.*\bR2C\b/i },
+  { type: "branding", pattern: /^(?:KB|iKB)\s*[\/|]\s*/i },
+  { type: "branding", pattern: /\bCODEX\b[.;]\s*\bS[\s-]*ECN\b/i },
 ];
 
 // Inline noise patterns to strip from within lines
@@ -91,6 +101,13 @@ const INLINE_NOISE_REPLACEMENTS: { pattern: RegExp; replacement: string }[] = [
   { pattern: /\s*\(?\s*en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS)\s*\)?\s*/gi, replacement: " " },
   { pattern: /\s*\[\s*\d+(?:\s*,\s*\d+)*\s*\]\s*/g, replacement: " " }, // Reference numbers [1,2,3]
   { pattern: /\s*\(\s*(?:source|réf|ref)\s*[:.]?\s*[^)]{0,30}\)\s*/gi, replacement: " " },
+  // P0: Strip inline platform branding
+  { pattern: /\bCODEX\b[.;]?\s*/gi, replacement: " " },
+  { pattern: /\bS[\s-]*ECN(?:\.COM)?\b\s*/gi, replacement: " " },
+  { pattern: /\bR2C\s+Révision\s+\d[\d\/]*\b\s*/gi, replacement: " " },
+  { pattern: /\bITEM\s+\d+\s*/gi, replacement: " " },
+  { pattern: /\bMED-LINE\b\s*/gi, replacement: " " },
+  { pattern: /\biKB\b\s*/gi, replacement: " " },
 ];
 
 // ---------- Main Filter ----------
