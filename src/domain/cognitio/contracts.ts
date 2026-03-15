@@ -147,6 +147,26 @@ export interface M2_Output {
   // P0: Secondary pass diagnostics
   _diag_secondary_pass_topic?: string;
   _diag_secondary_pass_concepts_count?: number;
+  // P0 FIX: Granular body concept validity tracking
+  _diag_concepts_from_segment_0_count?: number;
+  _diag_concepts_from_body_count?: number;
+  _diag_valid_body_concepts_count?: number;
+  _diag_uncertain_body_concepts_count?: number;
+  _diag_editorial_body_concepts_count?: number;
+  _diag_all_concepts_uncertain?: boolean;
+  _diag_main_topic_is_editorial_artifact?: boolean;
+  _diag_artifact_ratio?: number;
+  // P0 FIX: Domain classifier before/after body pass
+  _diag_domain_before_body_pass?: DocumentDomain;
+  _diag_domain_after_body_pass?: DocumentDomain;
+  // P0 FIX: Cleaning metrics
+  _diag_front_matter_chars_removed?: number;
+  _diag_editorial_lines_removed?: number;
+  _diag_header_noise_score_before?: number;
+  _diag_header_noise_score_after?: number;
+  // P0 FIX: LLM fallback
+  _diag_llm_fallback_triggered?: boolean;
+  _diag_llm_fallback_concepts_count?: number;
 }
 
 // ---------- Document Understanding Layer ----------
@@ -467,12 +487,26 @@ export interface PipelineDebugCounters {
   // P0: Segment distribution metrics
   concepts_from_segment_0_count?: number;
   concepts_from_body_count?: number;
+  valid_body_concepts_count?: number;
+  uncertain_body_concepts_count?: number;
+  editorial_body_concepts_count?: number;
   rejected_editorial_artifacts_count?: number;
 
   // P0: Second pass metrics
   body_first_pass_triggered?: boolean;
   secondary_pass_triggered?: boolean;
   secondary_pass_concepts_count?: number;
+
+  // P0 FIX: Domain classifier before/after body pass
+  domain_before_body_pass?: string;
+  domain_after_body_pass?: string;
+
+  // P0 FIX: Enhanced cleaning metrics
+  editorial_lines_removed?: number;
+
+  // P0 FIX: LLM fallback
+  llm_fallback_triggered?: boolean;
+  llm_fallback_concepts_count?: number;
 
   // P0: Body extraction pipeline diagnostic
   front_matter_detected?: boolean;

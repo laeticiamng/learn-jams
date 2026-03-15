@@ -166,11 +166,15 @@ export function useCreatePipeline() {
         preview: canonicalSemanticText.slice(0, 100),
         detail: `words=${m1Result.word_count}, segments=${m1Result.segments.length}, confidence=${m1Result.confidence_level.toFixed(2)}`,
       });
+      // P0 FIX: More faithful cleaning metric — avoid negative/misleading noise_removed
+      const noiseRemovedChars = Math.max(0, rawTextEstimate - canonicalSemanticText.length);
+      const noiseRemovedPct = rawTextEstimate > 0 ? ((noiseRemovedChars / rawTextEstimate) * 100).toFixed(1) : "0";
       counters.pipeline_trace.push({
         step: "B_cleaning",
         input_length: rawTextEstimate,
         output_length: canonicalSemanticText.length,
-        detail: `noise_removed=${rawTextEstimate - canonicalSemanticText.length} chars`,
+        detail: `noise_removed=${noiseRemovedChars} chars (${noiseRemovedPct}%), ` +
+          `raw_estimate=${rawTextEstimate}, canonical=${canonicalSemanticText.length}`,
       });
       console.info(
         `[COGNITIO][P0] M1 done: raw_text=${counters.raw_text_length}, ` +
@@ -276,6 +280,32 @@ export function useCreatePipeline() {
       if (m2Result._diag_secondary_pass_concepts_count !== undefined) {
         counters.secondary_pass_concepts_count = m2Result._diag_secondary_pass_concepts_count;
       }
+      // P0 FIX: Propagate granular body concept validity metrics
+      counters.valid_body_concepts_count = m2Result._diag_valid_body_concepts_count;
+      counters.uncertain_body_concepts_count = m2Result._diag_uncertain_body_concepts_count;
+      counters.editorial_body_concepts_count = m2Result._diag_editorial_body_concepts_count;
+      // P0 FIX: Domain before/after body pass
+      if (m2Result._diag_domain_before_body_pass) {
+        counters.domain_before_body_pass = m2Result._diag_domain_before_body_pass;
+      }
+      if (m2Result._diag_domain_after_body_pass) {
+        counters.domain_after_body_pass = m2Result._diag_domain_after_body_pass;
+      }
+      // P0 FIX: Enhanced cleaning metrics
+      if (m2Result._diag_editorial_lines_removed !== undefined) {
+        counters.editorial_lines_removed = m2Result._diag_editorial_lines_removed;
+      }
+      if (m2Result._diag_header_noise_score_before !== undefined) {
+        counters.header_noise_score_before = m2Result._diag_header_noise_score_before;
+      }
+      if (m2Result._diag_header_noise_score_after !== undefined) {
+        counters.header_noise_score_after = m2Result._diag_header_noise_score_after;
+      }
+      // P0 FIX: LLM fallback
+      if (m2Result._diag_llm_fallback_triggered) {
+        counters.llm_fallback_triggered = m2Result._diag_llm_fallback_triggered;
+        counters.llm_fallback_concepts_count = m2Result._diag_llm_fallback_concepts_count;
+      }
 
       counters.pipeline_trace.push({
         step: "E1_segment_distribution",
@@ -304,10 +334,12 @@ export function useCreatePipeline() {
       // P0 VALIDATION GATE: If 0 concepts from non-empty doc, this is a pipeline failure.
       // Block continuation and show explicit root cause instead of producing empty generation.
       if (m2Result.key_concepts.length === 0 && canonicalSemanticText.length > 50) {
-        const rootCause = `Le moteur d'extraction n'a trouvé aucun concept exploitable dans ${m1Result.word_count} mots ` +
-          `malgré toutes les méthodes d'extraction (front matter: ${m2Result._diag_front_matter_detected ?? "n/a"}, ` +
+        const rootCause = `Le moteur d'extraction a épuisé toutes ses méthodes automatiques sur ${m1Result.word_count} mots ` +
+          `(détection front matter: ${m2Result._diag_front_matter_detected ?? "n/a"}, ` +
           `quarantaine segment 0: ${m2Result._diag_segment_0_quarantined ?? "n/a"}, ` +
           `second pass corps: ${m2Result._diag_body_only_second_pass_triggered ?? "n/a"}, ` +
+          `recalcul domaine: ${m2Result._diag_domain_before_body_pass ?? "n/a"} → ${m2Result._diag_domain_after_body_pass ?? "n/a"}, ` +
+          `fallback compréhension: ${m2Result._diag_llm_fallback_triggered ?? false}, ` +
           `concepts corps: ${m2Result._diag_body_only_second_pass_concepts_count ?? 0}). ` +
           `Texte canonique: ${canonicalSemanticText.length} car.`;
         console.error(
@@ -342,14 +374,18 @@ export function useCreatePipeline() {
         const bodyPassWasAttempted = m2Result._diag_body_only_second_pass_triggered === true;
         const frontMatterWasDetected = m2Result._diag_front_matter_detected === true;
         const seg0WasQuarantined = m2Result._diag_segment_0_quarantined === true;
-        const allSafeguardsExhausted = bodyPassWasAttempted || (frontMatterWasDetected && seg0WasQuarantined);
+        const llmFallbackWasAttempted = m2Result._diag_llm_fallback_triggered === true;
+        const allSafeguardsExhausted = (bodyPassWasAttempted && llmFallbackWasAttempted) ||
+          (bodyPassWasAttempted && frontMatterWasDetected && seg0WasQuarantined);
 
         if ((allConceptsNoisy || (m2Result.key_concepts.length === 1 && allUncertain && allConceptsNoisy)) && allSafeguardsExhausted) {
           const sampleLabel = m2Result.key_concepts[0]?.label ?? "?";
-          const rootCause = `Le moteur d'extraction a épuisé toutes ses méthodes (détection front matter, quarantaine segment 0, ` +
-            `second pass sur le corps) mais n'a trouvé que des artefacts éditoriaux (ex: "${sampleLabel}"). ` +
+          const rootCause = `Le moteur d'extraction a épuisé toutes ses méthodes automatiques ` +
+            `(détection front matter, quarantaine segment 0, second pass corps, recalcul domaine, ` +
+            `fallback compréhension) mais n'a trouvé que des artefacts éditoriaux (ex: "${sampleLabel}"). ` +
             `Diagnostic : front_matter=${frontMatterWasDetected}, seg0_quarantined=${seg0WasQuarantined}, ` +
-            `body_pass=${bodyPassWasAttempted}, body_concepts=${m2Result._diag_body_only_second_pass_concepts_count ?? 0}.`;
+            `body_pass=${bodyPassWasAttempted}, llm_fallback=${m2Result._diag_llm_fallback_triggered ?? false}, ` +
+            `body_concepts=${m2Result._diag_body_only_second_pass_concepts_count ?? 0}.`;
           console.error(
             `[COGNITIO][P0] PRODUCT GUARD: All ${m2Result.key_concepts.length} concepts are editorial artifacts ` +
             `AFTER all safeguards exhausted. Pipeline blocked. ` +

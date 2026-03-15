@@ -1,14 +1,73 @@
 // ============================================================
 // DocumentQualityPanel — Full quality/reliability/confidence view
-// Shows what the engine understood and what's uncertain
+// Shows what the engine understood and what's uncertain.
+// Includes pre-analysis scoring (quality, noise, readiness).
 // ============================================================
 
-import { Shield, FileText, Globe, Layers, BarChart3, AlertCircle, Info, Ban } from "lucide-react";
+import { Shield, FileText, Globe, Layers, BarChart3, AlertCircle, Info, Ban, Gauge } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { M1_Output, M2_Output, SourceIssue, AnalysisConfidence } from "@/domain/cognitio/contracts";
 import { formatSourceType, formatStructureType, formatReasoningType, formatWordCount, formatLanguage, formatConfidence, getConfidenceColor, formatAnalysisConfidence } from "@/lib/cognitio-formatters";
 import { getQualityBandLabel, getQualityBandBg } from "@/lib/cognitio-ui";
 import { getQualityBand } from "@/domain/cognitio/validators";
+
+// ---------- Pre-analysis scoring (computed from M1 output only) ----------
+
+interface PreAnalysisScores {
+  /** Overall document quality: 0-1 */
+  document_quality: number;
+  /** Noise level: 0-1 (higher = more noise) */
+  noise_score: number;
+  /** Analysis readiness: 0-1 (whether the document is ready for concept extraction) */
+  readiness_score: number;
+}
+
+function computePreAnalysisScores(m1: M1_Output): PreAnalysisScores {
+  // --- Document quality ---
+  // Based on confidence, word count adequacy, and issue severity
+  let quality = m1.confidence_level;
+
+  // Penalize very short documents
+  if (m1.word_count < 50) quality *= 0.3;
+  else if (m1.word_count < 150) quality *= 0.6;
+  else if (m1.word_count < 300) quality *= 0.85;
+
+  // Penalize blocking issues heavily
+  const blockingCount = m1.issues.filter(i => i.severity === "blocking").length;
+  const warningCount = m1.issues.filter(i => i.severity === "warning").length;
+  quality *= Math.max(0, 1 - blockingCount * 0.4 - warningCount * 0.1);
+
+  // Bonus for good structure
+  if (m1.segments.length >= 2) quality = Math.min(1, quality * 1.1);
+
+  // --- Noise score ---
+  // Estimate noise from segment confidence variance and low-confidence segments
+  const avgSegConfidence = m1.segments.length > 0
+    ? m1.segments.reduce((s, seg) => s + seg.confidence_score, 0) / m1.segments.length
+    : m1.confidence_level;
+  const lowConfSegments = m1.segments.filter(s => s.confidence_score < 0.5).length;
+  const lowConfRatio = m1.segments.length > 0 ? lowConfSegments / m1.segments.length : 0;
+  const noise = Math.min(1, (1 - avgSegConfidence) * 0.6 + lowConfRatio * 0.4);
+
+  // --- Readiness score ---
+  // Is this document ready for concept extraction?
+  let readiness = 1;
+  if (blockingCount > 0) readiness = 0;
+  else {
+    if (m1.word_count < 50) readiness *= 0.1;
+    else if (m1.word_count < 100) readiness *= 0.4;
+    readiness *= Math.max(0.2, quality);
+    readiness *= Math.max(0.3, 1 - noise * 0.5);
+  }
+
+  return {
+    document_quality: Math.max(0, Math.min(1, quality)),
+    noise_score: Math.max(0, Math.min(1, noise)),
+    readiness_score: Math.max(0, Math.min(1, readiness)),
+  };
+}
+
+// ---------- Component ----------
 
 interface DocumentQualityPanelProps {
   m1Output: M1_Output;
@@ -17,6 +76,7 @@ interface DocumentQualityPanelProps {
 
 export function DocumentQualityPanel({ m1Output, m2Output }: DocumentQualityPanelProps) {
   const qualityBand = getQualityBand(m1Output.confidence_level);
+  const preScores = computePreAnalysisScores(m1Output);
 
   return (
     <div className="space-y-4">
@@ -28,6 +88,32 @@ export function DocumentQualityPanel({ m1Output, m2Output }: DocumentQualityPane
           <p className="text-xs text-muted-foreground">
             Confiance : {Math.round(m1Output.confidence_level * 100)}%
           </p>
+        </div>
+      </div>
+
+      {/* Pre-analysis scores */}
+      <div className="space-y-2">
+        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+          <Gauge className="h-3.5 w-3.5" />
+          Scores pré-analyse
+        </h4>
+        <div className="grid grid-cols-3 gap-2">
+          <ScoreBar
+            label="Qualité"
+            value={preScores.document_quality}
+            colorFn={(v) => v >= 0.7 ? "bg-green-500" : v >= 0.4 ? "bg-yellow-500" : "bg-red-500"}
+          />
+          <ScoreBar
+            label="Bruit"
+            value={preScores.noise_score}
+            colorFn={(v) => v <= 0.3 ? "bg-green-500" : v <= 0.6 ? "bg-yellow-500" : "bg-red-500"}
+            inverted
+          />
+          <ScoreBar
+            label="Prêt"
+            value={preScores.readiness_score}
+            colorFn={(v) => v >= 0.7 ? "bg-green-500" : v >= 0.4 ? "bg-yellow-500" : "bg-red-500"}
+          />
         </div>
       </div>
 
@@ -104,6 +190,36 @@ export function DocumentQualityPanel({ m1Output, m2Output }: DocumentQualityPane
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function ScoreBar({
+  label,
+  value,
+  colorFn,
+  inverted,
+}: {
+  label: string;
+  value: number;
+  colorFn: (v: number) => string;
+  inverted?: boolean;
+}) {
+  const pct = Math.round(value * 100);
+  const displayLabel = inverted ? `${pct}%` : `${pct}%`;
+
+  return (
+    <div className="p-2 bg-muted/20 rounded-lg">
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="text-[10px] text-muted-foreground font-medium">{label}</span>
+        <span className="text-[10px] font-mono font-bold">{displayLabel}</span>
+      </div>
+      <div className="h-1.5 bg-muted/40 rounded-full overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all duration-500 ${colorFn(value)}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
     </div>
   );
 }

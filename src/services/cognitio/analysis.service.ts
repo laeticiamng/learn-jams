@@ -34,7 +34,7 @@ import {
   type ConceptCandidateScores,
 } from "@/lib/cognitio-semantic-cleaning";
 import { filterEditorialNoise, detectFrontMatter, computeSegmentNoiseScore } from "./editorialNoiseFilter";
-import { runDocumentUnderstanding, deriveMissionUniverseHint } from "./documentUnderstandingLayer";
+import { runDocumentUnderstanding, deriveMissionUniverseHint, classifyDomainFromText } from "./documentUnderstandingLayer";
 import { extractAndCleanTopic, validateTopic, cleanTopicString } from "./topicCleaner";
 
 // ---------- Body-Only Topic Extraction Helper ----------
@@ -456,7 +456,9 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
   // Runs BEFORE concept extraction to build global semantic understanding.
   // Acts like an expert teacher reading the whole document first.
   const docUnderstanding = runDocumentUnderstanding(clean_text, segments, input.source_type);
-  const missionUniverseHint = deriveMissionUniverseHint(docUnderstanding);
+  let missionUniverseHint = deriveMissionUniverseHint(docUnderstanding);
+  // P0 FIX: Track domain before body pass for before/after comparison
+  const domainBeforeBodyPass = docUnderstanding.domain_classification;
 
   // === Level 1: Extract clean main topic ===
   // Use understanding layer's true topic if it's better than raw extraction
@@ -752,6 +754,41 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
     : (concepts.length === 0 ? 1 : 0);
 
   // ============================================================
+  // P0 FIX: Compute GRANULAR body concept validity metrics.
+  // These distinguish "concepts from body" from "VALID concepts from body".
+  // A concept from the body that is an artifact or uncertain is NOT valid.
+  // ============================================================
+  let validBodyConceptsCount = 0;
+  let uncertainBodyConceptsCount = 0;
+  let editorialBodyConceptsCount = 0;
+  let validConceptsCount = 0;
+
+  for (const c of concepts) {
+    const fromBody = c.source_trace?.some(t => t.segment_index > 0) ?? false;
+    const isUncertain = c.uncertain === true || c.source_confidence < 0.4;
+    const scores = scoreConceptCandidate(c.label, c.definition);
+    const isArtifact = !scores.accepted || scores.editorial_artifact_score >= 0.4 || scores.header_noise_score >= 0.4;
+    const isValid = !isUncertain && !isArtifact;
+
+    if (isValid) validConceptsCount++;
+
+    if (fromBody) {
+      if (isValid) validBodyConceptsCount++;
+      if (isUncertain) uncertainBodyConceptsCount++;
+      if (isArtifact) editorialBodyConceptsCount++;
+    }
+  }
+
+  console.info(
+    `[COGNITIO][M2] Body concept validity:\n` +
+    `  concepts_from_body=${conceptsFromBodyCount}\n` +
+    `  valid_body_concepts=${validBodyConceptsCount}\n` +
+    `  uncertain_body_concepts=${uncertainBodyConceptsCount}\n` +
+    `  editorial_body_concepts=${editorialBodyConceptsCount}\n` +
+    `  total_valid_concepts=${validConceptsCount}`
+  );
+
+  // ============================================================
   // P0 DEFINITIVE FIX: SINGLE SOURCE OF TRUTH FOR BODY-ONLY PASS
   // Use shouldTriggerBodyOnlySecondPass() — the centralized decision.
   // This replaces ALL previous ad-hoc trigger conditions.
@@ -762,12 +799,15 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
     concepts_from_segment_0: conceptsFromSegment0Count,
     raw_concepts_from_segment_0: rawConceptsFromSegment0Count,
     concepts_from_body: conceptsFromBodyCount,
+    valid_body_concepts_count: validBodyConceptsCount,
+    valid_concepts_count: validConceptsCount,
     main_topic_is_editorial_artifact: mainTopicIsEditorialArtifact,
     artifact_ratio: artifactRatio,
     all_concepts_uncertain: allConceptsAreUncertain,
     raw_concepts_count: rawConcepts.length,
     filtered_concepts_count: filteredConcepts.length,
     segments_count: segments.length,
+    editorial_body_concepts_count: editorialBodyConceptsCount,
   });
 
   console.info(
@@ -909,6 +949,18 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
             );
             mainTopic = firstBodyConcept.label;
           }
+        }
+
+        // P0 FIX: Recalculate domain classification from body-only text
+        // The domain classifier may have been misled by front matter / editorial noise.
+        const bodyTextForDomain = bodyOnlySegments.map(s => s.content).join("\n\n");
+        const domainAfterBodyPass = classifyDomainFromText(bodyTextForDomain, mainTopic);
+        if (domainAfterBodyPass !== domainBeforeBodyPass) {
+          console.info(
+            `[COGNITIO][M2] DOMAIN RECALCULATED after body pass: "${domainBeforeBodyPass}" → "${domainAfterBodyPass}"`
+          );
+          docUnderstanding.domain_classification = domainAfterBodyPass;
+          missionUniverseHint = deriveMissionUniverseHint(docUnderstanding);
         }
       }
     }
@@ -1165,17 +1217,35 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
 
     // Re-evaluate using shouldTriggerBodyOnlySecondPass with updated metrics
     const postScoringArtifactRatio = postScoringAllArtifacts ? 1 : artifactRatio;
+    // Recompute valid body concepts after scoring
+    let postScoringValidBodyConcepts = 0;
+    let postScoringEditorialBodyConcepts = 0;
+    let postScoringValidConcepts = 0;
+    for (const c of concepts) {
+      const fromBody = c.source_trace?.some(t => t.segment_index > 0) ?? false;
+      const isUncertain = c.uncertain === true || c.source_confidence < 0.4;
+      const sc = scoreConceptCandidate(c.label, c.definition);
+      const isArtifact = !sc.accepted || sc.editorial_artifact_score >= 0.4 || sc.header_noise_score >= 0.4;
+      if (!isUncertain && !isArtifact) postScoringValidConcepts++;
+      if (fromBody) {
+        if (!isUncertain && !isArtifact) postScoringValidBodyConcepts++;
+        if (isArtifact) postScoringEditorialBodyConcepts++;
+      }
+    }
     const postScoringDecision = shouldTriggerBodyOnlySecondPass({
       front_matter_detected: localFrontMatter.has_front_matter,
       concepts_from_segment_0: postScoringAllFromSeg0 ? concepts.length : conceptsFromSegment0Count,
       raw_concepts_from_segment_0: rawConceptsFromSegment0Count,
       concepts_from_body: postScoringNoBodyConcepts ? 0 : conceptsFromBodyCount,
+      valid_body_concepts_count: postScoringValidBodyConcepts,
+      valid_concepts_count: postScoringValidConcepts,
       main_topic_is_editorial_artifact: mainTopicIsEditorialArtifact,
       artifact_ratio: postScoringArtifactRatio,
       all_concepts_uncertain: concepts.every(c => c.uncertain || c.source_confidence < 0.4),
       raw_concepts_count: rawConcepts.length,
       filtered_concepts_count: concepts.length,
       segments_count: segments.length,
+      editorial_body_concepts_count: postScoringEditorialBodyConcepts,
     });
 
     if (postScoringDecision.trigger) {
@@ -1329,6 +1399,135 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
     console.info(`[COGNITIO][M2] Absolute last resort produced ${concepts.length} concepts from ${substantiveLines.length} substantive lines (min_seg_idx=${absoluteMinSegIdx}).`);
   }
 
+  // ============================================================
+  // P0 FIX: LLM FALLBACK — Document Understanding Concept Extraction
+  // If after body-only second pass AND all heuristic fallbacks,
+  // we STILL have 0 valid concepts on a substantial document,
+  // use the Document Understanding Layer as a structured concept extractor.
+  // This produces at least: a true topic, 3-8 clean concepts, 3-6 sections.
+  // ============================================================
+  let _diag_llm_fallback_triggered = false;
+  let _diag_llm_fallback_concepts_count = 0;
+
+  if (concepts.length === 0 && clean_text.length > 200) {
+    _diag_llm_fallback_triggered = true;
+    console.warn(
+      `[COGNITIO][M2][LLM_FALLBACK] 0 concepts from ${clean_text.length}-char document after ALL passes. ` +
+      `Activating Document Understanding fallback extraction.`
+    );
+
+    // Use the Document Understanding Layer's pre-computed learning core and sections
+    // to generate structured concepts as a last resort
+    const duFallbackTopic = docUnderstanding.true_topic !== "Sujet non identifié"
+      ? docUnderstanding.true_topic
+      : mainTopic;
+
+    // Generate concepts from learning core axes
+    const coreAxes = docUnderstanding.learning_core.slice(0, 8);
+    const criticalAxes = docUnderstanding.critical_axes.slice(0, 6);
+    const pedagogicalSections = docUnderstanding.section_map
+      .filter(s => !s.is_noise && s.title.length >= 5)
+      .slice(0, 6);
+
+    // Priority 1: Critical axes as concepts
+    for (let i = 0; i < criticalAxes.length && concepts.length < 8; i++) {
+      const axis = criticalAxes[i];
+      const matchingSection = pedagogicalSections.find(s =>
+        s.title.toLowerCase().includes(axis.toLowerCase()) ||
+        axis.toLowerCase().includes(s.title.toLowerCase())
+      );
+      const definition = matchingSection?.content_summary
+        ? `${axis} — ${matchingSection.content_summary}`
+        : `Axe d'apprentissage critique du document : ${axis}`;
+
+      concepts.push({
+        stable_key: `concept_llm_fallback_${concepts.length}`,
+        label: axis,
+        definition,
+        type: docUnderstanding.domain_classification,
+        criticality: (i < 2 ? 1 : i < 4 ? 2 : 3) as 1 | 2 | 3 | 4,
+        criticality_score: i < 2 ? 0.9 : i < 4 ? 0.7 : 0.5,
+        bloom_target: "understand",
+        relations: [],
+        prerequisites: [],
+        source_confidence: 0.5,
+        source_trace: [{
+          segment_index: Math.min(i + 1, Math.max(0, segments.length - 1)),
+          excerpt: definition.slice(0, 120),
+        }],
+        uncertain: false,
+      });
+    }
+
+    // Priority 2: Learning core axes not already covered
+    for (let i = 0; i < coreAxes.length && concepts.length < 8; i++) {
+      const axis = coreAxes[i];
+      const alreadyCovered = concepts.some(c =>
+        c.label.toLowerCase() === axis.toLowerCase()
+      );
+      if (alreadyCovered) continue;
+
+      concepts.push({
+        stable_key: `concept_llm_core_${concepts.length}`,
+        label: axis,
+        definition: `Axe d'apprentissage identifié par compréhension du document : ${axis}`,
+        type: docUnderstanding.domain_classification,
+        criticality: 2 as 1 | 2 | 3 | 4,
+        criticality_score: 0.6,
+        bloom_target: "understand",
+        relations: [],
+        prerequisites: [],
+        source_confidence: 0.45,
+        source_trace: [{
+          segment_index: Math.min(i + 1, Math.max(0, segments.length - 1)),
+          excerpt: axis,
+        }],
+        uncertain: false,
+      });
+    }
+
+    // Priority 3: Pedagogical section titles as concepts
+    for (let i = 0; i < pedagogicalSections.length && concepts.length < 8; i++) {
+      const section = pedagogicalSections[i];
+      const alreadyCovered = concepts.some(c =>
+        c.label.toLowerCase() === section.title.toLowerCase()
+      );
+      if (alreadyCovered) continue;
+
+      concepts.push({
+        stable_key: `concept_llm_section_${concepts.length}`,
+        label: section.title,
+        definition: section.content_summary || `Section pédagogique : ${section.title}`,
+        type: docUnderstanding.domain_classification,
+        criticality: 3 as 1 | 2 | 3 | 4,
+        criticality_score: 0.4,
+        bloom_target: "remember",
+        relations: [],
+        prerequisites: [],
+        source_confidence: 0.4,
+        source_trace: [{
+          segment_index: Math.min(i + 1, Math.max(0, segments.length - 1)),
+          excerpt: section.content_summary?.slice(0, 120) || section.title,
+        }],
+        uncertain: false,
+      });
+    }
+
+    _diag_llm_fallback_concepts_count = concepts.length;
+
+    // Override topic if understanding layer found a good one
+    if (duFallbackTopic.length >= 5 && duFallbackTopic !== "Sujet non identifié") {
+      mainTopic = duFallbackTopic;
+    }
+
+    console.info(
+      `[COGNITIO][M2][LLM_FALLBACK] Produced ${_diag_llm_fallback_concepts_count} concepts ` +
+      `from Document Understanding Layer. Topic: "${mainTopic}". ` +
+      `Sources: critical_axes=${criticalAxes.length}, learning_core=${coreAxes.length}, ` +
+      `sections=${pedagogicalSections.length}.`
+    );
+  }
+
   // P0: If topic is "Sujet non identifié" or editorial artifact but we have concepts, derive from concepts
   let finalTopic = mainTopic;
   const finalTopicIsEditorial = (() => {
@@ -1472,7 +1671,7 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
       ...(_dbg_fallback_level === "emergency" ? [{ code: "EMERGENCY_EXTRACTION" as const, message: `Extraction de secours utilisée — ${Object.entries(rejectReasons).map(([r, c]) => `${r}:${c}`).join(", ")}`, severity: "warning" as const }] : []),
       ...(_dbg_fallback_level === "heuristic_secours" ? [{ code: "HEURISTIC_LAST_RESORT" as const, message: `Mode secours heuristique activé — toutes les méthodes standard ont échoué sur ${clean_text.length} caractères`, severity: "error" as const }] : []),
       ...(_dbg_fallback_level === "absolute_last_resort" ? [{ code: "ABSOLUTE_LAST_RESORT" as const, message: `Mode secours absolu activé — extraction brute sans scoring sur ${clean_text.length} caractères. Vérifier la qualité des concepts.`, severity: "error" as const }] : []),
-      ...(concepts.length === 0 && clean_text.length > 50 ? [{ code: "ALL_CONCEPTS_REJECTED" as const, message: `Le moteur d'extraction n'a pas réussi à identifier de concepts pédagogiques après ${_dbg_body_only_second_pass_triggered ? "un second pass sur le corps du document" : "analyse complète"}. Diagnostic : front_matter=${segment0Quarantined}, body_pass=${_dbg_body_only_second_pass_triggered}, body_concepts=${_dbg_body_only_second_pass_concepts_count}.`, severity: "blocking" as const }] : []),
+      ...(concepts.length === 0 && clean_text.length > 50 ? [{ code: "ALL_CONCEPTS_REJECTED" as const, message: `Le moteur d'extraction a épuisé toutes ses méthodes automatiques (front matter, quarantaine seg0, second pass corps, recalcul domaine, fallback compréhension). Diagnostic : front_matter=${segment0Quarantined}, body_pass=${_dbg_body_only_second_pass_triggered}, llm_fallback=${_diag_llm_fallback_triggered}, body_concepts=${_dbg_body_only_second_pass_concepts_count}.`, severity: "blocking" as const }] : []),
       ...(concepts.length === 1 && concepts[0]?.uncertain ? [{ code: "SINGLE_UNCERTAIN_CONCEPT" as const, message: `Un seul concept incertain détecté — qualité insuffisante pour une fiche standard.`, severity: "warning" as const }] : []),
     ],
     total_concepts: concepts.length,
@@ -1500,6 +1699,40 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
     // P0: Secondary pass diagnostics
     _diag_secondary_pass_topic: _dbg_body_only_second_pass_triggered ? finalTopic : undefined,
     _diag_secondary_pass_concepts_count: _dbg_body_only_second_pass_concepts_count,
+    // P0 FIX: Granular body concept validity tracking
+    _diag_concepts_from_segment_0_count: finalConceptsFromSeg0,
+    _diag_concepts_from_body_count: finalConceptsFromBody,
+    _diag_valid_body_concepts_count: concepts.filter(c => {
+      const fromBody = c.source_trace?.some(t => t.segment_index > 0) ?? false;
+      if (!fromBody) return false;
+      const isUncertain = c.uncertain === true || c.source_confidence < 0.4;
+      const s = scoreConceptCandidate(c.label, c.definition);
+      return !isUncertain && s.accepted && s.editorial_artifact_score < 0.4 && s.header_noise_score < 0.4;
+    }).length,
+    _diag_uncertain_body_concepts_count: concepts.filter(c => {
+      const fromBody = c.source_trace?.some(t => t.segment_index > 0) ?? false;
+      return fromBody && (c.uncertain === true || c.source_confidence < 0.4);
+    }).length,
+    _diag_editorial_body_concepts_count: concepts.filter(c => {
+      const fromBody = c.source_trace?.some(t => t.segment_index > 0) ?? false;
+      if (!fromBody) return false;
+      const s = scoreConceptCandidate(c.label, c.definition);
+      return !s.accepted || s.editorial_artifact_score >= 0.4 || s.header_noise_score >= 0.4;
+    }).length,
+    _diag_all_concepts_uncertain: concepts.length > 0 && concepts.every(c => c.uncertain === true || c.source_confidence < 0.4),
+    _diag_main_topic_is_editorial_artifact: mainTopicIsEditorialArtifact,
+    _diag_artifact_ratio: artifactRatio,
+    // P0 FIX: Domain classifier before/after body pass
+    _diag_domain_before_body_pass: domainBeforeBodyPass,
+    _diag_domain_after_body_pass: docUnderstanding.domain_classification,
+    // P0 FIX: Cleaning metrics
+    _diag_front_matter_chars_removed: localFrontMatter.front_matter_chars_removed,
+    _diag_editorial_lines_removed: localFrontMatter.front_matter_lines_detected,
+    _diag_header_noise_score_before: localFrontMatter.header_noise_score_before,
+    _diag_header_noise_score_after: localFrontMatter.header_noise_score_after,
+    // P0 FIX: LLM fallback
+    _diag_llm_fallback_triggered: _diag_llm_fallback_triggered,
+    _diag_llm_fallback_concepts_count: _diag_llm_fallback_concepts_count,
   };
 }
 
@@ -1710,47 +1943,52 @@ function isEditorialArtifactForHeuristic(line: string): boolean {
  * P0 DEFINITIVE FIX: Centralized decision function for triggering
  * the body-only second pass. This is the SINGLE source of truth.
  *
- * Returns { trigger: true, reason } if any of these conditions hold:
- * A. front_matter + concepts from seg0 (raw OR filtered) + none from body
- * B. main topic is an editorial artifact
- * C. artifact ratio >= 0.8
+ * Returns { trigger: true, reason } if ANY of these conditions hold:
+ * A. main topic is an editorial artifact
+ * B. artifact ratio >= 0.8
+ * C. valid_concepts_count === 0 (no valid concepts at all)
  * D. all concepts uncertain + raw concepts exist
+ * E. valid_body_concepts_count === 0 (even if concepts_from_body > 0, they're all invalid)
+ * F. front_matter detected + first pass dominated by editorial concepts
+ * G. all raw concepts rejected + some existed
+ * H. front_matter + concepts from seg0 (raw OR filtered) + none from body
+ *
+ * CRITICAL: concepts_from_body > 0 does NOT block the second pass.
+ * Only VALID body concepts (non-artifact, non-uncertain) can prevent the retry.
  */
 export function shouldTriggerBodyOnlySecondPass(diag: {
   front_matter_detected: boolean;
   concepts_from_segment_0: number;       // post-filter count
   raw_concepts_from_segment_0: number;   // PRE-filter count (before artifact rejection)
   concepts_from_body: number;
+  valid_body_concepts_count: number;      // P0 FIX: body concepts that are valid (non-artifact, non-uncertain)
+  valid_concepts_count: number;           // P0 FIX: total valid concepts (all segments)
   main_topic_is_editorial_artifact: boolean;
   artifact_ratio: number;
   all_concepts_uncertain: boolean;
   raw_concepts_count: number;
   filtered_concepts_count: number;
   segments_count: number;
+  editorial_body_concepts_count: number;  // P0 FIX: body concepts that are editorial artifacts
 }): { trigger: boolean; reason: string } {
   // Cannot do body-only pass with a single segment
   if (diag.segments_count <= 1) {
     return { trigger: false, reason: "single_segment" };
   }
 
-  // Condition A: front matter detected + concepts come from seg0 (raw OR filtered) + none from body
-  // P0 CRITICAL FIX: Use raw_concepts_from_segment_0 (pre-filter), NOT just post-filter count.
-  // This fixes the case where seg0 concepts are all rejected as artifacts but
-  // the trigger condition sees 0 because it only checks post-filter counts.
-  if (diag.front_matter_detected &&
-      (diag.concepts_from_segment_0 > 0 || diag.raw_concepts_from_segment_0 > 0) &&
-      diag.concepts_from_body === 0) {
-    return { trigger: true, reason: "front_matter_with_seg0_only_concepts" };
-  }
-
-  // Condition B: main topic is an editorial artifact
+  // Condition A: main topic is an editorial artifact
   if (diag.main_topic_is_editorial_artifact) {
     return { trigger: true, reason: "editorial_artifact_topic" };
   }
 
-  // Condition C: high artifact ratio (>= 80%)
+  // Condition B: high artifact ratio (>= 80%)
   if (diag.artifact_ratio >= 0.8 && diag.raw_concepts_count > 0) {
     return { trigger: true, reason: "high_artifact_ratio" };
+  }
+
+  // Condition C: no valid concepts at all
+  if (diag.valid_concepts_count === 0 && diag.filtered_concepts_count > 0) {
+    return { trigger: true, reason: "zero_valid_concepts" };
   }
 
   // Condition D: all concepts uncertain + some raw concepts exist
@@ -1758,9 +1996,29 @@ export function shouldTriggerBodyOnlySecondPass(diag: {
     return { trigger: true, reason: "all_concepts_uncertain" };
   }
 
-  // Condition E: all raw concepts rejected + some existed
+  // Condition E: body concepts exist but NONE are valid
+  // P0 CRITICAL: concepts_from_body > 0 does NOT prevent trigger
+  // if those body concepts are all artifacts or uncertain
+  if (diag.concepts_from_body > 0 && diag.valid_body_concepts_count === 0) {
+    return { trigger: true, reason: "no_valid_body_concepts" };
+  }
+
+  // Condition F: front_matter detected + first pass dominated by editorial concepts
+  if (diag.front_matter_detected && diag.editorial_body_concepts_count > 0 &&
+      diag.editorial_body_concepts_count >= diag.concepts_from_body) {
+    return { trigger: true, reason: "front_matter_editorial_dominated" };
+  }
+
+  // Condition G: all raw concepts rejected + some existed
   if (diag.filtered_concepts_count === 0 && diag.raw_concepts_count > 0) {
     return { trigger: true, reason: "all_concepts_rejected" };
+  }
+
+  // Condition H: front matter + concepts from seg0 only + none from body
+  if (diag.front_matter_detected &&
+      (diag.concepts_from_segment_0 > 0 || diag.raw_concepts_from_segment_0 > 0) &&
+      diag.concepts_from_body === 0) {
+    return { trigger: true, reason: "front_matter_with_seg0_only_concepts" };
   }
 
   return { trigger: false, reason: "conditions_not_met" };

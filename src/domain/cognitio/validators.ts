@@ -259,9 +259,9 @@ export function runSemanticSuccessGate(params: {
     signals,
     display_message: passed
       ? "Base sémantique validée"
-      : "Le document a été importé, mais l'analyse n'a pas réussi à isoler de concepts pédagogiques exploitables " +
-        "après détection du front matter, quarantaine du segment 0 et extraction corps-seulement. " +
-        "Un second pass sur le corps du document sera tenté automatiquement.",
+      : "Le document a été importé. L'analyse approfondie est en cours : " +
+        "détection du front matter, quarantaine du segment 0, extraction corps-seulement, " +
+        "recalcul du domaine et extraction par compréhension du document seront tentés automatiquement.",
   };
 }
 
@@ -294,9 +294,11 @@ export function runMissionGate(signals: SemanticGateSignals, mainTopic: string):
     block_reasons: blockReasons,
     display_message: passed
       ? "Mission gate validée"
-      : "Le document a été importé, mais après toutes les passes d'extraction (front matter, quarantaine segment 0, " +
-        "extraction corps-seulement), l'analyse n'a pas identifié suffisamment de concepts pédagogiques fiables " +
-        "pour générer une mission interactive. " + blockReasons.join(". ") + ".",
+      : "Le document a été importé. Après toutes les passes d'extraction automatiques " +
+        "(détection front matter, quarantaine segment 0, extraction corps-seulement, " +
+        "recalcul du domaine, fallback par compréhension du document), l'analyse n'a pas " +
+        "identifié suffisamment de concepts pédagogiques fiables pour générer une mission interactive. " +
+        blockReasons.join(". ") + ".",
   };
 }
 

@@ -16,7 +16,11 @@ import Footer from "@/components/Footer";
 import IngestionStatus from "@/components/cognitio/IngestionStatus";
 import ImportDebugPanel from "@/components/cognitio/ImportDebugPanel";
 import { DocumentQualityPanel } from "@/components/cognitio/DocumentQualityPanel";
+import { DocumentPreview } from "@/components/cognitio/DocumentPreview";
+import { PipelineVisualization } from "@/components/cognitio/PipelineVisualization";
+import { SimplifiedDebugPanel } from "@/components/cognitio/SimplifiedDebugPanel";
 import { ConceptList } from "@/components/cognitio/ConceptList";
+import { ConceptGraph } from "@/components/cognitio/ConceptGraph";
 import { ConfusionPairsCard } from "@/components/cognitio/ConfusionPairsCard";
 import AmbiguityWarning from "@/components/cognitio/AmbiguityWarning";
 import { MemoryPlanCard } from "@/components/cognitio/MemoryPlanCard";
@@ -37,6 +41,9 @@ import { CreatePersonalizationStep } from "@/components/cognitio/create/CreatePe
 import { CreatePrimaryCTA } from "@/components/cognitio/create/CreatePrimaryCTA";
 import { CreateProgressHeader } from "@/components/cognitio/create/CreateProgressHeader";
 import { useCreatePipeline } from "@/hooks/useCreatePipeline";
+import { useQuotaGuard } from "@/hooks/useQuotaGuard";
+import { useUserPlan } from "@/hooks/useUserPlan";
+import { Paywall } from "@/components/billing/Paywall";
 import { useSeedLibrary } from "@/hooks/useSeedLibrary";
 import { SeedLibraryGrid } from "@/components/product/SeedLibraryGrid";
 import { FeatureFlagGuard } from "@/components/product/FeatureFlagGuard";
@@ -46,15 +53,19 @@ import type { LearningObjective } from "@/domain/cognitio/types";
 import type { EducationStage, ExplanationStyle } from "@/domain/cognitio/learner-profile.types";
 import { DEFAULT_LEARNER_PROFILE } from "@/domain/cognitio/learner-profile.types";
 import type { AmbiguousZone } from "@/domain/cognitio/types";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Create() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { track } = useProductTracking();
+  const { user } = useAuth();
 
   const pipeline = useCreatePipeline();
   const { seeds, loading: seedsLoading } = useSeedLibrary();
+  const { plan } = useUserPlan(user?.id ?? null);
+  const quotaGuard = useQuotaGuard(user?.id ?? null, plan);
   const [activeSeedId, setActiveSeedId] = useState<string | null>(null);
 
   // Step 1: Format
@@ -91,8 +102,12 @@ export default function Create() {
     setSourceData(null);
   }, []);
 
-  const handleSubmit = useCallback(() => {
+  const handleSubmit = useCallback(async () => {
     if (!sourceData || !selectedFormat) return;
+
+    // P0: Credit guard — check quota before running the pipeline
+    const allowed = await quotaGuard.checkBeforeGenerate(selectedFormat);
+    if (!allowed) return;
 
     const learner_profile = {
       ...DEFAULT_LEARNER_PROFILE,
@@ -110,7 +125,7 @@ export default function Create() {
       },
       selectedFormat,
     );
-  }, [sourceData, selectedFormat, objective, educationStage, explanationStyle, pipeline]);
+  }, [sourceData, selectedFormat, objective, educationStage, explanationStyle, pipeline, quotaGuard]);
 
   const { phase, ingestion, analysis, memory, format, generation, storyGeneration, missionResult, qa } = pipeline;
 
@@ -203,6 +218,23 @@ export default function Create() {
                 </motion.section>
               )}
 
+              {/* P0: Paywall — shown when quota guard blocks generation */}
+              {quotaGuard.guardResult && !quotaGuard.guardResult.allowed && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Paywall
+                    feature={quotaGuard.guardResult.feature}
+                    currentPlan={plan}
+                    upgradeTo={quotaGuard.guardResult.upgrade_to}
+                    reason={quotaGuard.guardResult.reason!}
+                    onBuyCredits={() => navigate("/pricing")}
+                  />
+                </motion.div>
+              )}
+
               {/* CTA — visible once format + source ready */}
               {selectedFormat && hasSource && (
                 <motion.div
@@ -214,6 +246,7 @@ export default function Create() {
                     selectedFormat={selectedFormat}
                     hasSource={hasSource}
                     onClick={handleSubmit}
+                    loading={quotaGuard.checking}
                   />
                 </motion.div>
               )}
@@ -242,6 +275,12 @@ export default function Create() {
               exit={{ opacity: 0, y: -20 }}
               className="space-y-6"
             >
+              <PipelineVisualization
+                phase={pipeline.phase}
+                debugCounters={pipeline.debugCounters}
+                hasError={!!pipeline.pipelineError}
+              />
+
               <IngestionStatus
                 steps={pipeline.allSteps}
                 title={phaseTitle}
@@ -285,6 +324,12 @@ export default function Create() {
               animate={{ opacity: 1, y: 0 }}
               className="space-y-6"
             >
+              <PipelineVisualization
+                phase={pipeline.phase}
+                debugCounters={pipeline.debugCounters}
+                hasError={!!pipeline.pipelineError}
+              />
+
               {/* Error in result phase */}
               {pipeline.pipelineError && (
                 <PipelineErrorCard
@@ -326,75 +371,17 @@ export default function Create() {
                 </div>
               )}
 
-              {/* P0: Debug counters summary (always visible when available) */}
+              {/* P0: Document preview — shows cleaned text, segments, issues */}
+              {ingestion.result && (
+                <DocumentPreview
+                  m1Output={ingestion.result}
+                  rawTextEstimate={pipeline.debugCounters?.raw_text_length}
+                />
+              )}
+
+              {/* P0: Simplified debug panel with user/dev modes */}
               {pipeline.debugCounters && (
-                <div className="border rounded-lg p-3 bg-muted/20 text-xs font-mono space-y-1">
-                  <p className="font-semibold text-muted-foreground mb-1">Diagnostic pipeline</p>
-
-                  {/* M1 — Text */}
-                  <p className="text-muted-foreground font-semibold mt-1">STEP A-B — Import + Nettoyage</p>
-                  <p>Texte source (segments concat.) : {pipeline.debugCounters.raw_text_length} car.</p>
-                  <p>Texte canonique (m1.clean_text) : {pipeline.debugCounters.cleaned_text_length} car.</p>
-                  {pipeline.debugCounters.canonical_text_preview && (
-                    <p className="text-muted-foreground truncate max-w-full">Aperçu : "{pipeline.debugCounters.canonical_text_preview.slice(0, 120)}..."</p>
-                  )}
-                  <p>Sections M1 : {pipeline.debugCounters.detected_sections_count}</p>
-
-                  {/* M2 — Topic + Concepts */}
-                  <p className="text-muted-foreground font-semibold mt-1">STEP C-E — Analyse + Concepts</p>
-                  <p>Texte envoyé à M2 : {pipeline.debugCounters.m2_input_text_length} car.</p>
-                  <p>Sujet détecté : "{pipeline.debugCounters.cleaned_topic || pipeline.debugCounters.raw_topic || "—"}"</p>
-                  <p>Concepts : {pipeline.debugCounters.extracted_concepts_raw_count} bruts → {pipeline.debugCounters.extracted_concepts_after_filter_count} après filtre ({pipeline.debugCounters.rejected_concepts_count} rejetés)</p>
-                  {pipeline.debugCounters.extracted_concepts_after_filter_count === 0 && pipeline.debugCounters.cleaned_text_length > 50 && (
-                    <p className="text-red-600 font-semibold">ANOMALIE : 0 concepts malgré {pipeline.debugCounters.cleaned_text_length} car. de texte canonique</p>
-                  )}
-
-                  {/* M3 — Memory */}
-                  <p className="text-muted-foreground font-semibold mt-1">STEP F — Architecture mémoire</p>
-                  <p>Concepts en entrée : {pipeline.debugCounters.concepts_persisted_count} | Segments mémoire : {pipeline.debugCounters.memory_segments_generated_count}</p>
-
-                  {/* M4-M5 — Format + Generation */}
-                  <p className="text-muted-foreground font-semibold mt-1">STEP G — Génération</p>
-                  <p>Format : {pipeline.debugCounters.final_format_decision || "—"} | Générateur : {pipeline.debugCounters.generator_called || "—"}</p>
-                  <p>Statut final : <span className={pipeline.debugCounters.final_generation_status === "success" ? "text-green-600" : "text-red-600"}>{pipeline.debugCounters.final_generation_status}</span></p>
-                  {pipeline.debugCounters.success_gate_reason && (
-                    <p>Raison : {pipeline.debugCounters.success_gate_reason}</p>
-                  )}
-                  {pipeline.debugCounters.generation_error && (
-                    <p className="text-red-500">Erreur : {pipeline.debugCounters.generation_error}</p>
-                  )}
-
-                  {/* P0: Semantic gate signals */}
-                  {pipeline.debugCounters.semantic_gate_status && (
-                    <>
-                      <p className="text-muted-foreground font-semibold mt-1">SEMANTIC GATE</p>
-                      <p>Gate : <span className={pipeline.debugCounters.semantic_gate_passed ? "text-green-600" : "text-red-600"}>{pipeline.debugCounters.semantic_gate_status}</span></p>
-                      <p>Concepts valides : {pipeline.debugCounters.valid_concepts_count ?? "—"} | Incertains : {pipeline.debugCounters.uncertain_concepts_count ?? "—"}</p>
-                      <p>Ratio artefacts : {pipeline.debugCounters.editorial_artifact_ratio != null ? `${Math.round(pipeline.debugCounters.editorial_artifact_ratio * 100)}%` : "—"}</p>
-                      <p>Sujet éditorial : {pipeline.debugCounters.main_topic_is_editorial_artifact ? "oui" : "non"}</p>
-                      {pipeline.debugCounters.semantic_gate_block_reasons && pipeline.debugCounters.semantic_gate_block_reasons.length > 0 && (
-                        <p className="text-red-500">Blocages : {pipeline.debugCounters.semantic_gate_block_reasons.join(" | ")}</p>
-                      )}
-                    </>
-                  )}
-                  {pipeline.debugCounters.reject_reasons.length > 0 && (
-                    <p>Raisons de rejet concepts : {pipeline.debugCounters.reject_reasons.map(r => `${r.reason}(${r.count})`).join(", ")}</p>
-                  )}
-
-                  {/* Pipeline trace */}
-                  {pipeline.debugCounters.pipeline_trace.length > 0 && (
-                    <details className="mt-2">
-                      <summary className="text-muted-foreground cursor-pointer font-semibold">Trace détaillée ({pipeline.debugCounters.pipeline_trace.length} étapes)</summary>
-                      <div className="pl-2 mt-1 space-y-0.5 text-muted-foreground">
-                        {pipeline.debugCounters.pipeline_trace.map((t, i) => (
-                          <div key={i} className={t.warning ? "text-red-500" : ""}>
-                            [{t.step}] {t.input_length != null && `in=${t.input_length}`} {t.output_length != null && `out=${t.output_length}`} {t.input_count != null && `in_count=${t.input_count}`} {t.output_count != null && `out_count=${t.output_count}`} {t.detail && `| ${t.detail}`} {t.warning && `| WARNING: ${t.warning}`}
-                          </div>
-                        ))}
-                      </div>
-                    </details>
-                  )}
-                </div>
+                <SimplifiedDebugPanel counters={pipeline.debugCounters} />
               )}
 
               {/* Audience mismatch warning */}
@@ -503,6 +490,14 @@ export default function Create() {
                 <div className="border rounded-lg p-4">
                   <ConceptList concepts={analysis.result.key_concepts} maxDisplay={10} />
                 </div>
+              )}
+
+              {/* Concept Graph */}
+              {analysis.result && analysis.result.key_concepts.length > 1 && (
+                <ConceptGraph
+                  concepts={analysis.result.key_concepts}
+                  confusionPairs={analysis.result.confusion_pairs}
+                />
               )}
 
               {/* Confusions & Traps */}

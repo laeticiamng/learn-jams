@@ -99,6 +99,37 @@ export const FORMAT_CONFIGS: Record<CreateFormat, FormatConfig> = {
   },
 };
 
+// ---------- Pipeline Integration Status ----------
+
+/**
+ * Formats that have full COGNITIO pipeline integration (M1→M5).
+ * Music and video have providers but are not yet wired into the
+ * M2→M4 analysis pipeline — they use separate generation flows.
+ */
+export const PIPELINE_INTEGRATED_FORMATS = new Set<CreateFormat>([
+  "dynamic_sheet",
+  "animated_story",
+  "escape_game",
+]);
+
+/** Check if a format has full pipeline integration. */
+export function isFormatPipelineIntegrated(format: CreateFormat): boolean {
+  return PIPELINE_INTEGRATED_FORMATS.has(format);
+}
+
+/**
+ * Formats that are coming soon (provider exists but not integrated).
+ */
+export const COMING_SOON_FORMATS = new Set<CreateFormat>([
+  "music",
+  "video",
+]);
+
+/** Check if a format is coming soon (has provider, not yet integrated). */
+export function isFormatComingSoon(format: CreateFormat): boolean {
+  return COMING_SOON_FORMATS.has(format);
+}
+
 // ---------- Helpers ----------
 
 /**
