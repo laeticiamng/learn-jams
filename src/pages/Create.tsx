@@ -1,19 +1,18 @@
 // ============================================================
-// Create Page — Import & Transform (M1 → M7 Pipeline)
-// Lightweight orchestrator page — all pipeline logic is in useCreatePipeline
+// Create Page — Progressive Create Flow (M1 → M7 Pipeline)
+// 3-step guided flow: Format → Source → Personalization
+// Lightweight orchestrator — all pipeline logic is in useCreatePipeline
 // ============================================================
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { FormatSelector } from "@/components/cognitio/FormatSelector";
 import type { CreateFormat } from "@/lib/create-format-config";
-import { FORMAT_CONFIGS } from "@/lib/create-format-config";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Brain, FileText, AlertTriangle, RotateCcw, Eye, ClipboardPaste, Upload, Bug } from "lucide-react";
+import { Brain, FileText, AlertTriangle, RotateCcw, Eye, ClipboardPaste, Upload, Bug, ArrowRight } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import ImportDropzone from "@/components/cognitio/ImportDropzone";
 import IngestionStatus from "@/components/cognitio/IngestionStatus";
 import ImportDebugPanel from "@/components/cognitio/ImportDebugPanel";
 import { DocumentQualityPanel } from "@/components/cognitio/DocumentQualityPanel";
@@ -32,13 +31,19 @@ import { DynamicSheetLayout } from "@/components/cognitio/DynamicSheetLayout";
 import { StoryboardLayout } from "@/components/cognitio/StoryboardLayout";
 import { QAChecklistPanel } from "@/components/cognitio/recall/QAChecklistPanel";
 import { PublishStatusBanner } from "@/components/cognitio/recall/PublishStatusBanner";
+import { CreateSourceStep, type SourceData } from "@/components/cognitio/create/CreateSourceStep";
+import { CreatePersonalizationStep } from "@/components/cognitio/create/CreatePersonalizationStep";
+import { CreatePrimaryCTA } from "@/components/cognitio/create/CreatePrimaryCTA";
+import { CreateProgressHeader } from "@/components/cognitio/create/CreateProgressHeader";
 import { useCreatePipeline } from "@/hooks/useCreatePipeline";
 import { useSeedLibrary } from "@/hooks/useSeedLibrary";
 import { SeedLibraryGrid } from "@/components/product/SeedLibraryGrid";
 import { FeatureFlagGuard } from "@/components/product/FeatureFlagGuard";
 import { useProductTracking } from "@/hooks/useProductTracking";
 import { useTranslation } from "react-i18next";
-import type { IngestInput } from "@/domain/cognitio/contracts";
+import type { LearningObjective } from "@/domain/cognitio/types";
+import type { EducationStage, ExplanationStyle } from "@/domain/cognitio/learner-profile.types";
+import { DEFAULT_LEARNER_PROFILE } from "@/domain/cognitio/learner-profile.types";
 import type { AmbiguousZone } from "@/domain/cognitio/types";
 
 export default function Create() {
@@ -50,7 +55,19 @@ export default function Create() {
   const pipeline = useCreatePipeline();
   const { seeds, loading: seedsLoading } = useSeedLibrary();
   const [activeSeedId, setActiveSeedId] = useState<string | null>(null);
+
+  // Step 1: Format
   const [selectedFormat, setSelectedFormat] = useState<CreateFormat | null>(null);
+
+  // Step 2: Source
+  const [sourceData, setSourceData] = useState<SourceData | null>(null);
+
+  // Step 3: Personalization (smart defaults)
+  const [objective, setObjective] = useState<LearningObjective>("revision");
+  const [educationStage, setEducationStage] = useState<EducationStage>("unknown");
+  const [explanationStyle, setExplanationStyle] = useState<ExplanationStyle>("balanced");
+
+  const hasSource = sourceData !== null;
 
   // Handle seed parameter from URL
   useEffect(() => {
@@ -60,9 +77,39 @@ export default function Create() {
     }
   }, [searchParams, pipeline.phase]);
 
-  const handleImport = (input: IngestInput) => {
-    pipeline.runPipeline(input, selectedFormat ?? undefined);
-  };
+  const handleFormatSelect = useCallback((f: CreateFormat) => {
+    setSelectedFormat(f);
+    track({ event_name: "format_selected", metadata: { format: f } });
+  }, [track]);
+
+  const handleSourceReady = useCallback((source: SourceData) => {
+    setSourceData(source);
+  }, []);
+
+  const handleSourceCleared = useCallback(() => {
+    setSourceData(null);
+  }, []);
+
+  const handleSubmit = useCallback(() => {
+    if (!sourceData || !selectedFormat) return;
+
+    const learner_profile = {
+      ...DEFAULT_LEARNER_PROFILE,
+      education_stage: educationStage,
+      explanation_style: explanationStyle,
+    };
+
+    pipeline.runPipeline(
+      {
+        file: sourceData.file,
+        pasted_text: sourceData.pasted_text,
+        content_type: sourceData.content_type,
+        objective,
+        learner_profile,
+      },
+      selectedFormat,
+    );
+  }, [sourceData, selectedFormat, objective, educationStage, explanationStyle, pipeline]);
 
   const { phase, ingestion, analysis, memory, format, generation, storyGeneration, qa } = pipeline;
 
@@ -79,45 +126,85 @@ export default function Create() {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      <main className="max-w-4xl mx-auto px-4 py-8 pt-24">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <Brain className="h-6 w-6 text-primary" />
-            <h1 className="text-2xl font-bold">{t("create_page.title")}</h1>
-          </div>
-          <p className="text-muted-foreground text-sm">
-            {t("create_page.subtitle")}
-          </p>
-        </div>
-
+      <main className="max-w-3xl mx-auto px-4 py-8 pt-24">
         <AnimatePresence mode="wait">
-          {/* Phase 1: Import */}
+          {/* ========== IMPORT PHASE — Progressive Flow ========== */}
           {phase === "import" && (
             <motion.div
               key="import"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="space-y-8"
+              className="space-y-6"
             >
-              {/* Step 1: Format Selection */}
-              <FormatSelector
-                selectedFormat={selectedFormat}
-                onSelectFormat={(f) => {
-                  setSelectedFormat(f);
-                  track({ event_name: "format_selected", metadata: { format: f } });
-                }}
-              />
+              {/* Header */}
+              <div className="text-center mb-2">
+                <div className="flex items-center justify-center gap-2.5 mb-2">
+                  <Brain className="h-6 w-6 text-primary" />
+                  <h1 className="text-2xl font-bold">
+                    {t("create_flow.title", { defaultValue: "Crée ton contenu" })}
+                  </h1>
+                </div>
+                <p className="text-muted-foreground text-sm max-w-md mx-auto">
+                  {t("create_flow.subtitle", { defaultValue: "Choisis un format, ajoute ton cours, et laisse COGNITIO faire le reste." })}
+                </p>
+              </div>
 
-              {/* Step 2: Import (only visible after format selection) */}
+              {/* Progress indicator */}
+              <CreateProgressHeader selectedFormat={selectedFormat} hasSource={hasSource} />
+
+              {/* SECTION 1 — Format Selection */}
+              <section>
+                <FormatSelector
+                  selectedFormat={selectedFormat}
+                  onSelectFormat={handleFormatSelect}
+                />
+              </section>
+
+              {/* SECTION 2 — Source (revealed after format) */}
               {selectedFormat && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
+                <motion.section
+                  initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="space-y-6"
+                  transition={{ duration: 0.25 }}
                 >
-                  <ImportDropzone onImport={handleImport} />
+                  <CreateSourceStep
+                    onSourceReady={handleSourceReady}
+                    onSourceCleared={handleSourceCleared}
+                  />
+                </motion.section>
+              )}
+
+              {/* SECTION 3 — Personalization (revealed after source, collapsible) */}
+              {selectedFormat && hasSource && (
+                <motion.section
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.25, delay: 0.05 }}
+                >
+                  <CreatePersonalizationStep
+                    objective={objective}
+                    educationStage={educationStage}
+                    explanationStyle={explanationStyle}
+                    onObjectiveChange={setObjective}
+                    onEducationStageChange={setEducationStage}
+                    onExplanationStyleChange={setExplanationStyle}
+                  />
+                </motion.section>
+              )}
+
+              {/* CTA — visible once format + source ready */}
+              {selectedFormat && hasSource && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2, delay: 0.1 }}
+                >
+                  <CreatePrimaryCTA
+                    selectedFormat={selectedFormat}
+                    hasSource={hasSource}
+                    onClick={handleSubmit}
+                  />
                 </motion.div>
               )}
 
@@ -136,7 +223,7 @@ export default function Create() {
             </motion.div>
           )}
 
-          {/* Phase 2-5: Progress */}
+          {/* ========== PROCESSING PHASES ========== */}
           {(phase === "ingesting" || phase === "analyzing" || phase === "architecting" || phase === "formatting" || phase === "generating") && (
             <motion.div
               key="progress"
@@ -155,36 +242,11 @@ export default function Create() {
 
               {/* Pipeline error with source info */}
               {pipeline.pipelineError && (
-                <div className="border border-red-200 bg-red-50 rounded-lg p-4">
-                  <div className="flex items-start gap-3">
-                    <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5" />
-                    <div>
-                      <p className="text-sm font-medium text-red-800">
-                        {t("create_page.error_label")} — {t(`create_page.error_source_${pipeline.pipelineError.source}`, { defaultValue: t("create_page.error_source_default") })}
-                      </p>
-                      <p className="text-sm text-red-600">{pipeline.pipelineError.message}</p>
-                      <p className="text-xs text-red-400 mt-1">
-                        {t("create_page.error_phase_hint", { phase: t(PHASE_KEYS[pipeline.pipelineError.phase] ?? "create_page.phase_default") })}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    <Button variant="outline" size="sm" onClick={pipeline.reset}>
-                      <RotateCcw className="h-4 w-4 mr-2" /> {t("create_page.retry")}
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => { pipeline.reset(); }}>
-                      <ClipboardPaste className="h-4 w-4 mr-2" /> {t("create_page.paste_text_instead")}
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={pipeline.reset}>
-                      <Upload className="h-4 w-4 mr-2" /> {t("create_page.import_other_doc")}
-                    </Button>
-                    {import.meta.env.DEV && (
-                      <Button variant="ghost" size="sm" onClick={() => console.error("[COGNITIO DEBUG]", pipeline.pipelineError)}>
-                        <Bug className="h-4 w-4 mr-2" /> {t("create_page.show_debug")}
-                      </Button>
-                    )}
-                  </div>
-                </div>
+                <PipelineErrorCard
+                  error={pipeline.pipelineError}
+                  phaseKeys={PHASE_KEYS}
+                  onReset={pipeline.reset}
+                />
               )}
 
               {/* Generic error fallback */}
@@ -205,7 +267,7 @@ export default function Create() {
             </motion.div>
           )}
 
-          {/* Phase 6: Result */}
+          {/* ========== RESULT PHASE ========== */}
           {phase === "result" && (
             <motion.div
               key="result"
@@ -215,36 +277,11 @@ export default function Create() {
             >
               {/* Error in result phase */}
               {pipeline.pipelineError && (
-                <div className="border border-red-200 bg-red-50 rounded-lg p-4">
-                  <div className="flex items-start gap-3">
-                    <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5" />
-                    <div>
-                      <p className="text-sm font-medium text-red-800">
-                        {t("create_page.error_label")} — {t(`create_page.error_source_${pipeline.pipelineError.source}`, { defaultValue: t("create_page.error_source_default") })}
-                      </p>
-                      <p className="text-sm text-red-600">{pipeline.pipelineError.message}</p>
-                      <p className="text-xs text-red-400 mt-1">
-                        {t("create_page.error_phase_hint", { phase: t(PHASE_KEYS[pipeline.pipelineError.phase] ?? "create_page.phase_default") })}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    <Button variant="outline" size="sm" onClick={pipeline.reset}>
-                      <RotateCcw className="h-4 w-4 mr-2" /> {t("create_page.retry")}
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => { pipeline.reset(); }}>
-                      <ClipboardPaste className="h-4 w-4 mr-2" /> {t("create_page.paste_text_instead")}
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={pipeline.reset}>
-                      <Upload className="h-4 w-4 mr-2" /> {t("create_page.import_other_doc")}
-                    </Button>
-                    {import.meta.env.DEV && (
-                      <Button variant="ghost" size="sm" onClick={() => console.error("[COGNITIO DEBUG]", pipeline.pipelineError)}>
-                        <Bug className="h-4 w-4 mr-2" /> {t("create_page.show_debug")}
-                      </Button>
-                    )}
-                  </div>
-                </div>
+                <PipelineErrorCard
+                  error={pipeline.pipelineError}
+                  phaseKeys={PHASE_KEYS}
+                  onReset={pipeline.reset}
+                />
               )}
 
               {/* Header message */}
@@ -450,6 +487,55 @@ export default function Create() {
       </main>
 
       <Footer />
+    </div>
+  );
+}
+
+// ============================================================
+// PipelineErrorCard — Extracted error display (used in progress + result)
+// ============================================================
+
+function PipelineErrorCard({
+  error,
+  phaseKeys,
+  onReset,
+}: {
+  error: { source: string; message: string; phase: string };
+  phaseKeys: Record<string, string>;
+  onReset: () => void;
+}) {
+  const { t } = useTranslation();
+
+  return (
+    <div className="border border-red-200 bg-red-50 rounded-lg p-4">
+      <div className="flex items-start gap-3">
+        <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5" />
+        <div>
+          <p className="text-sm font-medium text-red-800">
+            {t("create_page.error_label")} — {t(`create_page.error_source_${error.source}`, { defaultValue: t("create_page.error_source_default") })}
+          </p>
+          <p className="text-sm text-red-600">{error.message}</p>
+          <p className="text-xs text-red-400 mt-1">
+            {t("create_page.error_phase_hint", { phase: t(phaseKeys[error.phase] ?? "create_page.phase_default") })}
+          </p>
+        </div>
+      </div>
+      <div className="flex flex-wrap gap-2 mt-3">
+        <Button variant="outline" size="sm" onClick={onReset}>
+          <RotateCcw className="h-4 w-4 mr-2" /> {t("create_page.retry")}
+        </Button>
+        <Button variant="outline" size="sm" onClick={onReset}>
+          <ClipboardPaste className="h-4 w-4 mr-2" /> {t("create_page.paste_text_instead")}
+        </Button>
+        <Button variant="outline" size="sm" onClick={onReset}>
+          <Upload className="h-4 w-4 mr-2" /> {t("create_page.import_other_doc")}
+        </Button>
+        {import.meta.env.DEV && (
+          <Button variant="ghost" size="sm" onClick={() => console.error("[COGNITIO DEBUG]", error)}>
+            <Bug className="h-4 w-4 mr-2" /> {t("create_page.show_debug")}
+          </Button>
+        )}
+      </div>
     </div>
   );
 }
