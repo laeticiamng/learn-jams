@@ -177,8 +177,8 @@ export default function MissionAnalysis() {
           if (arch) {
             const m3: M3_Output = {
               architecture_id: arch.id,
-              document_id: arch.document_id,
-              course_profile_id: arch.course_profile_id,
+              document_id: arch.document_id ?? '',
+              course_profile_id: arch.course_profile_id ?? '',
               segments: arch.segments_json as unknown as M3_Output["segments"],
               concept_order: arch.concept_order_json as unknown as string[],
               repetition_plan: arch.repetition_plan_json as unknown as M3_Output["repetition_plan"],
@@ -186,8 +186,8 @@ export default function MissionAnalysis() {
               visual_anchors: arch.visual_anchors_json as unknown as M3_Output["visual_anchors"],
               cognitive_budget: arch.cognitive_budget_json as unknown as M3_Output["cognitive_budget"],
               pedagogical_contract: arch.pedagogical_contract_json as unknown as M3_Output["pedagogical_contract"],
-              total_duration_sec: arch.total_duration_sec,
-              needs_splitting: arch.needs_splitting,
+              total_duration_sec: arch.total_duration_sec ?? 0,
+              needs_splitting: arch.needs_splitting ?? false,
               split_modules: arch.split_modules_json as unknown as M3_Output["split_modules"],
               reasoning_type: arch.reasoning_type as M3_Output["reasoning_type"],
               objective: arch.objective as M3_Output["objective"],
