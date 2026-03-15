@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      adaptive_credit_balances: {
+        Row: {
+          consumed_flex_credits_json: Json | null
+          created_at: string
+          id: string
+          reallocation_log_json: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          consumed_flex_credits_json?: Json | null
+          created_at?: string
+          id?: string
+          reallocation_log_json?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          consumed_flex_credits_json?: Json | null
+          created_at?: string
+          id?: string
+          reallocation_log_json?: Json | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       collaborative_sessions: {
         Row: {
           created_at: string
@@ -199,6 +226,39 @@ export type Database = {
           id?: string
           message?: string
           name?: string
+        }
+        Relationships: []
+      }
+      cost_events: {
+        Row: {
+          actual_cost_usd: number | null
+          created_at: string
+          estimated_cost_usd: number | null
+          feature_key: string
+          id: string
+          metadata_json: Json | null
+          provider_key: string
+          user_id: string | null
+        }
+        Insert: {
+          actual_cost_usd?: number | null
+          created_at?: string
+          estimated_cost_usd?: number | null
+          feature_key: string
+          id?: string
+          metadata_json?: Json | null
+          provider_key?: string
+          user_id?: string | null
+        }
+        Update: {
+          actual_cost_usd?: number | null
+          created_at?: string
+          estimated_cost_usd?: number | null
+          feature_key?: string
+          id?: string
+          metadata_json?: Json | null
+          provider_key?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -866,6 +926,42 @@ export type Database = {
           session_count?: number | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      margin_reports: {
+        Row: {
+          created_at: string
+          details_json: Json | null
+          id: string
+          margin_pct: number | null
+          period_end: string | null
+          period_start: string | null
+          total_cost_usd: number | null
+          total_revenue_usd: number | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          details_json?: Json | null
+          id?: string
+          margin_pct?: number | null
+          period_end?: string | null
+          period_start?: string | null
+          total_cost_usd?: number | null
+          total_revenue_usd?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          details_json?: Json | null
+          id?: string
+          margin_pct?: number | null
+          period_end?: string | null
+          period_start?: string | null
+          total_cost_usd?: number | null
+          total_revenue_usd?: number | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -1643,27 +1739,33 @@ export type Database = {
         Row: {
           balance: number
           created_at: string
+          credit_type: string | null
           id: string
           lifetime_earned: number | null
           lifetime_spent: number | null
+          remaining: number | null
           updated_at: string
           user_id: string
         }
         Insert: {
           balance?: number
           created_at?: string
+          credit_type?: string | null
           id?: string
           lifetime_earned?: number | null
           lifetime_spent?: number | null
+          remaining?: number | null
           updated_at?: string
           user_id: string
         }
         Update: {
           balance?: number
           created_at?: string
+          credit_type?: string | null
           id?: string
           lifetime_earned?: number | null
           lifetime_spent?: number | null
+          remaining?: number | null
           updated_at?: string
           user_id?: string
         }
@@ -1703,6 +1805,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_usage_profiles: {
+        Row: {
+          created_at: string
+          dominant_usage_profile: string | null
+          feature_distribution_json: Json | null
+          id: string
+          metadata_json: Json | null
+          rolling_30d_json: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dominant_usage_profile?: string | null
+          feature_distribution_json?: Json | null
+          id?: string
+          metadata_json?: Json | null
+          rolling_30d_json?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          dominant_usage_profile?: string | null
+          feature_distribution_json?: Json | null
+          id?: string
+          metadata_json?: Json | null
+          rolling_30d_json?: Json | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       webhook_events: {
         Row: {
