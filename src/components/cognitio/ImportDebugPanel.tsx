@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Bug, ChevronDown, ChevronUp, Check, X, Minus } from "lucide-react";
 import type { ImportDebugInfo } from "@/hooks/useDocumentIngestion";
 
@@ -12,17 +12,32 @@ export default function ImportDebugPanel({ debugInfo }: ImportDebugPanelProps) {
   // Only show in development mode
   if (import.meta.env.PROD) return null;
 
+  // Auto-expand when an error occurs
+  useEffect(() => {
+    if (debugInfo.root_cause || debugInfo.raw_error) {
+      setExpanded(true);
+    }
+  }, [debugInfo.root_cause, debugInfo.raw_error]);
+
   // Don't show if no data yet
-  if (!debugInfo.file_name && !debugInfo.upload_started) return null;
+  if (!debugInfo.file_name && !debugInfo.upload_started && debugInfo.step_log.length === 0) return null;
+
+  const hasError = Boolean(debugInfo.root_cause || debugInfo.raw_error);
 
   return (
-    <div className="mt-4 border border-orange-500/30 rounded-xl bg-orange-500/5 text-xs font-mono overflow-hidden">
+    <div className={`mt-4 border rounded-xl text-xs font-mono overflow-hidden ${
+      hasError
+        ? "border-red-500/50 bg-red-500/5"
+        : "border-orange-500/30 bg-orange-500/5"
+    }`}>
       <button
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center gap-2 px-3 py-2 hover:bg-orange-500/10 transition-colors"
       >
-        <Bug className="w-3.5 h-3.5 text-orange-500" />
-        <span className="text-orange-600 dark:text-orange-400 font-semibold">Import Debug Panel</span>
+        <Bug className={`w-3.5 h-3.5 ${hasError ? "text-red-500" : "text-orange-500"}`} />
+        <span className={`font-semibold ${hasError ? "text-red-600 dark:text-red-400" : "text-orange-600 dark:text-orange-400"}`}>
+          Import Debug Panel
+        </span>
         <span className="flex-1" />
         {debugInfo.root_cause && (
           <span className="text-red-500 mr-2">cause: {debugInfo.root_cause}</span>
@@ -40,14 +55,14 @@ export default function ImportDebugPanel({ debugInfo }: ImportDebugPanelProps) {
           </DebugSection>
 
           {/* Extraction */}
-          <DebugSection title="Extraction texte">
+          <DebugSection title="Extraction texte (client-side)">
             <DebugRow label="méthode" value={debugInfo.extraction_method} />
             <DebugStatusRow label="succès" value={debugInfo.extraction_success} />
             <DebugRow label="texte extrait" value={debugInfo.extracted_text_length !== null ? `${debugInfo.extracted_text_length} chars` : null} />
             {debugInfo.extraction_warnings.length > 0 && (
               <div className="text-orange-500">
                 {debugInfo.extraction_warnings.map((w, i) => (
-                  <div key={i}>⚠ {w}</div>
+                  <div key={i}>warn: {w}</div>
                 ))}
               </div>
             )}
@@ -57,20 +72,23 @@ export default function ImportDebugPanel({ debugInfo }: ImportDebugPanelProps) {
           <DebugSection title="Upload storage">
             <DebugStatusRow label="démarré" value={debugInfo.upload_started} />
             <DebugStatusRow label="succès" value={debugInfo.upload_success} />
-            <DebugRow label="bucket" value={debugInfo.upload_bucket || "source-raw"} />
+            <DebugRow label="bucket" value={debugInfo.upload_bucket} />
+            {debugInfo.upload_error && (
+              <div className="text-red-500">erreur: {debugInfo.upload_error}</div>
+            )}
           </DebugSection>
 
           {/* DB Record */}
-          <DebugSection title="Document record">
+          <DebugSection title="Document record (source_documents)">
             <DebugRow label="document_id" value={debugInfo.document_id} />
             <DebugStatusRow label="créé" value={debugInfo.document_record_created} />
           </DebugSection>
 
           {/* Edge Function */}
-          <DebugSection title="Edge function">
+          <DebugSection title="Edge function (cognitio-ingest)">
             <DebugStatusRow label="appelée" value={debugInfo.edge_function_called} />
             <DebugRow label="status" value={debugInfo.edge_function_status} />
-            <DebugStatusRow label="fallback local" value={debugInfo.fallback_used} />
+            <DebugStatusRow label="fallback local utilisé" value={debugInfo.fallback_used} />
           </DebugSection>
 
           {/* Root Cause */}
@@ -86,6 +104,42 @@ export default function ImportDebugPanel({ debugInfo }: ImportDebugPanelProps) {
               <div className="text-red-400 whitespace-pre-wrap break-all max-h-32 overflow-y-auto">
                 {debugInfo.raw_error}
               </div>
+            </DebugSection>
+          )}
+
+          {/* Step Log — full chronological trace */}
+          {debugInfo.step_log.length > 0 && (
+            <DebugSection title="Journal détaillé">
+              <div className="text-muted-foreground whitespace-pre-wrap break-all max-h-64 overflow-y-auto bg-black/5 dark:bg-white/5 rounded p-2">
+                {debugInfo.step_log.map((line, i) => (
+                  <div key={i} className={
+                    line.includes("ERROR") || line.includes("FAILED") || line.includes("BLOCKED")
+                      ? "text-red-500"
+                      : line.includes("warn:")
+                        ? "text-orange-500"
+                        : line.includes("OK") || line.includes("COMPLETE")
+                          ? "text-green-600 dark:text-green-400"
+                          : ""
+                  }>
+                    {line}
+                  </div>
+                ))}
+              </div>
+            </DebugSection>
+          )}
+
+          {/* Timing */}
+          {Object.keys(debugInfo.timestamps).length > 1 && (
+            <DebugSection title="Timing">
+              {Object.entries(debugInfo.timestamps)
+                .sort(([, a], [, b]) => a - b)
+                .map(([key, ts]) => (
+                  <DebugRow
+                    key={key}
+                    label={key}
+                    value={`${new Date(ts).toISOString().slice(11, 23)} (${debugInfo.timestamps.start ? `+${ts - debugInfo.timestamps.start}ms` : ""})`}
+                  />
+                ))}
             </DebugSection>
           )}
         </div>

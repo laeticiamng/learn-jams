@@ -14,33 +14,60 @@ import { extractTextFromFile, type ExtractionResult } from "./file-extractor.ser
 
 // ---------- Upload ----------
 
+export interface UploadResult {
+  document_id: string;
+  storage_path: string | null;
+  storage_error: string | null;
+  bucket_used: string | null;
+}
+
 export async function uploadDocument(
   userId: string,
   input: IngestInput
-): Promise<{ document_id: string; storage_path: string | null }> {
+): Promise<UploadResult> {
   let storagePath: string | null = null;
+  let storageError: string | null = null;
+  let bucketUsed: string | null = null;
+  const hasTextFallback = Boolean(input.pasted_text && input.pasted_text.trim().length > 0);
 
   if (input.file) {
     const fileName = `${userId}/${crypto.randomUUID()}/${input.file.name}`;
+
+    // Try source-raw bucket first
     const { error: uploadError } = await supabase.storage
       .from("source-raw")
       .upload(fileName, input.file);
 
-    if (uploadError) {
+    if (!uploadError) {
+      storagePath = fileName;
+      bucketUsed = "source-raw";
+    } else {
       console.warn("[COGNITIO] source-raw upload failed, trying course-documents:", uploadError.message);
-      // Fallback to course-documents bucket (must match edge function fallback)
+
+      // Fallback to course-documents bucket
       const { error: uploadError2 } = await supabase.storage
         .from("course-documents")
         .upload(fileName, input.file);
 
-      if (uploadError2) {
-        throw createCognitioError(
-          "STORAGE_WRITE_FAILED",
-          `storage:upload failed on both buckets. source-raw: ${uploadError.message} | course-documents: ${uploadError2.message}`
-        );
+      if (!uploadError2) {
+        storagePath = fileName;
+        bucketUsed = "course-documents";
+      } else {
+        storageError = `source-raw: ${uploadError.message} | course-documents: ${uploadError2.message}`;
+        console.error("[COGNITIO] Both storage buckets failed:", storageError);
+
+        // CRITICAL FIX: If text was already extracted client-side, storage is non-fatal.
+        // We can proceed without the file in storage — the text is in pasted_text.
+        if (!hasTextFallback) {
+          throw createCognitioError(
+            "STORAGE_WRITE_FAILED",
+            `storage:upload failed on both buckets and no extracted text available. ${storageError}`
+          );
+        }
+        // If text IS available, continue without storage — the local fallback will use pasted_text
+        console.warn("[COGNITIO] Storage failed but text already extracted — proceeding without file storage");
       }
     }
-    storagePath = fileName;
   }
 
   const { data, error } = await supabase
@@ -51,14 +78,16 @@ export async function uploadDocument(
       content_type: input.content_type,
       ingestion_status: "pending",
       raw_storage_path: storagePath,
-      warnings_json: [] as unknown as Json,
+      warnings_json: (storageError
+        ? [{ code: "STORAGE_UPLOAD_FAILED", message: `Upload fichier échoué (non bloquant): ${storageError}`, severity: "info" }]
+        : []) as unknown as Json,
     })
     .select("id")
     .single();
 
   if (error) throw createCognitioError("DB_WRITE_FAILED", `db:source_documents insert failed: ${error.message} (code: ${error.code}, hint: ${error.hint ?? "none"})`);
 
-  return { document_id: data.id, storage_path: storagePath };
+  return { document_id: data.id, storage_path: storagePath, storage_error: storageError, bucket_used: bucketUsed };
 }
 
 // ---------- Run Ingestion (Edge Function) ----------
