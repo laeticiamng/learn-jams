@@ -198,7 +198,7 @@ export async function persistReviewQueue(
 }
 
 export async function getReviewQueue(userId: string): Promise<ReviewQueueItem[]> {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("review_queue")
     .select("*")
     .eq("user_id", userId)
