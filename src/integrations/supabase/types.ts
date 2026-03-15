@@ -474,6 +474,53 @@ export type Database = {
         }
         Relationships: []
       }
+      final_tests: {
+        Row: {
+          bloom_level: number | null
+          choices_json: Json | null
+          concepts_tested_json: Json | null
+          created_at: string
+          expected_answer_json: Json | null
+          id: string
+          item_type: string | null
+          prompt: string | null
+          test_item_id: string | null
+          transformation_id: string | null
+        }
+        Insert: {
+          bloom_level?: number | null
+          choices_json?: Json | null
+          concepts_tested_json?: Json | null
+          created_at?: string
+          expected_answer_json?: Json | null
+          id?: string
+          item_type?: string | null
+          prompt?: string | null
+          test_item_id?: string | null
+          transformation_id?: string | null
+        }
+        Update: {
+          bloom_level?: number | null
+          choices_json?: Json | null
+          concepts_tested_json?: Json | null
+          created_at?: string
+          expected_answer_json?: Json | null
+          id?: string
+          item_type?: string | null
+          prompt?: string | null
+          test_item_id?: string | null
+          transformation_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "final_tests_transformation_id_fkey"
+            columns: ["transformation_id"]
+            isOneToOne: false
+            referencedRelation: "transformations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       format_decisions: {
         Row: {
           architecture_id: string | null
@@ -526,6 +573,62 @@ export type Database = {
             columns: ["architecture_id"]
             isOneToOne: false
             referencedRelation: "memory_architectures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      generated_contents: {
+        Row: {
+          block_id: string | null
+          block_type: string
+          concepts_covered_json: Json | null
+          content: string | null
+          contrast_box_json: Json | null
+          created_at: string
+          id: string
+          mnemonic_json: Json | null
+          position: number | null
+          recall_event_json: Json | null
+          title: string | null
+          transformation_id: string | null
+          visual_anchor_json: Json | null
+        }
+        Insert: {
+          block_id?: string | null
+          block_type?: string
+          concepts_covered_json?: Json | null
+          content?: string | null
+          contrast_box_json?: Json | null
+          created_at?: string
+          id?: string
+          mnemonic_json?: Json | null
+          position?: number | null
+          recall_event_json?: Json | null
+          title?: string | null
+          transformation_id?: string | null
+          visual_anchor_json?: Json | null
+        }
+        Update: {
+          block_id?: string | null
+          block_type?: string
+          concepts_covered_json?: Json | null
+          content?: string | null
+          contrast_box_json?: Json | null
+          created_at?: string
+          id?: string
+          mnemonic_json?: Json | null
+          position?: number | null
+          recall_event_json?: Json | null
+          title?: string | null
+          transformation_id?: string | null
+          visual_anchor_json?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generated_contents_transformation_id_fkey"
+            columns: ["transformation_id"]
+            isOneToOne: false
+            referencedRelation: "transformations"
             referencedColumns: ["id"]
           },
         ]
@@ -1630,39 +1733,66 @@ export type Database = {
       }
       transformations: {
         Row: {
+          content_json: Json | null
+          course_profile_id: string | null
+          coverage_json: Json | null
           created_at: string
           document_id: string | null
+          estimated_duration_sec: number | null
           format: string | null
+          format_decision_id: string | null
+          generation_flags_json: Json | null
           id: string
+          internal_summary_json: Json | null
+          memory_architecture_id: string | null
           published_status: string | null
           qa_status: string | null
           recall_tests_json: Json | null
+          source_disclaimer_json: Json | null
           title: string | null
           transformation_json: Json | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          content_json?: Json | null
+          course_profile_id?: string | null
+          coverage_json?: Json | null
           created_at?: string
           document_id?: string | null
+          estimated_duration_sec?: number | null
           format?: string | null
+          format_decision_id?: string | null
+          generation_flags_json?: Json | null
           id?: string
+          internal_summary_json?: Json | null
+          memory_architecture_id?: string | null
           published_status?: string | null
           qa_status?: string | null
           recall_tests_json?: Json | null
+          source_disclaimer_json?: Json | null
           title?: string | null
           transformation_json?: Json | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          content_json?: Json | null
+          course_profile_id?: string | null
+          coverage_json?: Json | null
           created_at?: string
           document_id?: string | null
+          estimated_duration_sec?: number | null
           format?: string | null
+          format_decision_id?: string | null
+          generation_flags_json?: Json | null
           id?: string
+          internal_summary_json?: Json | null
+          memory_architecture_id?: string | null
           published_status?: string | null
           qa_status?: string | null
           recall_tests_json?: Json | null
+          source_disclaimer_json?: Json | null
           title?: string | null
           transformation_json?: Json | null
           updated_at?: string
@@ -1670,10 +1800,31 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "transformations_course_profile_id_fkey"
+            columns: ["course_profile_id"]
+            isOneToOne: false
+            referencedRelation: "course_profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "transformations_document_id_fkey"
             columns: ["document_id"]
             isOneToOne: false
             referencedRelation: "source_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transformations_format_decision_id_fkey"
+            columns: ["format_decision_id"]
+            isOneToOne: false
+            referencedRelation: "format_decisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transformations_memory_architecture_id_fkey"
+            columns: ["memory_architecture_id"]
+            isOneToOne: false
+            referencedRelation: "memory_architectures"
             referencedColumns: ["id"]
           },
         ]
@@ -1813,7 +1964,7 @@ export type Database = {
           feature_distribution_json: Json | null
           id: string
           metadata_json: Json | null
-          rolling_30d_json: Json | null
+          rolling_30d_usage_json: Json | null
           updated_at: string
           user_id: string
         }
@@ -1823,7 +1974,7 @@ export type Database = {
           feature_distribution_json?: Json | null
           id?: string
           metadata_json?: Json | null
-          rolling_30d_json?: Json | null
+          rolling_30d_usage_json?: Json | null
           updated_at?: string
           user_id: string
         }
@@ -1833,7 +1984,7 @@ export type Database = {
           feature_distribution_json?: Json | null
           id?: string
           metadata_json?: Json | null
-          rolling_30d_json?: Json | null
+          rolling_30d_usage_json?: Json | null
           updated_at?: string
           user_id?: string
         }
