@@ -39,6 +39,18 @@ const EDITORIAL_ARTIFACT_PATTERNS: RegExp[] = [
 
   // Color formatting metadata
   /^en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS)\s*$/i,
+
+  // Repeated branding / university headers (generic)
+  /^(?:Université|Faculté|Institut|École|Département)\s.{0,60}$/i,
+  /^(?:Cours|Module|Matière)\s*[:—–-]\s*.{0,60}$/i,
+  /^(?:Enseignant|Professeur|Dr|Pr)\s*[:—–.]\s*.{0,80}$/i,
+  /^(?:Année\s+(?:universitaire|scolaire|académique))\s*[:—–-]\s*\d/i,
+  /^(?:Semestre|Trimestre)\s*\d/i,
+
+  // Footer / header residues
+  /^(?:www\.|http|mailto)/i,
+  /^\d+\s*[-–—]\s*\d+\s*$/,
+  /^(?:Source|Adapté de|D'après)\s*:/i,
 ];
 
 /** Patterns for noise that should be stripped from concept labels */
@@ -370,11 +382,14 @@ export function cleanMainTopic(rawTopic: string): string {
   topic = topic.replace(/\s*\(?\s*Rang\s+[A-Z]\s*\)?\s*/gi, "");
   topic = topic.replace(/\s*R2C[^,)]*\s*/gi, "");
 
-  // Remove Item/UE prefixes
-  topic = topic.replace(/^(?:Item|UE)\s*\d+\s*[-–—:]\s*/i, "");
+  // Remove Item/UE/N° prefixes
+  topic = topic.replace(/^(?:Item|UE|N°)\s*\d+\s*[-–—:.\s]\s*/i, "");
 
   // Remove "Sujet principal :" prefix
   topic = topic.replace(/^Sujet\s+principal\s*:\s*/i, "");
+
+  // Remove branding/institution prefixes
+  topic = topic.replace(/^(?:Cours|Module|Matière|Chapitre|Partie|Section|Titre)\s*\d*\s*[-–—:.\s]\s*/i, "");
 
   // Collapse whitespace
   topic = topic.replace(/\s{2,}/g, " ").trim();
@@ -383,6 +398,79 @@ export function cleanMainTopic(rawTopic: string): string {
   topic = topic.replace(/\s*[-–—:;,]\s*$/, "").trim();
 
   return topic || rawTopic.trim();
+}
+
+/**
+ * Extract a clean main topic from segments by analyzing the document hierarchy.
+ * Uses the first meaningful heading, skipping editorial headers.
+ */
+export function extractCleanMainTopic(segments: { title: string | null; content: string; hierarchy_level: number }[]): string {
+  // Try finding the first level-1 heading that isn't noise
+  for (const seg of segments) {
+    if (!seg.title || seg.hierarchy_level > 1) continue;
+    const cleaned = cleanMainTopic(seg.title);
+    if (cleaned.length >= 5 && !isEditorialArtifact(cleaned)) {
+      return cleaned;
+    }
+  }
+
+  // Fallback: first heading of any level
+  for (const seg of segments) {
+    if (!seg.title) continue;
+    const cleaned = cleanMainTopic(seg.title);
+    if (cleaned.length >= 5 && !isEditorialArtifact(cleaned)) {
+      return cleaned;
+    }
+  }
+
+  // Fallback: first substantial content
+  for (const seg of segments) {
+    if (seg.content.length < 30) continue;
+    const firstSentence = seg.content.split(/[.!?]/)[0]?.trim();
+    if (firstSentence && firstSentence.length >= 10) {
+      const words = firstSentence.split(/\s+/).slice(0, 10).join(" ");
+      return cleanMainTopic(words);
+    }
+  }
+
+  return "Sujet non identifié";
+}
+
+/**
+ * Reconstruct the hierarchical chapter structure from segments.
+ * Returns a 3-level hierarchy: [{ title, level, childConcepts }]
+ */
+export function reconstructChapterHierarchy(
+  segments: { title: string | null; content: string; hierarchy_level: number }[]
+): { title: string; level: number; content: string; subSections: string[] }[] {
+  const chapters: { title: string; level: number; content: string; subSections: string[] }[] = [];
+  let currentChapter: typeof chapters[0] | null = null;
+
+  for (const seg of segments) {
+    if (seg.title && seg.hierarchy_level <= 1) {
+      // New top-level chapter
+      const cleanTitle = cleanMainTopic(seg.title);
+      if (cleanTitle.length < 3 || isEditorialArtifact(cleanTitle)) continue;
+
+      currentChapter = { title: cleanTitle, level: 1, content: seg.content, subSections: [] };
+      chapters.push(currentChapter);
+    } else if (seg.title && seg.hierarchy_level >= 2 && currentChapter) {
+      // Sub-section
+      const cleanTitle = cleanMainTopic(seg.title);
+      if (cleanTitle.length >= 3) {
+        currentChapter.subSections.push(cleanTitle);
+        currentChapter.content += "\n\n" + seg.content;
+      }
+    } else if (currentChapter) {
+      currentChapter.content += "\n\n" + seg.content;
+    } else if (seg.content.length > 50) {
+      // Content before any heading — create implicit chapter
+      currentChapter = { title: "Introduction", level: 1, content: seg.content, subSections: [] };
+      chapters.push(currentChapter);
+    }
+  }
+
+  return chapters;
 }
 
 // ---------- Helpers ----------

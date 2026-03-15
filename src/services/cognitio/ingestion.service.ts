@@ -303,10 +303,16 @@ function detectLanguage(text: string): string {
 }
 
 function detectStructure(text: string): DetectedStructureType {
-  const hasHeadings = /^#{1,6}\s/m.test(text) || /^[A-Z][A-ZÀÂÉÈÊËÎÏÔÙÛÇ\s]{3,}$/m.test(text);
+  const hasMarkdownHeadings = /^#{1,6}\s/m.test(text);
+  const hasAllCapsHeadings = /^[A-Z][A-ZÀÂÉÈÊËÎÏÔÙÛÇ\s]{3,}$/m.test(text);
+  const hasRomanHeadings = /^[IVXLC]+\s*[.):\-–—]\s+/m.test(text);
+  const hasNumberedHeadings = /^\d+\.\s+[A-ZÀ-Ÿ]/m.test(text);
+  const hasHeadings = hasMarkdownHeadings || hasAllCapsHeadings || hasRomanHeadings || hasNumberedHeadings;
+
   const hasBullets = /^[-*•]\s/m.test(text) || /^\s*\d+[.)]\s/m.test(text);
-  const hasTables = /\|.*\|.*\|/.test(text);
-  const signals = [hasHeadings, hasBullets, hasTables].filter(Boolean).length;
+  const hasTables = /\|.*\|.*\|/.test(text) || /\t.*\t/.test(text);
+  const hasSubsections = /^\d+\.\d+/m.test(text) || /^[A-Z]\)\s/m.test(text);
+  const signals = [hasHeadings, hasBullets, hasTables, hasSubsections].filter(Boolean).length;
 
   if (hasTables && signals >= 2) return "table";
   if (signals === 0) return text.length > 200 ? "prose" : "minimal";
@@ -330,26 +336,212 @@ function detectDetailedSourceType(text: string, structure: DetectedStructureType
   return "unknown";
 }
 
+// ---------- Section Header Detection Patterns ----------
+
+const HEADING_PATTERNS: { pattern: RegExp; level: number }[] = [
+  // Markdown headings
+  { pattern: /^(#{1,6})\s+(.+)$/, level: 0 }, // level derived from # count
+  // Roman numeral headings: "I.", "II.", "III. Title", "IV - Title"
+  { pattern: /^([IVXLC]+)\s*[.):\-–—]\s*(.+)$/i, level: 1 },
+  // Numbered headings: "1.", "1)", "1 -", "1.2.", "1.2.3"
+  { pattern: /^(\d+)\s*[.):\-–—]\s+([A-ZÀ-Ÿ].{3,})$/, level: 1 },
+  { pattern: /^(\d+\.\d+)\s*[.):\-–—]?\s*([A-ZÀ-Ÿ].{3,})$/, level: 2 },
+  { pattern: /^(\d+\.\d+\.\d+)\s*[.):\-–—]?\s*(.{3,})$/, level: 3 },
+  // Lettered headings: "A.", "B)", "a)"
+  { pattern: /^([A-Z])\s*[.):\-–—]\s+([A-ZÀ-Ÿ].{5,})$/, level: 2 },
+  // ALL-CAPS headings (min 4 chars, allow accented)
+  { pattern: /^([A-ZÀÂÉÈÊËÎÏÔÙÛÜÇ][A-ZÀÂÉÈÊËÎÏÔÙÛÜÇ\s,'']{3,})$/, level: 1 },
+  // French academic-style: "Chapitre X", "Partie X", "Section X"
+  { pattern: /^(?:Chapitre|Partie|Section|Titre)\s+[\dIVXLC]+\s*[:\-–—.]?\s*(.+)$/i, level: 1 },
+];
+
+/**
+ * Detect if a line is a section heading and return its level (1-3) and cleaned title.
+ * Returns null if not a heading.
+ */
+function detectHeading(line: string): { level: number; title: string } | null {
+  const trimmed = line.trim();
+  if (trimmed.length < 3 || trimmed.length > 200) return null;
+
+  for (const { pattern, level } of HEADING_PATTERNS) {
+    const match = trimmed.match(pattern);
+    if (!match) continue;
+
+    // Markdown: derive level from # count
+    if (pattern.source.startsWith("^(#{1,6})")) {
+      const hashCount = match[1].length;
+      return { level: Math.min(hashCount, 3), title: match[2].trim() };
+    }
+
+    // For ALL-CAPS pattern, reject if it's too short or looks like an acronym
+    if (level === 1 && /^[A-ZÀÂÉÈÊËÎÏÔÙÛÜÇ]+$/.test(trimmed) && trimmed.length < 4) continue;
+
+    const title = match[match.length - 1]?.trim() || match[0].replace(/^[\dIVXLC.)\-–—:\s]+/, "").trim();
+    if (title.length < 3) continue;
+
+    return { level, title };
+  }
+
+  return null;
+}
+
+// ---------- Table Extraction ----------
+
+/**
+ * Detect and extract table blocks from text.
+ * Returns table content as structured semantic blocks.
+ */
+function extractTableBlocks(text: string): { startLine: number; endLine: number; semantic: string }[] {
+  const lines = text.split("\n");
+  const tables: { startLine: number; endLine: number; semantic: string }[] = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i].trim();
+
+    // Detect pipe-delimited table rows
+    if (/\|.*\|.*\|/.test(line)) {
+      const startLine = i;
+      const tableLines: string[] = [];
+
+      while (i < lines.length && /\|/.test(lines[i].trim())) {
+        const tl = lines[i].trim();
+        // Skip separator rows (|---|---|)
+        if (!/^[\s|:\-–—]+$/.test(tl)) {
+          tableLines.push(tl);
+        }
+        i++;
+      }
+
+      if (tableLines.length >= 2) {
+        // Parse table into semantic description
+        const headers = tableLines[0].split("|").map(c => c.trim()).filter(Boolean);
+        const rows = tableLines.slice(1).map(row =>
+          row.split("|").map(c => c.trim()).filter(Boolean)
+        );
+
+        let semantic = `Tableau comparatif (${headers.join(" / ")}):\n`;
+        for (const row of rows) {
+          const pairs = row.map((cell, ci) => headers[ci] ? `${headers[ci]}: ${cell}` : cell).filter(Boolean);
+          semantic += `- ${pairs.join(", ")}\n`;
+        }
+        tables.push({ startLine, endLine: i - 1, semantic: semantic.trim() });
+      }
+      continue;
+    }
+
+    // Detect tab-separated or multi-column text (heuristic)
+    if (/\t/.test(line) && line.split("\t").filter(Boolean).length >= 2) {
+      const startLine = i;
+      const tabLines: string[] = [];
+
+      while (i < lines.length && /\t/.test(lines[i])) {
+        tabLines.push(lines[i].trim());
+        i++;
+      }
+
+      if (tabLines.length >= 2) {
+        const cols = tabLines[0].split("\t").filter(Boolean);
+        let semantic = `Tableau (${cols.join(" / ")}):\n`;
+        for (const tl of tabLines.slice(1)) {
+          const cells = tl.split("\t").filter(Boolean);
+          const pairs = cells.map((cell, ci) => cols[ci] ? `${cols[ci]}: ${cell}` : cell).filter(Boolean);
+          semantic += `- ${pairs.join(", ")}\n`;
+        }
+        tables.push({ startLine, endLine: i - 1, semantic: semantic.trim() });
+      }
+      continue;
+    }
+
+    i++;
+  }
+
+  return tables;
+}
+
+// ---------- Hierarchical Segmentation ----------
+
 function segmentText(text: string): SegmentOutput[] {
-  const parts = text.split(/\n{2,}|(?=^#{1,6}\s)/m);
+  const lines = text.split("\n");
   const segments: SegmentOutput[] = [];
 
-  for (const part of parts) {
-    const trimmed = part.trim();
-    if (trimmed.length === 0) continue;
-    const firstLine = trimmed.split("\n")[0];
-    const isHeading = /^#{1,6}\s/.test(trimmed) || /^[A-Z][A-ZÀÂÉÈÊËÎÏÔÙÛÇ\s]{3,}$/.test(firstLine);
-    const headingMatch = trimmed.match(/^(#+)\s*/);
-    const headingLevel = headingMatch ? Math.min(headingMatch[1].length, 3) : isHeading ? 1 : 0;
+  // First pass: extract tables so we can incorporate them
+  const tableBlocks = extractTableBlocks(text);
+  const tableLineSet = new Set<number>();
+  for (const tb of tableBlocks) {
+    for (let l = tb.startLine; l <= tb.endLine; l++) tableLineSet.add(l);
+  }
+
+  let currentTitle: string | null = null;
+  let currentLevel = 0;
+  let currentContent: string[] = [];
+  let nextTableIdx = 0;
+
+  function flushSegment() {
+    const content = currentContent.join("\n").trim();
+    if (content.length === 0 && !currentTitle) return;
 
     segments.push({
       segment_index: segments.length,
-      title: isHeading ? firstLine.replace(/^#+\s*/, "").trim() : null,
-      content: trimmed,
-      hierarchy_level: headingLevel,
-      confidence_score: 1.0,
+      title: currentTitle,
+      content: content || (currentTitle ?? ""),
+      hierarchy_level: currentLevel,
+      confidence_score: currentTitle ? 1.0 : 0.7,
       page_ref: null,
     });
+  }
+
+  for (let i = 0; i < lines.length; i++) {
+    // Skip lines that belong to tables (they'll be added as table segments)
+    if (tableLineSet.has(i)) {
+      // Check if we've reached a table block start
+      if (nextTableIdx < tableBlocks.length && tableBlocks[nextTableIdx].startLine === i) {
+        const tb = tableBlocks[nextTableIdx];
+        // Flush current content before adding table
+        if (currentContent.length > 0 || currentTitle) {
+          flushSegment();
+          currentContent = [];
+        }
+        // Add table as its own segment
+        segments.push({
+          segment_index: segments.length,
+          title: "Tableau",
+          content: tb.semantic,
+          hierarchy_level: Math.max(currentLevel + 1, 2),
+          confidence_score: 0.9,
+          page_ref: null,
+        });
+        nextTableIdx++;
+      }
+      continue;
+    }
+
+    const line = lines[i];
+    const trimmed = line.trim();
+
+    if (trimmed.length === 0) {
+      if (currentContent.length > 0) currentContent.push("");
+      continue;
+    }
+
+    const heading = detectHeading(trimmed);
+
+    if (heading) {
+      // Flush previous segment
+      if (currentContent.length > 0 || currentTitle) {
+        flushSegment();
+        currentContent = [];
+      }
+      currentTitle = heading.title;
+      currentLevel = heading.level;
+    } else {
+      currentContent.push(trimmed);
+    }
+  }
+
+  // Flush last segment
+  if (currentContent.length > 0 || currentTitle) {
+    flushSegment();
   }
 
   return segments;

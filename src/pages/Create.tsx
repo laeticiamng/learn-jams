@@ -488,8 +488,8 @@ export default function Create() {
                 )}
 
                 {missionResult && (
-                  <Button onClick={() => navigate(`/mission/${missionResult.mission_id}`)}>
-                    <Eye className="h-4 w-4 mr-2" /> {t("create_page.view_mission", { defaultValue: "Voir la mission" })}
+                  <Button onClick={() => navigate(`/mission/${missionResult.mission_id}/play`)}>
+                    <Eye className="h-4 w-4 mr-2" /> {t("create_page.play_mission", { defaultValue: "Jouer la mission" })}
                   </Button>
                 )}
 

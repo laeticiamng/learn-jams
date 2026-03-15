@@ -25,6 +25,9 @@ import {
   rejectConceptArtifact,
   compressDefinition,
   mergeDuplicateOrNoisyConcepts,
+  extractCleanMainTopic,
+  cleanMainTopic,
+  reconstructChapterHierarchy,
 } from "@/lib/cognitio-semantic-cleaning";
 
 // ---------- Run Analysis (Edge Function) ----------
@@ -51,36 +54,109 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
   // Apply semantic cleaning before extraction
   const cleanedText = cleanSourceNoise(clean_text);
 
-  const sentences = cleanedText.split(/[.!?]+/).filter((s) => s.trim().length > 20);
+  // === Level 1: Extract clean main topic ===
+  const mainTopic = extractCleanMainTopic(segments);
 
-  // Extract concepts from sentences, with normalization and artifact filtering
-  const rawConcepts: AnalyzedConcept[] = sentences.slice(0, 20).map((sentence, i) => {
-    const words = sentence.trim().split(/\s+/);
-    const key = words.slice(0, 3).join("_").toLowerCase().replace(/[^a-z0-9_]/g, "");
-    const excerpt = sentence.trim().slice(0, 120);
+  // === Level 2: Reconstruct chapter hierarchy ===
+  const chapters = reconstructChapterHierarchy(segments);
 
-    const criticality = (i < 3 ? 1 : i < 7 ? 2 : i < 12 ? 3 : 4) as 1 | 2 | 3 | 4;
+  // === Level 3: Extract concepts per chapter ===
+  const rawConcepts: AnalyzedConcept[] = [];
+  let globalIdx = 0;
 
-    // Normalize and compress
-    const rawLabel = words.slice(0, 5).join(" ").trim();
-    const label = normalizeConceptLabel(rawLabel) || rawLabel;
-    const definition = compressDefinition(sentence.trim());
+  for (let chapterIdx = 0; chapterIdx < chapters.length; chapterIdx++) {
+    const chapter = chapters[chapterIdx];
+    const chapterContent = cleanSourceNoise(chapter.content);
+    const sentences = chapterContent.split(/[.!?]+/).filter(s => s.trim().length > 20);
+    const chapterType = chapter.title;
 
-    return {
-      stable_key: `concept_${key}_${i}`,
-      label,
-      definition,
-      type: "general",
-      criticality,
-      criticality_score: criticality === 1 ? 1 : criticality === 2 ? 0.7 : criticality === 3 ? 0.4 : 0.2,
-      bloom_target: (i < 5 ? "understand" : "remember") as "understand" | "remember",
-      relations: [],
-      prerequisites: [],
-      source_confidence: 0.6,
-      source_trace: [{ segment_index: Math.min(i, (segments.length || 1) - 1), excerpt }],
-      uncertain: false,
-    };
-  });
+    // Extract concepts from this chapter's content
+    const maxPerChapter = Math.max(3, Math.ceil(25 / Math.max(chapters.length, 1)));
+    const chapterSentences = sentences.slice(0, maxPerChapter);
+
+    for (let si = 0; si < chapterSentences.length; si++) {
+      const sentence = chapterSentences[si].trim();
+      const words = sentence.split(/\s+/);
+      const excerpt = sentence.slice(0, 120);
+
+      // Build a meaningful label from the sentence
+      const rawLabel = buildConceptLabel(sentence, chapter.title);
+      const label = normalizeConceptLabel(rawLabel) || rawLabel;
+      const definition = compressDefinition(sentence, 250);
+
+      // Criticality: first concepts in early chapters are more critical
+      const positionScore = (chapterIdx * maxPerChapter + si) / Math.max(1, chapters.length * maxPerChapter);
+      const criticality = (positionScore < 0.15 ? 1 : positionScore < 0.4 ? 2 : positionScore < 0.7 ? 3 : 4) as 1 | 2 | 3 | 4;
+
+      const key = words.slice(0, 3).join("_").toLowerCase().replace(/[^a-z0-9_]/g, "");
+
+      rawConcepts.push({
+        stable_key: `concept_${key}_${globalIdx}`,
+        label,
+        definition,
+        type: chapterType,
+        criticality,
+        criticality_score: criticality === 1 ? 1 : criticality === 2 ? 0.7 : criticality === 3 ? 0.4 : 0.2,
+        bloom_target: determineBlooms(sentence),
+        relations: [],
+        prerequisites: [],
+        source_confidence: 0.65,
+        source_trace: [{ segment_index: Math.min(chapterIdx, (segments.length || 1) - 1), excerpt }],
+        uncertain: false,
+      });
+
+      globalIdx++;
+    }
+
+    // Also generate a concept for each sub-section title (if meaningful)
+    for (const subTitle of chapter.subSections) {
+      if (subTitle.length < 5) continue;
+      const normalizedSub = normalizeConceptLabel(subTitle);
+      if (!normalizedSub) continue;
+
+      rawConcepts.push({
+        stable_key: `concept_sub_${subTitle.slice(0, 15).toLowerCase().replace(/[^a-z0-9]/g, "_")}_${globalIdx}`,
+        label: normalizedSub,
+        definition: `Sous-partie du chapitre "${chapter.title}" : ${subTitle}`,
+        type: chapterType,
+        criticality: 3 as 1 | 2 | 3 | 4,
+        criticality_score: 0.4,
+        bloom_target: "remember",
+        relations: [],
+        prerequisites: [],
+        source_confidence: 0.5,
+        source_trace: [{ segment_index: Math.min(chapterIdx, (segments.length || 1) - 1), excerpt: subTitle }],
+        uncertain: false,
+      });
+      globalIdx++;
+    }
+  }
+
+  // If no chapters detected, fall back to sentence-based extraction
+  if (rawConcepts.length === 0) {
+    const sentences = cleanedText.split(/[.!?]+/).filter(s => s.trim().length > 20);
+    for (let i = 0; i < Math.min(20, sentences.length); i++) {
+      const sentence = sentences[i].trim();
+      const words = sentence.split(/\s+/);
+      const rawLabel = words.slice(0, 5).join(" ");
+      const label = normalizeConceptLabel(rawLabel) || rawLabel;
+
+      rawConcepts.push({
+        stable_key: `concept_${words.slice(0, 3).join("_").toLowerCase().replace(/[^a-z0-9_]/g, "")}_${i}`,
+        label,
+        definition: compressDefinition(sentence),
+        type: "general",
+        criticality: (i < 3 ? 1 : i < 7 ? 2 : i < 12 ? 3 : 4) as 1 | 2 | 3 | 4,
+        criticality_score: i < 3 ? 1 : i < 7 ? 0.7 : 0.4,
+        bloom_target: (i < 5 ? "understand" : "remember") as "understand" | "remember",
+        relations: [],
+        prerequisites: [],
+        source_confidence: 0.5,
+        source_trace: [{ segment_index: Math.min(i, (segments.length || 1) - 1), excerpt: sentence.slice(0, 120) }],
+        uncertain: false,
+      });
+    }
+  }
 
   // Filter out artifact concepts and deduplicate
   const filteredConcepts = rawConcepts.filter(c => {
@@ -99,20 +175,32 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
   else if (hasConditions) reasoningType = "conditionnel";
   else if (hasCausal) reasoningType = "causal";
 
-  const mainTopic = segments.find((s) => s.title)?.title || sentences[0]?.trim().split(/\s+/).slice(0, 8).join(" ") || "Sujet non identifié";
   const density = concepts.length >= 12 ? "high" as const : concepts.length >= 5 ? "medium" as const : "low" as const;
 
+  // Determine structure type from segments
+  const hasTableSegments = segments.some(s => s.title === "Tableau" || s.content.includes("Tableau comparatif"));
+  const hasHeadingSegments = segments.filter(s => s.hierarchy_level >= 1).length >= 2;
+  const structureType = hasTableSegments && hasHeadingSegments ? "table"
+    : hasHeadingSegments ? "mixed"
+    : input.source_type === "slides" ? "bullets"
+    : "prose";
+
   const confidence: AnalysisConfidence = {
-    concepts: Math.min(0.5, confidence_level),
-    logic: 0.3,
+    concepts: Math.min(0.6, confidence_level),
+    logic: hasCausal || hasConditions ? 0.5 : 0.3,
     traps: 0.2,
-    structure: segments.length >= 3 ? 0.5 : 0.3,
+    structure: chapters.length >= 3 ? 0.6 : segments.length >= 3 ? 0.5 : 0.3,
     ambiguous_zones: confidence_level < 0.5
       ? [{ zone_label: "Document entier", reason: "Confiance source faible — analyse heuristique uniquement", segment_refs: [0], severity: "medium" as const }]
       : [],
   };
 
   const estimatedComplexity = Math.min(10, Math.max(1, Math.ceil(concepts.length / 2)));
+
+  // Build learning objectives from chapters
+  const learningObjectives = chapters.length > 0
+    ? chapters.slice(0, 5).map(ch => `Comprendre : ${ch.title}`)
+    : [`Comprendre les notions clés de : ${mainTopic}`];
 
   // Audience mismatch detection
   const mismatch = input.learner_profile
@@ -127,7 +215,7 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
   return {
     course_profile_id: "",
     main_topic: mainTopic,
-    learning_objectives: [`Comprendre les notions clés de : ${mainTopic}`],
+    learning_objectives: learningObjectives,
     key_concepts: concepts,
     traps: [],
     confusion_pairs: [],
@@ -136,7 +224,7 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
     recommended_template: density === "high" ? "histoire_animee" : "fiche_dynamique",
     confidence,
     prerequis: [],
-    structure_type: input.source_type === "slides" ? "bullets" : "minimal",
+    structure_type: structureType as any,
     source_issues: [{ code: "FALLBACK_ANALYSIS", message: "Analyse locale heuristique (LLM non disponible)", severity: "warning" }],
     total_concepts: concepts.length,
     critical_count: concepts.filter((c) => c.criticality === 1).length,
@@ -146,6 +234,51 @@ export function runLocalAnalysis(input: M2_Input): M2_Output {
     audience_mismatch_risk: mismatch?.risk_level ?? 0,
     audience_mismatch_message: mismatch?.message,
   };
+}
+
+// ---------- Concept Label Builder ----------
+
+/**
+ * Build a meaningful concept label from a sentence, using the chapter context.
+ * Tries to extract a noun phrase or key term instead of raw first-N-words.
+ */
+function buildConceptLabel(sentence: string, chapterTitle: string): string {
+  const trimmed = sentence.trim();
+
+  // If the sentence defines something ("X est/sont..."), extract X
+  const defMatch = trimmed.match(/^(.{5,60}?)\s+(?:est|sont|désigne|signifie|correspond|représente|se définit)/i);
+  if (defMatch) {
+    return defMatch[1].trim();
+  }
+
+  // If the sentence lists something ("Les X incluent/comprennent..."), extract X
+  const listMatch = trimmed.match(/^(?:Les?\s+|L['']|Un[e]?\s+)(.{3,50}?)\s+(?:incluen|compren|regroup|concern|désign)/i);
+  if (listMatch) {
+    return listMatch[1].trim();
+  }
+
+  // If the sentence uses "on parle de X", "on appelle X"
+  const parlMatch = trimmed.match(/(?:on parle de|on appelle|on désigne par)\s+(.{3,60}?)(?:\s+(?:quand|lorsque|pour|en cas)|[.,;])/i);
+  if (parlMatch) {
+    return parlMatch[1].trim();
+  }
+
+  // Default: first 5-7 meaningful words, skipping common articles
+  const words = trimmed.split(/\s+/);
+  const meaningful = words.filter(w => w.length > 2 || /^[A-ZÀ-Ÿ]/.test(w));
+  return meaningful.slice(0, 6).join(" ");
+}
+
+/**
+ * Determine Bloom's taxonomy level from sentence content.
+ */
+function determineBlooms(sentence: string): "remember" | "understand" | "apply" | "analyze" | "evaluate" | "create" {
+  const s = sentence.toLowerCase();
+  if (/(?:évalue|compare|critique|juge|argumente)/.test(s)) return "evaluate";
+  if (/(?:analyse|distingue|différencie|classifie|identifie.*cause)/.test(s)) return "analyze";
+  if (/(?:applique|utilise|met en œuvre|calcule|réalise|prescri)/.test(s)) return "apply";
+  if (/(?:explique|décri[st]|résume|reformule|interprète)/.test(s)) return "understand";
+  return "remember";
 }
 
 // ---------- Persist M2 Output ----------

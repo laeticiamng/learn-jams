@@ -1,10 +1,12 @@
 // ============================================================
 // MissionPreviewLayout — Preview a generated mission in the Create result view
-// Shows mission summary: narrative, rooms overview, fallback mode
+// Shows mission summary: narrative, rooms overview, fallback mode + play button
 // ============================================================
 
-import { Gamepad2, DoorOpen, Crown, AlertTriangle, Shield } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Gamepad2, DoorOpen, Crown, AlertTriangle, Shield, Play } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import type { GenerateExperienceOutput } from "@/domain/cognitio/contracts";
 import type { FallbackMode } from "@/domain/cognitio/types";
 import { getBrickLabel } from "@/lib/cognitio-ui";
@@ -22,15 +24,29 @@ const FALLBACK_LABELS: Record<FallbackMode, string> = {
 };
 
 export function MissionPreviewLayout({ output }: MissionPreviewLayoutProps) {
-  const { mission_json, fallback_mode, quality_band, room_count, includes_boss } = output;
+  const navigate = useNavigate();
+  const { mission_id, mission_json, fallback_mode, quality_band, room_count, includes_boss } = output;
   const isDegraded = fallback_mode !== "full" && fallback_mode !== "full_with_alerts";
+  const isPlayable = mission_json.rooms.length > 0;
 
   return (
     <div className="space-y-4">
-      <h3 className="text-sm font-semibold flex items-center gap-2">
-        <Gamepad2 className="h-4 w-4 text-emerald-600" />
-        Mission Interactive
-      </h3>
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold flex items-center gap-2">
+          <Gamepad2 className="h-4 w-4 text-emerald-600" />
+          Mission Interactive
+        </h3>
+        {isPlayable && (
+          <Button
+            size="sm"
+            onClick={() => navigate(`/mission/${mission_id}/play`)}
+            className="gap-2 gradient-bg-premium rounded-xl"
+          >
+            <Play className="h-3.5 w-3.5" />
+            Jouer
+          </Button>
+        )}
+      </div>
 
       {/* Fallback mode badge */}
       <div className="flex items-center gap-2 flex-wrap">

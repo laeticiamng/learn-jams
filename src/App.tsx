@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -72,6 +72,7 @@ const App = () => (
               <Route path="/studio" element={<ProtectedRoute><Studio /></ProtectedRoute>} />
               <Route path="/league" element={<ProtectedRoute><League /></ProtectedRoute>} />
               <Route path="/export" element={<ProtectedRoute><Export /></ProtectedRoute>} />
+              <Route path="/mission/:id" element={<Navigate to="play" replace />} />
               <Route path="/mission/:id/play" element={<ProtectedRoute><MissionPlay /></ProtectedRoute>} />
               <Route path="/mission/:id/debrief" element={<ProtectedRoute><MissionDebrief /></ProtectedRoute>} />
               <Route path="/mission/:id/analysis" element={<ProtectedRoute><MissionAnalysis /></ProtectedRoute>} />

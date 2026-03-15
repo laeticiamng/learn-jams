@@ -15,7 +15,7 @@ import { useAnimatedStoryGeneration } from "@/hooks/useAnimatedStoryGeneration";
 import { useQAStatus } from "@/hooks/useQAStatus";
 import { useProductTracking } from "@/hooks/useProductTracking";
 import { generateRecallSuiteLocally } from "@/services/cognitio/recall-generator.service";
-import { generateMissionLocally } from "@/services/cognitio/experience-generator.service";
+import { generateMissionLocally, saveMission } from "@/services/cognitio/experience-generator.service";
 import type { IngestInput, GenerateExperienceOutput } from "@/domain/cognitio/contracts";
 import type { LearningObjective, ChosenFormat } from "@/domain/cognitio/types";
 import type { LearnerAudienceProfile } from "@/domain/cognitio/learner-profile.types";
@@ -201,11 +201,11 @@ export function useCreatePipeline() {
         }
       } else if (generationFormat === "mission_interactive") {
         try {
-          m5cResult = generateMissionLocally({
+          const missionInput = {
             document_id: m1Result.document_id,
             course_profile_id: m2Result.course_profile_id,
             user_id: session?.user?.id ?? "",
-            chosen_format: "mission_interactive",
+            chosen_format: "mission_interactive" as const,
             learning_contract: m3Result.pedagogical_contract as any,
             concepts: m2Result.key_concepts,
             confusion_pairs: m2Result.confusion_pairs,
@@ -216,8 +216,17 @@ export function useCreatePipeline() {
             })),
             quality_score: m1Result.confidence_level,
             objective: currentObjective,
-          });
+            main_topic: m2Result.main_topic,
+            reasoning_type: m2Result.reasoning_type,
+            estimated_audience_level: m2Result.estimated_audience_level,
+          };
+          m5cResult = generateMissionLocally(missionInput);
           setMissionResult(m5cResult);
+          // Persist mission to database so the player can load it
+          await saveMission(
+            missionInput,
+            m5cResult
+          );
         } catch (missionErr) {
           const errMsg = missionErr instanceof Error ? missionErr.message : "Échec de la génération de la mission";
           setPipelineError({ source: "generation", message: errMsg, phase: "generating" });

@@ -234,6 +234,12 @@ export interface GenerateExperienceInput {
   visual_anchors: VisualAnchor[];
   quality_score: number;
   objective: LearningObjective;
+  /** Clean main topic from M2 analysis (e.g. "Infections nosocomiales") */
+  main_topic?: string;
+  /** Reasoning type from M2 analysis */
+  reasoning_type?: ReasoningType;
+  /** Estimated audience level from M2 analysis */
+  estimated_audience_level?: string;
 }
 
 export interface GenerateExperienceOutput {
