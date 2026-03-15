@@ -205,6 +205,36 @@ export type Database = {
           },
         ]
       }
+      consent_events: {
+        Row: {
+          consent_type: string
+          created_at: string
+          granted: boolean | null
+          id: string
+          ip_address: string | null
+          metadata_json: Json | null
+          user_id: string
+        }
+        Insert: {
+          consent_type: string
+          created_at?: string
+          granted?: boolean | null
+          id?: string
+          ip_address?: string | null
+          metadata_json?: Json | null
+          user_id: string
+        }
+        Update: {
+          consent_type?: string
+          created_at?: string
+          granted?: boolean | null
+          id?: string
+          ip_address?: string | null
+          metadata_json?: Json | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       contact_messages: {
         Row: {
           created_at: string
@@ -592,12 +622,17 @@ export type Database = {
           block_type: string
           concepts_covered_json: Json | null
           content: string | null
+          content_json: Json | null
           contrast_box_json: Json | null
+          coverage_json: Json | null
           created_at: string
+          generation_flags_json: Json | null
           id: string
+          internal_summary_json: Json | null
           mnemonic_json: Json | null
           position: number | null
           recall_event_json: Json | null
+          source_disclaimer_json: Json | null
           title: string | null
           transformation_id: string | null
           version: number | null
@@ -608,12 +643,17 @@ export type Database = {
           block_type?: string
           concepts_covered_json?: Json | null
           content?: string | null
+          content_json?: Json | null
           contrast_box_json?: Json | null
+          coverage_json?: Json | null
           created_at?: string
+          generation_flags_json?: Json | null
           id?: string
+          internal_summary_json?: Json | null
           mnemonic_json?: Json | null
           position?: number | null
           recall_event_json?: Json | null
+          source_disclaimer_json?: Json | null
           title?: string | null
           transformation_id?: string | null
           version?: number | null
@@ -624,12 +664,17 @@ export type Database = {
           block_type?: string
           concepts_covered_json?: Json | null
           content?: string | null
+          content_json?: Json | null
           contrast_box_json?: Json | null
+          coverage_json?: Json | null
           created_at?: string
+          generation_flags_json?: Json | null
           id?: string
+          internal_summary_json?: Json | null
           mnemonic_json?: Json | null
           position?: number | null
           recall_event_json?: Json | null
+          source_disclaimer_json?: Json | null
           title?: string | null
           transformation_id?: string | null
           version?: number | null
@@ -1387,6 +1432,95 @@ export type Database = {
         }
         Relationships: []
       }
+      publish_decisions: {
+        Row: {
+          created_at: string
+          decided_at: string | null
+          decision_status: string | null
+          id: string
+          qa_report_id: string | null
+          reason: string | null
+          transformation_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          decided_at?: string | null
+          decision_status?: string | null
+          id?: string
+          qa_report_id?: string | null
+          reason?: string | null
+          transformation_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          decided_at?: string | null
+          decision_status?: string | null
+          id?: string
+          qa_report_id?: string | null
+          reason?: string | null
+          transformation_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "publish_decisions_qa_report_id_fkey"
+            columns: ["qa_report_id"]
+            isOneToOne: false
+            referencedRelation: "qa_reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "publish_decisions_transformation_id_fkey"
+            columns: ["transformation_id"]
+            isOneToOne: false
+            referencedRelation: "transformations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      qa_reports: {
+        Row: {
+          block_reason: string | null
+          checklist_json: Json | null
+          created_at: string
+          id: string
+          publish_blocked: boolean | null
+          qa_score: number | null
+          recommendations_json: Json | null
+          transformation_id: string | null
+          violations_json: Json | null
+        }
+        Insert: {
+          block_reason?: string | null
+          checklist_json?: Json | null
+          created_at?: string
+          id?: string
+          publish_blocked?: boolean | null
+          qa_score?: number | null
+          recommendations_json?: Json | null
+          transformation_id?: string | null
+          violations_json?: Json | null
+        }
+        Update: {
+          block_reason?: string | null
+          checklist_json?: Json | null
+          created_at?: string
+          id?: string
+          publish_blocked?: boolean | null
+          qa_score?: number | null
+          recommendations_json?: Json | null
+          transformation_id?: string | null
+          violations_json?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qa_reports_transformation_id_fkey"
+            columns: ["transformation_id"]
+            isOneToOne: false
+            referencedRelation: "transformations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       recall_attempts: {
         Row: {
           answers_json: Json | null
@@ -2050,6 +2184,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_minor_profiles: {
+        Row: {
+          birth_year: number | null
+          created_at: string
+          guardian_verified: boolean | null
+          id: string
+          is_minor: boolean | null
+          metadata_json: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          birth_year?: number | null
+          created_at?: string
+          guardian_verified?: boolean | null
+          id?: string
+          is_minor?: boolean | null
+          metadata_json?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          birth_year?: number | null
+          created_at?: string
+          guardian_verified?: boolean | null
+          id?: string
+          is_minor?: boolean | null
+          metadata_json?: Json | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       user_usage_profiles: {
         Row: {
