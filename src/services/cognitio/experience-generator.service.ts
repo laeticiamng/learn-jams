@@ -73,7 +73,7 @@ export function generateMissionLocally(
   const boss = includesBoss ? buildBoss(input) : undefined;
 
   const mission_json: MissionContent = {
-    title: `Mission: ${input.concepts[0]?.category ?? "Apprentissage"}`,
+    title: `Mission: ${input.concepts[0]?.type ?? "Apprentissage"}`,
     narrative_intro: buildNarrativeIntro(input, qualityBand),
     rooms,
     boss,
