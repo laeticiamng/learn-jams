@@ -15,6 +15,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ImportDropzone from "@/components/cognitio/ImportDropzone";
 import IngestionStatus from "@/components/cognitio/IngestionStatus";
+import ImportDebugPanel from "@/components/cognitio/ImportDebugPanel";
 import { DocumentQualityPanel } from "@/components/cognitio/DocumentQualityPanel";
 import { ConceptList } from "@/components/cognitio/ConceptList";
 import { ConfusionPairsCard } from "@/components/cognitio/ConfusionPairsCard";
@@ -148,6 +149,9 @@ export default function Create() {
                 steps={pipeline.allSteps}
                 title={phaseTitle}
               />
+
+              {/* Debug panel (dev only) */}
+              <ImportDebugPanel debugInfo={pipeline.ingestion.debugInfo} />
 
               {/* Pipeline error with source info */}
               {pipeline.pipelineError && (
