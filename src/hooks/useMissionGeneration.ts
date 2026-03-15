@@ -121,10 +121,14 @@ export function useMissionGeneration() {
         updateStep("memory_architecture", { status: "running", message: "Construction du plan mémoire..." });
         const memoryResult = buildLocalMemoryArchitect({
           course_profile_id: analysisResult.course_profile_id,
+          document_id: document_id,
           concepts: analysisResult.key_concepts,
           confusion_pairs: analysisResult.confusion_pairs,
+          traps: analysisResult.traps,
+          reasoning_type: analysisResult.reasoning_type,
           objective: input.objective,
-          knowledge_type: "factual",
+          density: analysisResult.density,
+          estimated_complexity: analysisResult.estimated_complexity,
         });
         updateStep("memory_architecture", { status: "completed" });
 
