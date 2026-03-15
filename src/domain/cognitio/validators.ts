@@ -259,8 +259,9 @@ export function runSemanticSuccessGate(params: {
     signals,
     display_message: passed
       ? "Base sémantique validée"
-      : "Le document a été importé, mais l'analyse a détecté uniquement des éléments éditoriaux non exploitables. " +
-        "Aucune mission fiable ne peut être générée à partir de ce document dans son état actuel.",
+      : "Le document a été importé, mais l'analyse n'a pas réussi à isoler de concepts pédagogiques exploitables " +
+        "après détection du front matter, quarantaine du segment 0 et extraction corps-seulement. " +
+        "Un second pass sur le corps du document sera tenté automatiquement.",
   };
 }
 
@@ -293,7 +294,8 @@ export function runMissionGate(signals: SemanticGateSignals, mainTopic: string):
     block_reasons: blockReasons,
     display_message: passed
       ? "Mission gate validée"
-      : "Le document a été importé, mais l'analyse n'a pas identifié suffisamment de concepts pédagogiques fiables " +
+      : "Le document a été importé, mais après toutes les passes d'extraction (front matter, quarantaine segment 0, " +
+        "extraction corps-seulement), l'analyse n'a pas identifié suffisamment de concepts pédagogiques fiables " +
         "pour générer une mission interactive. " + blockReasons.join(". ") + ".",
   };
 }

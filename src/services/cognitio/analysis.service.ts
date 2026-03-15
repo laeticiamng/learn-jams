@@ -718,7 +718,16 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
     if (cleanedBodyText.length > 50) {
       _dbg_body_first_pass_triggered = true;
       const bodyConcepts = extractConceptsFromText(cleanedBodyText, bodySegmentsOriginal, globalIdx);
+      // P0 FIX: Offset segment indices — body segments start at index 1 in the original
+      // document, but extractConceptsFromText assigns indices relative to the passed array.
       for (const bc of bodyConcepts) {
+        for (const trace of bc.source_trace) {
+          if (trace.segment_index === 0) {
+            trace.segment_index = 1; // Minimum body segment index
+          } else {
+            trace.segment_index = Math.min(trace.segment_index + 1, originalSegments.length - 1);
+          }
+        }
         const { rejected } = rejectConceptArtifact(bc);
         if (!rejected) {
           concepts.push(bc);
@@ -946,6 +955,108 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
   }
 
   // ============================================================
+  // P0 POST-SCORING BODY-ONLY SECOND PASS
+  // After all scoring, check if concepts are STILL all artifacts or
+  // all from segment 0 only. If so, and body-only second pass was
+  // NOT already triggered, trigger it now with LENIENT scoring.
+  // This catches cases where:
+  //  - The first pass produced some non-artifact concepts that survived
+  //    initial filtering, but post-scoring killed them all
+  //  - The body-only pass was never triggered because concepts.length > 0
+  //    before post-scoring
+  // ============================================================
+  if (concepts.length > 0 && originalSegments.length > 1 && !_dbg_body_only_second_pass_triggered) {
+    const postScoringAllArtifacts = concepts.every(c => {
+      const scores = scoreConceptCandidate(c.label, c.definition);
+      return !scores.accepted || scores.editorial_artifact_score >= 0.4 || scores.header_noise_score >= 0.4;
+    });
+    const postScoringAllFromSeg0 = concepts.every(c =>
+      c.source_trace.every(t => t.segment_index === 0)
+    );
+    const postScoringNoBodyConcepts = !concepts.some(c =>
+      c.source_trace.some(t => t.segment_index > 0)
+    );
+
+    if (postScoringAllArtifacts || (postScoringAllFromSeg0 && postScoringNoBodyConcepts)) {
+      console.warn(
+        `[COGNITIO][M2] POST_SCORING_BODY_PASS: After post-scoring, ` +
+        `all_artifacts=${postScoringAllArtifacts}, all_from_seg0=${postScoringAllFromSeg0}, ` +
+        `no_body_concepts=${postScoringNoBodyConcepts}. ` +
+        `Triggering body-only second pass (not yet attempted).`
+      );
+
+      _dbg_body_only_second_pass_triggered = true;
+      _dbg_artifact_only_first_pass = postScoringAllArtifacts;
+
+      // Clear artifact-only concepts to make room for body concepts
+      if (postScoringAllArtifacts) {
+        concepts = [];
+      }
+
+      const bodySegmentsForRetry = originalSegments.slice(1);
+      const bodyTextRetry = bodySegmentsForRetry.map(s => s.content).join("\n\n");
+      const bodyFMRetry = detectFrontMatter(bodyTextRetry);
+      const bodyAfterFMRetry = bodyFMRetry.has_front_matter ? bodyFMRetry.body_text : bodyTextRetry;
+      const bodyFilterRetry = filterEditorialNoise(bodyAfterFMRetry);
+      const cleanedBodyRetry = bodyFilterRetry.cleaned_text;
+
+      console.info(
+        `[COGNITIO][M2] POST_SCORING_BODY_PASS: body_text=${bodyTextRetry.length} chars → ` +
+        `after_fm=${bodyAfterFMRetry.length} → after_filter=${cleanedBodyRetry.length}`
+      );
+
+      if (cleanedBodyRetry.length > 50) {
+        const retryConcepts = extractConceptsFromText(cleanedBodyRetry, bodySegmentsForRetry, globalIdx);
+        for (const rc of retryConcepts) {
+          // Offset segment indices for body segments
+          for (const trace of rc.source_trace) {
+            trace.segment_index = Math.min(trace.segment_index + 1, originalSegments.length - 1);
+            if (trace.segment_index === 0) trace.segment_index = 1;
+          }
+          // Use LENIENT scoring to give body concepts the best chance
+          const scores = scoreConceptCandidate(rc.label, rc.definition, true);
+          if (scores.accepted) {
+            concepts.push(rc);
+            globalIdx++;
+            _dbg_body_only_second_pass_concepts_count++;
+          }
+        }
+        console.info(
+          `[COGNITIO][M2] POST_SCORING_BODY_PASS: ${retryConcepts.length} candidates → ` +
+          `${_dbg_body_only_second_pass_concepts_count} accepted (lenient scoring).`
+        );
+      }
+
+      // Per-segment fallback if joined body extraction failed
+      if (concepts.length === 0) {
+        console.warn(
+          `[COGNITIO][M2] POST_SCORING_BODY_PASS: Joined extraction failed. ` +
+          `Trying per-segment on ${originalSegments.length - 1} body segments.`
+        );
+        for (let si = 1; si < originalSegments.length && concepts.length < 15; si++) {
+          const seg = originalSegments[si];
+          if (seg.content.length < 30) continue;
+          const segCleaned = filterEditorialNoise(seg.content).cleaned_text;
+          if (segCleaned.length < 20) continue;
+          const segConcepts = extractConceptsFromText(segCleaned, [seg], globalIdx);
+          for (const sc of segConcepts) {
+            sc.source_trace = [{ segment_index: si, excerpt: sc.source_trace[0]?.excerpt || "" }];
+            const scores = scoreConceptCandidate(sc.label, sc.definition, true);
+            if (scores.accepted) {
+              concepts.push(sc);
+              globalIdx++;
+              _dbg_body_only_second_pass_concepts_count++;
+            }
+          }
+        }
+        console.info(
+          `[COGNITIO][M2] POST_SCORING_BODY_PASS per-segment: ${_dbg_body_only_second_pass_concepts_count} total concepts.`
+        );
+      }
+    }
+  }
+
+  // ============================================================
   // P0 ABSOLUTE LAST RESORT: If we STILL have 0 concepts from a
   // 5000+ char document, force-extract from raw text directly.
   // This is the final safety net — never let a real document through
@@ -1146,6 +1257,11 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
     _diag_segment_0_noise_score: seg0NoiseScore,
     _diag_front_matter_lines_count: localFrontMatter.front_matter_lines_detected,
     _diag_front_matter_chars_count: localFrontMatter.front_matter_chars_removed,
+    // P0: Secondary pass topic — derived from body concepts if second pass was triggered
+    _diag_secondary_pass_topic: _dbg_body_only_second_pass_triggered
+      ? (concepts.find(c => c.source_trace.some(t => t.segment_index > 0))?.label || finalTopic)
+      : undefined,
+    _diag_secondary_pass_concepts_count: _dbg_body_only_second_pass_concepts_count,
   };
 }
 

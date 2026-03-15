@@ -138,6 +138,9 @@ export interface M2_Output {
   _diag_segment_0_noise_score?: number;
   _diag_front_matter_lines_count?: number;
   _diag_front_matter_chars_count?: number;
+  // P0: Secondary pass diagnostics
+  _diag_secondary_pass_topic?: string;
+  _diag_secondary_pass_concepts_count?: number;
 }
 
 export interface AnalyzedConcept {
@@ -412,6 +415,9 @@ export interface PipelineDebugCounters {
   artifact_only_first_pass?: boolean;
   body_only_second_pass_triggered?: boolean;
   body_only_second_pass_concepts_count?: number;
+
+  // P0: Secondary pass detailed diagnostics
+  secondary_pass_topic?: string;
 
   // P0: Final topic after cleaning
   final_topic_clean?: string;
