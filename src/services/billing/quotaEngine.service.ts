@@ -111,7 +111,7 @@ async function incrementUsage(userId: string, feature: FeatureKey, amount: numbe
   if (existing) {
     const counters = existing.counters_json as Record<string, number>;
     counters[feature] = (counters[feature] ?? 0) + amount;
-    await supabase
+    await (supabase as any)
       .from("usage_quotas_v2")
       .update({ counters_json: counters, updated_at: now.toISOString() })
       .eq("id", existing.id);
