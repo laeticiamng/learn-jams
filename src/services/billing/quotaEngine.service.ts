@@ -148,7 +148,7 @@ async function getAllCurrentUsage(userId: string): Promise<Partial<Record<Featur
 
 async function getCreditBalance(userId: string, feature: FeatureKey): Promise<number> {
   const now = new Date().toISOString();
-  const { data } = await supabase
+  const { data } = await (supabase as any)
     .from("user_credit_balances")
     .select("remaining")
     .eq("user_id", userId)
