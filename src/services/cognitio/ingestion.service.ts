@@ -170,7 +170,7 @@ export async function runLocalIngestion(
         ? "docx"
         : "pasted_text";
 
-    await supabase.from("source_documents").update({
+    await (supabase as any).from("source_documents").update({
       ingestion_status: "parsed",
       quality_score: result.confidence_level,
       source_type: sourceType,
