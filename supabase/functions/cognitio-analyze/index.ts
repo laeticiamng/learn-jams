@@ -510,7 +510,31 @@ function buildFallbackAnalysis(
   segments: AnalyzeRequest["segments"],
   confidenceLevel: number
 ): AnalysisResult {
-  const sentences = cleanText.split(/[.!?]+/).filter((s) => s.trim().length > 20);
+  // P0 FIX: Pre-clean text to remove R2C/editorial noise before extraction
+  const cleaned = cleanTextForFallback(cleanText);
+
+  // P0 FIX: Join text into continuous prose before splitting on sentence boundaries
+  // to avoid fragmenting bullet-point medical text into too-short chunks
+  const continuousText = cleaned.replace(/\n+/g, " ").replace(/\s{2,}/g, " ");
+  let sentences = continuousText.split(/(?<=[.!?])\s+/).filter((s) => s.trim().length > 20);
+
+  // Fallback: if no sentence-boundary splits worked, split on paragraph breaks
+  if (sentences.length === 0 && cleaned.length > 30) {
+    sentences = cleaned.split(/\n\s*\n/).flatMap(p => {
+      const t = p.trim();
+      return t.length > 20 ? [t] : [];
+    });
+  }
+
+  // Last resort: word chunks
+  if (sentences.length === 0 && cleaned.length > 20) {
+    const words = cleaned.split(/\s+/);
+    for (let i = 0; i < words.length; i += 10) {
+      const chunk = words.slice(i, i + 15).join(" ");
+      if (chunk.length > 15) sentences.push(chunk);
+      if (sentences.length >= 10) break;
+    }
+  }
 
   // Extract concepts from first N sentences
   const concepts: ConceptResult[] = sentences.slice(0, 15).map((sentence, i) => {
@@ -521,7 +545,7 @@ function buildFallbackAnalysis(
     return {
       stable_key: `concept_${key}_${i}`,
       label: words.slice(0, 5).join(" ").trim(),
-      definition: sentence.trim(),
+      definition: compressDefinitionEdge(sentence.trim()),
       type: "general",
       criticality: i < 3 ? 1 : i < 7 ? 2 : i < 12 ? 3 : 4,
       criticality_score: i < 3 ? 1 : i < 7 ? 0.7 : i < 12 ? 0.4 : 0.2,
@@ -529,7 +553,7 @@ function buildFallbackAnalysis(
       relations: [],
       prerequisites: [],
       source_confidence: 0.6,
-      source_trace: [{ segment_index: Math.min(i, segments.length - 1) || 0, excerpt }],
+      source_trace: [{ segment_index: Math.min(i, Math.max(0, segments.length - 1)), excerpt }],
       uncertain: false,
     };
   });
@@ -544,11 +568,31 @@ function buildFallbackAnalysis(
   else if (hasConditions) reasoningType = "conditionnel";
   else if (hasCausal) reasoningType = "causal";
 
-  // Detect main topic from first segment or first heading
-  const firstTitle = segments.find((s) => s.title)?.title;
-  const mainTopic = firstTitle || sentences[0]?.trim().split(/\s+/).slice(0, 8).join(" ") || "Sujet non identifié";
+  // P0 FIX: Clean segment titles before using as topic
+  let mainTopic = "Sujet non identifié";
+  for (const seg of segments) {
+    if (!seg.title) continue;
+    const cleanedTitle = cleanTopicForFallback(seg.title);
+    if (cleanedTitle.length >= 5) {
+      mainTopic = cleanedTitle;
+      break;
+    }
+  }
+  // If no clean title found, use first substantial sentence
+  if (mainTopic === "Sujet non identifié" && sentences.length > 0) {
+    const firstWords = sentences[0].trim().split(/\s+/).slice(0, 8).join(" ");
+    const cleanedFirst = cleanTopicForFallback(firstWords);
+    if (cleanedFirst.length >= 5) {
+      mainTopic = cleanedFirst;
+    }
+  }
 
   const density = concepts.length >= 12 ? "high" : concepts.length >= 5 ? "medium" : "low";
+
+  console.log(
+    `[M2-FALLBACK] text=${cleanText.length}→cleaned=${cleaned.length}, ` +
+    `sentences=${sentences.length}, concepts=${concepts.length}, topic="${mainTopic}"`
+  );
 
   return {
     main_topic: mainTopic,
@@ -580,6 +624,65 @@ function buildFallbackAnalysis(
     }],
     estimated_complexity: Math.min(10, Math.max(1, Math.ceil(concepts.length / 2))),
   };
+}
+
+// ---------- Edge-side Noise Cleaning ----------
+
+/** Noise patterns to remove from text before fallback extraction */
+const EDGE_NOISE_LINE_PATTERNS: RegExp[] = [
+  /^(?:COM\s+)?R2C\s*:\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|Rang\s+[A-Z])\b/i,
+  /^\s*Rang\s+[A-Z]\s*$/i,
+  /^COM\s+R2C\b/i,
+  /^en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS)\s*$/i,
+  /^en\s+(?:NOIR|BLEU|ROUGE)\s*[-–—]\s*en\s+(?:NOIR|BLEU|ROUGE)/i,
+  /^(?:Dernière\s+)?(?:mise\s+à\s+jour|MAJ|révision)\s*[:—–\-]\s*\d/i,
+  /^Version\s+\d+/i,
+  /^(?:UE|DFGSM|DFASM|ECN|EDN|iECN)\s*\d/i,
+  /^(?:Item|Objectif|N°)\s*\d+\s*(?:[-–—:]|$)/i,
+  /^Collège\s+(?:national|des)\s/i,
+  /^Référentiel\s/i,
+  /^Page\s+\d+/i,
+  /^\d+\s*\/\s*\d+\s*$/,
+  /^©\s/,
+  /^Tous\s+droits\s+réservés/i,
+  /^[-–—]+\s*$/,
+  /^\s*[•\-–]\s*$/,
+  /^(?:Université|Faculté|Institut|École)\s.{0,60}$/i,
+  /^(?:Enseignant|Professeur|Dr|Pr)\s*[:—–.]\s*.{0,80}$/i,
+  /^(?:Année\s+(?:universitaire|scolaire))\s*[:—–\-]\s*\d/i,
+  /^Sujet\s+principal\s*:\s*COM\s/i,
+  /^(?:www\.|http|mailto)/i,
+];
+
+function cleanTextForFallback(text: string): string {
+  const lines = text.split("\n");
+  const cleaned: string[] = [];
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (trimmed.length === 0) { cleaned.push(""); continue; }
+    if (trimmed.length <= 2 && /^[^a-zA-ZÀ-ÿ0-9]/.test(trimmed)) continue;
+    if (EDGE_NOISE_LINE_PATTERNS.some(p => p.test(trimmed))) continue;
+    // Clean inline Rang labels
+    let cl = trimmed.replace(/\s*\(?\s*Rang\s+[A-Z]\s*\)?\s*/gi, " ");
+    cl = cl.replace(/\s*\(?\s*en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS)\s*\)?\s*/gi, " ");
+    cl = cl.replace(/\s{2,}/g, " ").trim();
+    if (cl.length < 3) continue;
+    cleaned.push(cl);
+  }
+  return cleaned.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+}
+
+function cleanTopicForFallback(rawTopic: string): string {
+  let topic = rawTopic.trim();
+  topic = topic.replace(/R2C\s*:?\s*(?:Rang\s+[A-Z]\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS)?\s*[-–—]?\s*)+/gi, "").trim();
+  topic = topic.replace(/\bCOM\s+R2C\s*:\s*/gi, "");
+  topic = topic.replace(/\s*[-–—]\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS)\b.*/gi, "");
+  topic = topic.replace(/\s*\(?\s*Rang\s+[A-Z]\s*(?:en\s+\w+)?\s*\)?\s*/gi, "");
+  topic = topic.replace(/^(?:Item|UE|N°)\s*\d+\s*[-–—:.\s]\s*/i, "");
+  topic = topic.replace(/^Sujet\s+principal\s*:\s*/i, "");
+  topic = topic.replace(/\s{2,}/g, " ").trim();
+  topic = topic.replace(/\s*[-–—:;,]\s*$/, "").trim();
+  return topic.length >= 3 ? topic : "";
 }
 
 // ---------- Helpers ----------
