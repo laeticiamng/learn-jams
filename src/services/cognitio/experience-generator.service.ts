@@ -22,7 +22,7 @@ import {
   validateRoomSequence,
 } from "@/domain/cognitio/validators";
 import { updateIngestionStatus } from "./ingestion.service";
-import { selectMissionFamily, selectUniverseProfile, type AudienceLevel, type MissionFamily } from "@/domain/cognitio/escapeGame.types";
+import { selectMissionFamily, selectMissionSubTheme, selectUniverseProfile, type AudienceLevel, type MissionFamily, type MissionSubTheme } from "@/domain/cognitio/escapeGame.types";
 
 const BRICK_TYPES: BrickType[] = ["TRI", "SEQUENCE", "ELIMINATION", "OBSERVATION", "DECISION"];
 
@@ -75,15 +75,16 @@ export function generateMissionLocally(
   const audienceLevel = resolveAudienceLevel(input.estimated_audience_level);
   const topicType = input.concepts[0]?.type ?? input.main_topic ?? "";
   const missionFamily = selectMissionFamily(topicType, audienceLevel);
+  const subTheme = selectMissionSubTheme(missionFamily, topicType);
   const universeProfile = selectUniverseProfile(audienceLevel);
 
-  const rooms = buildRooms(input, roomCount, missionFamily);
-  const boss = includesBoss ? buildBoss(input, missionFamily) : undefined;
+  const rooms = buildRooms(input, roomCount, subTheme);
+  const boss = includesBoss ? buildBoss(input, subTheme) : undefined;
 
   const topicLabel = input.main_topic || input.concepts[0]?.type || "Apprentissage";
   const mission_json: MissionContent = {
     title: `Mission: ${topicLabel}`,
-    narrative_intro: buildThemedNarrativeIntro(topicLabel, missionFamily, qualityBand),
+    narrative_intro: buildThemedNarrativeIntro(topicLabel, subTheme, qualityBand),
     rooms,
     boss,
     learning_contract: input.learning_contract,
@@ -211,8 +212,8 @@ const MISSION_FAMILY_NARRATIVES: Record<MissionFamily, {
   },
 };
 
-function buildThemedNarrativeIntro(topic: string, family: MissionFamily, qualityBand: QualityBand): string {
-  const base = MISSION_FAMILY_NARRATIVES[family].intro(topic);
+function buildThemedNarrativeIntro(topic: string, subTheme: MissionSubTheme, qualityBand: QualityBand): string {
+  const base = subTheme.intro(topic);
 
   if (qualityBand === "medium") {
     return base + " Note : la qualité du contenu source est moyenne — certaines salles ont été simplifiées.";
@@ -223,7 +224,7 @@ function buildThemedNarrativeIntro(topic: string, family: MissionFamily, quality
   return base;
 }
 
-function buildRooms(input: GenerateExperienceInput, roomCount: number, family: MissionFamily): MissionRoom[] {
+function buildRooms(input: GenerateExperienceInput, roomCount: number, subTheme: MissionSubTheme): MissionRoom[] {
   const { concepts, confusion_pairs } = input;
   const rooms: MissionRoom[] = [];
 
@@ -242,7 +243,7 @@ function buildRooms(input: GenerateExperienceInput, roomCount: number, family: M
     rooms.push({
       room_index: i,
       title: `Salle ${i + 1} — ${getBrickLabel(brick)}`,
-      narrative_context: getThemedRoomNarrative(brick, family),
+      narrative_context: subTheme.roomNarratives[brick],
       brick_type: brick,
       items: buildItems(brick, roomConcepts, confusion_pairs),
       hints: buildProgressiveHints(roomConcepts),
@@ -290,6 +291,7 @@ function getBrickLabel(brick: BrickType): string {
   }
 }
 
+// getThemedRoomNarrative kept for backward compat with flat family narratives
 function getThemedRoomNarrative(brick: BrickType, family: MissionFamily): string {
   return MISSION_FAMILY_NARRATIVES[family].roomNarratives[brick];
 }
@@ -361,7 +363,7 @@ function buildOptions(
   return options;
 }
 
-function buildBoss(input: GenerateExperienceInput, family: MissionFamily): MissionBossRoom {
+function buildBoss(input: GenerateExperienceInput, subTheme: MissionSubTheme): MissionBossRoom {
   const criticalConcepts = input.concepts.filter(c => c.criticality <= 2);
   const bossItems = criticalConcepts.slice(0, 6).map((concept, i) => {
     const bricks: BrickType[] = ["TRI", "DECISION", "ELIMINATION"];
@@ -381,7 +383,7 @@ function buildBoss(input: GenerateExperienceInput, family: MissionFamily): Missi
 
   return {
     title: "Boss Final — Cas complexe",
-    narrative_context: MISSION_FAMILY_NARRATIVES[family].bossIntro,
+    narrative_context: subTheme.bossIntro,
     brick_types: ["TRI", "DECISION", "ELIMINATION"],
     items: bossItems,
     hints: ["Revenez aux fondamentaux", "Cherchez les distinctions clés"],
