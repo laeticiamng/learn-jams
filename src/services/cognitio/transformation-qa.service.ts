@@ -507,8 +507,7 @@ function runSemanticQualityChecks(
   });
 
   // CHECK: format_fidelity — M4 output matches actual generation
-  const formatMatch = input.m4_output.chosen_format === input.format
-    || (input.m4_output.chosen_format === "mission_interactive" && input.format === "fiche_dynamique"); // temp fallback
+  const formatMatch = input.m4_output.chosen_format === input.format;
   checklist.push({
     key: "FORMAT_FIDELITY",
     label: "Fidélité du format",

@@ -29,6 +29,7 @@ import { FormatDecisionCard } from "@/components/cognitio/FormatDecisionCard";
 import { PedagogicalContractCard } from "@/components/cognitio/PedagogicalContractCard";
 import { DynamicSheetLayout } from "@/components/cognitio/DynamicSheetLayout";
 import { StoryboardLayout } from "@/components/cognitio/StoryboardLayout";
+import { MissionPreviewLayout } from "@/components/cognitio/MissionPreviewLayout";
 import { QAChecklistPanel } from "@/components/cognitio/recall/QAChecklistPanel";
 import { PublishStatusBanner } from "@/components/cognitio/recall/PublishStatusBanner";
 import { CreateSourceStep, type SourceData } from "@/components/cognitio/create/CreateSourceStep";
@@ -111,14 +112,23 @@ export default function Create() {
     );
   }, [sourceData, selectedFormat, objective, educationStage, explanationStyle, pipeline]);
 
-  const { phase, ingestion, analysis, memory, format, generation, storyGeneration, qa } = pipeline;
+  const { phase, ingestion, analysis, memory, format, generation, storyGeneration, missionResult, qa } = pipeline;
+
+  // Resolve generating phase label based on actual format being generated
+  const getGeneratingPhaseKey = () => {
+    const chosenFormat = format.result?.chosen_format;
+    if (chosenFormat === "fiche_dynamique") return "create_page.phase_generating_fiche";
+    if (chosenFormat === "histoire_animee") return "create_page.phase_generating_story";
+    if (chosenFormat === "mission_interactive") return "create_page.phase_generating_mission";
+    return "create_page.phase_generating";
+  };
 
   const PHASE_KEYS: Record<string, string> = {
     ingesting: "create_page.phase_ingesting",
     analyzing: "create_page.phase_analyzing",
     architecting: "create_page.phase_architecting",
     formatting: "create_page.phase_formatting",
-    generating: "create_page.phase_generating",
+    generating: getGeneratingPhaseKey(),
   };
   const phaseTitle = t(PHASE_KEYS[phase] ?? "create_page.phase_default");
 
@@ -333,6 +343,13 @@ export default function Create() {
                 </div>
               )}
 
+              {/* Generated Mission */}
+              {missionResult && (
+                <div className="border rounded-lg p-4">
+                  <MissionPreviewLayout output={missionResult} />
+                </div>
+              )}
+
               {/* QA Status */}
               {qa.publishDecision && (
                 <PublishStatusBanner decision={qa.publishDecision} />
@@ -470,7 +487,13 @@ export default function Create() {
                   </Button>
                 )}
 
-                {!pipeline.hasBlocking && format.result && !generation.result && !storyGeneration.result && (
+                {missionResult && (
+                  <Button onClick={() => navigate(`/mission/${missionResult.mission_id}`)}>
+                    <Eye className="h-4 w-4 mr-2" /> {t("create_page.view_mission", { defaultValue: "Voir la mission" })}
+                  </Button>
+                )}
+
+                {!pipeline.hasBlocking && format.result && !generation.result && !storyGeneration.result && !missionResult && (
                   <Button disabled className="opacity-50 cursor-not-allowed">
                     <ArrowRight className="h-4 w-4 mr-2" /> {t("create_page.format_unsupported")}
                   </Button>
