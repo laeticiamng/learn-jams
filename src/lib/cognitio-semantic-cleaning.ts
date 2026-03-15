@@ -839,20 +839,27 @@ export function computeConceptSemanticValidityScore(label: string, definition: s
 
 /**
  * Full scoring for a concept candidate. Returns all scores plus accept/reject decision.
+ * When `lenient` is true (emergency/heuristic mode), thresholds are relaxed to prevent
+ * total concept destruction on noisy documents.
  */
-export function scoreConceptCandidate(label: string, definition: string): ConceptCandidateScores {
+export function scoreConceptCandidate(label: string, definition: string, lenient: boolean = false): ConceptCandidateScores {
   const editorial_artifact_score = computeEditorialArtifactScore(label);
   const header_noise_score = computeHeaderNoiseScore(label);
   const concept_semantic_validity_score = computeConceptSemanticValidityScore(label, definition);
 
   let reject_reason: string | null = null;
 
+  // In lenient mode (emergency/heuristic), only reject the most obvious artifacts
+  const headerThreshold = lenient ? 0.8 : 0.5;
+  const editorialThreshold = lenient ? 0.85 : 0.6;
+  const validityThreshold = lenient ? 0.05 : 0.2;
+
   // Rejection rules
-  if (header_noise_score >= 0.5) {
+  if (header_noise_score >= headerThreshold) {
     reject_reason = `Header noise too high (${header_noise_score.toFixed(2)}): label resembles a document header`;
-  } else if (editorial_artifact_score >= 0.6) {
+  } else if (editorial_artifact_score >= editorialThreshold) {
     reject_reason = `Editorial artifact score too high (${editorial_artifact_score.toFixed(2)}): label is mostly editorial tokens`;
-  } else if (concept_semantic_validity_score < 0.2) {
+  } else if (concept_semantic_validity_score < validityThreshold) {
     reject_reason = `Semantic validity too low (${concept_semantic_validity_score.toFixed(2)}): not a pedagogical concept`;
   }
 
