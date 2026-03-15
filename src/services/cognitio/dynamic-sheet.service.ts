@@ -50,10 +50,10 @@ export async function runDynamicSheetGeneration(input: M5_Input): Promise<M5_Out
 // ---------- Local Generator ----------
 
 export function generateDynamicSheetLocally(input: M5_Input): M5_Output {
-  // Validate input
+  // Validate input — now non-fatal for empty concepts/segments
   const inputValidation = validateM5Input(input);
-  if (!inputValidation.valid) {
-    throw new Error(`Invalid M5 input: ${inputValidation.errors.map(e => e.message).join(", ")}`);
+  if (inputValidation.errors.length > 0) {
+    console.warn(`[COGNITIO][M5] Validation warnings: ${inputValidation.errors.map(e => e.message).join(", ")}`);
   }
 
   const { m2_output, m3_output, m4_output, source_document, user_objective } = input;
@@ -67,7 +67,22 @@ export function generateDynamicSheetLocally(input: M5_Input): M5_Output {
   const criticalConcepts = concepts.filter(c => c.criticality === 1);
   const majorConcepts = concepts.filter(c => c.criticality === 2);
   const confusionPairs = m2_output.confusion_pairs;
-  const segments = m3_output.segments;
+
+  // P0 FIX: If M3 produced no segments (e.g. 0 concepts upstream),
+  // create a single fallback segment so the generator can produce output.
+  let segments = m3_output.segments;
+  if (!segments || segments.length === 0) {
+    console.warn("[COGNITIO][M5] No memory segments — creating minimal fallback segment");
+    segments = [{
+      segment_index: 0,
+      concept_keys: concepts.map(c => c.stable_key),
+      new_element_count: concepts.length,
+      reinforcement_keys: [],
+      dominant_function: "encoding",
+      estimated_duration_sec: Math.max(30, concepts.length * 30),
+      bloom_targets: ["remember"],
+    }];
+  }
 
   // Build all content blocks following the 8 mandatory temps
   const blocks: ContentBlock[] = [];

@@ -333,6 +333,42 @@ export interface UpdateMemoryOutput {
   } | null;
 }
 
+// ---------- Pipeline Debug Counters ----------
+
+/**
+ * P0 debug counters — emitted at every pipeline stage so 0-concept
+ * scenarios always have an explicit root-cause trace.
+ */
+export interface PipelineDebugCounters {
+  // M1 — Ingestion
+  raw_text_length: number;
+  cleaned_text_length: number;
+  detected_sections_count: number;
+
+  // M2 — Analysis
+  extracted_concepts_raw_count: number;
+  extracted_concepts_after_filter_count: number;
+  rejected_concepts_count: number;
+  reject_reasons: { reason: string; count: number }[];
+  chapters_detected_count: number;
+  sentences_extracted_count: number;
+
+  // M3 — Memory Architecture
+  concepts_persisted_count: number;
+  concepts_reloaded_count: number;
+  memory_segments_generated_count: number;
+
+  // M4 — Format Decision
+  final_format_decision: string;
+  format_override_applied: boolean;
+  format_override_reason?: string;
+
+  // M5 — Generation
+  generator_called: string;
+  generation_success: boolean;
+  generation_error?: string;
+}
+
 // ---------- M9: Ops Metrics ----------
 
 export interface OpsMetricInput {

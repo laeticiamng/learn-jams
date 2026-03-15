@@ -16,7 +16,7 @@ import { useQAStatus } from "@/hooks/useQAStatus";
 import { useProductTracking } from "@/hooks/useProductTracking";
 import { generateRecallSuiteLocally } from "@/services/cognitio/recall-generator.service";
 import { generateMissionLocally, saveMission } from "@/services/cognitio/experience-generator.service";
-import type { IngestInput, GenerateExperienceOutput } from "@/domain/cognitio/contracts";
+import type { IngestInput, GenerateExperienceOutput, PipelineDebugCounters } from "@/domain/cognitio/contracts";
 import type { LearningObjective, ChosenFormat } from "@/domain/cognitio/types";
 import type { LearnerAudienceProfile } from "@/domain/cognitio/learner-profile.types";
 import type { M7_Input } from "@/domain/cognitio/qa.contracts";
@@ -67,6 +67,7 @@ export function useCreatePipeline() {
   const [pipelineError, setPipelineError] = useState<PipelineError | null>(null);
   const [userSelectedFormat, setUserSelectedFormat] = useState<CreateFormat | undefined>();
   const [missionResult, setMissionResult] = useState<GenerateExperienceOutput | null>(null);
+  const [debugCounters, setDebugCounters] = useState<PipelineDebugCounters | null>(null);
 
   // Track whether a pipeline run is active to prevent double-execution
   const runningRef = useRef(false);
@@ -93,6 +94,26 @@ export function useCreatePipeline() {
     setLearnerProfile(currentProfile);
 
     try {
+      // P0: Initialize debug counters
+      const counters: PipelineDebugCounters = {
+        raw_text_length: 0,
+        cleaned_text_length: 0,
+        detected_sections_count: 0,
+        extracted_concepts_raw_count: 0,
+        extracted_concepts_after_filter_count: 0,
+        rejected_concepts_count: 0,
+        reject_reasons: [],
+        chapters_detected_count: 0,
+        sentences_extracted_count: 0,
+        concepts_persisted_count: 0,
+        concepts_reloaded_count: 0,
+        memory_segments_generated_count: 0,
+        final_format_decision: "",
+        format_override_applied: false,
+        generator_called: "",
+        generation_success: false,
+      };
+
       // === M1: Ingestion ===
       setPhase("ingesting");
       track({ event_name: "upload_started" });
@@ -115,8 +136,20 @@ export function useCreatePipeline() {
         return;
       }
 
+      // P0: Populate M1 counters
+      counters.raw_text_length = input.pasted_text?.length ?? 0;
+      counters.cleaned_text_length = m1Result.clean_text.length;
+      counters.detected_sections_count = m1Result.segments.length;
+      console.info(
+        `[COGNITIO][P0] M1 done: raw_text=${counters.raw_text_length}, ` +
+        `cleaned_text=${counters.cleaned_text_length}, ` +
+        `sections=${counters.detected_sections_count}, ` +
+        `words=${m1Result.word_count}, confidence=${m1Result.confidence_level.toFixed(2)}`
+      );
+
       const hasBlocking = m1Result.issues.some((i) => i.severity === "blocking");
       if (hasBlocking) {
+        setDebugCounters(counters);
         setPhase("result");
         return;
       }
@@ -126,8 +159,26 @@ export function useCreatePipeline() {
       const m2Result = await analysis.analyze(m1Result, currentObjective, currentProfile);
       if (!m2Result) {
         setPipelineError({ source: "analysis", message: analysis.error ?? "Analysis failed", phase: "analyzing" });
+        setDebugCounters(counters);
         setPhase("result");
         return;
+      }
+
+      // P0: Populate M2 counters
+      counters.extracted_concepts_after_filter_count = m2Result.key_concepts.length;
+      counters.extracted_concepts_raw_count = m2Result.total_concepts; // after dedup, but best we have here
+      console.info(
+        `[COGNITIO][P0] M2 done: concepts=${m2Result.key_concepts.length}, ` +
+        `critical=${m2Result.critical_count}, density=${m2Result.density}, ` +
+        `reasoning=${m2Result.reasoning_type}, topic="${m2Result.main_topic}"`
+      );
+
+      // P0: Warn explicitly if 0 concepts from non-empty doc
+      if (m2Result.key_concepts.length === 0 && m1Result.clean_text.length > 50) {
+        console.error(
+          `[COGNITIO][P0] ALERT: 0 concepts extracted from ${m1Result.word_count}-word document! ` +
+          `This should not happen after emergency fallback. Check M2 extraction.`
+        );
       }
 
       // === M3: Memory Architecture ===
@@ -135,9 +186,20 @@ export function useCreatePipeline() {
       const m3Result = await memory.build(m2Result, m1Result.document_id, currentObjective, currentProfile);
       if (!m3Result) {
         setPipelineError({ source: "memory", message: memory.error ?? "Memory architecture failed", phase: "architecting" });
+        setDebugCounters(counters);
         setPhase("result");
         return;
       }
+
+      // P0: Populate M3 counters
+      counters.concepts_persisted_count = m2Result.key_concepts.length;
+      counters.concepts_reloaded_count = m3Result.concept_order.length;
+      counters.memory_segments_generated_count = m3Result.segments.length;
+      console.info(
+        `[COGNITIO][P0] M3 done: memory_segments=${m3Result.segments.length}, ` +
+        `concept_order=${m3Result.concept_order.length}, ` +
+        `duration=${m3Result.total_duration_sec}s, needs_split=${m3Result.needs_splitting}`
+      );
 
       // === M4: Format Selection (with user intent priority) ===
       setPhase("formatting");
@@ -151,9 +213,20 @@ export function useCreatePipeline() {
       );
       if (!m4Result) {
         setPipelineError({ source: "format", message: format.error ?? "Format selection failed", phase: "formatting" });
+        setDebugCounters(counters);
         setPhase("result");
         return;
       }
+
+      // P0: Populate M4 counters
+      counters.final_format_decision = m4Result.chosen_format;
+      counters.format_override_applied = (m4Result.overrides_applied?.length ?? 0) > 0;
+      counters.format_override_reason = m4Result.override_reason;
+      console.info(
+        `[COGNITIO][P0] M4 done: format=${m4Result.chosen_format}, ` +
+        `overrides=${m4Result.overrides_applied?.length ?? 0}, ` +
+        `user_respected=${m4Result.decision_trace.user_intent_respected}`
+      );
 
       // === M5: Generation ===
       setPhase("generating");
@@ -162,6 +235,7 @@ export function useCreatePipeline() {
       let m5cResult: GenerateExperienceOutput | null = null;
 
       const generationFormat = m4Result.chosen_format;
+      counters.generator_called = generationFormat;
 
       if (generationFormat === "fiche_dynamique") {
         m5Result = await generation.generate(
@@ -177,7 +251,11 @@ export function useCreatePipeline() {
           currentProfile
         ) ?? null;
         if (!m5Result) {
-          setPipelineError({ source: "generation", message: generation.error ?? "Échec de la génération de la fiche", phase: "generating" });
+          counters.generation_success = false;
+          counters.generation_error = generation.error ?? "Échec de la génération de la fiche";
+          setPipelineError({ source: "generation", message: counters.generation_error, phase: "generating" });
+          setDebugCounters(counters);
+          console.error("[COGNITIO][P0] M5 FAILED. Full debug counters:", JSON.stringify(counters, null, 2));
           setPhase("result");
           return;
         }
@@ -270,6 +348,11 @@ export function useCreatePipeline() {
         }
       }
 
+      // P0: Final debug counters
+      counters.generation_success = true;
+      setDebugCounters(counters);
+      console.info("[COGNITIO][P0] Pipeline complete. Debug counters:", JSON.stringify(counters, null, 2));
+
       setPhase("result");
       track({ event_name: "transformation_generated" });
     } finally {
@@ -288,6 +371,7 @@ export function useCreatePipeline() {
     setPhase("import");
     setPipelineError(null);
     setMissionResult(null);
+    setDebugCounters(null);
     runningRef.current = false;
   }, [ingestion, analysis, memory, format, generation, storyGeneration, qa]);
 
@@ -334,6 +418,7 @@ export function useCreatePipeline() {
     hasBlocking,
     anyError,
     pipelineError,
+    debugCounters,
 
     // Actions
     runPipeline,
