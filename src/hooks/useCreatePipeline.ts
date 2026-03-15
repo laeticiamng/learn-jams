@@ -180,12 +180,15 @@ export function useCreatePipeline() {
       if (generationOutput) {
         try {
           const recallSuite = generateRecallSuiteLocally({
+            transformation_id: generationOutput.transformation_id,
             concepts: m2Result.key_concepts,
             confusion_pairs: m2Result.confusion_pairs,
             critical_concept_keys: m2Result.key_concepts
               .filter((c) => c.criticality <= 2)
               .map((c) => c.stable_key),
             learner_profile: currentProfile,
+            user_objective: currentObjective,
+            word_count: m1Result.word_count,
           });
 
           const qaInput: M7_Input = {
@@ -208,7 +211,7 @@ export function useCreatePipeline() {
       }
 
       setPhase("result");
-      track({ event_name: "pipeline_completed" });
+      track({ event_name: "transformation_generated" });
     } finally {
       runningRef.current = false;
     }

@@ -41,7 +41,8 @@ export function useMissionPlay(missionId: string, userId: string) {
   const loadMission = useCallback(async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      // Use any-typed query to bypass missing table types
+      const { data, error } = await (supabase as any)
         .from("generated_missions")
         .select("mission_json")
         .eq("id", missionId)
@@ -56,7 +57,7 @@ export function useMissionPlay(missionId: string, userId: string) {
       setMission(missionContent);
 
       // Create mission run
-      const { data: run, error: runError } = await supabase
+      const { data: run, error: runError } = await (supabase as any)
         .from("mission_runs")
         .insert({
           mission_id: missionId,
@@ -189,7 +190,7 @@ export function useMissionPlay(missionId: string, userId: string) {
     const score = computeCompositeScore(state.events);
     const debrief = computeDebrief(state.events, mission);
 
-    await supabase
+    await (supabase as any)
       .from("mission_runs")
       .update({
         completed_at: new Date().toISOString(),
@@ -231,8 +232,7 @@ function computeCompositeScore(events: RoomEvent[]): CompositeScore {
   const calibrationGap = computeCalibrationGap(events);
   const confidence_calibration = Math.max(0, 1 - calibrationGap);
   const completion_rate = 1;
-  // Compute actual bloom coverage from events
-  const bloomLevels = new Set(events.map((e) => e.item_id)); // Each item has a bloom level tracked
+  const bloomLevels = new Set(events.map((e) => e.item_id));
   const bloom_coverage = Math.min(1, bloomLevels.size / Math.max(1, events.length) + 0.3);
   const trap_detection = events.filter((e) => e.is_correct && !e.hint_used).length / Math.max(1, events.length);
 

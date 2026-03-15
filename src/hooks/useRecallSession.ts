@@ -88,7 +88,7 @@ export function useRecallSession() {
 
     const answer: RecallAnswer = {
       item_id: item.id,
-      user_answer: userAnswer,
+      answer: userAnswer,
       is_correct: isCorrect,
       confidence,
       concepts_tested: item.concepts_tested,
@@ -112,6 +112,7 @@ export function useRecallSession() {
 
     try {
       const grade = gradeRecallLocally({
+        recall_test_id: testId,
         answers: finalAnswers,
         concepts,
         critical_concept_keys: criticalKeys,
@@ -135,7 +136,7 @@ export function useRecallSession() {
         transformation_id: transformationId,
         grade_output: grade,
         concepts,
-        confusion_pairs: confusionPairs.map((p) => p.concept_a_key),
+        confusion_pairs: confusionPairs,
         traps,
         answers: finalAnswers,
       });

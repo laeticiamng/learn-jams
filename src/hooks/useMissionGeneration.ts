@@ -5,7 +5,7 @@
 import { useState, useCallback } from "react";
 import type { PipelineStep, LearningObjective } from "@/domain/cognitio/types";
 import type { IngestInput, AnalyzeOutput, GenerateExperienceOutput } from "@/domain/cognitio/contracts";
-import { uploadDocument, runIngestion, saveSegments, extractPastedText, updateIngestionStatus } from "@/services/cognitio/ingestion.service";
+import { uploadDocument, runIngestion, updateIngestionStatus, extractAndAnalyzeText } from "@/services/cognitio/ingestion.service";
 import { runAnalysis } from "@/services/cognitio/analysis.service";
 import { buildLocalMemoryArchitect } from "@/services/cognitio/memory-architect.service";
 import { selectFormatLocally } from "@/services/cognitio/format-selector.service";
@@ -72,28 +72,26 @@ export function useMissionGeneration() {
         } catch {
           // Fallback for pasted text if edge function unavailable
           if (input.pasted_text) {
-            const local = extractPastedText(input.pasted_text);
+            const local = extractAndAnalyzeText(input.pasted_text);
             ingestionResult = {
               document_id,
               clean_text: local.clean_text,
-              source_type: "pasted_text" as const,
-              confidence_level: 0.8,
-              detected_structure: {
-                has_headings: false,
-                has_lists: false,
-                has_tables: false,
-                estimated_word_count: local.word_count,
-              },
-              issues: local.warnings,
+              word_count: local.word_count,
+              language: local.language,
+              source_type: local.source_type,
+              confidence_level: local.confidence_level,
+              detected_structure: local.detected_structure,
+              issues: local.issues,
               segments: local.segments,
             };
-            await updateIngestionStatus(document_id, "parsed", 0.7, 0.8, local.warnings);
+            await updateIngestionStatus(document_id, "parsed", {
+              quality_score: local.confidence_level,
+            });
           } else {
             throw new Error("L'analyse du fichier a échoué. Essayez de coller le texte directement.");
           }
         }
 
-        await saveSegments(document_id, ingestionResult.segments);
         updateStep("ingestion", {
           status: "completed",
           message: `${ingestionResult.segments.length} segments détectés`,
@@ -107,11 +105,12 @@ export function useMissionGeneration() {
             document_id,
             segments: ingestionResult.segments,
             clean_text: ingestionResult.clean_text,
-            objective: input.objective,
+            source_type: ingestionResult.source_type,
+            confidence_level: ingestionResult.confidence_level,
           });
         } catch {
           // Local fallback analysis
-          analysisResult = buildLocalAnalysis(document_id, ingestionResult, input.objective);
+          analysisResult = buildLocalAnalysis(document_id, ingestionResult);
         }
         updateStep("analysis", {
           status: "completed",
@@ -122,10 +121,10 @@ export function useMissionGeneration() {
         updateStep("memory_architecture", { status: "running", message: "Construction du plan mémoire..." });
         const memoryResult = buildLocalMemoryArchitect({
           course_profile_id: analysisResult.course_profile_id,
-          concepts: analysisResult.concepts,
+          concepts: analysisResult.key_concepts,
           confusion_pairs: analysisResult.confusion_pairs,
           objective: input.objective,
-          knowledge_type: analysisResult.knowledge_type,
+          knowledge_type: "factual",
         });
         updateStep("memory_architecture", { status: "completed" });
 
@@ -135,7 +134,7 @@ export function useMissionGeneration() {
           course_profile_id: analysisResult.course_profile_id,
           total_concepts: analysisResult.total_concepts,
           critical_count: analysisResult.critical_count,
-          knowledge_type: analysisResult.knowledge_type,
+          knowledge_type: "factual",
           estimated_complexity: analysisResult.estimated_complexity,
           quality_score: ingestionResult.confidence_level,
           objective: input.objective,
@@ -153,9 +152,13 @@ export function useMissionGeneration() {
           user_id: user.id,
           chosen_format: formatResult.chosen_format,
           learning_contract: memoryResult.learning_contract,
-          concepts: analysisResult.concepts,
+          concepts: analysisResult.key_concepts,
           confusion_pairs: analysisResult.confusion_pairs,
-          visual_anchors: memoryResult.visual_anchors,
+          visual_anchors: memoryResult.visual_anchors.map((va) => ({
+            concept_key: va.concept_key,
+            anchor_type: va.anchor_type as "metaphor" | "comparison" | "mnemonic" | "image_desc",
+            content: va.content,
+          })),
           quality_score: ingestionResult.confidence_level,
           objective: input.objective,
         });
@@ -169,7 +172,7 @@ export function useMissionGeneration() {
         const qa = runLocalQA({
           mission_id: missionResult.mission_id,
           mission_json: missionResult.mission_json,
-          concepts: analysisResult.concepts,
+          concepts: analysisResult.key_concepts,
           quality_score: ingestionResult.confidence_level,
           source_text: ingestionResult.clean_text,
         });
@@ -205,7 +208,6 @@ export function useMissionGeneration() {
 function buildLocalAnalysis(
   documentId: string,
   ingestion: { clean_text: string; segments: { content: string; segment_index: number }[] },
-  objective: LearningObjective
 ): AnalyzeOutput {
   // Extract simple concepts from text segments
   const sentences = ingestion.clean_text.split(/[.!?]+/).filter((s) => s.trim().length > 20);
@@ -216,25 +218,34 @@ function buildLocalAnalysis(
       stable_key: `concept_${key}_${i}`,
       label: words.slice(0, 5).join(" "),
       definition: sentence.trim(),
+      type: "Général",
       criticality: (i < 3 ? 1 : i < 7 ? 2 : i < 12 ? 3 : 4) as 1 | 2 | 3 | 4,
+      criticality_score: i < 3 ? 0.9 : 0.5,
       bloom_target: (i < 5 ? "understand" : "remember") as "understand" | "remember",
-      category: "Général",
+      relations: [],
       prerequisites: [],
       source_confidence: 0.6,
       source_trace: [{ segment_index: 0, excerpt: sentence.trim().slice(0, 100) }],
+      uncertain: false,
     };
   });
 
   return {
     course_profile_id: "",
-    concepts,
+    main_topic: "",
+    learning_objectives: [],
+    key_concepts: concepts,
+    traps: [],
     confusion_pairs: [],
-    knowledge_type: "factual",
-    structure_type: "linear",
+    reasoning_type: "declaratif",
+    density: "medium",
+    recommended_template: "fiche_dynamique",
+    confidence: { concepts: 0.6, logic: 0.6, traps: 0.5, structure: 0.6, ambiguous_zones: [] },
+    prerequis: [],
+    structure_type: "minimal",
     source_issues: [],
     total_concepts: concepts.length,
     critical_count: concepts.filter((c) => c.criticality === 1).length,
     estimated_complexity: Math.min(10, Math.max(1, Math.ceil(concepts.length / 2))),
-    ambiguous_zones: [],
   };
 }
