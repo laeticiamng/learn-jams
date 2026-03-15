@@ -23,7 +23,7 @@ import {
 } from "@/domain/cognitio/validators";
 import type { UniverseSelectionResult } from "./missionUniverseSelector";
 import type { NormalizedConcept } from "./conceptNormalizer";
-import { detectDocumentNoise, computeNoiseScore, stripDocumentNoise } from "@/lib/cognitio-semantic-cleaning";
+import { detectDocumentNoise, computeNoiseScore, stripDocumentNoise, cleanMainTopic, isEditorialArtifact } from "@/lib/cognitio-semantic-cleaning";
 
 // ---------- Types ----------
 
@@ -288,8 +288,14 @@ export function buildMissionBlueprint(input: BlueprintInput): BlueprintOutput {
   // Build narrative intro
   const narrativeIntro = buildNarrativeIntro(main_topic, subTheme, qualityBand, universe);
 
+  // P0: Clean main topic to prevent editorial artifacts in mission title
+  const cleanedTopic = cleanMainTopic(main_topic);
+  const safeTopic = (cleanedTopic.length >= 3 && !isEditorialArtifact(cleanedTopic))
+    ? cleanedTopic
+    : "Apprentissage";
+
   const mission_json: MissionContent = {
-    title: `Mission: ${main_topic}`,
+    title: `Mission: ${safeTopic}`,
     narrative_intro: narrativeIntro,
     rooms,
     boss,
@@ -332,9 +338,11 @@ function buildThemedRooms(
 
     const items = buildRoomItems(brick, roomConcepts, concepts);
 
+    // P0 FIX: Use rooms.length for sequential indexing to prevent gaps
+    const roomNumber = rooms.length;
     rooms.push({
-      room_index: i,
-      title: `Salle ${i + 1} — ${getBrickLabel(brick)}`,
+      room_index: roomNumber,
+      title: `Salle ${roomNumber + 1} — ${getBrickLabel(brick)}`,
       narrative_context: subTheme.roomNarratives[brick],
       brick_type: brick,
       items,

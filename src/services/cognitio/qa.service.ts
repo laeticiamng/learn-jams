@@ -283,7 +283,63 @@ export function runLocalQA(input: QAInput): QAOutput {
     });
   }
 
-  // Check 18: P0 — Product guard: single uncertain concept check
+  // Check 18: P0 — Semantic validity: all concepts uncertain
+  const allUncertain = concepts.length > 0 && concepts.every(c => c.uncertain === true || (c.source_confidence ?? 1) < 0.4);
+  checklist.push({
+    check_id: "not_all_uncertain",
+    label: "Concepts non tous incertains",
+    passed: !allUncertain,
+    weight: 15,
+    details: allUncertain
+      ? `Tous les ${concepts.length} concepts sont incertains`
+      : `${concepts.filter(c => !c.uncertain && (c.source_confidence ?? 1) >= 0.4).length}/${concepts.length} concepts fiables`,
+  });
+  if (allUncertain) {
+    violations.push({
+      violation_type: "all_concepts_uncertain",
+      severity: "blocking",
+      message: `Tous les ${concepts.length} concept(s) sont marqués incertains — base sémantique invalide`,
+    });
+  }
+
+  // Check 19: P0 — Body content coverage: at least 1 concept from body
+  const bodyConceptsInMission = concepts.filter(c =>
+    c.source_trace?.some(t => t.segment_index > 0)
+  ).length;
+  const hasBodyConcepts = bodyConceptsInMission > 0 || concepts.length === 0;
+  checklist.push({
+    check_id: "body_content_coverage",
+    label: "Couverture contenu corps du document",
+    passed: hasBodyConcepts,
+    weight: 12,
+    details: `${bodyConceptsInMission} concept(s) du corps du document`,
+  });
+  if (!hasBodyConcepts && concepts.length > 0) {
+    violations.push({
+      violation_type: "no_body_concepts",
+      severity: "blocking",
+      message: "Aucun concept ne provient du corps du document — tous viennent du segment 0 (en-tête)",
+    });
+  }
+
+  // Check 20: P0 — Semantic base validity composite score
+  const semanticBaseScore = computeSemanticBaseScore(concepts);
+  checklist.push({
+    check_id: "semantic_base_validity",
+    label: "Validité base sémantique",
+    passed: semanticBaseScore >= 0.4,
+    weight: 15,
+    details: `Score : ${Math.round(semanticBaseScore * 100)}%`,
+  });
+  if (semanticBaseScore < 0.3) {
+    violations.push({
+      violation_type: "semantic_base_invalid",
+      severity: "blocking",
+      message: `Base sémantique invalide (score : ${Math.round(semanticBaseScore * 100)}%) — les concepts ne sont pas exploitables`,
+    });
+  }
+
+  // Check 21 (legacy): P0 — Product guard: single uncertain concept check
   const singleUncertainCheck = assessSingleUncertainConcept(concepts);
   if (!singleUncertainCheck.passed) {
     checklist.push({
@@ -566,6 +622,37 @@ function assessSingleUncertainConcept(concepts: { label: string; definition: str
   }
 
   return { passed: true, details: "Single concept is valid" };
+}
+
+/**
+ * P0: Compute a composite semantic base score.
+ * Factors: concept certainty, body coverage, artifact leak, concept validity.
+ */
+function computeSemanticBaseScore(concepts: { label: string; definition: string; uncertain?: boolean; source_confidence?: number; source_trace?: { segment_index: number }[] }[]): number {
+  if (concepts.length === 0) return 0;
+
+  // 1. Certainty score: ratio of certain concepts
+  const certainCount = concepts.filter(c => !c.uncertain && (c.source_confidence ?? 1) >= 0.4).length;
+  const certaintyScore = certainCount / concepts.length;
+
+  // 2. Body coverage score: ratio of concepts from body (segment > 0)
+  const bodyCount = concepts.filter(c =>
+    c.source_trace?.some(t => t.segment_index > 0)
+  ).length;
+  const bodyScore = concepts.length > 0 ? bodyCount / concepts.length : 0;
+
+  // 3. Artifact leak score: ratio of non-artifact concepts
+  let cleanCount = 0;
+  for (const c of concepts) {
+    const scores = scoreConceptCandidate(c.label, c.definition);
+    if (scores.accepted && scores.editorial_artifact_score < 0.4 && scores.header_noise_score < 0.4) {
+      cleanCount++;
+    }
+  }
+  const artifactCleanScore = cleanCount / concepts.length;
+
+  // Weighted composite
+  return certaintyScore * 0.3 + bodyScore * 0.3 + artifactCleanScore * 0.4;
 }
 
 function assessThemeCoherence(mission: MissionContent): {

@@ -130,6 +130,174 @@ export function validateRoomSequence(brickTypes: string[]) {
   return { valid: violations.length === 0, violations };
 }
 
+// ---------- Semantic Success Gate ----------
+
+/**
+ * P0: Semantic validation signals computed from M2 output.
+ * These signals determine whether generation should proceed.
+ */
+export interface SemanticGateSignals {
+  valid_concepts_count: number;
+  uncertain_concepts_count: number;
+  body_concepts_count: number;
+  segment_0_concepts_count: number;
+  editorial_artifact_ratio: number;
+  main_topic_is_editorial_artifact: boolean;
+  semantic_generation_allowed: boolean;
+  gate_block_reasons: string[];
+}
+
+/**
+ * P0: Semantic success gate result.
+ * If `passed` is false, no generation should proceed.
+ */
+export interface SemanticGateResult {
+  passed: boolean;
+  status: "semantic_success" | "semantic_failure";
+  signals: SemanticGateSignals;
+  display_message: string;
+}
+
+/**
+ * P0: Mission-specific gate result.
+ * Stricter than the general semantic gate.
+ */
+export interface MissionGateResult {
+  passed: boolean;
+  block_reasons: string[];
+  display_message: string;
+}
+
+/**
+ * P0: Run the semantic success gate on M2 analysis output.
+ * Blocks generation if the conceptual base is invalid.
+ */
+export function runSemanticSuccessGate(params: {
+  concepts: {
+    label: string;
+    definition: string;
+    uncertain: boolean;
+    source_confidence: number;
+    source_trace: { segment_index: number; excerpt: string }[];
+  }[];
+  main_topic: string;
+  scoreConceptCandidate: (label: string, definition: string) => {
+    accepted: boolean;
+    editorial_artifact_score: number;
+    header_noise_score: number;
+  };
+  isEditorialArtifact: (text: string) => boolean;
+  cleanMainTopic: (text: string) => string;
+}): SemanticGateResult {
+  const { concepts, main_topic, scoreConceptCandidate, isEditorialArtifact, cleanMainTopic } = params;
+  const blockReasons: string[] = [];
+
+  // Compute signals
+  let validConceptsCount = 0;
+  let uncertainConceptsCount = 0;
+  let bodyConceptsCount = 0;
+  let segment0ConceptsCount = 0;
+  let editorialArtifactCount = 0;
+
+  for (const c of concepts) {
+    const scores = scoreConceptCandidate(c.label, c.definition);
+    const isUncertain = c.uncertain === true || c.source_confidence < 0.4;
+    const isArtifact = !scores.accepted || scores.editorial_artifact_score >= 0.4 || scores.header_noise_score >= 0.4;
+
+    if (isUncertain) uncertainConceptsCount++;
+    if (isArtifact) editorialArtifactCount++;
+    if (!isArtifact && !isUncertain) validConceptsCount++;
+
+    const fromSeg0 = c.source_trace?.every(t => t.segment_index === 0) ?? false;
+    const fromBody = c.source_trace?.some(t => t.segment_index > 0) ?? false;
+
+    if (fromSeg0 && !fromBody) segment0ConceptsCount++;
+    if (fromBody) bodyConceptsCount++;
+  }
+
+  const editorialArtifactRatio = concepts.length > 0 ? editorialArtifactCount / concepts.length : 1;
+
+  // Check main topic
+  const cleanedTopic = cleanMainTopic(main_topic);
+  const mainTopicIsEditorial = isEditorialArtifact(main_topic) ||
+    cleanedTopic.length < 3 ||
+    /^R2C\b|^Rang\s+[A-Z]|^COM\s+R2C|^CODEX\b|^S[\s-]*ECN\b|^ITEM\s+\d|^Révision\s+\d/i.test(cleanedTopic);
+
+  // Gate conditions
+  if (validConceptsCount < 2) {
+    blockReasons.push(`Seulement ${validConceptsCount} concept(s) valide(s) (minimum : 2)`);
+  }
+  if (bodyConceptsCount < 1 && concepts.length > 0) {
+    blockReasons.push("Aucun concept provenant du corps du document");
+  }
+  if (concepts.length > 0 && uncertainConceptsCount === concepts.length) {
+    blockReasons.push("Tous les concepts sont marqués incertains");
+  }
+  if (mainTopicIsEditorial) {
+    blockReasons.push(`Le sujet principal est un artefact éditorial : "${main_topic}"`);
+  }
+  if (editorialArtifactRatio >= 0.8) {
+    blockReasons.push(`${Math.round(editorialArtifactRatio * 100)}% des concepts sont des artefacts éditoriaux`);
+  }
+
+  const signals: SemanticGateSignals = {
+    valid_concepts_count: validConceptsCount,
+    uncertain_concepts_count: uncertainConceptsCount,
+    body_concepts_count: bodyConceptsCount,
+    segment_0_concepts_count: segment0ConceptsCount,
+    editorial_artifact_ratio: Math.round(editorialArtifactRatio * 100) / 100,
+    main_topic_is_editorial_artifact: mainTopicIsEditorial,
+    semantic_generation_allowed: blockReasons.length === 0,
+    gate_block_reasons: blockReasons,
+  };
+
+  const passed = blockReasons.length === 0;
+
+  return {
+    passed,
+    status: passed ? "semantic_success" : "semantic_failure",
+    signals,
+    display_message: passed
+      ? "Base sémantique validée"
+      : "Le document a été importé, mais l'analyse a détecté uniquement des éléments éditoriaux non exploitables. " +
+        "Aucune mission fiable ne peut être générée à partir de ce document dans son état actuel.",
+  };
+}
+
+/**
+ * P0: Mission-specific gate — stricter than the general semantic gate.
+ */
+export function runMissionGate(signals: SemanticGateSignals, mainTopic: string): MissionGateResult {
+  const blockReasons: string[] = [];
+
+  if (signals.valid_concepts_count < 2) {
+    blockReasons.push(`Minimum 2 concepts valides requis pour une mission (trouvé : ${signals.valid_concepts_count})`);
+  }
+  if (signals.body_concepts_count < 1) {
+    blockReasons.push("Au moins 1 concept du corps du document est requis pour une mission");
+  }
+  if (signals.uncertain_concepts_count > 0 && signals.valid_concepts_count === 0) {
+    blockReasons.push("Impossible de générer une mission uniquement avec des concepts incertains");
+  }
+  if (signals.main_topic_is_editorial_artifact) {
+    blockReasons.push("Le sujet principal est un artefact éditorial — la mission ne peut pas être thématisée");
+  }
+  if (signals.editorial_artifact_ratio >= 0.7) {
+    blockReasons.push("Trop de concepts sont des artefacts éditoriaux pour construire une mission fiable");
+  }
+
+  const passed = blockReasons.length === 0;
+
+  return {
+    passed,
+    block_reasons: blockReasons,
+    display_message: passed
+      ? "Mission gate validée"
+      : "Le document a été importé, mais l'analyse n'a pas identifié suffisamment de concepts pédagogiques fiables " +
+        "pour générer une mission interactive. " + blockReasons.join(". ") + ".",
+  };
+}
+
 // ---------- Confidence Calibration ----------
 
 export function computeCalibrationGap(

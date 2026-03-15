@@ -4,12 +4,13 @@
 // ============================================================
 
 import { useNavigate } from "react-router-dom";
-import { Gamepad2, DoorOpen, Crown, AlertTriangle, Shield, Play } from "lucide-react";
+import { Gamepad2, DoorOpen, Crown, AlertTriangle, Shield, Play, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { GenerateExperienceOutput } from "@/domain/cognitio/contracts";
 import type { FallbackMode } from "@/domain/cognitio/types";
 import { getBrickLabel } from "@/lib/cognitio-ui";
+import { isEditorialArtifact } from "@/lib/cognitio-semantic-cleaning";
 
 interface MissionPreviewLayoutProps {
   output: GenerateExperienceOutput;
@@ -27,7 +28,10 @@ export function MissionPreviewLayout({ output }: MissionPreviewLayoutProps) {
   const navigate = useNavigate();
   const { mission_id, mission_json, fallback_mode, quality_band, room_count, includes_boss } = output;
   const isDegraded = fallback_mode !== "full" && fallback_mode !== "full_with_alerts";
-  const isPlayable = mission_json.rooms.length > 0;
+  // P0: Check if mission title contains editorial artifacts (safety check)
+  const titleText = mission_json.title.replace(/^Mission:\s*/i, "");
+  const hasTitleArtifact = isEditorialArtifact(titleText) || /^R2C\b|^Rang\s+[A-Z]|^COM\s+R2C|^CODEX\b|^S[\s-]*ECN\b/i.test(titleText);
+  const isPlayable = mission_json.rooms.length > 0 && !hasTitleArtifact;
 
   return (
     <div className="space-y-4">
@@ -108,6 +112,21 @@ export function MissionPreviewLayout({ output }: MissionPreviewLayoutProps) {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* P0: Editorial artifact in title — block play */}
+      {hasTitleArtifact && mission_json.rooms.length > 0 && (
+        <div className="p-4 rounded-lg border border-red-200 bg-red-50/50">
+          <div className="flex items-start gap-2">
+            <XCircle className="h-4 w-4 text-red-500 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-red-800">Mission non jouable</p>
+              <p className="text-xs text-red-600">
+                Le titre de la mission est basé sur un artefact éditorial ("{titleText}"). La mission ne peut pas être lancée dans cet état.
+              </p>
+            </div>
+          </div>
         </div>
       )}
 

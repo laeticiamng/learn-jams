@@ -363,6 +363,20 @@ export default function Create() {
                   {pipeline.debugCounters.generation_error && (
                     <p className="text-red-500">Erreur : {pipeline.debugCounters.generation_error}</p>
                   )}
+
+                  {/* P0: Semantic gate signals */}
+                  {pipeline.debugCounters.semantic_gate_status && (
+                    <>
+                      <p className="text-muted-foreground font-semibold mt-1">SEMANTIC GATE</p>
+                      <p>Gate : <span className={pipeline.debugCounters.semantic_gate_passed ? "text-green-600" : "text-red-600"}>{pipeline.debugCounters.semantic_gate_status}</span></p>
+                      <p>Concepts valides : {pipeline.debugCounters.valid_concepts_count ?? "—"} | Incertains : {pipeline.debugCounters.uncertain_concepts_count ?? "—"}</p>
+                      <p>Ratio artefacts : {pipeline.debugCounters.editorial_artifact_ratio != null ? `${Math.round(pipeline.debugCounters.editorial_artifact_ratio * 100)}%` : "—"}</p>
+                      <p>Sujet éditorial : {pipeline.debugCounters.main_topic_is_editorial_artifact ? "oui" : "non"}</p>
+                      {pipeline.debugCounters.semantic_gate_block_reasons && pipeline.debugCounters.semantic_gate_block_reasons.length > 0 && (
+                        <p className="text-red-500">Blocages : {pipeline.debugCounters.semantic_gate_block_reasons.join(" | ")}</p>
+                      )}
+                    </>
+                  )}
                   {pipeline.debugCounters.reject_reasons.length > 0 && (
                     <p>Raisons de rejet concepts : {pipeline.debugCounters.reject_reasons.map(r => `${r.reason}(${r.count})`).join(", ")}</p>
                   )}
@@ -556,7 +570,7 @@ export default function Create() {
                   </Button>
                 )}
 
-                {missionResult && (
+                {missionResult && !isEmptyGeneration(pipeline) && !pipeline.pipelineError && (
                   <Button onClick={() => navigate(`/mission/${missionResult.mission_id}/play`)}>
                     <Eye className="h-4 w-4 mr-2" /> {t("create_page.play_mission", { defaultValue: "Jouer la mission" })}
                   </Button>
@@ -588,8 +602,18 @@ export default function Create() {
 // ============================================================
 
 function isEmptyGeneration(pipeline: ReturnType<typeof useCreatePipeline>): boolean {
+  // P0: Check semantic gate failure
+  if (pipeline.debugCounters?.semantic_gate_status === "semantic_failure") {
+    return true;
+  }
+
   // Check via debug counters (most reliable)
   if (pipeline.debugCounters?.final_generation_status === "empty_generation") {
+    return true;
+  }
+
+  // P0: Check if generation status is error (semantic or mission gate blocked)
+  if (pipeline.debugCounters?.final_generation_status === "error") {
     return true;
   }
 

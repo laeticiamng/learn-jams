@@ -24,7 +24,8 @@ import type { M5_Output } from "@/domain/cognitio/generation.contracts";
 import type { M5B_Output } from "@/domain/cognitio/story.contracts";
 import type { CreateFormat } from "@/lib/create-format-config";
 import { validateGenerationNotEmpty } from "@/domain/cognitio/generation.validators";
-import { scoreConceptCandidate } from "@/lib/cognitio-semantic-cleaning";
+import { scoreConceptCandidate, isEditorialArtifact, cleanMainTopic } from "@/lib/cognitio-semantic-cleaning";
+import { runSemanticSuccessGate, runMissionGate } from "@/domain/cognitio/validators";
 
 export type PipelinePhase =
   | "import"
@@ -343,6 +344,94 @@ export function useCreatePipeline() {
             `(body_pass=${bodyPassWasAttempted}, fm=${frontMatterWasDetected}, seg0_q=${seg0WasQuarantined}). ` +
             `Allowing pipeline to continue — not blaming user.`
           );
+        }
+      }
+
+      // === P0 SEMANTIC SUCCESS GATE ===
+      // Block generation if the conceptual base is semantically invalid,
+      // even if concepts were extracted (they may all be artifacts/uncertain).
+      const semanticGate = runSemanticSuccessGate({
+        concepts: m2Result.key_concepts.map(c => ({
+          label: c.label,
+          definition: c.definition,
+          uncertain: c.uncertain,
+          source_confidence: c.source_confidence,
+          source_trace: c.source_trace.map(t => ({
+            segment_index: t.segment_index,
+            excerpt: t.excerpt,
+          })),
+        })),
+        main_topic: m2Result.main_topic,
+        scoreConceptCandidate,
+        isEditorialArtifact,
+        cleanMainTopic,
+      });
+
+      // Populate semantic gate signals in counters
+      counters.semantic_gate_passed = semanticGate.passed;
+      counters.semantic_gate_status = semanticGate.status;
+      counters.valid_concepts_count = semanticGate.signals.valid_concepts_count;
+      counters.uncertain_concepts_count = semanticGate.signals.uncertain_concepts_count;
+      counters.editorial_artifact_ratio = semanticGate.signals.editorial_artifact_ratio;
+      counters.main_topic_is_editorial_artifact = semanticGate.signals.main_topic_is_editorial_artifact;
+      counters.semantic_generation_allowed = semanticGate.signals.semantic_generation_allowed;
+      counters.semantic_gate_block_reasons = semanticGate.signals.gate_block_reasons;
+
+      counters.pipeline_trace.push({
+        step: "E2_secondary_pass",
+        detail: `semantic_gate=${semanticGate.status}, valid=${semanticGate.signals.valid_concepts_count}, ` +
+          `uncertain=${semanticGate.signals.uncertain_concepts_count}, ` +
+          `body=${semanticGate.signals.body_concepts_count}, seg0=${semanticGate.signals.segment_0_concepts_count}, ` +
+          `artifact_ratio=${semanticGate.signals.editorial_artifact_ratio}, ` +
+          `topic_editorial=${semanticGate.signals.main_topic_is_editorial_artifact}`,
+        warning: !semanticGate.passed
+          ? `SEMANTIC GATE BLOCKED: ${semanticGate.signals.gate_block_reasons.join("; ")}`
+          : undefined,
+      });
+
+      if (!semanticGate.passed) {
+        console.error(
+          `[COGNITIO][P0] SEMANTIC SUCCESS GATE BLOCKED. ` +
+          `Reasons: ${semanticGate.signals.gate_block_reasons.join("; ")}. ` +
+          `Signals: valid=${semanticGate.signals.valid_concepts_count}, ` +
+          `uncertain=${semanticGate.signals.uncertain_concepts_count}, ` +
+          `body=${semanticGate.signals.body_concepts_count}, ` +
+          `artifact_ratio=${semanticGate.signals.editorial_artifact_ratio}`
+        );
+        counters.final_generation_status = "error";
+        counters.success_gate_reason = `Semantic gate failed: ${semanticGate.signals.gate_block_reasons.join("; ")}`;
+        counters.generation_error = semanticGate.display_message;
+        setDebugCounters(counters);
+        setPipelineError({
+          source: "analysis",
+          message: semanticGate.display_message,
+          phase: "analyzing",
+        });
+        setPhase("result");
+        return;
+      }
+
+      // === P0 MISSION-SPECIFIC GATE (if mission format requested) ===
+      if (chosenFormatHint === "mission_interactive") {
+        const missionGate = runMissionGate(semanticGate.signals, m2Result.main_topic);
+        counters.mission_gate_passed = missionGate.passed;
+        counters.mission_gate_block_reasons = missionGate.block_reasons;
+
+        if (!missionGate.passed) {
+          console.error(
+            `[COGNITIO][P0] MISSION GATE BLOCKED. Reasons: ${missionGate.block_reasons.join("; ")}`
+          );
+          counters.final_generation_status = "error";
+          counters.success_gate_reason = `Mission gate failed: ${missionGate.block_reasons.join("; ")}`;
+          counters.generation_error = missionGate.display_message;
+          setDebugCounters(counters);
+          setPipelineError({
+            source: "analysis",
+            message: missionGate.display_message,
+            phase: "analyzing",
+          });
+          setPhase("result");
+          return;
         }
       }
 

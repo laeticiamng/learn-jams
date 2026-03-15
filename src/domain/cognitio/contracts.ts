@@ -303,7 +303,7 @@ export interface QAChecklistItem {
 }
 
 export interface QAViolation {
-  violation_type: "hallucination" | "overload" | "missing_recall" | "bloom_gap" | "source_mismatch";
+  violation_type: "hallucination" | "overload" | "missing_recall" | "bloom_gap" | "source_mismatch" | "dirty_concept_labels" | "poor_definitions" | "artifact_as_critical" | "dirty_topic" | "editorial_artifact_promoted" | "single_uncertain_concept" | "all_concepts_uncertain" | "no_body_concepts" | "semantic_base_invalid";
   severity: "warning" | "blocking";
   message: string;
   concept_key?: string;
@@ -416,6 +416,20 @@ export interface PipelineDebugCounters {
   // P0: Final topic after cleaning
   final_topic_clean?: string;
   final_concepts_count?: number;
+
+  // P0: Semantic gate signals
+  semantic_gate_passed?: boolean;
+  semantic_gate_status?: "semantic_success" | "semantic_failure";
+  valid_concepts_count?: number;
+  uncertain_concepts_count?: number;
+  editorial_artifact_ratio?: number;
+  main_topic_is_editorial_artifact?: boolean;
+  semantic_generation_allowed?: boolean;
+  semantic_gate_block_reasons?: string[];
+
+  // P0: Mission gate signals
+  mission_gate_passed?: boolean;
+  mission_gate_block_reasons?: string[];
 
   // Pipeline trace — root-cause diagnostic
   pipeline_trace: PipelineTraceEntry[];
