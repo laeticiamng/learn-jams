@@ -193,12 +193,12 @@ export async function persistReviewQueue(
     status: item.status,
   }));
 
-  const { error } = await (supabase as any).from("review_queue").insert(rows);
+  const { error } = await supabase.from("review_queue").insert(rows);
   if (error) throw new Error(`Review queue persist failed: ${error.message}`);
 }
 
 export async function getReviewQueue(userId: string): Promise<ReviewQueueItem[]> {
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from("review_queue")
     .select("*")
     .eq("user_id", userId)
@@ -210,7 +210,7 @@ export async function getReviewQueue(userId: string): Promise<ReviewQueueItem[]>
 }
 
 export async function markReviewCompleted(reviewId: string): Promise<void> {
-  await (supabase as any)
+  await supabase
     .from("review_queue")
     .update({ status: "completed", updated_at: new Date().toISOString() })
     .eq("id", reviewId);

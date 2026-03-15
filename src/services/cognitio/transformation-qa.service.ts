@@ -4,6 +4,7 @@
 // ============================================================
 
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import type { M7_Input, M7_Output } from "@/domain/cognitio/qa.contracts";
 import type {
   QAReport,
@@ -19,8 +20,8 @@ import type {
 } from "@/domain/cognitio/qa.types";
 import { validateM7Input } from "@/domain/cognitio/qa.validators";
 import type { AnalyzedConcept } from "@/domain/cognitio/contracts";
-import type { ContentBlock } from "@/domain/cognitio/generation.types";
-import type { StoryScene } from "@/domain/cognitio/story.types";
+import type { ContentBlock, ContentBlockType } from "@/domain/cognitio/generation.types";
+import type { StoryScene, StorySceneType } from "@/domain/cognitio/story.types";
 
 // ---------- Edge Function ----------
 
@@ -126,7 +127,7 @@ function runFicheDynamiqueChecks(
   const blockTypes = new Set(blocks.map(b => b.type));
 
   // STRUCTURE_REQUIRED_PRESENT
-  const requiredTypes = ["contract", "hook", "pedagogical", "consolidation", "final_test"];
+  const requiredTypes: ContentBlockType[] = ["contract", "hook", "pedagogical", "consolidation", "final_test"];
   const missingTypes = requiredTypes.filter(t => !blockTypes.has(t));
   checklist.push({
     key: "STRUCTURE_REQUIRED_PRESENT",
@@ -242,8 +243,8 @@ function runHistoireAnimeeChecks(
   const sceneTypes = new Set(scenes.map(s => s.type));
 
   // STRUCTURE_REQUIRED_PRESENT
-  const requiredTypes = ["contract_hook", "anchoring", "narrative_core", "active_pause", "clarity_peak", "consolidation"];
-  const missingTypes = requiredTypes.filter(t => !sceneTypes.has(t));
+  const requiredSceneTypes: StorySceneType[] = ["contract_hook", "anchoring", "narrative_core", "active_pause", "clarity_peak", "consolidation"];
+  const missingTypes = requiredSceneTypes.filter(t => !sceneTypes.has(t));
   checklist.push({
     key: "STRUCTURE_REQUIRED_PRESENT",
     label: "Structure de scènes obligatoire",
@@ -451,9 +452,9 @@ export async function persistQAReport(
       transformation_id: qa_report.transformation_id,
       qa_score: qa_report.qa_score,
       qa_status: qa_report.qa_status,
-      checklist_results_json: qa_report.checklist_results,
-      violations_json: qa_report.violations,
-      recommendations_json: qa_report.recommendations,
+      checklist_results_json: qa_report.checklist_results as unknown as Json,
+      violations_json: qa_report.violations as unknown as Json,
+      recommendations_json: qa_report.recommendations as unknown as Json,
       publish_blocked: qa_report.publish_blocked,
     });
 
@@ -465,7 +466,8 @@ export async function persistQAReport(
       id: publish_decision.id,
       transformation_id: publish_decision.transformation_id,
       qa_report_id: publish_decision.qa_report_id,
-      decision_status: publish_decision.decision_status,
+      user_id: userId,
+      status: publish_decision.decision_status,
       reason: publish_decision.reason,
     });
 

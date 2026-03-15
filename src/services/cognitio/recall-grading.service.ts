@@ -3,6 +3,7 @@
 // ============================================================
 
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import type { M6_GradeInput, M6_GradeOutput } from "@/domain/cognitio/recall.contracts";
 import type { RecallAnswer } from "@/domain/cognitio/recall.types";
 import {
@@ -68,7 +69,7 @@ export async function persistRecallAttempt(
       id: gradeOutput.attempt_id,
       recall_test_id: recallTestId,
       user_id: userId,
-      answers_json: answers,
+      answers_json: answers as unknown as Json,
       raw_score: gradeOutput.raw_score,
       confidence_score: gradeOutput.confidence_score,
       calibration_gap: gradeOutput.calibration_gap,

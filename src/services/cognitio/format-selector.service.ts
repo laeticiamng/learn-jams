@@ -3,6 +3,7 @@
 // ============================================================
 
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import type { M4_Input, M4_Output } from "@/domain/cognitio/format.contracts";
 import type { FormatDecisionModule, FormatOverride, CostLevel } from "@/domain/cognitio/format.types";
 import type { ChosenFormat } from "@/domain/cognitio/types";
@@ -178,7 +179,7 @@ export async function persistFormatDecision(
   courseProfileId: string,
   userId: string
 ): Promise<string> {
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from("format_decisions")
     .insert({
       id: output.decision_id,
@@ -192,10 +193,10 @@ export async function persistFormatDecision(
       estimated_duration_sec: output.estimated_duration_sec,
       needs_split: output.needs_split,
       split_count: output.split_count ?? null,
-      modules_json: output.modules ?? null,
-      overrides_applied_json: output.overrides_applied,
+      modules_json: (output.modules ?? null) as unknown as Json,
+      overrides_applied_json: output.overrides_applied as unknown as Json,
       cost_level: output.cost_level,
-      decision_trace_json: output.decision_trace,
+      decision_trace_json: output.decision_trace as unknown as Json,
     })
     .select("id")
     .single();
@@ -205,7 +206,7 @@ export async function persistFormatDecision(
 }
 
 export async function getFormatDecision(architectureId: string): Promise<M4_Output | null> {
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from("format_decisions")
     .select("*")
     .eq("architecture_id", architectureId)
@@ -218,15 +219,15 @@ export async function getFormatDecision(architectureId: string): Promise<M4_Outp
   return {
     decision_id: data.id,
     architecture_id: data.architecture_id,
-    chosen_format: data.chosen_format as ChosenFormat,
+    chosen_format: data.chosen_format as unknown as ChosenFormat,
     justification: data.justification,
     matrix_reasoning: data.matrix_reasoning,
     estimated_duration_sec: data.estimated_duration_sec,
     needs_split: data.needs_split,
     split_count: data.split_count ?? undefined,
-    modules: data.modules_json as FormatDecisionModule[] | undefined,
-    overrides_applied: data.overrides_applied_json as FormatOverride[],
-    cost_level: data.cost_level as CostLevel,
-    decision_trace: data.decision_trace_json as M4_Output["decision_trace"],
+    modules: data.modules_json as unknown as FormatDecisionModule[] | undefined,
+    overrides_applied: data.overrides_applied_json as unknown as FormatOverride[],
+    cost_level: data.cost_level as unknown as CostLevel,
+    decision_trace: data.decision_trace_json as unknown as M4_Output["decision_trace"],
   };
 }

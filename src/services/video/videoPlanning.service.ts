@@ -3,6 +3,7 @@
 // ============================================================
 
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import type {
   VideoGenerationPlan, SceneDefinition, ShotDefinition,
   VisualDirection, SubtitlePlan, FallbackRenderPlan, FallbackSlide,
@@ -24,11 +25,11 @@ export async function createGenerationPlan(
     .from("video_generation_plans")
     .insert({
       project_id: projectId,
-      scenes_json: scenes,
-      shot_list_json: shots,
-      visual_direction_json: visualDirection,
-      subtitle_plan_json: subtitlePlan,
-      fallback_render_plan_json: fallbackPlan,
+      scenes_json: scenes as unknown as Json,
+      shot_list_json: shots as unknown as Json,
+      visual_direction_json: visualDirection as unknown as Json,
+      subtitle_plan_json: subtitlePlan as unknown as Json,
+      fallback_render_plan_json: fallbackPlan as unknown as Json,
     })
     .select("*")
     .single();

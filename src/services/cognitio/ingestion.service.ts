@@ -4,6 +4,7 @@
 // ============================================================
 
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import type { M1_Output, SourceIssue, SegmentOutput, IngestInput } from "@/domain/cognitio/contracts";
 import type { DetailedSourceType, DetectedStructureType, SourceDocument } from "@/domain/cognitio/types";
 import { validateWordCount, WORD_COUNT_THRESHOLDS } from "@/domain/cognitio/validators";
@@ -42,7 +43,7 @@ export async function uploadDocument(
     storagePath = fileName;
   }
 
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from("source_documents")
     .insert({
       user_id: userId,
@@ -50,7 +51,7 @@ export async function uploadDocument(
       content_type: input.content_type,
       ingestion_status: "pending",
       raw_storage_path: storagePath,
-      warnings_json: [],
+      warnings_json: [] as unknown as Json,
     })
     .select("id")
     .single();
@@ -170,7 +171,7 @@ export async function runLocalIngestion(
         ? "docx"
         : "pasted_text";
 
-    await (supabase as any).from("source_documents").update({
+    await supabase.from("source_documents").update({
       ingestion_status: "parsed",
       quality_score: result.confidence_level,
       source_type: sourceType,
@@ -179,11 +180,11 @@ export async function runLocalIngestion(
       source_language: result.language,
       detected_language: result.language,
       word_count: result.word_count,
-      warnings_json: result.issues,
+      warnings_json: result.issues as unknown as Json,
     }).eq("id", documentId);
 
     if (result.segments.length > 0) {
-      await (supabase as any).from("document_segments").insert(
+      await supabase.from("document_segments").insert(
         result.segments.map((s) => ({
           document_id: documentId,
           segment_index: s.segment_index,
@@ -191,7 +192,7 @@ export async function runLocalIngestion(
           content: s.content,
           hierarchy_level: s.hierarchy_level,
           confidence_score: s.confidence_score,
-          page_ref: s.page_ref,
+          page_ref: s.page_ref != null ? Number(s.page_ref) : null,
         }))
       );
     }
@@ -343,7 +344,7 @@ function computeConfidence(wordCount: number, structure: DetectedStructureType, 
 // ---------- Getters ----------
 
 export async function getDocument(documentId: string): Promise<SourceDocument | null> {
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from("source_documents")
     .select("*")
     .eq("id", documentId)
@@ -353,7 +354,7 @@ export async function getDocument(documentId: string): Promise<SourceDocument | 
 }
 
 export async function getUserDocuments(userId: string): Promise<SourceDocument[]> {
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from("source_documents")
     .select("*")
     .eq("user_id", userId)
@@ -367,5 +368,5 @@ export async function updateIngestionStatus(
   status: string,
   extra?: Record<string, unknown>
 ) {
-  await (supabase as any).from("source_documents").update({ ingestion_status: status, ...extra }).eq("id", documentId);
+  await supabase.from("source_documents").update({ ingestion_status: status, ...extra }).eq("id", documentId);
 }

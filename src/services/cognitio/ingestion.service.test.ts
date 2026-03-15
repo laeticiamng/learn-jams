@@ -62,7 +62,7 @@ describe("extractAndAnalyzeText", () => {
   it("removes repeated lines (headers/footers)", () => {
     const repeated = "Page Header - Université de Paris";
     const content = "Contenu important du cours sur la biologie.";
-    const lines = [];
+    const lines: string[] = [];
     for (let i = 0; i < 5; i++) {
       lines.push(repeated, content + ` Paragraphe ${i + 1}.`, "");
     }

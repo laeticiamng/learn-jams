@@ -3,20 +3,21 @@
 // ============================================================
 
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import type { FeatureKey, CostEvent } from "@/domain/billing/pricing.types";
 import { ESTIMATED_UNIT_COSTS } from "@/domain/billing/pricing.types";
 
 // ---------- Record a cost event ----------
 
 export async function recordCostEvent(event: CostEvent): Promise<void> {
-  await (supabase as any).from("cost_events").insert({
+  await supabase.from("cost_events").insert({
     user_id: event.user_id,
     transformation_id: event.transformation_id,
     feature_key: event.feature_key,
     provider_key: event.provider_key,
     estimated_cost_usd: event.estimated_cost_usd,
     actual_cost_usd: event.actual_cost_usd,
-    metadata_json: event.metadata_json,
+    metadata_json: event.metadata_json as unknown as Json,
   });
 }
 
@@ -48,7 +49,7 @@ export async function getCostSummary(
   since: string,
   until?: string,
 ): Promise<{ feature_key: string; provider_key: string; total_estimated: number; total_actual: number; count: number }[]> {
-  let query = (supabase as any)
+  let query = supabase
     .from("cost_events")
     .select("feature_key, provider_key, estimated_cost_usd, actual_cost_usd")
     .gte("created_at", since);
@@ -79,7 +80,7 @@ export async function getUserCostForPeriod(
   userId: string,
   since: string,
 ): Promise<number> {
-  const { data } = await (supabase as any)
+  const { data } = await supabase
     .from("cost_events")
     .select("estimated_cost_usd, actual_cost_usd")
     .eq("user_id", userId)

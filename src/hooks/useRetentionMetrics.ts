@@ -26,7 +26,7 @@ export function useRetentionMetrics() {
 
     try {
       // Use any-typed query to bypass missing table types
-      const { data: runs, error } = await (supabase as any)
+      const { data: runs, error } = await supabase
         .from("mission_runs")
         .select(`
           id,

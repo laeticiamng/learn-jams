@@ -3,6 +3,7 @@
 // ============================================================
 
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import type { M6_GenerateInput, M6_GenerateOutput, M6_RecallSuite } from "@/domain/cognitio/recall.contracts";
 import type { RecallItem, RecallTestType, BloomNumeric } from "@/domain/cognitio/recall.types";
 import type { AnalyzedConcept, AnalyzedConfusionPair } from "@/domain/cognitio/contracts";
@@ -354,7 +355,7 @@ export async function persistRecallTest(
       user_id: userId,
       transformation_id: transformationId,
       test_type: output.test_type,
-      questions_json: output.items,
+      questions_json: output.items as unknown as Json,
       generated_from_version: 1,
     })
     .select("id")

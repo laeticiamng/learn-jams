@@ -3,6 +3,7 @@
 // ============================================================
 
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import type { FeatureKey, PlanKey } from "@/domain/billing/pricing.types";
 import type {
   AdaptiveCreditPolicy,
@@ -252,7 +253,7 @@ export async function consumeFlexCredit(
   };
 
   // Upsert adaptive credit balance
-  const { data: existing } = await (supabase as any)
+  const { data: existing } = await supabase
     .from("adaptive_credit_balances")
     .select("id, consumed_flex_credits_json, reallocation_log_json")
     .eq("user_id", userId)
@@ -260,27 +261,27 @@ export async function consumeFlexCredit(
     .single();
 
   if (existing) {
-    const consumed = existing.consumed_flex_credits_json as Record<string, number>;
+    const consumed = existing.consumed_flex_credits_json as unknown as Record<string, number>;
     consumed[feature] = (consumed[feature] ?? 0) + amount;
-    const log = existing.reallocation_log_json as ReallocationEntry[];
+    const log = existing.reallocation_log_json as unknown as ReallocationEntry[];
     log.push(entry);
 
-    await (supabase as any)
+    await supabase
       .from("adaptive_credit_balances")
       .update({
         consumed_flex_credits_json: consumed,
-        reallocation_log_json: log,
+        reallocation_log_json: log as unknown as Json,
         updated_at: now.toISOString(),
       })
       .eq("id", existing.id);
   } else {
-    await (supabase as any).from("adaptive_credit_balances").insert({
+    await supabase.from("adaptive_credit_balances").insert({
       user_id: userId,
       billing_period_start: periodStart,
       billing_period_end: periodEnd,
-      available_flex_credits_json: computeAvailableFlexCredits(plan, currentUsage),
-      consumed_flex_credits_json: { [feature]: amount },
-      reallocation_log_json: [entry],
+      available_flex_credits_json: computeAvailableFlexCredits(plan, currentUsage) as unknown as Json,
+      consumed_flex_credits_json: { [feature]: amount } as unknown as Json,
+      reallocation_log_json: [entry] as unknown as Json,
     });
   }
 

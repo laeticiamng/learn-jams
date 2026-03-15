@@ -9,16 +9,22 @@ function makeConcept(key: string): AnalyzedConcept {
     stable_key: key,
     label: `Concept ${key}`,
     definition: `Definition of ${key}`,
+    type: "general",
     criticality: 1,
+    criticality_score: 0.8,
+    bloom_target: "understand",
+    relations: [],
+    prerequisites: [],
+    source_confidence: 0.8,
+    source_trace: [{ segment_index: 0, excerpt: `About ${key}` }],
     uncertain: false,
-    source_spans: [],
-  } as AnalyzedConcept;
+  };
 }
 
 function makeAnswer(overrides: Partial<RecallAnswer> = {}): RecallAnswer {
   return {
     item_id: crypto.randomUUID(),
-    user_answer: "test",
+    answer: "test",
     is_correct: true,
     confidence: 3,
     concepts_tested: ["c0"],

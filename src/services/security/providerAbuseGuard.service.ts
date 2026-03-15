@@ -5,7 +5,8 @@
 import type { FeatureKey, PlanKey } from "@/domain/billing/pricing.types";
 import { checkRateLimit, type RateLimitResult } from "@/security/rateLimit";
 import { preCheckCost, checkCircuitBreaker, type CostCheckResult } from "@/security/costGuards";
-import { checkQuota, type ConsumeResult } from "@/services/billing/quotaEngine.service";
+import { checkQuota } from "@/services/billing/quotaEngine.service";
+import type { ConsumeResult } from "@/domain/billing/pricing.types";
 
 export interface AbuseCheckResult {
   allowed: boolean;

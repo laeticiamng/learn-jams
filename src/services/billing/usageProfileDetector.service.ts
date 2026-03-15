@@ -73,14 +73,14 @@ export async function persistUsageProfile(
   const profile = detectUsageProfile(usage);
   const now = new Date().toISOString();
 
-  const { data: existing } = await (supabase as any)
+  const { data: existing } = await supabase
     .from("user_usage_profiles")
     .select("id")
     .eq("user_id", userId)
     .single();
 
   if (existing) {
-    await (supabase as any)
+    await supabase
       .from("user_usage_profiles")
       .update({
         dominant_usage_profile: profile,
@@ -90,7 +90,7 @@ export async function persistUsageProfile(
       })
       .eq("id", existing.id);
   } else {
-    await (supabase as any).from("user_usage_profiles").insert({
+    await supabase.from("user_usage_profiles").insert({
       user_id: userId,
       dominant_usage_profile: profile,
       rolling_30d_usage_json: usage,
@@ -106,7 +106,7 @@ export async function persistUsageProfile(
 export async function getStoredUsageProfile(
   userId: string,
 ): Promise<{ profile: UsageProfile; usage: Partial<Record<FeatureKey, number>> } | null> {
-  const { data } = await (supabase as any)
+  const { data } = await supabase
     .from("user_usage_profiles")
     .select("dominant_usage_profile, rolling_30d_usage_json")
     .eq("user_id", userId)

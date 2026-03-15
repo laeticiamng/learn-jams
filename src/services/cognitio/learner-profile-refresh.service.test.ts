@@ -43,7 +43,6 @@ function makeFormatRecord(overrides: Partial<FormatEffectivenessRecord> = {}): F
     avg_composite_score: 70,
     avg_calibration_gap: 0.1,
     retention_signal: 0.63,
-    created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     ...overrides,
   };

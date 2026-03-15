@@ -4,6 +4,7 @@
 
 import type { BillingEvent, BillingEventType } from "@/domain/billing/observability.types";
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 
 export async function trackBillingEvent(
   eventType: BillingEventType,
@@ -18,13 +19,13 @@ export async function trackBillingEvent(
   };
 
   // Log to product events table (already exists)
-  await (supabase as any).from("product_events").insert({
-    event_type: event.event_type,
+  await supabase.from("product_events").insert({
+    event_name: event.event_type,
     user_id: event.user_id,
-    payload_json: {
+    metadata_json: {
       ...event.metadata,
       billing_event: true,
-    },
+    } as unknown as Json,
   }).then(() => {});
 }
 

@@ -79,7 +79,7 @@ export function buildFFmpegRenderJob(
   // Filter for concatenation + scaling
   const imageCount = inputFiles.filter(f => f.type === "image").length;
   if (imageCount > 0) {
-    const filterParts = [];
+    const filterParts: string[] = [];
     for (let i = 0; i < imageCount; i++) {
       filterParts.push(`[${i}:v]scale=${width}:${height}:force_original_aspect_ratio=decrease,pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2,setsar=1[v${i}]`);
     }

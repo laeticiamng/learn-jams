@@ -3,6 +3,7 @@
 // ============================================================
 
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import type { M6_DebriefInput, M6_DebriefOutput } from "@/domain/cognitio/recall.contracts";
 import type { DebriefReport, FragilityNode } from "@/domain/cognitio/recall.types";
 import { computeFragilityMap, computeConfusionMap } from "./calibration.service";
@@ -147,14 +148,14 @@ export async function persistDebrief(
   debrief: DebriefReport,
   userId: string,
 ): Promise<string> {
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from("debrief_reports")
     .insert({
       id: debrief.id,
       user_id: userId,
       transformation_id: debrief.transformation_id,
       recall_attempt_id: debrief.recall_attempt_id,
-      report_json: debrief,
+      report_json: debrief as unknown as Json,
     })
     .select("id")
     .single();
