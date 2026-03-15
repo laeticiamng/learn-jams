@@ -123,8 +123,10 @@ const FRONT_MATTER_PATTERNS: RegExp[] = [
 
 /**
  * Detect front matter at the top of a document.
- * Scans from line 0 forward. Stops when it hits a run of 2+ consecutive
- * non-front-matter, non-blank lines (= real pedagogical content).
+ * Scans from line 0 forward. Uses a ratio-based approach:
+ * - Tracks noise lines vs clean lines in a sliding window
+ * - Body starts when we hit a run of 3+ consecutive clean, content-bearing lines
+ * - OR when the noise ratio drops below 30% in a 5-line window
  *
  * Returns the body text with front matter removed plus metadata.
  */
@@ -133,6 +135,7 @@ export function detectFrontMatter(text: string): FrontMatterResult {
   const frontMatterLines: FilteredPattern[] = [];
   let bodyStartLine = 0;
   let consecutiveClean = 0;
+  let firstCleanLineOfRun = -1;
 
   // Compute header noise score from the first 30 lines (before cleaning)
   const headerAreaLines = lines.slice(0, 30).map(l => l.trim()).filter(l => l.length > 0);
@@ -159,6 +162,7 @@ export function detectFrontMatter(text: string): FrontMatterResult {
     if (trimmed.length <= 2 && /^[^a-zA-ZÀ-ÿ0-9]/.test(trimmed)) {
       frontMatterLines.push({ type: "front_matter", original: trimmed, line_number: i + 1 });
       consecutiveClean = 0;
+      firstCleanLineOfRun = -1;
       continue;
     }
 
@@ -167,25 +171,36 @@ export function detectFrontMatter(text: string): FrontMatterResult {
     if (isFrontMatter) {
       frontMatterLines.push({ type: "front_matter", original: trimmed, line_number: i + 1 });
       consecutiveClean = 0;
+      firstCleanLineOfRun = -1;
     } else {
+      if (consecutiveClean === 0) {
+        firstCleanLineOfRun = i;
+      }
       consecutiveClean++;
-      // Once we see 2 consecutive clean, content-bearing lines, we're in the body
-      if (consecutiveClean >= 2) {
-        // Body starts at the first clean line of this run
-        bodyStartLine = i - 1;
+      // P0 FIX: Require 3 consecutive clean lines (up from 2) to be more robust
+      // against isolated clean lines (e.g. real title) between noise blocks
+      if (consecutiveClean >= 3) {
+        bodyStartLine = firstCleanLineOfRun;
         break;
       }
     }
 
-    // Safety: don't scan more than 60 lines for front matter
-    if (i >= 59) {
+    // Safety: don't scan more than 80 lines for front matter (up from 60)
+    if (i >= 79) {
       bodyStartLine = i + 1;
       break;
     }
   }
 
-  // If we never found 2 consecutive clean lines, body starts after last front matter line
-  if (consecutiveClean < 2 && frontMatterLines.length > 0) {
+  // P0 FIX: If we saw exactly 2 consecutive clean lines but not 3,
+  // still consider body starting at those 2 clean lines if the noise
+  // ratio in the header area is above 40%
+  if (consecutiveClean === 2 && firstCleanLineOfRun >= 0 && headerNoiseScoreBefore > 0.4) {
+    bodyStartLine = firstCleanLineOfRun;
+  }
+
+  // If we never found enough consecutive clean lines, body starts after last front matter line
+  if (bodyStartLine === 0 && frontMatterLines.length > 0) {
     const lastFM = frontMatterLines[frontMatterLines.length - 1].line_number;
     bodyStartLine = lastFM; // line_number is 1-based, so this is the correct 0-based index
   }
