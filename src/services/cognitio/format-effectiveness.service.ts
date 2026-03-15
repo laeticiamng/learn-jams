@@ -87,7 +87,7 @@ export async function upsertFormatEffectiveness(
     if (error) throw new Error(`Format effectiveness update failed: ${error.message}`);
     return data as unknown as FormatEffectivenessRecord;
   } else {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("learner_format_effectiveness")
       .insert({
         user_id: userId,
