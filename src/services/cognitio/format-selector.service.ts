@@ -1,5 +1,6 @@
 // ============================================================
 // COGNITIO Format Selector Service — M4
+// User intent priority: user choice > feasibility > system heuristic
 // ============================================================
 
 import { supabase } from "@/integrations/supabase/client";
@@ -10,7 +11,7 @@ import type { ChosenFormat } from "@/domain/cognitio/types";
 import {
   getMatrixFormat,
   checkOverrides,
-  applyOverrides,
+  resolveFormatWithUserIntent,
   FORMAT_DURATION_MAX,
 } from "@/domain/cognitio/format.validators";
 
@@ -32,7 +33,7 @@ export async function runFormatSelector(input: M4_Input): Promise<M4_Output> {
   }
 }
 
-// ---------- Local Format Selector (Deterministic Matrix) ----------
+// ---------- Local Format Selector (Deterministic Matrix + User Intent) ----------
 
 export function selectFormatLocally(input: M4_Input): M4_Output {
   const { reasoning_type, objective, total_duration_sec, needs_splitting, split_modules } = input;
@@ -40,7 +41,7 @@ export function selectFormatLocally(input: M4_Input): M4_Output {
   // Step 1: Get matrix recommendation
   const matrixResult = getMatrixFormat(reasoning_type, objective);
 
-  // Step 2: Check overrides
+  // Step 2: Check overrides (system heuristics)
   const overrides = checkOverrides(input, matrixResult);
   const overridesChecked = [
     "duration_too_short",
@@ -49,11 +50,22 @@ export function selectFormatLocally(input: M4_Input): M4_Output {
     "insufficient_structure",
   ];
 
-  // Step 3: Apply overrides
-  const finalFormat = applyOverrides(matrixResult, overrides);
+  // Step 3: Resolve final format with USER INTENT PRIORITY
+  const resolution = resolveFormatWithUserIntent(input, matrixResult, overrides);
+
+  const finalFormat = resolution.finalFormat;
 
   // Step 4: Build justification
-  const justification = buildJustification(matrixResult, finalFormat, overrides, reasoning_type, objective);
+  const justification = buildJustification(
+    matrixResult,
+    finalFormat,
+    overrides,
+    reasoning_type,
+    objective,
+    input.user_selected_format,
+    resolution.userIntentRespected,
+    resolution.overrideReason,
+  );
   const matrixReasoning = buildMatrixReasoning(reasoning_type, objective, matrixResult);
 
   // Step 5: Handle splitting
@@ -87,12 +99,21 @@ export function selectFormatLocally(input: M4_Input): M4_Output {
     modules,
     overrides_applied: overrides,
     cost_level: costLevel,
+
+    // Override transparency
+    user_selected_format: input.user_selected_format,
+    system_recommended_format: resolution.systemRecommended,
+    fallback_candidates: resolution.fallbackCandidates,
+    override_reason: resolution.overrideReason,
+    override_requires_confirmation: resolution.overrideRequiresConfirmation,
+
     decision_trace: {
       reasoning_type,
       objective,
       matrix_result: matrixResult,
       overrides_checked: overridesChecked,
       final_format: finalFormat,
+      user_intent_respected: resolution.userIntentRespected,
     },
   };
 }
@@ -137,13 +158,33 @@ function buildJustification(
   finalFormat: ChosenFormat,
   overrides: FormatOverride[],
   reasoningType: string,
-  objective: string
+  objective: string,
+  userSelected?: ChosenFormat,
+  userIntentRespected?: boolean,
+  overrideReason?: string,
 ): string {
+  const parts: string[] = [];
+
+  if (userSelected) {
+    parts.push(`Format demandé : ${formatLabel(userSelected)}.`);
+  }
+
+  parts.push(`Matrice: ${matrixResult} (${reasoningType} × ${objective}).`);
+
   if (overrides.length > 0) {
     const overrideReasons = overrides.map(o => o.message).join(". ");
-    return `Matrice: ${matrixResult} (${reasoningType} × ${objective}). Override appliqué: ${overrideReasons}. Format final: ${finalFormat}.`;
+    parts.push(`Contraintes détectées : ${overrideReasons}.`);
   }
-  return `Le type de raisonnement "${reasoningType}" combiné à l'objectif "${objective}" indique le format ${finalFormat}.`;
+
+  if (userSelected && !userIntentRespected) {
+    parts.push(`Le format choisi n'a pas pu être généré. ${overrideReason ?? ""}`);
+  } else if (userSelected && userIntentRespected && finalFormat !== matrixResult) {
+    parts.push(`Le choix utilisateur a été respecté malgré la recommandation système.`);
+  }
+
+  parts.push(`Format final : ${formatLabel(finalFormat)}.`);
+
+  return parts.join(" ");
 }
 
 function buildMatrixReasoning(
@@ -156,6 +197,7 @@ function buildMatrixReasoning(
 
 function getCostLevel(format: ChosenFormat, duration: number, needsSplit: boolean): CostLevel {
   if (format === "fiche_dynamique") return "low";
+  if (format === "mission_interactive") return "medium";
   if (needsSplit) return "high";
   if (duration > 400) return "high";
   return "medium";
@@ -168,6 +210,14 @@ function mapKnowledgeTypeToReasoning(kt: string): M4_Input["reasoning_type"] {
     case "conceptual": return "declaratif";
     case "factual": return "declaratif";
     default: return "declaratif";
+  }
+}
+
+function formatLabel(format: ChosenFormat): string {
+  switch (format) {
+    case "fiche_dynamique": return "Fiche Dynamique";
+    case "histoire_animee": return "Histoire Animée";
+    case "mission_interactive": return "Mission Interactive";
   }
 }
 
@@ -228,6 +278,12 @@ export async function getFormatDecision(architectureId: string): Promise<M4_Outp
     modules: data.modules_json as unknown as FormatDecisionModule[] | undefined,
     overrides_applied: data.overrides_applied_json as unknown as FormatOverride[],
     cost_level: data.cost_level as unknown as CostLevel,
+    // Defaults for legacy data
+    user_selected_format: undefined,
+    system_recommended_format: data.chosen_format as unknown as ChosenFormat,
+    fallback_candidates: [],
+    override_reason: undefined,
+    override_requires_confirmation: false,
     decision_trace: data.decision_trace_json as unknown as M4_Output["decision_trace"],
   };
 }

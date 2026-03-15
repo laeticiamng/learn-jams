@@ -238,13 +238,13 @@ function buildMnemonics(sorted: AnalyzedConcept[]): MnemonicItem[] {
   const mnemonics: MnemonicItem[] = [];
 
   const critical = sorted.filter(c => c.criticality === 1);
+  const major = sorted.filter(c => c.criticality <= 2);
 
   // 1. Acronym from critical concepts — only if it forms a pronounceable word
   if (critical.length >= 3) {
     const labels = critical.slice(0, 7).map(c => c.label);
     const initials = labels.map(l => l.charAt(0).toUpperCase()).join("");
 
-    // Check if the acronym is pronounceable (has vowels and consonants)
     const hasVowel = /[AEIOUY]/i.test(initials);
     const hasConsonant = /[^AEIOUY\s]/i.test(initials);
     const isPronounceable = hasVowel && hasConsonant && initials.length >= 3;
@@ -254,61 +254,131 @@ function buildMnemonics(sorted: AnalyzedConcept[]): MnemonicItem[] {
         concept_keys: critical.slice(0, 7).map(c => c.stable_key),
         mnemonic: initials,
         type: "acronym",
-        effectiveness_hint: `"${initials}" pour retenir : ${labels.slice(0, 4).join(", ")}${labels.length > 4 ? "…" : ""}`,
-      });
-    } else if (critical.length >= 3) {
-      // Fallback: create a sentence mnemonic from first words
-      const firstWords = critical.slice(0, 5).map(c => {
-        const words = c.label.split(/\s+/);
-        return words[0];
-      });
-      mnemonics.push({
-        concept_keys: critical.slice(0, 5).map(c => c.stable_key),
-        mnemonic: `Retenir : ${firstWords.join(" → ")}`,
-        type: "story",
-        effectiveness_hint: `Chaîne mnémonique reliant les ${Math.min(5, critical.length)} concepts critiques`,
+        effectiveness_hint: `"${initials}" pour retenir : ${labels.slice(0, 4).join(", ")}${labels.length > 4 ? "…" : ""}. Répétez 3 fois l'acronyme puis récitez chaque concept.`,
       });
     }
   }
 
-  // 2. Visual/metaphor anchor for the most critical concept
-  if (critical.length >= 1) {
-    const top = critical[0];
-    const shortDef = top.definition.slice(0, 60).replace(/\s\S*$/, "");
+  // 2. Narrative chain for critical concepts — always provide a story-style chain
+  if (critical.length >= 2) {
+    const chainLabels = critical.slice(0, 5).map(c => c.label);
+    const chainStory = buildNarrativeChain(chainLabels);
     mnemonics.push({
-      concept_keys: [top.stable_key],
-      mnemonic: `Imaginez "${top.label}" comme le pilier central : ${shortDef}`,
-      type: "association",
-      effectiveness_hint: "Image mentale pour le concept le plus important",
+      concept_keys: critical.slice(0, 5).map(c => c.stable_key),
+      mnemonic: chainStory,
+      type: "story",
+      effectiveness_hint: `Visualisez cette histoire pour ancrer les ${Math.min(5, critical.length)} concepts essentiels. L'enchaînement logique aide la mémoire épisodique.`,
     });
   }
 
-  // 3. Contrast mnemonic for related concept pairs (help distinguish confusables)
+  // 3. Specific visual anchors for top 2 critical concepts with analogy
+  for (const concept of critical.slice(0, 2)) {
+    const analogy = buildConceptAnalogy(concept);
+    if (analogy) {
+      mnemonics.push({
+        concept_keys: [concept.stable_key],
+        mnemonic: analogy,
+        type: "visual",
+        effectiveness_hint: "Ancrage visuel : associez cette image mentale au concept. Fermez les yeux et visualisez.",
+      });
+    }
+  }
+
+  // 4. Rhyme/rhythm mnemonic if applicable
+  if (major.length >= 3 && major.length <= 6) {
+    const rhymeLabels = major.slice(0, 4).map(c => c.label);
+    const rhyme = buildRhymeMnemonic(rhymeLabels);
+    if (rhyme) {
+      mnemonics.push({
+        concept_keys: major.slice(0, 4).map(c => c.stable_key),
+        mnemonic: rhyme,
+        type: "rhyme",
+        effectiveness_hint: "Récitez cette phrase à voix haute 3 fois. Le rythme facilite la mémorisation à long terme.",
+      });
+    }
+  }
+
+  // 5. Contrast mnemonic for related concept pairs (help distinguish confusables)
   const relatedPairs = sorted
     .flatMap(c => c.relations
       .filter(r => r.relation_type === "contrasts_with" || r.relation_type === "related")
-      .map(r => ({ a: c.stable_key, b: r.target_key, labelA: c.label, relType: r.relation_type }))
+      .map(r => ({ a: c.stable_key, b: r.target_key, labelA: c.label, defA: c.definition, relType: r.relation_type }))
     )
-    .slice(0, 2);
+    .slice(0, 3);
 
   for (const pair of relatedPairs) {
     const conceptB = sorted.find(c => c.stable_key === pair.b);
     if (conceptB) {
-      const mnemText = pair.relType === "contrasts_with"
-        ? `"${pair.labelA}" ≠ "${conceptB.label}" — ne pas confondre !`
-        : `"${pair.labelA}" → "${conceptB.label}" — concepts liés`;
+      const distinction = buildDistinctionMnemonic(pair.labelA, conceptB.label, pair.relType);
       mnemonics.push({
         concept_keys: [pair.a, pair.b],
-        mnemonic: mnemText,
+        mnemonic: distinction,
         type: "association",
         effectiveness_hint: pair.relType === "contrasts_with"
-          ? "Distinction entre concepts facilement confondus"
-          : "Lien entre concepts complémentaires",
+          ? "Attention piège fréquent : ces deux concepts sont souvent confondus. Retenez la différence clé."
+          : "Lien logique entre concepts complémentaires — comprendre l'un aide à comprendre l'autre.",
       });
     }
   }
 
   return mnemonics;
+}
+
+/** Build a narrative chain linking concept labels into a memorable story */
+function buildNarrativeChain(labels: string[]): string {
+  if (labels.length <= 1) return labels[0] ?? "";
+  if (labels.length === 2) return `D'abord "${labels[0]}", puis "${labels[1]}" — l'un mène à l'autre.`;
+
+  const parts: string[] = [];
+  parts.push(`Tout commence par "${labels[0]}"`);
+  for (let i = 1; i < labels.length - 1; i++) {
+    const connectors = ["qui déclenche", "ce qui active", "menant à", "relié à"];
+    parts.push(`${connectors[i % connectors.length]} "${labels[i]}"`);
+  }
+  parts.push(`pour aboutir à "${labels[labels.length - 1]}"`);
+
+  return parts.join(", ") + ".";
+}
+
+/** Build a concept-specific analogy using definition keywords */
+function buildConceptAnalogy(concept: AnalyzedConcept): string | null {
+  const label = concept.label;
+  const def = concept.definition.toLowerCase();
+
+  // Extract a key action/property from definition
+  const actionMatch = def.match(/(?:permet|provoque|entraîne|assure|régule|contrôle|inhibe|active|stimule)\s+(.{10,40})/);
+  if (actionMatch) {
+    return `"${label}" agit comme un interrupteur qui ${actionMatch[0].trim()}.`;
+  }
+
+  const defMatch = def.match(/(?:est|désigne|correspond)\s+(?:un|une|le|la|l'|des|au)?\s*(.{10,50})/);
+  if (defMatch) {
+    return `Pensez à "${label}" comme ${defMatch[1].trim().replace(/\.$/, "")}.`;
+  }
+
+  // Generic visual
+  return `Imaginez "${label}" comme une pièce maîtresse d'un puzzle — sans elle, le tableau est incomplet.`;
+}
+
+/** Build a rhythm-based mnemonic from labels */
+function buildRhymeMnemonic(labels: string[]): string | null {
+  if (labels.length < 2) return null;
+
+  // Extract first significant word of each label
+  const keywords = labels.map(l => {
+    const words = l.split(/\s+/).filter(w => w.length > 2);
+    return words[0] ?? l;
+  });
+
+  return `Pour tout retenir : ${keywords.join(", ")} — dans cet ordre, jamais en désordre !`;
+}
+
+/** Build a distinction mnemonic for two concepts */
+function buildDistinctionMnemonic(labelA: string, labelB: string, relType: string): string {
+  if (relType === "contrasts_with") {
+    return `"${labelA}" ≠ "${labelB}" — À ne pas confondre ! "${labelA}" est un concept distinct de "${labelB}". Quand on pense à l'un, vérifiez que ce n'est pas l'autre.`;
+  }
+  return `"${labelA}" ↔ "${labelB}" — ces deux concepts se complètent. Comprendre l'un éclaire l'autre.`;
 }
 
 // ---------- Visual Anchors Builder ----------

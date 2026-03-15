@@ -8,8 +8,10 @@
 /** Patterns that indicate editorial/administrative artifacts in medical/academic documents */
 const EDITORIAL_ARTIFACT_PATTERNS: RegExp[] = [
   // Rang labels (French medical classification) — standalone lines only
-  /^(?:COM\s+)?R2C\s*:\s*Rang\s+[A-Z]\b/i,
+  /^(?:COM\s+)?R2C\s*:\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|Rang\s+[A-Z])\b/i,
   /^\s*Rang\s+[A-Z]\s*$/i,
+  /^COM\s+R2C\b/i,
+  /^en\s+(?:NOIR|BLEU|ROUGE)\s*[-–—]\s*en\s+(?:NOIR|BLEU|ROUGE)/i,
 
   // Revision/version metadata
   /^(?:Dernière\s+)?(?:mise\s+à\s+jour|MAJ|révision)\s*[:—–-]\s*\d/i,
@@ -22,6 +24,7 @@ const EDITORIAL_ARTIFACT_PATTERNS: RegExp[] = [
   /^(?:Item|Objectif|N°)\s*\d+\s*(?:[-–—:]|$)/i,
   /^Collège\s+(?:national|des)\s/i,
   /^Référentiel\s/i,
+  /^Sujet\s+principal\s*:\s*COM\s/i,
 
   // Page/section indicators
   /^Page\s+\d+/i,
@@ -33,6 +36,9 @@ const EDITORIAL_ARTIFACT_PATTERNS: RegExp[] = [
   /^[-–—]+\s*$/,
   /^\s*[)(\]}\[{]\s*[-–—]\s*/,
   /^\s*[•\-–]\s*$/,
+
+  // Color formatting metadata
+  /^en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS)\s*$/i,
 ];
 
 /** Patterns for noise that should be stripped from concept labels */
@@ -43,8 +49,8 @@ const CONCEPT_LABEL_NOISE_PATTERNS: RegExp[] = [
   /[\s\-–—•:;,.\]}\[{]+$/,
 
   // Rang/classification prefixes
-  /^(?:COM\s+)?R2C\s*:\s*Rang\s+[A-Z]\s*[-–—:]\s*/i,
-  /\s*[-–—]\s*Rang\s+[A-Z]\s*$/i,
+  /^(?:COM\s+)?R2C\s*:\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|Rang\s+[A-Z])\s*[-–—:]\s*/i,
+  /\s*[-–—]\s*(?:Rang\s+[A-Z]|en\s+(?:NOIR|BLEU|ROUGE))\s*$/i,
   /^Rang\s+[A-Z]\s*[-–—:]\s*/i,
 
   // Item number prefixes
@@ -53,6 +59,15 @@ const CONCEPT_LABEL_NOISE_PATTERNS: RegExp[] = [
 
   // Signes/symptômes fragments that are not standalone concepts
   /^[)]\s*[-–—]\s*/,
+
+  // Color metadata
+  /\s*[-–—]\s*en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS)\s*$/i,
+  /^en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS)\s*[-–—]\s*/i,
+
+  // Truncation artifacts — trailing open parens without close
+  /\s*\(\s*$/,
+  // Leading close parens
+  /^\s*\)\s*/,
 ];
 
 // ---------- Source Noise Cleaning ----------
@@ -162,6 +177,15 @@ export function normalizeConceptLabel(rawLabel: string): string | null {
     return null;
   }
 
+  // Reject if it ends with an unclosed parenthesis (truncation artifact)
+  if (/\(\s*$/.test(label) && !label.includes(")")) {
+    return null;
+  }
+
+  // Clean trailing "++" or ":" fragments from medical shorthand
+  label = label.replace(/\s*\+{2,}\s*:?\s*$/, "").trim();
+  label = label.replace(/\s*:\s*$/, "").trim();
+
   // Normalize capitalization: Title Case for proper concept names
   // But preserve ALL-CAPS medical acronyms (PAC, VIH, etc.)
   if (label === label.toUpperCase() && label.length > 5 && label.includes(" ")) {
@@ -200,6 +224,18 @@ export function isValidConceptLabel(label: string): boolean {
     /^(?:Introduction|Conclusion|Résumé|Bibliographie|Références?)\s*$/i,
     /^(?:NB|PS|Note)\s*:/i,
     /^(?:Suite|Fin|Début)\s*$/i,
+    // Color/formatting metadata
+    /^(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS)\b/i,
+    /^COM\s+R2C\b/i,
+    // Truncated labels ending with open paren or starting mid-word
+    /\(\s*$/,
+    // Labels that are just "++ :" type fragments
+    /^\+{2,}\s*:/,
+    // Labels with interpretability fragments
+    /^interprétable\s+si\b/i,
+    /^réalisables?\s+sur\b/i,
+    // Subject line artifacts
+    /^Sujet\s+principal\s*:/i,
   ];
 
   return !rejectPatterns.some(p => p.test(normalized));
@@ -314,6 +350,39 @@ export function compressDefinition(rawDefinition: string, maxLength: number = 20
   }
 
   return def;
+}
+
+// ---------- Main Topic Cleaning ----------
+
+/**
+ * Clean the detected main_topic from editorial noise.
+ * The main_topic should be a clean, human-readable subject label.
+ */
+export function cleanMainTopic(rawTopic: string): string {
+  let topic = rawTopic.trim();
+
+  // Remove COM R2C metadata
+  topic = topic.replace(/\bCOM\s+R2C\s*:\s*/gi, "");
+  topic = topic.replace(/\s*[-–—]\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS)\b/gi, "");
+  topic = topic.replace(/\s*en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS)\b/gi, "");
+
+  // Remove Rang labels
+  topic = topic.replace(/\s*\(?\s*Rang\s+[A-Z]\s*\)?\s*/gi, "");
+  topic = topic.replace(/\s*R2C[^,)]*\s*/gi, "");
+
+  // Remove Item/UE prefixes
+  topic = topic.replace(/^(?:Item|UE)\s*\d+\s*[-–—:]\s*/i, "");
+
+  // Remove "Sujet principal :" prefix
+  topic = topic.replace(/^Sujet\s+principal\s*:\s*/i, "");
+
+  // Collapse whitespace
+  topic = topic.replace(/\s{2,}/g, " ").trim();
+
+  // Remove trailing punctuation
+  topic = topic.replace(/\s*[-–—:;,]\s*$/, "").trim();
+
+  return topic || rawTopic.trim();
 }
 
 // ---------- Helpers ----------

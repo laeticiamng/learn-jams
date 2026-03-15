@@ -32,6 +32,9 @@ export interface M4_Input {
   quality_score: number;              // 0-1
   objective: LearningObjective;
   learner_profile?: LearnerAudienceProfile;
+
+  // User intent — explicit format choice from UI
+  user_selected_format?: ChosenFormat;
 }
 
 // ---------- M4 Output ----------
@@ -57,6 +60,13 @@ export interface M4_Output {
   // Cost
   cost_level: CostLevel;
 
+  // Override transparency
+  user_selected_format?: ChosenFormat;
+  system_recommended_format: ChosenFormat;
+  fallback_candidates: ChosenFormat[];
+  override_reason?: string;
+  override_requires_confirmation: boolean;
+
   // Deterministic trace
   decision_trace: {
     reasoning_type: ReasoningType;
@@ -64,5 +74,6 @@ export interface M4_Output {
     matrix_result: ChosenFormat;
     overrides_checked: string[];
     final_format: ChosenFormat;
+    user_intent_respected: boolean;
   };
 }

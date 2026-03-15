@@ -61,7 +61,7 @@ export default function Create() {
   }, [searchParams, pipeline.phase]);
 
   const handleImport = (input: IngestInput) => {
-    pipeline.runPipeline(input);
+    pipeline.runPipeline(input, selectedFormat ?? undefined);
   };
 
   const { phase, ingestion, analysis, memory, format, generation, storyGeneration, qa } = pipeline;

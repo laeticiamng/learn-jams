@@ -15,11 +15,12 @@ import { useQAStatus } from "@/hooks/useQAStatus";
 import { useProductTracking } from "@/hooks/useProductTracking";
 import { generateRecallSuiteLocally } from "@/services/cognitio/recall-generator.service";
 import type { IngestInput } from "@/domain/cognitio/contracts";
-import type { LearningObjective } from "@/domain/cognitio/types";
+import type { LearningObjective, ChosenFormat } from "@/domain/cognitio/types";
 import type { LearnerAudienceProfile } from "@/domain/cognitio/learner-profile.types";
 import type { M7_Input } from "@/domain/cognitio/qa.contracts";
 import type { M5_Output } from "@/domain/cognitio/generation.contracts";
 import type { M5B_Output } from "@/domain/cognitio/story.contracts";
+import type { CreateFormat } from "@/lib/create-format-config";
 
 export type PipelinePhase =
   | "import"
@@ -44,11 +45,24 @@ export interface PipelineError {
   phase: PipelinePhase;
 }
 
+/** Map CreateFormat (UI) to ChosenFormat (pipeline) */
+function mapCreateFormatToChosenFormat(createFormat?: CreateFormat): ChosenFormat | undefined {
+  if (!createFormat) return undefined;
+  switch (createFormat) {
+    case "escape_game": return "mission_interactive";
+    case "dynamic_sheet": return "fiche_dynamique";
+    case "animated_story": return "histoire_animee";
+    // music and video don't map to cognitio ChosenFormat
+    default: return undefined;
+  }
+}
+
 export function useCreatePipeline() {
   const [phase, setPhase] = useState<PipelinePhase>("import");
   const [objective, setObjective] = useState<LearningObjective>("discovery");
   const [learnerProfile, setLearnerProfile] = useState<LearnerAudienceProfile | undefined>();
   const [pipelineError, setPipelineError] = useState<PipelineError | null>(null);
+  const [userSelectedFormat, setUserSelectedFormat] = useState<CreateFormat | undefined>();
 
   // Track whether a pipeline run is active to prevent double-execution
   const runningRef = useRef(false);
@@ -62,13 +76,15 @@ export function useCreatePipeline() {
   const qa = useQAStatus();
   const { track } = useProductTracking();
 
-  const runPipeline = useCallback(async (input: IngestInput) => {
+  const runPipeline = useCallback(async (input: IngestInput, selectedFormat?: CreateFormat) => {
     if (runningRef.current) return;
     runningRef.current = true;
     setPipelineError(null);
+    setUserSelectedFormat(selectedFormat);
 
     const currentObjective = input.objective;
     const currentProfile = input.learner_profile;
+    const chosenFormatHint = mapCreateFormatToChosenFormat(selectedFormat);
     setObjective(currentObjective);
     setLearnerProfile(currentProfile);
 
@@ -119,14 +135,15 @@ export function useCreatePipeline() {
         return;
       }
 
-      // === M4: Format Selection ===
+      // === M4: Format Selection (with user intent priority) ===
       setPhase("formatting");
       const m4Result = await format.decide(
         m3Result,
         m2Result,
         m1Result.document_id,
         m1Result.confidence_level,
-        currentObjective
+        currentObjective,
+        chosenFormatHint,
       );
       if (!m4Result) {
         setPipelineError({ source: "format", message: format.error ?? "Format selection failed", phase: "formatting" });
@@ -139,7 +156,13 @@ export function useCreatePipeline() {
       let m5Result: M5_Output | null = null;
       let m5bResult: M5B_Output | null = null;
 
-      if (m4Result.chosen_format === "fiche_dynamique") {
+      // mission_interactive falls back to fiche_dynamique generation for now
+      // until full mission generation pipeline is connected
+      const generationFormat = m4Result.chosen_format === "mission_interactive"
+        ? "fiche_dynamique"
+        : m4Result.chosen_format;
+
+      if (generationFormat === "fiche_dynamique") {
         m5Result = await generation.generate(
           m2Result,
           m3Result,
@@ -157,7 +180,7 @@ export function useCreatePipeline() {
           setPhase("result");
           return;
         }
-      } else if (m4Result.chosen_format === "histoire_animee") {
+      } else if (generationFormat === "histoire_animee") {
         m5bResult = await storyGeneration.generate(
           m2Result,
           m3Result,
@@ -258,6 +281,7 @@ export function useCreatePipeline() {
     phase,
     objective,
     learnerProfile,
+    userSelectedFormat,
 
     // Sub-hook results (for display)
     ingestion,
