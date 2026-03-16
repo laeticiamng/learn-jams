@@ -348,13 +348,13 @@ function checkNoDocumentArtifactLeak(m: EscapeGameMission): MissionQACheck {
 
   for (const item of allItems) {
     // Check prompt
-    const promptNoise = detectDocumentNoise(item.prompt_text ?? "");
+    const promptNoise = detectDocumentNoise(item.prompt ?? "");
     if (promptNoise.noisy) {
-      leaks.push(`Prompt: "${(item.prompt_text ?? "").slice(0, 50)}..." → ${promptNoise.matches.join(", ")}`);
+      leaks.push(`Prompt: "${(item.prompt ?? "").slice(0, 50)}..." → ${promptNoise.matches.join(", ")}`);
     }
 
     // Check all options/choices
-    const choices = item.choices ?? item.options ?? [];
+    const choices = item.options ?? [];
     for (const choice of choices) {
       const choiceText = typeof choice === "string" ? choice : choice.label ?? "";
       const choiceNoise = detectDocumentNoise(choiceText);
@@ -406,8 +406,8 @@ function checkItemNoiseCleanliness(m: EscapeGameMission): MissionQACheck {
   let totalScore = 0;
 
   for (const item of allItems) {
-    const promptText = item.prompt_text ?? "";
-    const choices = (item.choices ?? item.options ?? []).map(
+    const promptText = item.prompt ?? "";
+    const choices = (item.options ?? []).map(
       (c: string | { label?: string }) => typeof c === "string" ? c : c.label ?? ""
     );
     const allText = [promptText, ...choices, item.explanation ?? ""].join(" ");
@@ -447,8 +447,8 @@ function checkPedagogicalValidity(m: EscapeGameMission): MissionQACheck {
   const issues: string[] = [];
 
   for (const item of allItems) {
-    const promptText = item.prompt_text ?? "";
-    const choices = (item.choices ?? item.options ?? []).map(
+    const promptText = item.prompt ?? "";
+    const choices = (item.options ?? []).map(
       (c: string | { label?: string }) => typeof c === "string" ? c : c.label ?? ""
     );
 
@@ -457,14 +457,16 @@ function checkPedagogicalValidity(m: EscapeGameMission): MissionQACheck {
       issues.push(`Item has too-short prompt: "${promptText}"`);
     }
 
-    // Must have at least 2 meaningful options
-    const meaningfulOptions = choices.filter((o: string) => o.length >= 3 && /[a-zA-ZÀ-ÿ]{3,}/.test(o));
-    if (meaningfulOptions.length < 2) {
-      issues.push(`Item has fewer than 2 meaningful options`);
+    // Must have at least 2 meaningful options (only for mechanics that use options)
+    if (choices.length > 0) {
+      const meaningfulOptions = choices.filter((o: string) => o.length >= 3 && /[a-zA-ZÀ-ÿ]{3,}/.test(o));
+      if (meaningfulOptions.length < 2) {
+        issues.push(`Item has fewer than 2 meaningful options`);
+      }
     }
 
     // Correct answer must be identifiable and clean
-    const correctAnswer = item.correct_answer ?? item.correct_option ?? "";
+    const correctAnswer = item.correct_answer ?? "";
     if (typeof correctAnswer === "string" && correctAnswer.length < 3) {
       issues.push(`Correct answer too short: "${correctAnswer}"`);
     }
