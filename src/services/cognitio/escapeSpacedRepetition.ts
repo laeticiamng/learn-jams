@@ -289,6 +289,13 @@ export function generateEscapeDebrief(
   // Next actions
   const nextActions = generateNextActions(conceptResults, accuracy);
 
+  // Inventory summary from rooms + state
+  const allRewards = rooms.flatMap(r => r.rewards);
+  const collectedIds = new Set(state.inventory_collected);
+  const keyItemsTotal = allRewards.filter(r => r.is_key_item).length;
+  const keyItemsCollected = allRewards.filter(r => r.is_key_item && collectedIds.has(r.id)).length;
+  const badgesEarned = allRewards.filter(r => r.type === "badge" && collectedIds.has(r.id)).length;
+
   return {
     score: state.score,
     accuracy,
@@ -300,5 +307,12 @@ export function generateEscapeDebrief(
     resolution_narrative: resolutionNarrative,
     achievements,
     next_actions: nextActions,
+    inventory_summary: {
+      collected: collectedIds.size,
+      total: allRewards.length,
+      key_items_collected: keyItemsCollected,
+      key_items_total: keyItemsTotal,
+      badges_earned: badgesEarned,
+    },
   };
 }

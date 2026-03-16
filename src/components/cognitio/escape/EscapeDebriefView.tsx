@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
   Trophy, Star, Brain, Clock, Target, ArrowRight,
-  RotateCcw, BookOpen, Shield,
+  RotateCcw, BookOpen, Shield, Package,
 } from "lucide-react";
 import type { EscapeDebrief, Achievement, NextAction } from "@/domain/cognitio/escapeEngine.types";
 
@@ -81,6 +81,40 @@ export default function EscapeDebriefView({
           </div>
         </div>
       </motion.div>
+
+      {/* Inventory summary */}
+      {debrief.inventory_summary && debrief.inventory_summary.total > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+          className="glass-card p-4 rounded-xl"
+        >
+          <h3 className="text-xs font-semibold flex items-center gap-2 text-muted-foreground mb-3">
+            <Package className="w-3.5 h-3.5" /> Collection
+          </h3>
+          <div className="grid grid-cols-3 gap-3 text-center">
+            <div>
+              <p className="text-lg font-bold">
+                {debrief.inventory_summary.collected}/{debrief.inventory_summary.total}
+              </p>
+              <p className="text-[10px] text-muted-foreground">Objets</p>
+            </div>
+            <div>
+              <p className="text-lg font-bold text-amber-500">
+                {debrief.inventory_summary.key_items_collected}/{debrief.inventory_summary.key_items_total}
+              </p>
+              <p className="text-[10px] text-muted-foreground">Objets clés</p>
+            </div>
+            <div>
+              <p className="text-lg font-bold text-orange-500">
+                {debrief.inventory_summary.badges_earned}
+              </p>
+              <p className="text-[10px] text-muted-foreground">Badges</p>
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       {/* Narrative */}
       <motion.div

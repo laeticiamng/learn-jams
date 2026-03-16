@@ -313,6 +313,14 @@ export interface EscapeDebrief {
   achievements: Achievement[];
   /** Recommendations */
   next_actions: NextAction[];
+  /** Inventory collection summary (optional) */
+  inventory_summary?: {
+    collected: number;
+    total: number;
+    key_items_collected: number;
+    key_items_total: number;
+    badges_earned: number;
+  };
 }
 
 export interface ConceptResult {
