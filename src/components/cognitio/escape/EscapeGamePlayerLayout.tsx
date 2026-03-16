@@ -26,12 +26,15 @@ interface EscapeGamePlayerLayoutProps {
   session: EscapeGameSession;
   missionId: string;
   onMissionCompleted?: () => void;
+  /** Domain key for immersive atmosphere (e.g. "medical_clinical", "law") */
+  domain?: string;
 }
 
 export default function EscapeGamePlayerLayout({
   session,
   missionId,
   onMissionCompleted,
+  domain,
 }: EscapeGamePlayerLayoutProps) {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -129,6 +132,15 @@ export default function EscapeGamePlayerLayout({
   }, [state.phase, state.current_puzzle_index]);
 
   const totalItems = rooms.reduce((sum, r) => sum + r.rewards.length, 0);
+
+  // Notify parent when mission is completed (debrief reached)
+  const completedRef = useRef(false);
+  useEffect(() => {
+    if (state.phase === "debrief" && !completedRef.current) {
+      completedRef.current = true;
+      onMissionCompleted?.();
+    }
+  }, [state.phase, onMissionCompleted]);
 
   // -------- Briefing Phase --------
   if (state.phase === "briefing") {
@@ -368,11 +380,28 @@ export default function EscapeGamePlayerLayout({
 
         {/* Main game area */}
         <main className="flex-1 max-w-3xl mx-auto px-4 py-6 space-y-6">
+          {/* Boss room indicator */}
+          {currentRoom?.room_type === "final" && state.phase !== "room_complete" && state.phase !== "debrief" && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex items-center gap-3 px-4 py-2 rounded-xl border border-red-500/20 bg-red-500/5"
+            >
+              <span className="text-sm">🏆</span>
+              <div className="flex-1">
+                <p className="text-xs font-semibold text-red-400">Épreuve finale</p>
+                <p className="text-[10px] text-muted-foreground">
+                  Toutes vos connaissances sont mises à l'épreuve. Bonne chance !
+                </p>
+              </div>
+            </motion.div>
+          )}
+
           {/* Narrative banner */}
           {narrativeMessage && (
             <EscapeNarrativeBanner
               message={narrativeMessage}
-              emotion={getEmotionForPhase(state.phase)}
+              emotion={currentRoom?.room_type === "final" ? "urgency" : getEmotionForPhase(state.phase)}
             />
           )}
 
@@ -607,6 +636,7 @@ export default function EscapeGamePlayerLayout({
           roomIndex={state.current_room_index}
           totalRooms={rooms.length}
           mainTopic={session.narrative.briefing.title}
+          domain={domain}
         />
       )}
     </div>

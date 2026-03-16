@@ -97,6 +97,11 @@ export function generateEscapeRooms(input: RoomGenerationInput): EscapeRoom[] {
     // Create discoverable elements (hidden clues, environmental objects)
     const discoverables = generateRoomDiscoverables(roomConcepts, roomType, puzzles, i);
 
+    // Inject meta-puzzle into the final room as a capstone synthesis challenge
+    if (roomType === "final" && concepts.length >= 3) {
+      puzzles.push(createMetaPuzzle(concepts, roomCount, difficulty));
+    }
+
     rooms.push({
       room_index: i,
       id: roomId,

@@ -19,11 +19,24 @@ import type { EscapeGameSession } from "@/domain/cognitio/escapeEngine.types";
 import { convertMissionToEscapeGame } from "@/services/cognitio/escapeGameBuilder";
 import { selectMissionFamily, selectUniverseProfile } from "@/domain/cognitio/escapeGame.types";
 
+/** Derive a document domain key from mission family for immersive profile lookup */
+function missionFamilyToDomain(family: string, topic: string): string {
+  switch (family) {
+    case "clinical_simulation": return "medical_clinical";
+    case "legal_reasoning": return "law";
+    case "scientific_discovery": return "fundamental_science";
+    case "logic_sequencing": return "computer_science";
+    case "investigation": return "history";
+    default: return "general";
+  }
+}
+
 export default function EscapeGame() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [session, setSession] = useState<EscapeGameSession | null>(null);
+  const [domain, setDomain] = useState<string | undefined>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -71,17 +84,20 @@ export default function EscapeGame() {
         // Determine mission family and universe from topic
         const missionFamily = selectMissionFamily(mainTopic, "university");
         const universeProfile = selectUniverseProfile("university");
+        const resolvedDomain = missionFamilyToDomain(missionFamily, mainTopic);
 
-        // Convert to escape game session
+        // Convert to escape game session (enriched with immersive universe profiles)
         const escapeSession = convertMissionToEscapeGame(
           missionContent,
           id!,
           user!.id,
           missionFamily,
           universeProfile,
-          mainTopic
+          mainTopic,
+          resolvedDomain,
         );
 
+        setDomain(resolvedDomain);
         setSession(escapeSession);
       } catch (err) {
         console.error("Failed to load escape game:", err);
@@ -154,6 +170,7 @@ export default function EscapeGame() {
     <EscapeGamePlayerLayout
       session={session}
       missionId={id ?? ""}
+      domain={domain}
     />
   );
 }

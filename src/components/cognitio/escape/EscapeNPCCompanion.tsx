@@ -12,6 +12,8 @@ import {
   Shield, Sparkles, Send,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { getUniverseProfile, getRoomAtmosphere } from "@/services/cognitio/immersiveUniverseProfiles";
+import type { PremiumUniverseProfile } from "@/services/cognitio/immersiveUniverseProfiles";
 
 // ---------- Types ----------
 
@@ -39,6 +41,8 @@ interface EscapeNPCCompanionProps {
   roomIndex: number;
   totalRooms: number;
   mainTopic: string;
+  /** Domain key for immersive NPC voice (e.g. "medical_clinical", "law") */
+  domain?: string;
 }
 
 // ---------- NPC Profiles ----------
@@ -102,17 +106,37 @@ function generateNPCResponse(
     roomIndex: number;
     totalRooms: number;
     playerMessage: string;
+    domain?: string;
   }
 ): { text: string; emotion: NPCMessage["emotion"] } {
-  const { roomType, puzzleSolved, hintsUsed, accuracy, roomIndex, totalRooms, playerMessage } = context;
+  const { roomType, puzzleSolved, hintsUsed, accuracy, roomIndex, totalRooms, playerMessage, domain } = context;
   const progress = (roomIndex + 1) / totalRooms;
   const lowered = playerMessage.toLowerCase();
+
+  // Resolve immersive profile for domain-specific voice
+  const profile = domain ? getUniverseProfile(domain) : undefined;
 
   // Check for specific player intents
   const askingForHelp = /aide|help|indice|hint|bloqué|stuck|comment|how/i.test(lowered);
   const askingAboutProgress = /progrès|progress|avance|score|combien/i.test(lowered);
   const greeting = /bonjour|hello|salut|hey|coucou/i.test(lowered);
   const frustrated = /difficile|dur|impossible|comprends pas|nul/i.test(lowered);
+
+  // Use immersive profile voice when available for key interactions
+  if (profile) {
+    if (askingForHelp && hintsUsed < 2) {
+      return { text: profile.voice.hint_personality, emotion: "encouraging" };
+    }
+    if (puzzleSolved === true) {
+      return { text: profile.voice.celebration_style, emotion: "excited" };
+    }
+    if (puzzleSolved === false) {
+      return { text: profile.voice.error_framing, emotion: "warning" };
+    }
+    if (frustrated) {
+      return { text: `${profile.atmosphere.setback_metaphor} Prenez votre temps.`, emotion: "encouraging" };
+    }
+  }
 
   // Role-specific responses
   switch (role) {
@@ -174,8 +198,15 @@ export default function EscapeNPCCompanion({
   roomIndex,
   totalRooms,
   mainTopic,
+  domain,
 }: EscapeNPCCompanionProps) {
-  const profile = NPC_PROFILES[role];
+  const npcProfile = NPC_PROFILES[role];
+
+  // Override NPC name/greeting with immersive universe NPC voice when available
+  const universeProfile = domain ? getUniverseProfile(domain) : undefined;
+  const profile: NPCProfile = universeProfile
+    ? { ...npcProfile, greeting: universeProfile.atmosphere.opening_hook }
+    : npcProfile;
   const Icon = profile.icon;
 
   const [isOpen, setIsOpen] = useState(false);
@@ -199,19 +230,27 @@ export default function EscapeNPCCompanion({
     }
   }, [messages]);
 
-  // Contextual auto-message on room change
+  // Contextual auto-message on room change — enriched with immersive room atmospheres
   useEffect(() => {
-    const autoMessages: Record<string, string> = {
-      briefing: "Nous entrons dans la zone de briefing. Prenez connaissance de la situation.",
-      exploration: "Cette salle d'exploration cache des indices. Fouinez partout !",
-      analysis: "Il est temps d'analyser les données collectées.",
-      diagnostic: "Le moment du diagnostic approche. Rassemblez vos observations.",
-      decision: "Une décision cruciale vous attend ici.",
-      synthesis: "Synthétisez tout ce que vous avez appris.",
-      final: "L'épreuve finale. Donnez le meilleur de vous-même.",
-    };
+    let text: string | undefined;
 
-    const text = autoMessages[roomType];
+    // Use immersive room atmosphere if available
+    if (universeProfile) {
+      const roomAtmos = getRoomAtmosphere(universeProfile, roomType);
+      text = roomAtmos.entry_description;
+    } else {
+      const autoMessages: Record<string, string> = {
+        briefing: "Nous entrons dans la zone de briefing. Prenez connaissance de la situation.",
+        exploration: "Cette salle d'exploration cache des indices. Fouinez partout !",
+        analysis: "Il est temps d'analyser les données collectées.",
+        diagnostic: "Le moment du diagnostic approche. Rassemblez vos observations.",
+        decision: "Une décision cruciale vous attend ici.",
+        synthesis: "Synthétisez tout ce que vous avez appris.",
+        final: "L'épreuve finale. Donnez le meilleur de vous-même.",
+      };
+      text = autoMessages[roomType];
+    }
+
     if (text && roomIndex > 0) {
       const id = `auto-${roomIndex}-${msgIdCounter.current++}`;
       setMessages(prev => [
@@ -233,6 +272,7 @@ export default function EscapeNPCCompanion({
       roomIndex,
       totalRooms,
       playerMessage: puzzleSolved ? "__puzzle_solved__" : "__puzzle_failed__",
+      domain,
     });
 
     const id = `react-${msgIdCounter.current++}`;
@@ -267,6 +307,7 @@ export default function EscapeNPCCompanion({
         roomIndex,
         totalRooms,
         playerMessage: inputText.trim(),
+        domain,
       });
 
       const npcId = `npc-${msgIdCounter.current++}`;
@@ -276,7 +317,7 @@ export default function EscapeNPCCompanion({
       ]);
       setIsTyping(false);
     }, 600 + Math.random() * 800);
-  }, [inputText, role, roomType, puzzleType, puzzleSolved, hintsUsed, accuracy, roomIndex, totalRooms]);
+  }, [inputText, role, roomType, puzzleType, puzzleSolved, hintsUsed, accuracy, roomIndex, totalRooms, domain]);
 
   const emotionColor = (emotion?: NPCMessage["emotion"]) => {
     switch (emotion) {
