@@ -6,8 +6,9 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Lightbulb, Check, X, Send } from "lucide-react";
-import type { MissionItem, BrickType } from "@/domain/cognitio/types";
+import { Lightbulb, Send } from "lucide-react";
+import type { MissionItem } from "@/domain/cognitio/types";
+import MissionPuzzleWidget from "./MissionPuzzleWidget";
 
 interface MissionActionPanelProps {
   item: MissionItem;
@@ -24,25 +25,48 @@ export default function MissionActionPanel({
   hintsAvailable,
   disabled = false,
 }: MissionActionPanelProps) {
-  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
+  const [pendingAnswer, setPendingAnswer] = useState<string | string[] | null>(null);
   const [confidence, setConfidence] = useState(0.5);
   const [submitted, setSubmitted] = useState(false);
   const startTime = useRef(Date.now());
 
+  // Determine if this brick type uses the integrated widget (with built-in submit)
+  const usesIntegratedWidget = item.interaction_mode && item.interaction_mode !== "select";
+
   // Reset on new item
   useEffect(() => {
-    setSelectedAnswer(null);
+    setPendingAnswer(null);
     setConfidence(0.5);
     setSubmitted(false);
     startTime.current = Date.now();
   }, [item.id]);
 
+  const handleWidgetAnswer = useCallback(
+    (answer: string | string[]) => {
+      if (submitted || disabled) return;
+      if (usesIntegratedWidget) {
+        // For integrated widgets, the widget itself triggers submission
+        setPendingAnswer(answer);
+      } else {
+        setPendingAnswer(answer);
+      }
+    },
+    [submitted, disabled, usesIntegratedWidget]
+  );
+
   const handleSubmit = useCallback(() => {
-    if (!selectedAnswer || submitted || disabled) return;
+    if (!pendingAnswer || submitted || disabled) return;
     const timeTaken = Date.now() - startTime.current;
     setSubmitted(true);
-    onSubmit(selectedAnswer, confidence, timeTaken);
-  }, [selectedAnswer, confidence, submitted, disabled, onSubmit]);
+    onSubmit(pendingAnswer, confidence, timeTaken);
+  }, [pendingAnswer, confidence, submitted, disabled, onSubmit]);
+
+  // Auto-submit for integrated widgets once answer is set
+  useEffect(() => {
+    if (usesIntegratedWidget && pendingAnswer && !submitted) {
+      // Show confidence slider briefly before submitting
+    }
+  }, [usesIntegratedWidget, pendingAnswer, submitted]);
 
   return (
     <div className="space-y-4">
@@ -50,47 +74,18 @@ export default function MissionActionPanel({
       <div className="glass-card-elevated p-6 rounded-xl space-y-4">
         <p className="font-medium text-base">{item.prompt}</p>
 
-        {/* Options */}
-        {item.options && (
-          <div className="space-y-2">
-            {item.options.map((option) => {
-              const isSelected = selectedAnswer === option;
-
-              return (
-                <motion.button
-                  key={option}
-                  whileHover={!submitted ? { scale: 1.01 } : undefined}
-                  whileTap={!submitted ? { scale: 0.99 } : undefined}
-                  onClick={() => !submitted && !disabled && setSelectedAnswer(option)}
-                  disabled={submitted || disabled}
-                  className={`w-full text-left p-3.5 rounded-xl border transition-all ${
-                    isSelected
-                      ? "border-primary bg-primary/5 shadow-sm"
-                      : "border-border/20 hover:border-border/40"
-                  }`}
-                  aria-pressed={isSelected}
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
-                        isSelected
-                          ? "border-primary bg-primary"
-                          : "border-border/40"
-                      }`}
-                    >
-                      {isSelected && <Check className="w-3 h-3 text-white" />}
-                    </div>
-                    <span className="text-sm">{option}</span>
-                  </div>
-                </motion.button>
-              );
-            })}
-          </div>
+        {/* Puzzle widget — adapts to interaction mode */}
+        {!submitted && (
+          <MissionPuzzleWidget
+            item={item}
+            onAnswer={handleWidgetAnswer}
+            disabled={submitted || disabled}
+          />
         )}
 
         {/* Confidence slider */}
         <AnimatePresence>
-          {!submitted && selectedAnswer && (
+          {!submitted && pendingAnswer && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
@@ -138,7 +133,7 @@ export default function MissionActionPanel({
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={!selectedAnswer || disabled}
+            disabled={!pendingAnswer || disabled}
             className="ml-auto gradient-bg-premium rounded-xl gap-2"
           >
             <Send className="w-4 h-4" />

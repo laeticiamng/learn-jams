@@ -5,11 +5,12 @@
 
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Clock, Lightbulb } from "lucide-react";
+import { Clock, Lightbulb, Lock } from "lucide-react";
 import type { MissionItem, MissionRoom as MissionRoomType, BrickType } from "@/domain/cognitio/types";
 import { getBrickLabel } from "@/lib/cognitio-ui";
 import MissionActionPanel from "./MissionActionPanel";
 import MissionFeedbackPanel from "./MissionFeedbackPanel";
+import MissionExploration from "./MissionExploration";
 import { validateAnswer, type ValidationResult } from "@/services/cognitio/missionValidationEngine";
 import {
   generateHint,
@@ -112,10 +113,27 @@ export default function MissionRoomView({
         </div>
       </div>
 
-      {/* Narrative context */}
-      <p className="text-sm text-muted-foreground leading-relaxed glass-card p-4 rounded-xl">
-        {room.narrative_context}
-      </p>
+      {/* Narrative context with exploration */}
+      {room.hidden_clues && room.hidden_clues.length > 0 ? (
+        <MissionExploration
+          narrativeText={room.narrative_context}
+          hiddenClues={room.hidden_clues}
+        />
+      ) : (
+        <p className="text-sm text-muted-foreground leading-relaxed glass-card p-4 rounded-xl">
+          {room.narrative_context}
+        </p>
+      )}
+
+      {/* Required item notice */}
+      {item.requires_item && (
+        <div className="flex items-center gap-2 p-3 rounded-xl bg-yellow-500/5 border border-yellow-500/20">
+          <Lock className="w-4 h-4 text-yellow-500 shrink-0" />
+          <p className="text-xs text-yellow-700 dark:text-yellow-400">
+            Cet exercice nécessite un fragment collecté dans la salle précédente.
+          </p>
+        </div>
+      )}
 
       {/* Hints display */}
       <AnimatePresence>

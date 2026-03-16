@@ -71,7 +71,17 @@ export type BrickType =
   | "SEQUENCE"
   | "ELIMINATION"
   | "OBSERVATION"
-  | "DECISION";
+  | "DECISION"
+  // Extended brick types for escape game mechanics
+  | "CODE_RECONSTRUCT"
+  | "ASSOCIATION"
+  | "TRAP_DISTINCTION"
+  | "PUZZLE_STEPS"
+  | "ERROR_IDENTIFICATION"
+  | "COMPLETION"
+  | "DECISION_TREE"
+  | "LOCK_LOGIC"
+  | "ORDERING";
 
 export type QualityBand =
   | "excellent"   // > 0.85
@@ -229,6 +239,8 @@ export interface MissionContent {
   boss?: MissionBossRoom;
   learning_contract: LearningContract;
   visual_anchors: VisualAnchor[];
+  // Escape game inventory
+  inventory_items?: InventoryItem[];
 }
 
 export interface MissionRoom {
@@ -240,6 +252,18 @@ export interface MissionRoom {
   hints: string[];
   target_concepts: string[]; // stable_keys
   time_limit_sec?: number;
+  // Exploration mechanics
+  hidden_clues?: HiddenClue[];
+  exploration_text?: string; // rich narrative with clickable keywords
+  room_reward?: InventoryItem; // item granted on room completion
+}
+
+export interface HiddenClue {
+  id: string;
+  trigger_keyword: string; // word in narrative_context that reveals this clue
+  clue_text: string;
+  bonus_hint?: string; // optional hint for current room puzzle
+  reveals_item?: string; // optional inventory item ID revealed
 }
 
 export interface MissionBossRoom {
@@ -250,6 +274,11 @@ export interface MissionBossRoom {
   hints: string[];
   target_concepts: string[];
   time_limit_sec?: number;
+  // Meta-puzzle fields
+  is_meta_puzzle?: boolean;
+  requires_all_fragments?: boolean; // all room fragments needed
+  synthesis_prompt?: string; // narrative prompt that ties all rooms together
+  required_items?: string[]; // inventory items needed to attempt boss
 }
 
 export interface MissionItem {
@@ -262,6 +291,51 @@ export interface MissionItem {
   concept_key: string;
   bloom_level: BloomLevel;
   difficulty: number; // 1-5
+  // Extended escape game fields
+  interaction_mode?: InteractionMode;
+  depends_on?: string; // ID of puzzle that must be solved first
+  unlock_key?: string; // key granted when solved (used by other puzzles)
+  reward_item?: InventoryItem; // item added to inventory on solve
+  requires_item?: string; // inventory item ID needed to attempt this puzzle
+  fragments?: string[]; // text fragments for CODE_RECONSTRUCT
+  pairs?: MatchPair[]; // pairs for ASSOCIATION
+  error_document?: string; // document text for ERROR_IDENTIFICATION
+  completion_template?: string; // text with {{blanks}} for COMPLETION
+  decision_tree?: DecisionNode; // tree for DECISION_TREE
+  lock_digits?: number; // number of digits for LOCK_LOGIC
+}
+
+export type InteractionMode =
+  | "select"         // standard QCM (default)
+  | "drag_order"     // drag-and-drop ordering
+  | "drag_match"     // drag-and-drop matching pairs
+  | "text_input"     // free text input
+  | "multi_select"   // select multiple options
+  | "fragment_build" // assemble fragments
+  | "click_error"    // click on error in document
+  | "fill_blanks"    // fill in blanks
+  | "tree_navigate"  // navigate decision tree
+  | "lock_code";     // enter numeric/alpha code
+
+export interface MatchPair {
+  left: string;
+  right: string;
+}
+
+export interface DecisionNode {
+  id: string;
+  prompt: string;
+  choices: { label: string; next_node_id: string | null; is_correct: boolean }[];
+}
+
+export interface InventoryItem {
+  id: string;
+  name: string;
+  description: string;
+  icon: string; // lucide icon name
+  usable_in_puzzles: string[]; // puzzle IDs where this item can be used
+  obtained_from_puzzle: string; // puzzle ID that grants this item
+  combined_with?: string[]; // IDs of items that can be combined with this
 }
 
 export interface LearningContract {

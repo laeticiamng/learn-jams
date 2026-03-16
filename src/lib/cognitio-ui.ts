@@ -67,6 +67,16 @@ export function getBrickLabel(brick: BrickType): string {
     case "ELIMINATION": return "Élimination";
     case "OBSERVATION": return "Observation";
     case "DECISION": return "Décision";
+    case "CODE_RECONSTRUCT": return "Reconstruction";
+    case "ASSOCIATION": return "Association";
+    case "TRAP_DISTINCTION": return "Piège";
+    case "PUZZLE_STEPS": return "Étapes";
+    case "ERROR_IDENTIFICATION": return "Erreur";
+    case "COMPLETION": return "Complétion";
+    case "DECISION_TREE": return "Arbre décisionnel";
+    case "LOCK_LOGIC": return "Verrou logique";
+    case "ORDERING": return "Ordonnancement";
+    default: return brick;
   }
 }
 
@@ -77,6 +87,16 @@ export function getBrickIcon(brick: BrickType): string {
     case "ELIMINATION": return "x-circle";
     case "OBSERVATION": return "eye";
     case "DECISION": return "git-branch";
+    case "CODE_RECONSTRUCT": return "puzzle";
+    case "ASSOCIATION": return "link";
+    case "TRAP_DISTINCTION": return "alert-triangle";
+    case "PUZZLE_STEPS": return "footprints";
+    case "ERROR_IDENTIFICATION": return "search";
+    case "COMPLETION": return "text-cursor-input";
+    case "DECISION_TREE": return "network";
+    case "LOCK_LOGIC": return "lock";
+    case "ORDERING": return "arrow-up-down";
+    default: return "circle";
   }
 }
 

@@ -26,6 +26,7 @@ import MissionProgressBar from "./MissionProgressBar";
 import MissionRoomView from "./MissionRoomView";
 import MissionBossView from "./MissionBossView";
 import MissionEndScreen from "./MissionEndScreen";
+import MissionInventory from "./MissionInventory";
 
 type MissionPhase = "intro" | "playing" | "boss" | "completed";
 
@@ -49,6 +50,7 @@ export default function MissionPlayerLayout({
   const [events, setEvents] = useState<RoomEvent[]>([]);
   const [hintsUsedCount, setHintsUsedCount] = useState(0);
   const [elapsed, setElapsed] = useState(0);
+  const [collectedItems, setCollectedItems] = useState<Set<string>>(new Set());
   const startTimeRef = useRef(Date.now());
   const itemStartRef = useRef(Date.now());
 
@@ -137,6 +139,11 @@ export default function MissionPlayerLayout({
         hint_used: false, // tracked separately
       };
       setEvents((prev) => [...prev, event]);
+
+      // Collect inventory item if correct and item has a reward
+      if (result.is_correct && currentItem?.reward_item) {
+        setCollectedItems((prev) => new Set(prev).add(currentItem.reward_item!.id));
+      }
     },
     [phase, currentRoomIndex, currentItem]
   );
@@ -212,6 +219,17 @@ export default function MissionPlayerLayout({
             </Button>
             <h1 className="text-lg font-bold">{mission.title}</h1>
           </div>
+
+          {/* Inventory */}
+          {mission.inventory_items && mission.inventory_items.length > 0 && (
+            <div className="mb-4">
+              <MissionInventory
+                items={mission.inventory_items}
+                collectedIds={collectedItems}
+                requiredForBoss={mission.boss?.required_items}
+              />
+            </div>
+          )}
 
           {/* Progress bar */}
           <div className="mb-6">

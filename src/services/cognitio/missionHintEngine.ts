@@ -156,6 +156,24 @@ function generateLevel1Hint(item: MissionItem): string {
       return `Cherchez l'élément qui ne partage pas la même propriété fondamentale que les autres. Quel est le point commun des réponses correctes ?`;
     case "DECISION":
       return `Analysez le contexte et les contraintes. Quelle option répond le mieux à l'ensemble des critères posés ?`;
+    case "CODE_RECONSTRUCT":
+      return `Lisez chaque fragment attentivement. Cherchez des connecteurs logiques ou temporels qui indiquent l'ordre.`;
+    case "ASSOCIATION":
+      return `Cherchez les liens sémantiques entre les éléments de gauche et de droite. Un concept appelle sa définition.`;
+    case "TRAP_DISTINCTION":
+      return `Attention aux détails ! L'un de ces éléments ressemble aux autres mais cache une différence subtile.`;
+    case "PUZZLE_STEPS":
+      return `Identifiez la première étape : celle qui ne dépend d'aucune autre. Puis construisez la chaîne.`;
+    case "ERROR_IDENTIFICATION":
+      return `Relisez le document méthodiquement. L'erreur peut être une donnée, un terme, ou une logique incorrecte.`;
+    case "COMPLETION":
+      return `Pensez au vocabulaire précis du domaine. Le mot manquant est un terme clé.`;
+    case "DECISION_TREE":
+      return `À chaque embranchement, évaluez les conséquences avant de choisir. Le bon chemin suit la logique du domaine.`;
+    case "LOCK_LOGIC":
+      return `Reprenez les indices précédents. Le code se déduit des informations déjà collectées.`;
+    case "ORDERING":
+      return `Pensez à la chronologie ou à la hiérarchie naturelle des éléments. Quel est le premier ? Le dernier ?`;
     default:
       return `Relisez attentivement l'énoncé et pensez au concept clé "${conceptKey}".`;
   }
@@ -177,6 +195,24 @@ function generateLevel2Hint(item: MissionItem): string {
       return `L'intrus se distingue car : ${firstHalf}…`;
     case "DECISION":
       return `La bonne approche tient compte du fait que : ${firstHalf}…`;
+    case "CODE_RECONSTRUCT":
+      return `Le premier fragment commence par : ${firstHalf}…`;
+    case "ASSOCIATION":
+      return `L'une des associations clés est : ${firstHalf}…`;
+    case "TRAP_DISTINCTION":
+      return `Le piège est lié au fait que : ${firstHalf}…`;
+    case "PUZZLE_STEPS":
+      return `La séquence d'étapes repose sur : ${firstHalf}…`;
+    case "ERROR_IDENTIFICATION":
+      return `L'erreur se trouve dans la partie concernant : ${firstHalf}…`;
+    case "COMPLETION":
+      return `Le terme recherché est lié à : ${firstHalf}…`;
+    case "DECISION_TREE":
+      return `Le bon chemin passe par : ${firstHalf}…`;
+    case "LOCK_LOGIC":
+      return `Le code utilise la logique suivante : ${firstHalf}…`;
+    case "ORDERING":
+      return `Le premier élément dans l'ordre correct est lié à : ${firstHalf}…`;
     default:
       return `Indice important : ${firstHalf}…`;
   }

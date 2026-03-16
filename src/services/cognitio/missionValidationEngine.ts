@@ -69,16 +69,19 @@ function checkCorrectness(item: MissionItem, answer: string | string[]): boolean
   const correct = item.correct_answer;
 
   if (Array.isArray(correct) && Array.isArray(answer)) {
-    // Multi-answer: order may or may not matter
-    if (item.type === "SEQUENCE") {
-      // Order matters for sequence
+    // Order matters for sequence-like types
+    if (item.type === "SEQUENCE" || item.type === "ORDERING" || item.type === "PUZZLE_STEPS" || item.type === "CODE_RECONSTRUCT") {
       return JSON.stringify(answer) === JSON.stringify(correct);
     }
-    // Order doesn't matter
+    // Order doesn't matter for multi-select types
     return JSON.stringify([...answer].sort()) === JSON.stringify([...correct].sort());
   }
 
   if (typeof correct === "string" && typeof answer === "string") {
+    // Flexible matching for free text input (COMPLETION, LOCK_LOGIC)
+    if (item.type === "COMPLETION" || item.type === "LOCK_LOGIC") {
+      return answer.trim().toLowerCase() === correct.trim().toLowerCase();
+    }
     return answer.trim().toLowerCase() === correct.trim().toLowerCase();
   }
 
@@ -89,8 +92,9 @@ function checkCorrectness(item: MissionItem, answer: string | string[]): boolean
 function computePartialScore(item: MissionItem, answer: string | string[], isCorrect: boolean): number {
   if (isCorrect) return 1;
 
-  // Partial credit for sequence: count correct positions
-  if (item.type === "SEQUENCE" && Array.isArray(answer) && Array.isArray(item.correct_answer)) {
+  // Partial credit for ordering types: count correct positions
+  const orderTypes: BrickType[] = ["SEQUENCE", "ORDERING", "PUZZLE_STEPS", "CODE_RECONSTRUCT"];
+  if (orderTypes.includes(item.type) && Array.isArray(answer) && Array.isArray(item.correct_answer)) {
     let correctPositions = 0;
     const minLen = Math.min(answer.length, item.correct_answer.length);
     for (let i = 0; i < minLen; i++) {
@@ -99,14 +103,26 @@ function computePartialScore(item: MissionItem, answer: string | string[], isCor
     return correctPositions / Math.max(1, item.correct_answer.length);
   }
 
-  // Partial credit for TRI: count correctly placed items
-  if (item.type === "TRI" && Array.isArray(answer) && Array.isArray(item.correct_answer)) {
+  // Partial credit for set-based types: count correctly placed items
+  const setTypes: BrickType[] = ["TRI", "ASSOCIATION"];
+  if (setTypes.includes(item.type) && Array.isArray(answer) && Array.isArray(item.correct_answer)) {
     const correctSet = new Set(item.correct_answer);
     let correctCount = 0;
     for (const a of answer) {
       if (correctSet.has(a)) correctCount++;
     }
     return correctCount / Math.max(1, item.correct_answer.length);
+  }
+
+  // Partial credit for COMPLETION: check substring match
+  if (item.type === "COMPLETION" && typeof answer === "string" && typeof item.correct_answer === "string") {
+    const answerWords = answer.trim().toLowerCase().split(/\s+/);
+    const correctWords = item.correct_answer.trim().toLowerCase().split(/\s+/);
+    let matchCount = 0;
+    for (const w of answerWords) {
+      if (correctWords.includes(w)) matchCount++;
+    }
+    return matchCount / Math.max(1, correctWords.length);
   }
 
   return 0;
@@ -223,6 +239,26 @@ function getCorrectMessage(brickType: BrickType, confidence: number): string {
       return "Bien identifié ! Vous savez distinguer l'intrus des éléments cohérents.";
     case "DECISION":
       return "Bonne décision ! Votre analyse du contexte est pertinente.";
+    case "CODE_RECONSTRUCT":
+      return "Reconstruction parfaite ! Vous avez assemblé les fragments dans le bon ordre.";
+    case "ASSOCIATION":
+      return "Associations correctes ! Vous maîtrisez les liens entre les concepts.";
+    case "TRAP_DISTINCTION":
+      return "Bien vu ! Vous n'êtes pas tombé dans le piège. Votre discernement est solide.";
+    case "PUZZLE_STEPS":
+      return "Toutes les étapes sont dans le bon ordre. Votre méthode est rigoureuse.";
+    case "ERROR_IDENTIFICATION":
+      return "Erreur identifiée ! Votre œil critique est affûté.";
+    case "COMPLETION":
+      return "Texte complété correctement. Votre maîtrise du vocabulaire est précise.";
+    case "DECISION_TREE":
+      return "Excellent parcours décisionnel ! Vous avez navigué l'arbre sans erreur.";
+    case "LOCK_LOGIC":
+      return "Code déverrouillé ! Votre raisonnement logique est impeccable.";
+    case "ORDERING":
+      return "Ordonnancement correct ! La logique séquentielle est maîtrisée.";
+    default:
+      return "Correct ! Bonne réponse.";
   }
 }
 
@@ -238,6 +274,26 @@ function getIncorrectMessage(brickType: BrickType): string {
       return "Ce n'est pas l'intrus. Cherchez le point commun partagé par les autres éléments.";
     case "DECISION":
       return "Ce n'est pas la meilleure option dans ce contexte. Réévaluez les contraintes.";
+    case "CODE_RECONSTRUCT":
+      return "L'assemblage n'est pas correct. Cherchez la logique de construction du texte.";
+    case "ASSOCIATION":
+      return "Certaines associations sont incorrectes. Revoyez les définitions de chaque concept.";
+    case "TRAP_DISTINCTION":
+      return "Attention, vous êtes tombé dans le piège ! Relisez les nuances entre les concepts.";
+    case "PUZZLE_STEPS":
+      return "Les étapes ne sont pas dans le bon ordre. Identifiez les dépendances logiques.";
+    case "ERROR_IDENTIFICATION":
+      return "Ce n'est pas l'erreur principale. Analysez plus attentivement le document.";
+    case "COMPLETION":
+      return "Le terme utilisé n'est pas le bon. Pensez au vocabulaire précis du domaine.";
+    case "DECISION_TREE":
+      return "Ce chemin décisionnel n'était pas optimal. Réévaluez les conséquences de chaque choix.";
+    case "LOCK_LOGIC":
+      return "Code incorrect. Reprenez les indices et réfléchissez à la combinaison logique.";
+    case "ORDERING":
+      return "L'ordre n'est pas correct. Pensez aux relations de précédence entre les éléments.";
+    default:
+      return "Ce n'est pas la bonne réponse. Réessayez en relisant l'explication.";
   }
 }
 
