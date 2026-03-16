@@ -4,6 +4,7 @@
 // ============================================================
 
 import { motion } from "framer-motion";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   Play,
   DoorOpen,
@@ -14,6 +15,7 @@ import {
   Swords,
   Shield,
   BookOpen,
+  KeyRound,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { MissionContent } from "@/domain/cognitio/types";
@@ -30,6 +32,8 @@ export default function MissionIntroScreen({
   onStart,
   universeTone,
 }: MissionIntroScreenProps) {
+  const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
   const totalItems =
     mission.rooms.reduce((sum, r) => sum + r.items.length, 0) +
     (mission.boss?.items.length ?? 0);
@@ -151,12 +155,12 @@ export default function MissionIntroScreen({
         </ul>
       </div>
 
-      {/* Start button */}
+      {/* Start buttons */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.6 }}
-        className="pt-2"
+        className="pt-2 space-y-3"
       >
         <Button
           onClick={onStart}
@@ -164,8 +168,19 @@ export default function MissionIntroScreen({
           className="w-full gradient-bg-premium rounded-xl gap-3 text-base py-6"
         >
           <Play className="w-5 h-5" />
-          Commencer la mission
+          Mode classique
         </Button>
+        {id && (
+          <Button
+            onClick={() => navigate(`/mission/${id}/escape`)}
+            size="lg"
+            variant="outline"
+            className="w-full rounded-xl gap-3 text-base py-6 border-primary/20 hover:bg-primary/5"
+          >
+            <KeyRound className="w-5 h-5 text-primary" />
+            Mode Escape Game
+          </Button>
+        )}
       </motion.div>
     </motion.div>
   );
