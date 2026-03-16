@@ -221,11 +221,12 @@ export function canUnlockRoom(room: EscapeRoom, state: EscapeGameState): boolean
     case "none":
       return true;
 
-    case "code_lock":
+    case "code_lock": {
       // Check if all code parts have been discovered
       if (!lock.code) return false;
       const discoveredCode = Array.from(state.codes_discovered.values()).join("");
       return discoveredCode === lock.code;
+    }
 
     case "key_item":
       return lock.required_item_id

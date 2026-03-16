@@ -203,7 +203,10 @@ export default function EscapeNPCCompanion({
   const npcProfile = NPC_PROFILES[role];
 
   // Override NPC name/greeting with immersive universe NPC voice when available
-  const universeProfile = domain ? getUniverseProfile(domain) : undefined;
+  const universeProfile = useMemo(
+    () => (domain ? getUniverseProfile(domain) : undefined),
+    [domain],
+  );
   const profile: NPCProfile = universeProfile
     ? { ...npcProfile, greeting: universeProfile.atmosphere.opening_hook }
     : npcProfile;
@@ -258,7 +261,7 @@ export default function EscapeNPCCompanion({
         { id, role: "npc", text, emotion: "neutral" },
       ]);
     }
-  }, [roomIndex, roomType]);
+  }, [roomIndex, roomType, universeProfile]);
 
   // Contextual reaction to puzzle solve
   useEffect(() => {
@@ -280,7 +283,7 @@ export default function EscapeNPCCompanion({
       ...prev,
       { id, role: "npc", text: response.text, emotion: response.emotion },
     ]);
-  }, [puzzleSolved]);
+  }, [puzzleSolved, accuracy, domain, hintsUsed, puzzleType, role, roomIndex, roomType, totalRooms]);
 
   const handleSendMessage = useCallback(() => {
     if (!inputText.trim()) return;
