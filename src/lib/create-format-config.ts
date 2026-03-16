@@ -118,12 +118,25 @@ export function isFormatPipelineIntegrated(format: CreateFormat): boolean {
 }
 
 /**
- * Formats that are coming soon (provider exists but not integrated).
+ * Formats that use a direct-generation flow (provider-based, not M2→M5 pipeline).
+ * Music → lyrics generation + Suno provider
+ * Video → video planning + OpenAI Sora provider
  */
-export const COMING_SOON_FORMATS = new Set<CreateFormat>([
+export const DIRECT_GENERATION_FORMATS = new Set<CreateFormat>([
   "music",
   "video",
 ]);
+
+/** Check if a format uses direct provider-based generation (not the M2→M5 pipeline). */
+export function isDirectGenerationFormat(format: CreateFormat): boolean {
+  return DIRECT_GENERATION_FORMATS.has(format);
+}
+
+/**
+ * Formats that are coming soon (provider exists but not integrated).
+ * Currently empty — music and video are now operational.
+ */
+export const COMING_SOON_FORMATS = new Set<CreateFormat>([]);
 
 /** Check if a format is coming soon (has provider, not yet integrated). */
 export function isFormatComingSoon(format: CreateFormat): boolean {
