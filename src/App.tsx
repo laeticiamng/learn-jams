@@ -41,6 +41,7 @@ const CognitioLibrary = lazy(() => import("./pages/CognitioLibrary"));
 const ReviewHub = lazy(() => import("./pages/ReviewHub"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const GuardianSettings = lazy(() => import("./pages/GuardianSettings"));
+const EscapeGame = lazy(() => import("./pages/EscapeGame"));
 
 const queryClient = new QueryClient();
 
@@ -76,6 +77,7 @@ const App = () => (
               <Route path="/export" element={<ProtectedRoute><Export /></ProtectedRoute>} />
               <Route path="/mission/:id" element={<Navigate to="play" replace />} />
               <Route path="/mission/:id/play" element={<ProtectedRoute><MissionPlay /></ProtectedRoute>} />
+              <Route path="/mission/:id/escape" element={<ProtectedRoute><EscapeGame /></ProtectedRoute>} />
               <Route path="/mission/:id/debrief" element={<ProtectedRoute><MissionDebrief /></ProtectedRoute>} />
               <Route path="/mission/:id/analysis" element={<ProtectedRoute><MissionAnalysis /></ProtectedRoute>} />
               <Route path="/transformation/:id" element={<ProtectedRoute><TransformationView /></ProtectedRoute>} />
