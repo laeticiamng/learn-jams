@@ -27,6 +27,7 @@ import { validateGenerationNotEmpty } from "@/domain/cognitio/generation.validat
 import { scoreConceptCandidate, isEditorialArtifact, cleanMainTopic } from "@/lib/cognitio-semantic-cleaning";
 import { runSemanticSuccessGate, runMissionGate } from "@/domain/cognitio/validators";
 import { runLocalAnalysis } from "@/services/cognitio/analysis.service";
+import { recordSecondPassEvaluation, recordSecondPassCompletion, recordGateEvaluation } from "@/services/observability/metricsService";
 
 export type PipelinePhase =
   | "import"
@@ -423,7 +424,7 @@ export function useCreatePipeline() {
           definition: c.definition,
           uncertain: c.uncertain,
           source_confidence: c.source_confidence,
-          source_trace: c.source_trace.map(t => ({
+          source_trace: c.source_trace?.map(t => ({
             segment_index: t.segment_index,
             excerpt: t.excerpt,
           })),
@@ -432,6 +433,19 @@ export function useCreatePipeline() {
         scoreConceptCandidate,
         isEditorialArtifact,
         cleanMainTopic,
+        analysis_mode: "full",
+      });
+
+      // Ticket 4: record gate evaluation
+      recordGateEvaluation({
+        analysis_mode: "full",
+        threshold_profile: semanticGate.signals.threshold_profile ?? "full_strict",
+        passed: semanticGate.passed,
+        gate_failure_reasons: semanticGate.signals.gate_block_reasons,
+        valid_concepts_count: semanticGate.signals.valid_concepts_count,
+        body_concepts_count: semanticGate.signals.body_concepts_count,
+        editorial_artifact_ratio: semanticGate.signals.editorial_artifact_ratio,
+        main_topic_is_editorial_artifact: semanticGate.signals.main_topic_is_editorial_artifact,
       });
 
       // Populate semantic gate signals in counters
@@ -467,6 +481,15 @@ export function useCreatePipeline() {
         const hasMultipleSegments = m1Result.segments.length > 1;
 
         if (!bodyPassWasTriggered && hasMultipleSegments) {
+          // Ticket 4: record second-pass trigger from pipeline retry
+          recordSecondPassEvaluation({
+            analysis_mode: "body_only",
+            trigger_reason: "pipeline_gate_retry",
+            triggered: true,
+            valid_concepts_count: semanticGate.signals.valid_concepts_count,
+            segments_count: m1Result.segments.length,
+          });
+
           console.warn(
             `[COGNITIO][P0] SEMANTIC GATE RETRY: Gate failed but body-only second pass was NOT triggered. ` +
             `Forcing re-analysis on body segments (segments 1-${m1Result.segments.length - 1}).`
@@ -499,7 +522,7 @@ export function useCreatePipeline() {
                   definition: c.definition,
                   uncertain: c.uncertain,
                   source_confidence: c.source_confidence,
-                  source_trace: c.source_trace.map(t => ({
+                  source_trace: c.source_trace?.map(t => ({
                     segment_index: t.segment_index,
                     excerpt: t.excerpt,
                   })),
@@ -508,6 +531,19 @@ export function useCreatePipeline() {
                 scoreConceptCandidate,
                 isEditorialArtifact,
                 cleanMainTopic,
+                analysis_mode: "body_only",
+              });
+
+              // Ticket 4: record body-only retry gate evaluation
+              recordGateEvaluation({
+                analysis_mode: "body_only",
+                threshold_profile: retryGate.signals.threshold_profile ?? "body_only_relaxed",
+                passed: retryGate.passed,
+                gate_failure_reasons: retryGate.signals.gate_block_reasons,
+                valid_concepts_count: retryGate.signals.valid_concepts_count,
+                body_concepts_count: retryGate.signals.body_concepts_count,
+                editorial_artifact_ratio: retryGate.signals.editorial_artifact_ratio,
+                main_topic_is_editorial_artifact: retryGate.signals.main_topic_is_editorial_artifact,
               });
 
               console.info(

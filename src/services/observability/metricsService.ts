@@ -24,6 +24,16 @@ export type MetricName =
   | "m2.llm_fallback_triggered"
   | "m2.semantic_gate_passed"
   | "m2.semantic_gate_failed"
+  // Second-pass observability (Ticket 4)
+  | "m2.second_pass_evaluated"
+  | "m2.second_pass_triggered"
+  | "m2.second_pass_skipped"
+  | "m2.second_pass_completed"
+  | "m2.second_pass_failed"
+  | "m2.second_pass_duration_ms"
+  | "m2.gate_evaluated"
+  | "m2.gate_passed"
+  | "m2.gate_failed"
   | "m3.memory_duration_ms"
   | "m3.segments_generated"
   | "m4.format_decision"
@@ -196,3 +206,96 @@ export class PipelineTimer {
 // ---------- Singleton ----------
 
 export const metrics = new MetricsCollector();
+
+// ---------- Second-Pass Instrumentation Helpers (Ticket 4) ----------
+
+/** Structured metadata for second-pass trigger evaluation */
+export interface SecondPassEvalMetadata {
+  document_type?: string;
+  analysis_mode: "full" | "body_only" | "quick";
+  trigger_reason: string;
+  triggered: boolean;
+  valid_body_concepts_count?: number;
+  valid_concepts_count?: number;
+  editorial_body_concepts_count?: number;
+  segments_count?: number;
+  artifact_ratio?: number;
+  front_matter_detected?: boolean;
+}
+
+/** Structured metadata for gate evaluation */
+export interface GateEvalMetadata {
+  analysis_mode: "full" | "body_only";
+  threshold_profile: string;
+  passed: boolean;
+  gate_failure_reasons?: string[];
+  valid_concepts_count?: number;
+  body_concepts_count?: number;
+  editorial_artifact_ratio?: number;
+  main_topic_is_editorial_artifact?: boolean;
+  duration_ms?: number;
+}
+
+/**
+ * Record a second-pass trigger evaluation event.
+ * Emits structured metadata without raw document content.
+ */
+export function recordSecondPassEvaluation(meta: SecondPassEvalMetadata): void {
+  const metricName: MetricName = meta.triggered
+    ? "m2.second_pass_triggered"
+    : "m2.second_pass_skipped";
+
+  metrics.record("m2.second_pass_evaluated", 1, {
+    analysis_mode: meta.analysis_mode,
+    trigger_reason: meta.trigger_reason,
+    triggered: String(meta.triggered),
+  });
+
+  metrics.record(metricName, 1, {
+    analysis_mode: meta.analysis_mode,
+    trigger_reason: meta.trigger_reason,
+    valid_body_concepts_count: String(meta.valid_body_concepts_count ?? 0),
+    valid_concepts_count: String(meta.valid_concepts_count ?? 0),
+    editorial_body_concepts_count: String(meta.editorial_body_concepts_count ?? 0),
+    segments_count: String(meta.segments_count ?? 0),
+    artifact_ratio: String(meta.artifact_ratio ?? 0),
+    front_matter_detected: String(meta.front_matter_detected ?? false),
+  });
+}
+
+/**
+ * Record a second-pass completion event.
+ */
+export function recordSecondPassCompletion(success: boolean, durationMs: number, conceptsCount: number): void {
+  const metricName: MetricName = success ? "m2.second_pass_completed" : "m2.second_pass_failed";
+  metrics.record(metricName, 1, {
+    concepts_count: String(conceptsCount),
+  });
+  metrics.record("m2.second_pass_duration_ms", durationMs, {
+    success: String(success),
+  });
+}
+
+/**
+ * Record a gate evaluation event with structured failure reasons.
+ */
+export function recordGateEvaluation(meta: GateEvalMetadata): void {
+  metrics.record("m2.gate_evaluated", 1, {
+    analysis_mode: meta.analysis_mode,
+    threshold_profile: meta.threshold_profile,
+    passed: String(meta.passed),
+  });
+
+  const metricName: MetricName = meta.passed ? "m2.gate_passed" : "m2.gate_failed";
+  metrics.record(metricName, 1, {
+    analysis_mode: meta.analysis_mode,
+    threshold_profile: meta.threshold_profile,
+    valid_concepts_count: String(meta.valid_concepts_count ?? 0),
+    body_concepts_count: String(meta.body_concepts_count ?? 0),
+    editorial_artifact_ratio: String(meta.editorial_artifact_ratio ?? 0),
+    main_topic_is_editorial_artifact: String(meta.main_topic_is_editorial_artifact ?? false),
+    ...(meta.gate_failure_reasons && meta.gate_failure_reasons.length > 0
+      ? { gate_failure_reasons: meta.gate_failure_reasons.join("|") }
+      : {}),
+  });
+}
