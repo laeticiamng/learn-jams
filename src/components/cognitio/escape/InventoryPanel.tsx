@@ -10,7 +10,8 @@ import {
   Gem, Puzzle, Award, Key, Package, X, Eye,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { InventoryItem, InventoryItemType } from "@/domain/cognitio/escapeEngine.types";
+import type { InventoryItem, InventoryItemType, EscapeRoom } from "@/domain/cognitio/escapeEngine.types";
+import { getItemsByType, getKeyItems, getItemUsage } from "@/services/cognitio/escapeInventoryEngine";
 
 interface InventoryPanelProps {
   inventory: InventoryItem[];
@@ -18,6 +19,8 @@ interface InventoryPanelProps {
   onExamine: (itemId: string) => string | null;
   onUseItem?: (itemId: string, targetRoomIndex: number) => boolean;
   lockedRoomIndices?: number[];
+  /** All rooms — used for item usage hints on key items */
+  rooms?: EscapeRoom[];
 }
 
 const ITEM_ICONS: Record<InventoryItemType, typeof FileText> = {
@@ -59,11 +62,13 @@ export default function InventoryPanel({
   onExamine,
   onUseItem,
   lockedRoomIndices,
+  rooms,
 }: InventoryPanelProps) {
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [examineText, setExamineText] = useState<string>("");
 
   const collectedItems = inventory.filter(i => i.collected);
+  const keyItems = getKeyItems(inventory);
   const progress = totalItems > 0
     ? Math.round((collectedItems.length / totalItems) * 100)
     : 0;
@@ -84,6 +89,25 @@ export default function InventoryPanel({
           {collectedItems.length}/{totalItems}
         </span>
       </div>
+
+      {/* Key items highlight */}
+      {keyItems.length > 0 && (
+        <div className="flex gap-1.5 flex-wrap">
+          {keyItems.map(item => {
+            const Icon = ITEM_ICONS[item.type] ?? Package;
+            return (
+              <button
+                key={item.id}
+                onClick={() => handleExamine(item)}
+                className="flex items-center gap-1 px-2 py-1 rounded-lg border border-amber-500/20 bg-amber-500/5 text-[10px] text-amber-500 font-medium"
+              >
+                <Icon className="w-3 h-3" />
+                {item.name.length > 15 ? item.name.slice(0, 15) + "…" : item.name}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Item grid */}
       {collectedItems.length === 0 ? (
@@ -157,6 +181,20 @@ export default function InventoryPanel({
             <p className="text-xs text-muted-foreground leading-relaxed">
               {examineText}
             </p>
+            {/* Show usage hint for key items */}
+            {selectedItem.is_key_item && rooms && (() => {
+              const usage = getItemUsage(selectedItem, rooms);
+              if (usage.needed_for.length > 0) {
+                return (
+                  <p className="text-[10px] text-amber-500 mt-1">
+                    {usage.used
+                      ? `✓ Utilisé pour débloquer : ${usage.needed_for.join(", ")}`
+                      : `🔑 Nécessaire pour : ${usage.needed_for.join(", ")}`}
+                  </p>
+                );
+              }
+              return null;
+            })()}
           </motion.div>
         )}
       </AnimatePresence>

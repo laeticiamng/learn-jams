@@ -310,6 +310,7 @@ export default function EscapeGamePlayerLayout({
               onExamine={examineItem}
               onUseItem={useItem}
               lockedRoomIndices={rooms.filter(r => !r.unlocked).map(r => r.room_index)}
+              rooms={rooms}
             />
           </div>
         </aside>

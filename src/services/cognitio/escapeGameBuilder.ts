@@ -22,9 +22,12 @@ import type {
 } from "@/domain/cognitio/types";
 import type { MissionFamily, MissionUniverseProfile } from "@/domain/cognitio/escapeGame.types";
 import { selectMissionSubTheme } from "@/domain/cognitio/escapeGame.types";
+import type { AnalyzedConcept, AnalyzedConfusionPair, DocumentDomain } from "@/domain/cognitio/contracts";
 import { generateEscapeRooms } from "./escapeRoomEngine";
 import { generateNarrativeArc } from "./escapeNarrativeEngine";
 import { buildPuzzleDependencyGraph } from "./escapePuzzleEngine";
+import { buildImmersiveEscapeGame } from "./immersiveEscapeEngine";
+import type { ImmersiveEngineOutput } from "./immersiveEscapeEngine";
 import type { NormalizedConcept } from "./conceptNormalizer";
 import type { BlueprintOutput } from "./missionBlueprintEngine";
 
@@ -420,4 +423,104 @@ function buildInstructionsForBrick(brick: string): string {
     DECISION: "Choisissez l'option la plus adaptée au contexte.",
   };
   return instructions[brick] ?? "Résolvez le puzzle pour progresser.";
+}
+
+// ---------- Immersive (Premium) Builder ----------
+
+export interface ImmersiveEscapeBuildInput {
+  /** Analyzed concepts from the full analysis pipeline */
+  concepts: AnalyzedConcept[];
+  /** Confusion pairs from analysis */
+  confusion_pairs: AnalyzedConfusionPair[];
+  /** Document domain */
+  domain: DocumentDomain;
+  /** Main topic */
+  main_topic: string;
+  /** Reasoning type from analysis */
+  reasoning_type: string;
+  /** Mission family */
+  mission_family: MissionFamily;
+  /** Universe profile */
+  universe_profile: MissionUniverseProfile;
+  /** User ID */
+  user_id: string;
+  /** Mission ID */
+  mission_id: string;
+  /** Optional universe hint from analysis */
+  mission_universe_hint?: { domain: string; suggested_universe: string; reasoning_approach: string };
+  /** Optional section titles */
+  section_titles?: string[];
+}
+
+export interface ImmersiveEscapeSession {
+  session: EscapeGameSession;
+  immersive: ImmersiveEngineOutput;
+}
+
+/**
+ * Build a premium immersive escape game session from analyzed concepts.
+ * This combines the standard escape game session with the 3D immersive
+ * engine (dependency graphs, pedagogical objects, camera waypoints).
+ * Use this when the full analysis pipeline output is available.
+ */
+export function buildImmersiveEscapeSession(
+  input: ImmersiveEscapeBuildInput,
+): ImmersiveEscapeSession {
+  // 1. Build the immersive 3D layer
+  const immersive = buildImmersiveEscapeGame({
+    user_id: input.user_id,
+    mission_id: input.mission_id,
+    concepts: input.concepts,
+    confusion_pairs: input.confusion_pairs,
+    domain: input.domain,
+    main_topic: input.main_topic,
+    reasoning_type: input.reasoning_type,
+    mission_universe_hint: input.mission_universe_hint,
+    section_titles: input.section_titles,
+  });
+
+  // 2. Convert analyzed concepts to normalized concepts for the standard builder
+  const normalizedConcepts: NormalizedConcept[] = input.concepts.map(c => ({
+    normalized_label: c.label,
+    original_label: c.label,
+    definition: c.definition,
+    compressed_definition: c.definition.slice(0, 120),
+    stable_key: c.stable_key,
+  }));
+
+  // 3. Build standard escape game session with domain for narrative enrichment
+  const subTheme = selectMissionSubTheme(input.mission_family, input.main_topic);
+  const roomCount = Math.max(3, immersive.session_metadata.total_rooms + 2);
+
+  const rooms = generateEscapeRooms({
+    concepts: normalizedConcepts,
+    roomCount,
+    difficulty_base: getDifficultyBase(input.universe_profile),
+    includeCodeLocks: roomCount >= 4,
+    narrative_contexts: subTheme.roomNarratives,
+  });
+
+  const narrative = generateNarrativeArc({
+    main_topic: input.main_topic,
+    mission_family: input.mission_family,
+    sub_theme: subTheme,
+    rooms,
+    tension_level: input.universe_profile.tension_level,
+    domain: input.domain,
+  });
+
+  const metadata = buildMetadata(rooms, normalizedConcepts, input.mission_family, input.universe_profile);
+
+  const session: EscapeGameSession = {
+    id: crypto.randomUUID(),
+    mission_id: input.mission_id,
+    user_id: input.user_id,
+    rooms,
+    inventory: [],
+    narrative,
+    state: createInitialState(),
+    metadata,
+  };
+
+  return { session, immersive };
 }
