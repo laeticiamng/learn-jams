@@ -29,6 +29,18 @@ export function useUserPlan(userId: string | null): UserPlanState {
 
     setLoading(true);
     try {
+      // Check if user is admin (admins get school plan)
+      const { data: { user } } = await supabase.auth.getUser();
+      const meta = user?.user_metadata;
+      if (meta?.is_admin === true || meta?.role === "admin") {
+        const adminPlan: PlanKey = (meta.plan_key as PlanKey) ?? "school";
+        setPlan(adminPlan);
+        const summary = await getUserUsageSummary(userId, adminPlan);
+        setUsage(summary);
+        setLoading(false);
+        return;
+      }
+
       // Get subscription to determine plan
       const { data: sub } = await supabase
         .from("subscriptions")
@@ -37,8 +49,7 @@ export function useUserPlan(userId: string | null): UserPlanState {
         .eq("status", "active")
         .single();
 
-      // For now, map subscription presence to plan level
-      // In production, the subscription metadata would contain the plan_key
+      // Map subscription presence to plan level
       const currentPlan: PlanKey = sub ? "core" : "free";
       setPlan(currentPlan);
 
