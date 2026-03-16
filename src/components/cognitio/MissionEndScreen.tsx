@@ -16,6 +16,7 @@ import {
   Percent,
   Clock,
   Zap,
+  Compass,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { CompositeScore, RoomEvent, MissionContent } from "@/domain/cognitio/types";
@@ -31,6 +32,7 @@ interface MissionEndScreenProps {
   onViewDebrief: () => void;
   onBackToLibrary: () => void;
   onReplay: () => void;
+  onEscapeGame?: () => void;
 }
 
 export default function MissionEndScreen({
@@ -43,6 +45,7 @@ export default function MissionEndScreen({
   onViewDebrief,
   onBackToLibrary,
   onReplay,
+  onEscapeGame,
 }: MissionEndScreenProps) {
   const correctCount = events.filter((e) => e.is_correct).length;
   const totalCount = events.length;
@@ -207,6 +210,12 @@ export default function MissionEndScreen({
 
       {/* Action buttons */}
       <div className="flex flex-wrap justify-center gap-3 pt-2">
+        {onEscapeGame && (
+          <Button onClick={onEscapeGame} className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white">
+            <Compass className="w-4 h-4" />
+            Escape Game immersif
+          </Button>
+        )}
         <Button onClick={onViewDebrief} className="gap-2">
           <BarChart2 className="w-4 h-4" />
           Débrief complet

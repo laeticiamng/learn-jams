@@ -426,6 +426,10 @@ export function useCreatePipeline() {
       // === P0 SEMANTIC SUCCESS GATE ===
       // Block generation if the conceptual base is semantically invalid,
       // even if concepts were extracted (they may all be artifacts/uncertain).
+      // FIX: When M2 already performed body-only second pass, use relaxed thresholds
+      const m2BodyPassAlreadyDone = m2Result._diag_body_only_second_pass_triggered === true;
+      const initialGateMode: "full" | "body_only" = m2BodyPassAlreadyDone ? "body_only" : "full";
+
       const semanticGate = runSemanticSuccessGate({
         concepts: m2Result.key_concepts.map(c => ({
           label: c.label,
@@ -441,13 +445,13 @@ export function useCreatePipeline() {
         scoreConceptCandidate,
         isEditorialArtifact,
         cleanMainTopic,
-        analysis_mode: "full",
+        analysis_mode: initialGateMode,
       });
 
       // Ticket 4: record gate evaluation
       recordGateEvaluation({
-        analysis_mode: "full",
-        threshold_profile: semanticGate.signals.threshold_profile ?? "full_strict",
+        analysis_mode: initialGateMode,
+        threshold_profile: semanticGate.signals.threshold_profile ?? (m2BodyPassAlreadyDone ? "body_only_relaxed" : "full_strict"),
         passed: semanticGate.passed,
         gate_failure_reasons: semanticGate.signals.gate_block_reasons,
         valid_concepts_count: semanticGate.signals.valid_concepts_count,
@@ -695,28 +699,54 @@ export function useCreatePipeline() {
             return;
           }
         } else {
-          // Body-only pass was already attempted or only 1 segment — genuine failure
-          console.error(
-            `[COGNITIO][P0] SEMANTIC SUCCESS GATE BLOCKED. ` +
-            `Reasons: ${semanticGate.signals.gate_block_reasons.join("; ")}. ` +
-            `Signals: valid=${semanticGate.signals.valid_concepts_count}, ` +
-            `uncertain=${semanticGate.signals.uncertain_concepts_count}, ` +
-            `body=${semanticGate.signals.body_concepts_count}, ` +
-            `artifact_ratio=${semanticGate.signals.editorial_artifact_ratio}` +
-            `${bodyPassWasTriggered ? " (body-only second pass WAS triggered)" : ""}` +
-            `${!hasMultipleSegments ? " (single-segment document)" : ""}`
-          );
-          counters.final_generation_status = "error";
-          counters.success_gate_reason = `Semantic gate failed: ${semanticGate.signals.gate_block_reasons.join("; ")}`;
-          counters.generation_error = semanticGate.display_message;
-          setDebugCounters(counters);
-          setPipelineError({
-            source: "analysis",
-            message: semanticGate.display_message,
-            phase: "analyzing",
-          });
-          setPhase("result");
-          return;
+          // Body-only pass was already attempted or only 1 segment.
+          // DEGRADED GENERATION FALLBACK: If we have at least 1 concept (valid or uncertain),
+          // allow generation in degraded mode rather than blocking completely.
+          const totalUsableConcepts = semanticGate.signals.valid_concepts_count + semanticGate.signals.uncertain_concepts_count;
+          const hasAnyConcepts = m2Result.key_concepts.length > 0;
+          const canDegradeGracefully = hasAnyConcepts && totalUsableConcepts >= 1;
+
+          if (canDegradeGracefully) {
+            console.warn(
+              `[COGNITIO][P0] DEGRADED GENERATION FALLBACK: Gate failed but ${totalUsableConcepts} usable concept(s) found. ` +
+              `Allowing degraded generation (body_pass=${bodyPassWasTriggered}, segments=${m1Result.segments.length}). ` +
+              `Reasons: ${semanticGate.signals.gate_block_reasons.join("; ")}`
+            );
+            counters.semantic_gate_passed = true; // Override — allow generation
+            counters.semantic_gate_status = "semantic_success";
+            counters.semantic_generation_allowed = true;
+            counters.success_gate_reason = `Degraded generation: gate failed but ${totalUsableConcepts} usable concept(s) available`;
+            counters.pipeline_trace.push({
+              step: "E2_secondary_pass",
+              detail: `DEGRADED FALLBACK: Allowing generation with ${totalUsableConcepts} usable concepts ` +
+                `(valid=${semanticGate.signals.valid_concepts_count}, uncertain=${semanticGate.signals.uncertain_concepts_count})`,
+              warning: `Gate originally blocked: ${semanticGate.signals.gate_block_reasons.join("; ")}`,
+            });
+            // Continue pipeline — do NOT block
+          } else {
+            // Truly no usable concepts — genuine failure
+            console.error(
+              `[COGNITIO][P0] SEMANTIC SUCCESS GATE BLOCKED. ` +
+              `Reasons: ${semanticGate.signals.gate_block_reasons.join("; ")}. ` +
+              `Signals: valid=${semanticGate.signals.valid_concepts_count}, ` +
+              `uncertain=${semanticGate.signals.uncertain_concepts_count}, ` +
+              `body=${semanticGate.signals.body_concepts_count}, ` +
+              `artifact_ratio=${semanticGate.signals.editorial_artifact_ratio}` +
+              `${bodyPassWasTriggered ? " (body-only second pass WAS triggered)" : ""}` +
+              `${!hasMultipleSegments ? " (single-segment document)" : ""}`
+            );
+            counters.final_generation_status = "error";
+            counters.success_gate_reason = `Semantic gate failed: ${semanticGate.signals.gate_block_reasons.join("; ")}`;
+            counters.generation_error = semanticGate.display_message;
+            setDebugCounters(counters);
+            setPipelineError({
+              source: "analysis",
+              message: semanticGate.display_message,
+              phase: "analyzing",
+            });
+            setPhase("result");
+            return;
+          }
         }
       }
 

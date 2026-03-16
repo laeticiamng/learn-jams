@@ -279,6 +279,7 @@ export default function MissionPlayerLayout({
           onViewDebrief={() => navigate(`/mission/${missionId}/debrief`)}
           onBackToLibrary={() => navigate("/cognitio-library")}
           onReplay={() => window.location.reload()}
+          onEscapeGame={() => navigate(`/mission/${missionId}/escape`)}
         />
       )}
     </div>
