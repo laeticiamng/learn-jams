@@ -407,13 +407,14 @@ export function useEscapeGame(session: EscapeGameSession | null) {
         // Will be handled by checkUnlockableRooms
         setNarrativeMessage(unlock.unlock_message);
         break;
-      case "item":
+      case "item": {
         const newItems = collectItem(inventory, unlock.target_id, rooms);
         if (newItems.length > inventory.length) {
           setInventory(newItems);
           setNarrativeMessage(unlock.unlock_message);
         }
         break;
+      }
       case "narrative":
         setNarrativeMessage(unlock.unlock_message);
         break;

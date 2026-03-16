@@ -25,6 +25,8 @@ import { generateRoomObjects, createMemoryTotem } from "./pedagogicalObjectSyste
 import { createDefaultCameraState, createRoomEntryWaypoint, createRoomOverviewWaypoint, createGuidedTourWaypoints } from "./cameraSystem";
 import { detectPerformanceProfile } from "./scenePerformanceResolver";
 import { createUserKnowledgeGraph, computeDifficultyProfile } from "./adaptiveLearningEngine";
+import { getUniverseProfile } from "./immersiveUniverseProfiles";
+import type { PremiumUniverseProfile } from "./immersiveUniverseProfiles";
 
 // ---------- Types ----------
 
@@ -44,6 +46,8 @@ export interface ImmersiveEngineInput {
 export interface ImmersiveEngineOutput {
   game_config: ImmersiveGameConfig;
   knowledge_graph: UserKnowledgeGraph;
+  /** Immersive atmosphere profile for narrative enrichment */
+  universe_profile: PremiumUniverseProfile;
   session_metadata: {
     total_rooms: number;
     total_objects: number;
@@ -63,6 +67,9 @@ export function buildImmersiveEscapeGame(
     input.concepts,
     input.confusion_pairs,
   );
+
+  // Step 1b: Resolve immersive universe profile for this domain
+  const universe_profile = getUniverseProfile(input.domain);
 
   // Step 2: Generate universe configuration
   const room_count = Math.max(3, Math.min(8, dependency_graph.cluster_count + 2));
@@ -115,6 +122,7 @@ export function buildImmersiveEscapeGame(
   return {
     game_config,
     knowledge_graph,
+    universe_profile,
     session_metadata: {
       total_rooms: dependency_graph.cluster_count,
       total_objects: pedagogical_objects.length,

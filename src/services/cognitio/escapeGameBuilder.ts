@@ -45,6 +45,8 @@ export interface EscapeGameBuildInput {
   user_id: string;
   /** Mission ID */
   mission_id: string;
+  /** Document domain for immersive narrative atmosphere */
+  domain?: string;
 }
 
 // ---------- Main Builder ----------
@@ -63,6 +65,7 @@ export function buildEscapeGameSession(input: EscapeGameBuildInput): EscapeGameS
     main_topic,
     user_id,
     mission_id,
+    domain,
   } = input;
 
   // 1. Get sub-theme for narrative context
@@ -90,13 +93,14 @@ export function buildEscapeGameSession(input: EscapeGameBuildInput): EscapeGameS
     rooms.push(bossRoom);
   }
 
-  // 5. Generate narrative arc
+  // 5. Generate narrative arc (enriched with immersive universe profiles)
   const narrative = generateNarrativeArc({
     main_topic,
     mission_family,
     sub_theme: subTheme,
     rooms,
     tension_level: universe_profile.tension_level,
+    domain,
   });
 
   // 6. Collect all inventory items
@@ -130,7 +134,8 @@ export function convertMissionToEscapeGame(
   userId: string,
   missionFamily: MissionFamily,
   universeProfile: MissionUniverseProfile,
-  mainTopic: string
+  mainTopic: string,
+  domain?: string,
 ): EscapeGameSession {
   const subTheme = selectMissionSubTheme(missionFamily, mainTopic);
 
@@ -146,13 +151,14 @@ export function convertMissionToEscapeGame(
     );
   }
 
-  // Generate narrative
+  // Generate narrative (enriched with immersive universe profiles)
   const narrative = generateNarrativeArc({
     main_topic: mainTopic,
     mission_family: missionFamily,
     sub_theme: subTheme,
     rooms: escapeRooms,
     tension_level: universeProfile.tension_level,
+    domain,
   });
 
   const metadata = buildMetadata(escapeRooms, [], missionFamily, universeProfile);

@@ -12,6 +12,7 @@ import type {
   LightingConfig,
   FogConfig,
 } from "@/domain/cognitio/immersiveEngine.types";
+import { getUniverseProfile } from "./immersiveUniverseProfiles";
 
 // Re-export existing universe selection infrastructure
 // This module EXTENDS missionUniverseSelector and missionUniverseProfiles
@@ -462,8 +463,16 @@ export function generateNarrativeVocabulary(domain: DocumentDomain, theme: Unive
   const baseVocab = domainVocab[domain] ?? domainVocab.general;
   const themeTags = THEME_ROOM_TAGS[theme] ?? [];
 
+  // Enrich with immersive universe profile motifs and signature objects
+  const universeProfile = getUniverseProfile(domain);
+  const immersiveTerms = [
+    ...universeProfile.atmosphere.motifs,
+    ...universeProfile.atmosphere.signature_objects,
+    ...universeProfile.atmosphere.color_mood,
+  ];
+
   // Deduplicate
-  const combined = new Set<string>([...baseVocab, ...themeTags]);
+  const combined = new Set<string>([...baseVocab, ...themeTags, ...immersiveTerms]);
   return Array.from(combined);
 }
 

@@ -11,6 +11,8 @@ import type {
   EscapeRoom,
 } from "@/domain/cognitio/escapeEngine.types";
 import type { MissionFamily, MissionSubTheme } from "@/domain/cognitio/escapeGame.types";
+import type { PremiumUniverseProfile } from "./immersiveUniverseProfiles";
+import { getUniverseProfile, getRoomAtmosphere, pickSensoryDetail, pickAmbientDescription, pickMotif } from "./immersiveUniverseProfiles";
 
 // ---------- Narrative Generation ----------
 
@@ -20,37 +22,59 @@ export interface NarrativeInput {
   sub_theme: MissionSubTheme;
   rooms: EscapeRoom[];
   tension_level: number; // 1-5
+  /** Domain key for immersive universe atmosphere (e.g. "medical_clinical", "law") */
+  domain?: string;
 }
 
 /**
  * Generate a complete narrative arc for an escape game session.
  */
 export function generateNarrativeArc(input: NarrativeInput): NarrativeArc {
-  const { main_topic, sub_theme, rooms, tension_level } = input;
+  const { main_topic, sub_theme, rooms, tension_level, domain } = input;
 
-  // Briefing
+  // Resolve immersive universe profile for richer atmosphere
+  const universeProfile = domain ? getUniverseProfile(domain) : undefined;
+
+  // Briefing — enriched with universe opening hook & sensory detail
+  const briefingBase = sub_theme.intro(main_topic);
+  const briefingText = universeProfile
+    ? `${universeProfile.atmosphere.opening_hook}\n\n${pickSensoryDetail(universeProfile)} ${briefingBase}`
+    : briefingBase;
+
   const briefing: NarrativeBeat = {
     title: "Briefing de mission",
-    text: sub_theme.intro(main_topic),
+    text: briefingText,
     emotion: "curiosity",
     reveal_delay_ms: 0,
   };
 
-  // Per-room narratives
-  const room_narratives: NarrativeBeat[] = rooms.map((room, index) => ({
-    title: room.title,
-    text: room.entry_narrative,
-    emotion: getRoomEmotion(index, rooms.length),
-    reveal_delay_ms: index === 0 ? 500 : 300,
-  }));
+  // Per-room narratives — enriched with room-specific atmospheres
+  const room_narratives: NarrativeBeat[] = rooms.map((room, index) => {
+    let text = room.entry_narrative;
+    if (universeProfile) {
+      const roomAtmos = getRoomAtmosphere(universeProfile, room.room_type);
+      text = `${roomAtmos.entry_description}\n\n${pickAmbientDescription(universeProfile)} ${text}`;
+    }
+    return {
+      title: room.title,
+      text,
+      emotion: getRoomEmotion(index, rooms.length),
+      reveal_delay_ms: index === 0 ? 500 : 300,
+    };
+  });
 
   // Tension events
   const tension_events = generateTensionEvents(rooms, tension_level, sub_theme);
 
-  // Resolution
+  // Resolution — enriched with universe closing hook
+  const resolutionBase = buildResolutionNarrative(main_topic, sub_theme, rooms.length);
+  const resolutionText = universeProfile
+    ? `${resolutionBase}\n\n${universeProfile.atmosphere.closing_hook}`
+    : resolutionBase;
+
   const resolution: NarrativeBeat = {
     title: "Mission terminée",
-    text: buildResolutionNarrative(main_topic, sub_theme, rooms.length),
+    text: resolutionText,
     emotion: "triumph",
     reveal_delay_ms: 500,
   };
@@ -155,25 +179,40 @@ export function generateEventNarrative(
     itemCollected?: string;
     roomIndex?: number;
     totalRooms?: number;
+    /** Optional domain key for immersive narrative flavor */
+    domain?: string;
   }
 ): string {
+  const profile = context.domain ? getUniverseProfile(context.domain) : undefined;
+
   switch (eventType) {
     case "puzzle_solved":
       if (context.accuracy && context.accuracy >= 0.8) {
-        return "Résolution impeccable. Votre maîtrise impressionne.";
+        return profile?.voice.celebration_style ?? "Résolution impeccable. Votre maîtrise impressionne.";
       }
-      return "Puzzle résolu. Vous progressez dans la bonne direction.";
+      return profile
+        ? `${profile.atmosphere.mastery_metaphor}`
+        : "Puzzle résolu. Vous progressez dans la bonne direction.";
 
     case "puzzle_failed":
+      if (profile) {
+        return profile.voice.error_framing;
+      }
       if (context.hintsUsed && context.hintsUsed > 0) {
         return "Pas tout à fait. Relisez les indices en votre possession et réessayez.";
       }
       return "Réponse incorrecte. Prenez le temps d'analyser chaque option.";
 
-    case "room_unlocked":
-      return `Nouvelle salle débloquée ! ${context.roomIndex !== undefined && context.totalRooms !== undefined
+    case "hint_used":
+      return profile?.voice.hint_personality ?? "Un indice a été révélé. Utilisez-le avec discernement.";
+
+    case "room_unlocked": {
+      const transitionText = profile?.atmosphere.room_transition_style ?? "";
+      const progressText = context.roomIndex !== undefined && context.totalRooms !== undefined
         ? `Progression : ${context.roomIndex + 1}/${context.totalRooms}`
-        : ""}`;
+        : "";
+      return `${transitionText} Nouvelle salle débloquée ! ${progressText}`.trim();
+    }
 
     case "item_collected":
       return `Nouvel objet ajouté à votre inventaire : "${context.itemCollected}". Examinez-le — il pourrait être utile plus tard.`;

@@ -9,15 +9,15 @@ interface ImportDebugPanelProps {
 export default function ImportDebugPanel({ debugInfo }: ImportDebugPanelProps) {
   const [expanded, setExpanded] = useState(false);
 
-  // Only show in development mode
-  if (import.meta.env.PROD) return null;
-
   // Auto-expand when an error occurs
   useEffect(() => {
     if (debugInfo.root_cause || debugInfo.raw_error) {
       setExpanded(true);
     }
   }, [debugInfo.root_cause, debugInfo.raw_error]);
+
+  // Only show in development mode
+  if (import.meta.env.PROD) return null;
 
   // Don't show if no data yet
   if (!debugInfo.file_name && !debugInfo.upload_started && debugInfo.step_log.length === 0) return null;
