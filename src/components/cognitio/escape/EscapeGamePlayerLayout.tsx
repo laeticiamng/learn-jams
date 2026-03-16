@@ -11,12 +11,16 @@ import { ArrowLeft, Package, Map, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { EscapeGameSession } from "@/domain/cognitio/escapeEngine.types";
 import { useEscapeGame } from "@/hooks/useEscapeGame";
-import EscapeRoomMap from "./EscapeRoomMap";
+import { useEscapeAudio } from "@/hooks/useEscapeAudio";
+import type { AmbientPreset } from "@/hooks/useEscapeAudio";
+import EscapeRoomMap2D from "./EscapeRoomMap2D";
 import InventoryPanel from "./InventoryPanel";
 import EscapePuzzleView from "./EscapePuzzleView";
 import EscapeNarrativeBanner from "./EscapeNarrativeBanner";
 import EscapeCodeLock from "./EscapeCodeLock";
 import EscapeDebriefView from "./EscapeDebriefView";
+import EscapeNPCCompanion from "./EscapeNPCCompanion";
+import EscapeAudioControl from "./EscapeAudioControl";
 
 interface EscapeGamePlayerLayoutProps {
   session: EscapeGameSession;
@@ -57,6 +61,54 @@ export default function EscapeGamePlayerLayout({
     useItem,
     discoverElement,
   } = useEscapeGame(session);
+
+  // Audio engine
+  const { muted, crossfadeAmbient, playSfx, toggleMute } = useEscapeAudio();
+
+  // Map room type to ambient preset
+  const roomTypeToAmbient: Record<string, AmbientPreset> = {
+    briefing: "briefing",
+    exploration: "exploration",
+    analysis: "analysis",
+    diagnostic: "diagnostic",
+    decision: "decision",
+    synthesis: "synthesis",
+    final: "final",
+  };
+
+  // Crossfade ambient on room change
+  useEffect(() => {
+    if (currentRoom && state.phase !== "briefing" && state.phase !== "debrief") {
+      const preset = roomTypeToAmbient[currentRoom.room_type] ?? "exploration";
+      crossfadeAmbient(preset);
+    }
+  }, [state.current_room_index, currentRoom?.room_type]);
+
+  // Track puzzle solved state for NPC
+  const [lastPuzzleSolved, setLastPuzzleSolved] = useState<boolean | undefined>(undefined);
+
+  // Wrap submitAnswer to trigger SFX
+  const handleSubmitAnswer = useCallback((answer: string | string[], confidence: number) => {
+    const result = submitAnswer(answer, confidence);
+    if (result) {
+      playSfx(result.is_correct ? "puzzle_correct" : "puzzle_wrong");
+      setLastPuzzleSolved(result.is_correct);
+      if (result.code_fragment) playSfx("code_fragment");
+    }
+    return result;
+  }, [submitAnswer, playSfx]);
+
+  // Wrap proceedToNextRoom to play SFX
+  const handleProceedToNextRoom = useCallback(() => {
+    playSfx("room_unlock");
+    proceedToNextRoom();
+  }, [proceedToNextRoom, playSfx]);
+
+  // Wrap discoverElement to play SFX
+  const handleDiscoverElement = useCallback((id: string) => {
+    playSfx("discovery");
+    discoverElement(id);
+  }, [discoverElement, playSfx]);
 
   // Timer for current puzzle
   useEffect(() => {
@@ -194,6 +246,9 @@ export default function EscapeGamePlayerLayout({
             {Math.round(state.score)} pts
           </span>
 
+          {/* Audio control */}
+          <EscapeAudioControl muted={muted} onToggle={toggleMute} />
+
           {/* Mobile toggles */}
           <div className="flex items-center gap-1 lg:hidden">
             <Button
@@ -231,7 +286,7 @@ export default function EscapeGamePlayerLayout({
       <div className="flex-1 flex">
         {/* Sidebar (desktop) */}
         <aside className="hidden lg:block w-72 shrink-0 border-r border-border/10 p-4 space-y-6 overflow-y-auto" style={{ maxHeight: "calc(100vh - 52px)" }}>
-          <EscapeRoomMap
+          <EscapeRoomMap2D
             rooms={rooms}
             currentRoomIndex={state.current_room_index}
             onRoomSelect={enterRoom}
@@ -289,7 +344,7 @@ export default function EscapeGamePlayerLayout({
                 </div>
 
                 {sidebarTab === "map" ? (
-                  <EscapeRoomMap
+                  <EscapeRoomMap2D
                     rooms={rooms}
                     currentRoomIndex={state.current_room_index}
                     onRoomSelect={(index) => {
@@ -353,7 +408,7 @@ export default function EscapeGamePlayerLayout({
                           key={disc.id}
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.98 }}
-                          onClick={() => !disc.discovered && discoverElement(disc.id)}
+                          onClick={() => !disc.discovered && handleDiscoverElement(disc.id)}
                           disabled={disc.discovered}
                           className={`text-left p-3 rounded-xl border transition-all ${
                             disc.discovered
@@ -447,7 +502,7 @@ export default function EscapeGamePlayerLayout({
                     className="text-center pt-4"
                   >
                     <Button
-                      onClick={proceedToNextRoom}
+                      onClick={handleProceedToNextRoom}
                       className="gradient-bg-premium rounded-xl gap-2"
                     >
                       Salle suivante <ArrowLeft className="w-4 h-4 rotate-180" />
@@ -472,7 +527,7 @@ export default function EscapeGamePlayerLayout({
                   roomTitle={currentRoom.title}
                   timeElapsed={elapsed}
                   timeLimitSec={currentRoom.time_limit_sec}
-                  onSubmit={submitAnswer}
+                  onSubmit={handleSubmitAnswer}
                   onHint={requestHint}
                   onNext={nextPuzzle}
                 />
@@ -519,7 +574,7 @@ export default function EscapeGamePlayerLayout({
                 )}
 
                 <Button
-                  onClick={proceedToNextRoom}
+                  onClick={handleProceedToNextRoom}
                   className="gradient-bg-premium rounded-xl gap-2"
                 >
                   Continuer <ArrowLeft className="w-4 h-4 rotate-180" />
@@ -539,11 +594,36 @@ export default function EscapeGamePlayerLayout({
           )}
         </main>
       </div>
+
+      {/* NPC Companion */}
+      {currentRoom && (
+        <EscapeNPCCompanion
+          role={getNPCRoleForRoom(currentRoom.room_type)}
+          roomType={currentRoom.room_type}
+          puzzleType={currentPuzzle?.puzzle_type}
+          puzzleSolved={lastPuzzleSolved}
+          hintsUsed={state.hints_used}
+          accuracy={state.puzzles_solved.length > 0 ? state.score / (state.puzzles_solved.length * 100) : 0}
+          roomIndex={state.current_room_index}
+          totalRooms={rooms.length}
+          mainTopic={session.narrative.briefing.title}
+        />
+      )}
     </div>
   );
 }
 
 // ---------- Helpers ----------
+
+function getNPCRoleForRoom(roomType: string): "coach" | "patient" | "scientist" | "adversary" | "guide" {
+  switch (roomType) {
+    case "diagnostic": return "patient";
+    case "analysis": return "scientist";
+    case "final": return "adversary";
+    case "briefing": return "guide";
+    default: return "coach";
+  }
+}
 
 function getEmotionForPhase(phase: string): "curiosity" | "tension" | "discovery" | "urgency" | "relief" | "triumph" {
   switch (phase) {

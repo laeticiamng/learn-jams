@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 import type { EscapePuzzle, EscapeHint } from "@/domain/cognitio/escapeEngine.types";
 import type { PuzzleValidationResult } from "@/services/cognitio/escapePuzzleEngine";
+import EscapeDragDropPuzzle from "./EscapeDragDropPuzzle";
+import type { DragDropMode } from "./EscapeDragDropPuzzle";
 
 interface EscapePuzzleViewProps {
   puzzle: EscapePuzzle;
@@ -56,7 +58,9 @@ export default function EscapePuzzleView({
   }, [puzzle.id]);
 
   const isActiveGeneration = puzzle.puzzle_type === "active_generation" || puzzle.puzzle_type === "synthesis";
-  const hasOptions = puzzle.options && puzzle.options.length > 0;
+  const isDragDrop = puzzle.puzzle_type === "sequencing" || puzzle.puzzle_type === "association" || puzzle.puzzle_type === "reconstruction";
+  const dragDropMode: DragDropMode = puzzle.puzzle_type === "association" ? "matching" : puzzle.puzzle_type === "reconstruction" ? "spatial" : "ordering";
+  const hasOptions = puzzle.options && puzzle.options.length > 0 && !isDragDrop;
 
   const handleSubmit = useCallback(() => {
     const answer = isActiveGeneration ? textAnswer : selectedAnswer;
@@ -65,6 +69,11 @@ export default function EscapePuzzleView({
     const res = onSubmit(answer, confidence);
     if (res) setResult(res);
   }, [selectedAnswer, textAnswer, confidence, onSubmit, isActiveGeneration]);
+
+  const handleDragDropSubmit = useCallback((answer: string[]) => {
+    const res = onSubmit(answer, confidence);
+    if (res) setResult(res);
+  }, [onSubmit, confidence]);
 
   const handleHint = useCallback(() => {
     const h = onHint();
@@ -167,6 +176,20 @@ export default function EscapePuzzleView({
               );
             })}
           </div>
+        )}
+
+        {/* Drag & drop puzzles */}
+        {isDragDrop && !result && (
+          <EscapeDragDropPuzzle
+            mode={dragDropMode}
+            items={puzzle.options ?? []}
+            matchTargets={dragDropMode === "matching" ? (Array.isArray(puzzle.correct_answer) ? puzzle.correct_answer.map((_, i) => `Cible ${i + 1}`) : []) : undefined}
+            correctOrder={Array.isArray(puzzle.correct_answer) ? puzzle.correct_answer : [puzzle.correct_answer]}
+            prompt={puzzle.prompt}
+            instructions={puzzle.instructions}
+            onSubmit={handleDragDropSubmit}
+            disabled={!!result}
+          />
         )}
 
         {/* Active generation textarea */}
