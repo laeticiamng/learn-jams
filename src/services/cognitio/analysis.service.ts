@@ -1956,73 +1956,119 @@ function isEditorialArtifactForHeuristic(line: string): boolean {
  * CRITICAL: concepts_from_body > 0 does NOT block the second pass.
  * Only VALID body concepts (non-artifact, non-uncertain) can prevent the retry.
  */
-export function shouldTriggerBodyOnlySecondPass(diag: {
-  front_matter_detected: boolean;
-  concepts_from_segment_0: number;       // post-filter count
-  raw_concepts_from_segment_0: number;   // PRE-filter count (before artifact rejection)
-  concepts_from_body: number;
-  valid_body_concepts_count: number;      // P0 FIX: body concepts that are valid (non-artifact, non-uncertain)
-  valid_concepts_count: number;           // P0 FIX: total valid concepts (all segments)
-  main_topic_is_editorial_artifact: boolean;
-  artifact_ratio: number;
-  all_concepts_uncertain: boolean;
-  raw_concepts_count: number;
-  filtered_concepts_count: number;
-  segments_count: number;
-  editorial_body_concepts_count: number;  // P0 FIX: body concepts that are editorial artifacts
-}): { trigger: boolean; reason: string } {
+/** Input for body-only second-pass trigger evaluation. All numeric fields accept undefined and default to 0. */
+export interface BodyOnlySecondPassInput {
+  front_matter_detected?: boolean;
+  concepts_from_segment_0?: number;       // post-filter count
+  raw_concepts_from_segment_0?: number;   // PRE-filter count (before artifact rejection)
+  concepts_from_body?: number;
+  valid_body_concepts_count?: number;      // body concepts that are valid (non-artifact, non-uncertain)
+  valid_concepts_count?: number;           // total valid concepts (all segments)
+  main_topic_is_editorial_artifact?: boolean;
+  artifact_ratio?: number;
+  all_concepts_uncertain?: boolean;
+  raw_concepts_count?: number;
+  filtered_concepts_count?: number;
+  segments_count?: number;
+  editorial_body_concepts_count?: number;  // body concepts that are editorial artifacts
+  /** Optional: analysis mode tag for observability */
+  analysis_mode?: "full" | "body_only" | "quick";
+}
+
+export function shouldTriggerBodyOnlySecondPass(
+  diag: BodyOnlySecondPassInput,
+): { trigger: boolean; reason: string } {
+  // Safe defaults: treat undefined/NaN numerics as 0, booleans as false
+  const d = {
+    front_matter_detected: diag.front_matter_detected ?? false,
+    concepts_from_segment_0: Number.isFinite(diag.concepts_from_segment_0) ? diag.concepts_from_segment_0! : 0,
+    raw_concepts_from_segment_0: Number.isFinite(diag.raw_concepts_from_segment_0) ? diag.raw_concepts_from_segment_0! : 0,
+    concepts_from_body: Number.isFinite(diag.concepts_from_body) ? diag.concepts_from_body! : 0,
+    valid_body_concepts_count: Number.isFinite(diag.valid_body_concepts_count) ? diag.valid_body_concepts_count! : 0,
+    valid_concepts_count: Number.isFinite(diag.valid_concepts_count) ? diag.valid_concepts_count! : 0,
+    main_topic_is_editorial_artifact: diag.main_topic_is_editorial_artifact ?? false,
+    artifact_ratio: Number.isFinite(diag.artifact_ratio) ? diag.artifact_ratio! : 0,
+    all_concepts_uncertain: diag.all_concepts_uncertain ?? false,
+    raw_concepts_count: Number.isFinite(diag.raw_concepts_count) ? diag.raw_concepts_count! : 0,
+    filtered_concepts_count: Number.isFinite(diag.filtered_concepts_count) ? diag.filtered_concepts_count! : 0,
+    segments_count: Number.isFinite(diag.segments_count) ? diag.segments_count! : 0,
+    editorial_body_concepts_count: Number.isFinite(diag.editorial_body_concepts_count) ? diag.editorial_body_concepts_count! : 0,
+  };
+
   // Cannot do body-only pass with a single segment
-  if (diag.segments_count <= 1) {
+  if (d.segments_count <= 1) {
     return { trigger: false, reason: "single_segment" };
   }
 
   // Condition A: main topic is an editorial artifact
-  if (diag.main_topic_is_editorial_artifact) {
+  if (d.main_topic_is_editorial_artifact) {
     return { trigger: true, reason: "editorial_artifact_topic" };
   }
 
   // Condition B: high artifact ratio (>= 80%)
-  if (diag.artifact_ratio >= 0.8 && diag.raw_concepts_count > 0) {
+  if (d.artifact_ratio >= SECOND_PASS_THRESHOLDS.HIGH_ARTIFACT_RATIO && d.raw_concepts_count > 0) {
     return { trigger: true, reason: "high_artifact_ratio" };
   }
 
-  // Condition C: no valid concepts at all
-  if (diag.valid_concepts_count === 0 && diag.filtered_concepts_count > 0) {
+  // Condition C: no valid concepts at all (but some survived filtering)
+  if (d.valid_concepts_count === 0 && d.filtered_concepts_count > 0) {
     return { trigger: true, reason: "zero_valid_concepts" };
   }
 
   // Condition D: all concepts uncertain + some raw concepts exist
-  if (diag.all_concepts_uncertain && diag.raw_concepts_count > 0) {
+  if (d.all_concepts_uncertain && d.raw_concepts_count > 0) {
     return { trigger: true, reason: "all_concepts_uncertain" };
   }
 
   // Condition E: body concepts exist but NONE are valid
-  // P0 CRITICAL: concepts_from_body > 0 does NOT prevent trigger
-  // if those body concepts are all artifacts or uncertain
-  if (diag.concepts_from_body > 0 && diag.valid_body_concepts_count === 0) {
+  if (d.concepts_from_body > 0 && d.valid_body_concepts_count === 0) {
     return { trigger: true, reason: "no_valid_body_concepts" };
   }
 
   // Condition F: front_matter detected + first pass dominated by editorial concepts
-  if (diag.front_matter_detected && diag.editorial_body_concepts_count > 0 &&
-      diag.editorial_body_concepts_count >= diag.concepts_from_body) {
+  if (d.front_matter_detected && d.editorial_body_concepts_count > 0 &&
+      d.editorial_body_concepts_count >= d.concepts_from_body) {
     return { trigger: true, reason: "front_matter_editorial_dominated" };
   }
 
   // Condition G: all raw concepts rejected + some existed
-  if (diag.filtered_concepts_count === 0 && diag.raw_concepts_count > 0) {
+  if (d.filtered_concepts_count === 0 && d.raw_concepts_count > 0) {
     return { trigger: true, reason: "all_concepts_rejected" };
   }
 
   // Condition H: front matter + concepts from seg0 only + none from body
-  if (diag.front_matter_detected &&
-      (diag.concepts_from_segment_0 > 0 || diag.raw_concepts_from_segment_0 > 0) &&
-      diag.concepts_from_body === 0) {
+  if (d.front_matter_detected &&
+      (d.concepts_from_segment_0 > 0 || d.raw_concepts_from_segment_0 > 0) &&
+      d.concepts_from_body === 0) {
     return { trigger: true, reason: "front_matter_with_seg0_only_concepts" };
   }
 
   return { trigger: false, reason: "conditions_not_met" };
 }
+
+// ---------- Second Pass Thresholds ----------
+// Centralized constants to avoid magic numbers scattered across conditions
+
+export const SECOND_PASS_THRESHOLDS = {
+  /** Artifact ratio above which second pass is triggered */
+  HIGH_ARTIFACT_RATIO: 0.8,
+  /** Minimum valid concepts for semantic gate (full analysis) */
+  MIN_VALID_CONCEPTS_FULL: 2,
+  /** Minimum valid concepts for semantic gate (body-only second pass) */
+  MIN_VALID_CONCEPTS_BODY_ONLY: 1,
+  /** Minimum body concepts for semantic gate (full analysis) */
+  MIN_BODY_CONCEPTS_FULL: 1,
+  /** Minimum body concepts for semantic gate (body-only second pass) — relaxed since all concepts are from body */
+  MIN_BODY_CONCEPTS_BODY_ONLY: 0,
+  /** Editorial artifact ratio above which gate blocks (full) */
+  MAX_ARTIFACT_RATIO_FULL: 0.8,
+  /** Editorial artifact ratio above which gate blocks (body-only) */
+  MAX_ARTIFACT_RATIO_BODY_ONLY: 0.9,
+  /** Mission gate: minimum valid concepts */
+  MISSION_MIN_VALID_CONCEPTS: 2,
+  /** Mission gate: max artifact ratio */
+  MISSION_MAX_ARTIFACT_RATIO: 0.7,
+} as const;
 
 // ---------- Segment 0 Quarantine ----------
 

@@ -23,10 +23,17 @@ import type { M7_Input } from "@/domain/cognitio/qa.contracts";
 import type { M5_Output } from "@/domain/cognitio/generation.contracts";
 import type { M5B_Output } from "@/domain/cognitio/story.contracts";
 import type { CreateFormat } from "@/lib/create-format-config";
+import { isDirectGenerationFormat } from "@/lib/create-format-config";
 import { validateGenerationNotEmpty } from "@/domain/cognitio/generation.validators";
 import { scoreConceptCandidate, isEditorialArtifact, cleanMainTopic } from "@/lib/cognitio-semantic-cleaning";
 import { runSemanticSuccessGate, runMissionGate } from "@/domain/cognitio/validators";
 import { runLocalAnalysis } from "@/services/cognitio/analysis.service";
+import { recordSecondPassEvaluation, recordSecondPassCompletion, recordGateEvaluation, metrics } from "@/services/observability/metricsService";
+import { sunoMusicProvider } from "@/services/providers/sunoMusicProvider";
+import { openaiVideoProvider } from "@/services/providers/openaiVideoProvider";
+import { buildPromptModules, assembleSystemPrompt, buildUserPrompt } from "@/services/lyrics/lyricsPromptBuilder";
+import { supabase } from "@/integrations/supabase/client";
+import type { MusicResult } from "@/domain/providers/providerInterfaces";
 
 export type PipelinePhase =
   | "import"
@@ -71,6 +78,8 @@ export function useCreatePipeline() {
   const [pipelineError, setPipelineError] = useState<PipelineError | null>(null);
   const [userSelectedFormat, setUserSelectedFormat] = useState<CreateFormat | undefined>();
   const [missionResult, setMissionResult] = useState<GenerateExperienceOutput | null>(null);
+  const [musicResult, setMusicResult] = useState<{ song_id: string; title: string; style: string; status: string } | null>(null);
+  const [videoResult, setVideoResult] = useState<{ generation_id: string; status: string; video_url?: string } | null>(null);
   const [debugCounters, setDebugCounters] = useState<PipelineDebugCounters | null>(null);
 
   // Track whether a pipeline run is active to prevent double-execution
@@ -423,7 +432,7 @@ export function useCreatePipeline() {
           definition: c.definition,
           uncertain: c.uncertain,
           source_confidence: c.source_confidence,
-          source_trace: c.source_trace.map(t => ({
+          source_trace: c.source_trace?.map(t => ({
             segment_index: t.segment_index,
             excerpt: t.excerpt,
           })),
@@ -432,6 +441,19 @@ export function useCreatePipeline() {
         scoreConceptCandidate,
         isEditorialArtifact,
         cleanMainTopic,
+        analysis_mode: "full",
+      });
+
+      // Ticket 4: record gate evaluation
+      recordGateEvaluation({
+        analysis_mode: "full",
+        threshold_profile: semanticGate.signals.threshold_profile ?? "full_strict",
+        passed: semanticGate.passed,
+        gate_failure_reasons: semanticGate.signals.gate_block_reasons,
+        valid_concepts_count: semanticGate.signals.valid_concepts_count,
+        body_concepts_count: semanticGate.signals.body_concepts_count,
+        editorial_artifact_ratio: semanticGate.signals.editorial_artifact_ratio,
+        main_topic_is_editorial_artifact: semanticGate.signals.main_topic_is_editorial_artifact,
       });
 
       // Populate semantic gate signals in counters
@@ -467,6 +489,15 @@ export function useCreatePipeline() {
         const hasMultipleSegments = m1Result.segments.length > 1;
 
         if (!bodyPassWasTriggered && hasMultipleSegments) {
+          // Ticket 4: record second-pass trigger from pipeline retry
+          recordSecondPassEvaluation({
+            analysis_mode: "body_only",
+            trigger_reason: "pipeline_gate_retry",
+            triggered: true,
+            valid_concepts_count: semanticGate.signals.valid_concepts_count,
+            segments_count: m1Result.segments.length,
+          });
+
           console.warn(
             `[COGNITIO][P0] SEMANTIC GATE RETRY: Gate failed but body-only second pass was NOT triggered. ` +
             `Forcing re-analysis on body segments (segments 1-${m1Result.segments.length - 1}).`
@@ -499,7 +530,7 @@ export function useCreatePipeline() {
                   definition: c.definition,
                   uncertain: c.uncertain,
                   source_confidence: c.source_confidence,
-                  source_trace: c.source_trace.map(t => ({
+                  source_trace: c.source_trace?.map(t => ({
                     segment_index: t.segment_index,
                     excerpt: t.excerpt,
                   })),
@@ -508,6 +539,19 @@ export function useCreatePipeline() {
                 scoreConceptCandidate,
                 isEditorialArtifact,
                 cleanMainTopic,
+                analysis_mode: "body_only",
+              });
+
+              // Ticket 4: record body-only retry gate evaluation
+              recordGateEvaluation({
+                analysis_mode: "body_only",
+                threshold_profile: retryGate.signals.threshold_profile ?? "body_only_relaxed",
+                passed: retryGate.passed,
+                gate_failure_reasons: retryGate.signals.gate_block_reasons,
+                valid_concepts_count: retryGate.signals.valid_concepts_count,
+                body_concepts_count: retryGate.signals.body_concepts_count,
+                editorial_artifact_ratio: retryGate.signals.editorial_artifact_ratio,
+                main_topic_is_editorial_artifact: retryGate.signals.main_topic_is_editorial_artifact,
               });
 
               console.info(
@@ -698,6 +742,155 @@ export function useCreatePipeline() {
           setPhase("result");
           return;
         }
+      }
+
+      // === DIRECT GENERATION PATH (Music / Video) ===
+      // These formats bypass M3→M5 and use provider-based generation directly.
+      if (selectedFormat && isDirectGenerationFormat(selectedFormat)) {
+        setPhase("generating");
+
+        if (selectedFormat === "music") {
+          try {
+            metrics.record("m5.generation_started" as any, 1, { format: "music" });
+
+            // Build lyrics from course content using LLM
+            const lang = currentProfile?.language ?? "fr";
+            const modules = buildPromptModules(lang, null);
+            const systemPrompt = assembleSystemPrompt(modules);
+            const userPrompt = buildUserPrompt({
+              text: m1Result.clean_text,
+              style: (input as any).music_style ?? "pop",
+              title: m2Result.main_topic,
+              targetLangName: lang === "fr" ? "français" : "English",
+              subject: m2Result.main_topic,
+            });
+
+            // Call LLM for lyrics generation
+            const { data: lyricsData, error: lyricsError } = await supabase.functions.invoke("generate-lyrics", {
+              body: {
+                system_prompt: systemPrompt,
+                user_prompt: userPrompt,
+                concepts: m2Result.key_concepts.map(c => c.label),
+                main_topic: m2Result.main_topic,
+              },
+            });
+
+            if (lyricsError) throw new Error(`Lyrics generation failed: ${lyricsError.message}`);
+
+            const lyrics = lyricsData?.lyrics ?? lyricsData?.text ?? "";
+            const songTitle = lyricsData?.title ?? m2Result.main_topic;
+
+            if (!lyrics || lyrics.length < 50) {
+              throw new Error("Les paroles générées sont trop courtes ou vides.");
+            }
+
+            // Send to Suno for music generation
+            const musicGenResult: MusicResult = await sunoMusicProvider.generateMusic({
+              title: songTitle,
+              lyrics,
+              style: (input as any).music_style ?? "pop",
+            });
+
+            // Persist song to database
+            const userId = session?.user?.id;
+            if (userId) {
+              const { data: songRow, error: insertError } = await supabase.from("songs").insert({
+                user_id: userId,
+                title: songTitle,
+                style: (input as any).music_style ?? "pop",
+                original_text: m1Result.clean_text.slice(0, 5000),
+                generated_lyrics: lyrics,
+                subject: m2Result.main_topic,
+                status: "generating",
+              }).select("id").single();
+
+              if (!insertError && songRow) {
+                setMusicResult({
+                  song_id: songRow.id,
+                  title: songTitle,
+                  style: (input as any).music_style ?? "pop",
+                  status: "generating",
+                });
+
+                // Start polling in background (Suno callback or poll-suno-status will update status)
+                if (musicGenResult.task_id) {
+                  await supabase.from("songs").update({
+                    suno_task_id: musicGenResult.task_id,
+                    audio_url: musicGenResult.audio_url ?? null,
+                    status: musicGenResult.audio_url ? "ready" : "generating",
+                  }).eq("id", songRow.id);
+                }
+              }
+            }
+
+            metrics.record("m5.generation_success", 1, { format: "music" });
+            counters.generation_success = true;
+            counters.final_generation_status = "success";
+            counters.generator_called = "music_direct";
+            counters.final_format_decision = "music";
+          } catch (musicErr) {
+            const errMsg = musicErr instanceof Error ? musicErr.message : "Échec de la génération musicale";
+            metrics.record("m5.generation_failed", 1, { format: "music", error: errMsg });
+            counters.generation_success = false;
+            counters.final_generation_status = "error";
+            counters.generation_error = errMsg;
+            setPipelineError({ source: "generation", message: errMsg, phase: "generating" });
+            setDebugCounters(counters);
+            setPhase("result");
+            return;
+          }
+        } else if (selectedFormat === "video") {
+          try {
+            metrics.record("m5.generation_started" as any, 1, { format: "video" });
+
+            // Build a video script/prompt from the course content and concepts
+            const conceptLabels = m2Result.key_concepts.slice(0, 10).map(c => c.label).join(", ");
+            const videoPrompt = `Create a short educational video about "${m2Result.main_topic}". ` +
+              `Key concepts to cover: ${conceptLabels}. ` +
+              `Content summary: ${m1Result.clean_text.slice(0, 1000)}`;
+
+            // Send to OpenAI Sora for video generation
+            const videoGenResult = await openaiVideoProvider.generateVideo(videoPrompt, {
+              duration_sec: 60,
+              resolution: "720p",
+              style: "educational",
+            });
+
+            setVideoResult({
+              generation_id: videoGenResult.generation_id,
+              status: videoGenResult.status,
+              video_url: videoGenResult.video_url,
+            });
+
+            metrics.record("m5.generation_success", 1, { format: "video" });
+            counters.generation_success = true;
+            counters.final_generation_status = "success";
+            counters.generator_called = "video_direct";
+            counters.final_format_decision = "video";
+          } catch (videoErr) {
+            const errMsg = videoErr instanceof Error ? videoErr.message : "Échec de la génération vidéo";
+            metrics.record("m5.generation_failed", 1, { format: "video", error: errMsg });
+            counters.generation_success = false;
+            counters.final_generation_status = "error";
+            counters.generation_error = errMsg;
+            setPipelineError({ source: "generation", message: errMsg, phase: "generating" });
+            setDebugCounters(counters);
+            setPhase("result");
+            return;
+          }
+        }
+
+        // Direct-generation path complete
+        counters.success_gate_reason = "Direct generation completed";
+        counters.pipeline_trace.push({
+          step: "G_generation",
+          input_count: m2Result.key_concepts.length,
+          detail: `format=${selectedFormat}, status=success, path=direct_generation`,
+        });
+        setDebugCounters(counters);
+        setPhase("result");
+        track({ event_name: "transformation_generated", metadata: { format: selectedFormat } });
+        return;
       }
 
       // === M3: Memory Architecture ===
@@ -931,6 +1124,8 @@ export function useCreatePipeline() {
     setPhase("import");
     setPipelineError(null);
     setMissionResult(null);
+    setMusicResult(null);
+    setVideoResult(null);
     setDebugCounters(null);
     runningRef.current = false;
   }, [ingestion, analysis, memory, format, generation, storyGeneration, qa]);
@@ -971,6 +1166,8 @@ export function useCreatePipeline() {
     generation,
     storyGeneration,
     missionResult,
+    musicResult,
+    videoResult,
     qa,
 
     // Aggregated state

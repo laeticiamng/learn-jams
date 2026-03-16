@@ -145,6 +145,10 @@ export interface SemanticGateSignals {
   main_topic_is_editorial_artifact: boolean;
   semantic_generation_allowed: boolean;
   gate_block_reasons: string[];
+  /** Which analysis mode / threshold profile was used */
+  analysis_mode?: "full" | "body_only";
+  /** Which threshold profile was applied */
+  threshold_profile?: string;
 }
 
 /**
@@ -172,14 +176,37 @@ export interface MissionGateResult {
  * P0: Run the semantic success gate on M2 analysis output.
  * Blocks generation if the conceptual base is invalid.
  */
+/** Concept input for semantic gate — all fields are tolerant of undefined for partial analysis results */
+export interface SemanticGateConceptInput {
+  label: string;
+  definition: string;
+  uncertain?: boolean;
+  source_confidence?: number;
+  source_trace?: { segment_index: number; excerpt: string }[];
+}
+
+/**
+ * Normalize a concept input to ensure all fields have safe defaults.
+ * Prevents validation failures from partial upstream analysis objects.
+ */
+export function normalizeGateConceptInput(c: SemanticGateConceptInput): {
+  label: string;
+  definition: string;
+  uncertain: boolean;
+  source_confidence: number;
+  source_trace: { segment_index: number; excerpt: string }[];
+} {
+  return {
+    label: c.label ?? "",
+    definition: c.definition ?? "",
+    uncertain: c.uncertain ?? false,
+    source_confidence: Number.isFinite(c.source_confidence) ? c.source_confidence! : 0.5,
+    source_trace: Array.isArray(c.source_trace) ? c.source_trace : [],
+  };
+}
+
 export function runSemanticSuccessGate(params: {
-  concepts: {
-    label: string;
-    definition: string;
-    uncertain: boolean;
-    source_confidence: number;
-    source_trace: { segment_index: number; excerpt: string }[];
-  }[];
+  concepts: SemanticGateConceptInput[];
   main_topic: string;
   scoreConceptCandidate: (label: string, definition: string) => {
     accepted: boolean;
@@ -188,18 +215,30 @@ export function runSemanticSuccessGate(params: {
   };
   isEditorialArtifact: (text: string) => boolean;
   cleanMainTopic: (text: string) => string;
+  /** Ticket 3: analysis mode — body_only uses relaxed thresholds */
+  analysis_mode?: "full" | "body_only";
 }): SemanticGateResult {
-  const { concepts, main_topic, scoreConceptCandidate, isEditorialArtifact, cleanMainTopic } = params;
+  const { main_topic, scoreConceptCandidate, isEditorialArtifact, cleanMainTopic } = params;
+  const analysisMode = params.analysis_mode ?? "full";
   const blockReasons: string[] = [];
 
-  // Compute signals
+  // Mode-aware thresholds
+  const isBodyOnly = analysisMode === "body_only";
+  const minValidConcepts = isBodyOnly ? 1 : 2;
+  const minBodyConcepts = isBodyOnly ? 0 : 1; // body-only: all concepts are from body by definition
+  const maxArtifactRatio = isBodyOnly ? 0.9 : 0.8;
+  const thresholdProfile = isBodyOnly ? "body_only_relaxed" : "full_strict";
+
+  // Normalize and compute signals
   let validConceptsCount = 0;
   let uncertainConceptsCount = 0;
   let bodyConceptsCount = 0;
   let segment0ConceptsCount = 0;
   let editorialArtifactCount = 0;
 
-  for (const c of concepts) {
+  const normalizedConcepts = params.concepts.map(normalizeGateConceptInput);
+
+  for (const c of normalizedConcepts) {
     const scores = scoreConceptCandidate(c.label, c.definition);
     const isUncertain = c.uncertain === true || c.source_confidence < 0.4;
     const isArtifact = !scores.accepted || scores.editorial_artifact_score >= 0.4 || scores.header_noise_score >= 0.4;
@@ -208,14 +247,18 @@ export function runSemanticSuccessGate(params: {
     if (isArtifact) editorialArtifactCount++;
     if (!isArtifact && !isUncertain) validConceptsCount++;
 
-    const fromSeg0 = c.source_trace?.every(t => t.segment_index === 0) ?? false;
-    const fromBody = c.source_trace?.some(t => t.segment_index > 0) ?? false;
+    const fromSeg0 = c.source_trace.length > 0 && c.source_trace.every(t => t.segment_index === 0);
+    const fromBody = c.source_trace.some(t => t.segment_index > 0);
 
     if (fromSeg0 && !fromBody) segment0ConceptsCount++;
     if (fromBody) bodyConceptsCount++;
+
+    // For body-only mode, if source_trace is empty, count as body concept
+    // (body-only retry may not have segment indices set correctly)
+    if (isBodyOnly && c.source_trace.length === 0) bodyConceptsCount++;
   }
 
-  const editorialArtifactRatio = concepts.length > 0 ? editorialArtifactCount / concepts.length : 1;
+  const editorialArtifactRatio = normalizedConcepts.length > 0 ? editorialArtifactCount / normalizedConcepts.length : 1;
 
   // Check main topic
   const cleanedTopic = cleanMainTopic(main_topic);
@@ -223,20 +266,20 @@ export function runSemanticSuccessGate(params: {
     cleanedTopic.length < 3 ||
     /^R2C\b|^Rang\s+[A-Z]|^COM\s+R2C|^CODEX\b|^S[\s-]*ECN\b|^ITEM\s+\d|^Révision\s+\d/i.test(cleanedTopic);
 
-  // Gate conditions
-  if (validConceptsCount < 2) {
-    blockReasons.push(`Seulement ${validConceptsCount} concept(s) valide(s) (minimum : 2)`);
+  // Gate conditions — mode-aware
+  if (validConceptsCount < minValidConcepts) {
+    blockReasons.push(`Seulement ${validConceptsCount} concept(s) valide(s) (minimum : ${minValidConcepts})`);
   }
-  if (bodyConceptsCount < 1 && concepts.length > 0) {
+  if (bodyConceptsCount < minBodyConcepts && normalizedConcepts.length > 0) {
     blockReasons.push("Aucun concept provenant du corps du document");
   }
-  if (concepts.length > 0 && uncertainConceptsCount === concepts.length) {
+  if (normalizedConcepts.length > 0 && uncertainConceptsCount === normalizedConcepts.length) {
     blockReasons.push("Tous les concepts sont marqués incertains");
   }
   if (mainTopicIsEditorial) {
     blockReasons.push(`Le sujet principal est un artefact éditorial : "${main_topic}"`);
   }
-  if (editorialArtifactRatio >= 0.8) {
+  if (editorialArtifactRatio >= maxArtifactRatio) {
     blockReasons.push(`${Math.round(editorialArtifactRatio * 100)}% des concepts sont des artefacts éditoriaux`);
   }
 
@@ -249,6 +292,8 @@ export function runSemanticSuccessGate(params: {
     main_topic_is_editorial_artifact: mainTopicIsEditorial,
     semantic_generation_allowed: blockReasons.length === 0,
     gate_block_reasons: blockReasons,
+    analysis_mode: analysisMode,
+    threshold_profile: thresholdProfile,
   };
 
   const passed = blockReasons.length === 0;

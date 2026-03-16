@@ -10,7 +10,7 @@ import type { CreateFormat } from "@/lib/create-format-config";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Brain, FileText, AlertTriangle, RotateCcw, Eye, ClipboardPaste, Upload, Bug, ArrowRight } from "lucide-react";
+import { Brain, FileText, AlertTriangle, RotateCcw, Eye, ClipboardPaste, Upload, Bug, ArrowRight, Music, Video } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import IngestionStatus from "@/components/cognitio/IngestionStatus";
@@ -79,6 +79,9 @@ export default function Create() {
   const [educationStage, setEducationStage] = useState<EducationStage>("unknown");
   const [explanationStyle, setExplanationStyle] = useState<ExplanationStyle>("balanced");
 
+  // Format-specific options
+  const [musicStyle, setMusicStyle] = useState<string>("pop");
+
   const hasSource = sourceData !== null;
 
   // Handle seed parameter from URL
@@ -122,15 +125,18 @@ export default function Create() {
         content_type: sourceData.content_type,
         objective,
         learner_profile,
-      },
+        ...(selectedFormat === "music" ? { music_style: musicStyle } : {}),
+      } as any,
       selectedFormat,
     );
   }, [sourceData, selectedFormat, objective, educationStage, explanationStyle, pipeline, quotaGuard]);
 
-  const { phase, ingestion, analysis, memory, format, generation, storyGeneration, missionResult, qa } = pipeline;
+  const { phase, ingestion, analysis, memory, format, generation, storyGeneration, missionResult, musicResult, videoResult, qa } = pipeline;
 
   // Resolve generating phase label based on actual format being generated
   const getGeneratingPhaseKey = () => {
+    if (selectedFormat === "music") return "create_page.phase_generating_music";
+    if (selectedFormat === "video") return "create_page.phase_generating_video";
     const chosenFormat = format.result?.chosen_format;
     if (chosenFormat === "fiche_dynamique") return "create_page.phase_generating_fiche";
     if (chosenFormat === "histoire_animee") return "create_page.phase_generating_story";
@@ -215,6 +221,39 @@ export default function Create() {
                     onEducationStageChange={setEducationStage}
                     onExplanationStyleChange={setExplanationStyle}
                   />
+                </motion.section>
+              )}
+
+              {/* Music style selector (shown only for music format) */}
+              {selectedFormat === "music" && hasSource && (
+                <motion.section
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.25, delay: 0.05 }}
+                >
+                  <div className="rounded-xl border border-border/30 bg-card/30 p-4 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Music className="w-4 h-4 text-pink-500" />
+                      <p className="text-sm font-medium">
+                        {t("create_flow.music_style_title", { defaultValue: "Style musical" })}
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                      {["pop", "rap", "lofi", "rock", "jazz", "reggaeton", "spoken-word", "classique", "afrobeat", "techno"].map((style) => (
+                        <button
+                          key={style}
+                          onClick={() => setMusicStyle(style)}
+                          className={`px-2.5 py-2 rounded-lg border text-xs font-medium capitalize transition-all ${
+                            musicStyle === style
+                              ? "border-pink-500 bg-pink-500/10 ring-1 ring-pink-500/20 text-pink-600"
+                              : "border-border/30 hover:border-border/50 bg-card/50 text-muted-foreground"
+                          }`}
+                        >
+                          {style}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </motion.section>
               )}
 
@@ -420,6 +459,70 @@ export default function Create() {
                 </div>
               )}
 
+              {/* Generated Music */}
+              {musicResult && (
+                <div className="border rounded-lg p-4">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-full bg-pink-500/10 flex items-center justify-center">
+                      <Music className="w-5 h-5 text-pink-500" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold">{musicResult.title}</h3>
+                      <p className="text-xs text-muted-foreground capitalize">
+                        {musicResult.style} · {musicResult.status === "generating"
+                          ? t("create_page.music_generating", { defaultValue: "Génération en cours…" })
+                          : t("create_page.music_ready", { defaultValue: "Prêt à écouter" })}
+                      </p>
+                    </div>
+                  </div>
+                  {musicResult.status === "generating" && (
+                    <p className="text-xs text-muted-foreground bg-muted/20 rounded-lg px-3 py-2">
+                      {t("create_page.music_generating_hint", {
+                        defaultValue: "La chanson est en cours de génération par le moteur musical. Tu peux écouter le résultat sur la page Player dès qu'il sera prêt.",
+                      })}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Generated Video */}
+              {videoResult && (
+                <div className="border rounded-lg p-4">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
+                      <Video className="w-5 h-5 text-green-500" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold">
+                        {t("create_page.video_title", { defaultValue: "Vidéo pédagogique" })}
+                      </h3>
+                      <p className="text-xs text-muted-foreground">
+                        {videoResult.status === "pending" || videoResult.status === "processing"
+                          ? t("create_page.video_generating", { defaultValue: "Génération en cours…" })
+                          : videoResult.status === "completed"
+                            ? t("create_page.video_ready", { defaultValue: "Prêt à visionner" })
+                            : t("create_page.video_failed", { defaultValue: "Échec de la génération" })}
+                      </p>
+                    </div>
+                  </div>
+                  {videoResult.video_url && (
+                    <video
+                      src={videoResult.video_url}
+                      controls
+                      className="w-full rounded-lg mt-2"
+                      style={{ maxHeight: 400 }}
+                    />
+                  )}
+                  {!videoResult.video_url && (videoResult.status === "pending" || videoResult.status === "processing") && (
+                    <p className="text-xs text-muted-foreground bg-muted/20 rounded-lg px-3 py-2">
+                      {t("create_page.video_generating_hint", {
+                        defaultValue: "La vidéo est en cours de génération. Cette opération peut prendre plusieurs minutes.",
+                      })}
+                    </p>
+                  )}
+                </div>
+              )}
+
               {/* QA Status */}
               {qa.publishDecision && (
                 <PublishStatusBanner decision={qa.publishDecision} />
@@ -571,7 +674,19 @@ export default function Create() {
                   </Button>
                 )}
 
-                {!pipeline.hasBlocking && format.result && !generation.result && !storyGeneration.result && !missionResult && (
+                {musicResult && (
+                  <Button onClick={() => navigate(`/player/${musicResult.song_id}`)}>
+                    <Music className="h-4 w-4 mr-2" /> {t("create_page.listen_song", { defaultValue: "Écouter la chanson" })}
+                  </Button>
+                )}
+
+                {videoResult && videoResult.video_url && (
+                  <Button onClick={() => window.open(videoResult.video_url, "_blank")}>
+                    <Video className="h-4 w-4 mr-2" /> {t("create_page.watch_video", { defaultValue: "Voir la vidéo" })}
+                  </Button>
+                )}
+
+                {!pipeline.hasBlocking && format.result && !generation.result && !storyGeneration.result && !missionResult && !musicResult && !videoResult && (
                   <Button disabled className="opacity-50 cursor-not-allowed">
                     <ArrowRight className="h-4 w-4 mr-2" /> {t("create_page.format_unsupported")}
                   </Button>
@@ -628,7 +743,9 @@ function isEmptyGeneration(pipeline: ReturnType<typeof useCreatePipeline>): bool
     !pipeline.hasBlocking &&
     !pipeline.generation.result &&
     !pipeline.storyGeneration.result &&
-    !pipeline.missionResult
+    !pipeline.missionResult &&
+    !pipeline.musicResult &&
+    !pipeline.videoResult
   ) {
     return true;
   }

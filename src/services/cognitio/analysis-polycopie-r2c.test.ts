@@ -3,6 +3,8 @@ import { shouldTriggerBodyOnlySecondPass } from "./analysis.service";
 import { detectFrontMatter, filterEditorialNoise, computeSegmentNoiseScore } from "./editorialNoiseFilter";
 import { extractAndCleanTopic, validateTopic, cleanTopicString } from "./topicCleaner";
 import { normalizeConcepts } from "./conceptNormalizer";
+import { runSemanticSuccessGate, normalizeGateConceptInput } from "@/domain/cognitio/validators";
+import { recordSecondPassEvaluation, recordGateEvaluation, metrics } from "@/services/observability/metricsService";
 
 // ============================================================
 // Test Suite: P0 Polycopié R2C Analysis — Front Matter,
@@ -229,6 +231,91 @@ describe("shouldTriggerBodyOnlySecondPass", () => {
   });
 });
 
+// ---------- Ticket 1: Robustness to missing/undefined fields ----------
+
+describe("shouldTriggerBodyOnlySecondPass — missing fields robustness", () => {
+  it("handles completely undefined numeric fields without crashing", () => {
+    const result = shouldTriggerBodyOnlySecondPass({
+      segments_count: 3,
+      // all other fields undefined
+    } as any);
+    // Should not crash; should return a valid result
+    expect(result).toHaveProperty("trigger");
+    expect(result).toHaveProperty("reason");
+  });
+
+  it("treats undefined valid_body_concepts_count as 0 (triggers no_valid_body_concepts when concepts_from_body > 0)", () => {
+    const result = shouldTriggerBodyOnlySecondPass({
+      front_matter_detected: false,
+      concepts_from_segment_0: 2,
+      raw_concepts_from_segment_0: 3,
+      concepts_from_body: 3,
+      valid_body_concepts_count: undefined as any,
+      valid_concepts_count: 5,
+      main_topic_is_editorial_artifact: false,
+      artifact_ratio: 0.1,
+      all_concepts_uncertain: false,
+      raw_concepts_count: 6,
+      filtered_concepts_count: 5,
+      segments_count: 4,
+      editorial_body_concepts_count: 0,
+    });
+    expect(result.trigger).toBe(true);
+    expect(result.reason).toBe("no_valid_body_concepts");
+  });
+
+  it("treats NaN artifact_ratio as 0 (does not falsely trigger high_artifact_ratio)", () => {
+    const result = shouldTriggerBodyOnlySecondPass({
+      front_matter_detected: false,
+      concepts_from_segment_0: 2,
+      raw_concepts_from_segment_0: 3,
+      concepts_from_body: 5,
+      valid_body_concepts_count: 5,
+      valid_concepts_count: 7,
+      main_topic_is_editorial_artifact: false,
+      artifact_ratio: NaN,
+      all_concepts_uncertain: false,
+      raw_concepts_count: 8,
+      filtered_concepts_count: 7,
+      segments_count: 4,
+      editorial_body_concepts_count: 0,
+    });
+    expect(result.trigger).toBe(false);
+    expect(result.reason).toBe("conditions_not_met");
+  });
+
+  it("triggers with minimal partial input when body extraction is insufficient", () => {
+    const result = shouldTriggerBodyOnlySecondPass({
+      front_matter_detected: true,
+      raw_concepts_from_segment_0: 5,
+      concepts_from_body: 0,
+      segments_count: 3,
+    });
+    expect(result.trigger).toBe(true);
+    expect(result.reason).toBe("front_matter_with_seg0_only_concepts");
+  });
+
+  it("condition priority: editorial_artifact_topic takes priority over high_artifact_ratio", () => {
+    const result = shouldTriggerBodyOnlySecondPass({
+      front_matter_detected: true,
+      concepts_from_segment_0: 0,
+      raw_concepts_from_segment_0: 5,
+      concepts_from_body: 0,
+      valid_body_concepts_count: 0,
+      valid_concepts_count: 0,
+      main_topic_is_editorial_artifact: true,
+      artifact_ratio: 1.0,
+      all_concepts_uncertain: true,
+      raw_concepts_count: 5,
+      filtered_concepts_count: 0,
+      editorial_body_concepts_count: 0,
+      segments_count: 3,
+    });
+    expect(result.trigger).toBe(true);
+    expect(result.reason).toBe("editorial_artifact_topic");
+  });
+});
+
 // ---------- Front Matter Detection ----------
 
 describe("detectFrontMatter", () => {
@@ -386,5 +473,211 @@ describe("Concept normalization with R2C noise", () => {
     const result = normalizeConcepts(rawConcepts);
     expect(result.normalized_concepts_count).toBeGreaterThanOrEqual(2);
     expect(result.rejected_editorial_artifacts_count).toBe(0);
+  });
+});
+
+// ---------- Ticket 2: normalizeGateConceptInput ----------
+
+describe("normalizeGateConceptInput — partial analysis objects", () => {
+  it("normalizes completely missing fields to safe defaults", () => {
+    const raw = { label: "Test", definition: "A test concept" };
+    const normalized = normalizeGateConceptInput(raw);
+    expect(normalized.uncertain).toBe(false);
+    expect(normalized.source_confidence).toBe(0.5);
+    expect(normalized.source_trace).toEqual([]);
+  });
+
+  it("preserves present fields", () => {
+    const raw = {
+      label: "Torsion",
+      definition: "Urgence chirurgicale.",
+      uncertain: true,
+      source_confidence: 0.9,
+      source_trace: [{ segment_index: 1, excerpt: "body" }],
+    };
+    const normalized = normalizeGateConceptInput(raw);
+    expect(normalized.uncertain).toBe(true);
+    expect(normalized.source_confidence).toBe(0.9);
+    expect(normalized.source_trace).toHaveLength(1);
+  });
+
+  it("handles NaN source_confidence", () => {
+    const raw = { label: "Test", definition: "Def", source_confidence: NaN };
+    const normalized = normalizeGateConceptInput(raw);
+    expect(normalized.source_confidence).toBe(0.5);
+  });
+});
+
+// ---------- Ticket 3: Mode-aware semantic gate thresholds ----------
+
+describe("runSemanticSuccessGate — mode-aware thresholds", () => {
+  // Shared helpers
+  const mockScoreCandidate = (label: string, _def: string) => ({
+    accepted: true,
+    editorial_artifact_score: 0.1,
+    header_noise_score: 0.1,
+    concept_semantic_validity_score: 0.8,
+    semantic_score: 0.8,
+  });
+  const mockIsEditorial = (_text: string) => false;
+  const mockCleanTopic = (text: string) => text;
+
+  it("full mode: blocks with only 1 valid concept", () => {
+    const result = runSemanticSuccessGate({
+      concepts: [
+        { label: "Torsion", definition: "Urgence chirurgicale testiculaire.", source_trace: [{ segment_index: 1, excerpt: "body" }] },
+      ],
+      main_topic: "Pathologie génito-scrotale",
+      scoreConceptCandidate: mockScoreCandidate,
+      isEditorialArtifact: mockIsEditorial,
+      cleanMainTopic: mockCleanTopic,
+      analysis_mode: "full",
+    });
+    expect(result.passed).toBe(false);
+    expect(result.signals.analysis_mode).toBe("full");
+    expect(result.signals.threshold_profile).toBe("full_strict");
+  });
+
+  it("body_only mode: passes with 1 valid concept (relaxed threshold)", () => {
+    const result = runSemanticSuccessGate({
+      concepts: [
+        { label: "Torsion", definition: "Urgence chirurgicale testiculaire.", source_trace: [{ segment_index: 1, excerpt: "body" }] },
+      ],
+      main_topic: "Pathologie génito-scrotale",
+      scoreConceptCandidate: mockScoreCandidate,
+      isEditorialArtifact: mockIsEditorial,
+      cleanMainTopic: mockCleanTopic,
+      analysis_mode: "body_only",
+    });
+    expect(result.passed).toBe(true);
+    expect(result.signals.analysis_mode).toBe("body_only");
+    expect(result.signals.threshold_profile).toBe("body_only_relaxed");
+  });
+
+  it("body_only mode: does not block for missing body concepts (all are from body)", () => {
+    const result = runSemanticSuccessGate({
+      concepts: [
+        { label: "Torsion", definition: "Urgence chirurgicale testiculaire." },
+        { label: "Hydrocèle", definition: "Épanchement liquidien dans la vaginale testiculaire." },
+      ],
+      main_topic: "Pathologie génito-scrotale",
+      scoreConceptCandidate: mockScoreCandidate,
+      isEditorialArtifact: mockIsEditorial,
+      cleanMainTopic: mockCleanTopic,
+      analysis_mode: "body_only",
+    });
+    // Should pass: body_only mode doesn't require body segment traces
+    expect(result.passed).toBe(true);
+    expect(result.signals.body_concepts_count).toBeGreaterThanOrEqual(0);
+  });
+
+  it("full mode: blocks when no body concepts", () => {
+    const result = runSemanticSuccessGate({
+      concepts: [
+        { label: "Torsion", definition: "Urgence chirurgicale testiculaire.", source_trace: [{ segment_index: 0, excerpt: "seg0" }] },
+        { label: "Hydrocèle", definition: "Épanchement liquidien dans la vaginale testiculaire.", source_trace: [{ segment_index: 0, excerpt: "seg0" }] },
+      ],
+      main_topic: "Pathologie génito-scrotale",
+      scoreConceptCandidate: mockScoreCandidate,
+      isEditorialArtifact: mockIsEditorial,
+      cleanMainTopic: mockCleanTopic,
+      analysis_mode: "full",
+    });
+    expect(result.passed).toBe(false);
+    expect(result.signals.gate_block_reasons.some(r => r.includes("corps du document"))).toBe(true);
+  });
+
+  it("body_only mode: handles concepts with undefined source_trace", () => {
+    const result = runSemanticSuccessGate({
+      concepts: [
+        { label: "Torsion", definition: "Urgence chirurgicale testiculaire." },
+        { label: "Hydrocèle", definition: "Épanchement liquidien dans la vaginale testiculaire." },
+      ],
+      main_topic: "Pathologie génito-scrotale",
+      scoreConceptCandidate: mockScoreCandidate,
+      isEditorialArtifact: mockIsEditorial,
+      cleanMainTopic: mockCleanTopic,
+      analysis_mode: "body_only",
+    });
+    // Should not crash and should pass with body_only mode
+    expect(result.passed).toBe(true);
+  });
+
+  it("signals include threshold_profile for observability", () => {
+    const result = runSemanticSuccessGate({
+      concepts: [
+        { label: "Torsion", definition: "Urgence chirurgicale testiculaire.", source_trace: [{ segment_index: 1, excerpt: "body" }] },
+        { label: "Hydrocèle", definition: "Épanchement liquidien dans la vaginale testiculaire.", source_trace: [{ segment_index: 2, excerpt: "body" }] },
+      ],
+      main_topic: "Pathologie génito-scrotale",
+      scoreConceptCandidate: mockScoreCandidate,
+      isEditorialArtifact: mockIsEditorial,
+      cleanMainTopic: mockCleanTopic,
+      analysis_mode: "full",
+    });
+    expect(result.signals.threshold_profile).toBeDefined();
+    expect(result.signals.analysis_mode).toBe("full");
+  });
+});
+
+// ---------- Ticket 4: Observability event recording ----------
+
+describe("Second-pass observability instrumentation", () => {
+  it("recordSecondPassEvaluation does not throw", () => {
+    metrics.clear();
+    expect(() => recordSecondPassEvaluation({
+      analysis_mode: "body_only",
+      trigger_reason: "pipeline_gate_retry",
+      triggered: true,
+      valid_concepts_count: 3,
+      segments_count: 4,
+    })).not.toThrow();
+    const events = metrics.getRecentEvents(10);
+    expect(events.some(e => e.name === "m2.second_pass_evaluated")).toBe(true);
+    expect(events.some(e => e.name === "m2.second_pass_triggered")).toBe(true);
+  });
+
+  it("recordSecondPassEvaluation records skip event when not triggered", () => {
+    metrics.clear();
+    recordSecondPassEvaluation({
+      analysis_mode: "full",
+      trigger_reason: "conditions_not_met",
+      triggered: false,
+    });
+    const events = metrics.getRecentEvents(10);
+    expect(events.some(e => e.name === "m2.second_pass_skipped")).toBe(true);
+  });
+
+  it("recordGateEvaluation records structured metadata", () => {
+    metrics.clear();
+    recordGateEvaluation({
+      analysis_mode: "body_only",
+      threshold_profile: "body_only_relaxed",
+      passed: false,
+      gate_failure_reasons: ["too_few_valid_concepts"],
+      valid_concepts_count: 1,
+      body_concepts_count: 0,
+      editorial_artifact_ratio: 0.5,
+      main_topic_is_editorial_artifact: false,
+    });
+    const events = metrics.getRecentEvents(10);
+    expect(events.some(e => e.name === "m2.gate_evaluated")).toBe(true);
+    expect(events.some(e => e.name === "m2.gate_failed")).toBe(true);
+    const failEvent = events.find(e => e.name === "m2.gate_failed");
+    expect(failEvent?.tags.threshold_profile).toBe("body_only_relaxed");
+    expect(failEvent?.tags.gate_failure_reasons).toBe("too_few_valid_concepts");
+  });
+
+  it("recordGateEvaluation records pass event", () => {
+    metrics.clear();
+    recordGateEvaluation({
+      analysis_mode: "full",
+      threshold_profile: "full_strict",
+      passed: true,
+      valid_concepts_count: 5,
+      body_concepts_count: 3,
+    });
+    const events = metrics.getRecentEvents(10);
+    expect(events.some(e => e.name === "m2.gate_passed")).toBe(true);
   });
 });
