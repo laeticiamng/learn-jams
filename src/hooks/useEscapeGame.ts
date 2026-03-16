@@ -248,6 +248,7 @@ export function useEscapeGame(session: EscapeGameSession | null) {
     }
 
     return result;
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- handlePuzzleUnlock is defined later; adding it would create a circular dependency
   }, [currentPuzzle, currentRoom, state.current_room_index, puzzleDependencyGraph, state]);
 
   // ---------- Hints ----------
@@ -291,6 +292,7 @@ export function useEscapeGame(session: EscapeGameSession | null) {
       // Room complete
       completeRoom(currentRoom.room_index);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- completeRoom is defined below; adding it would create a circular dependency
   }, [currentRoom, state.current_puzzle_index, startPuzzle]);
 
   const completeRoom = useCallback((roomIndex: number) => {
@@ -359,6 +361,7 @@ export function useEscapeGame(session: EscapeGameSession | null) {
     }
 
     enterRoom(nextRoomIndex);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- finishGame is defined below; adding it would create a circular dependency
   }, [state.current_room_index, rooms.length, enterRoom]);
 
   // ---------- Code Lock ----------

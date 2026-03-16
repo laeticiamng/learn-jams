@@ -85,6 +85,7 @@ export default function EscapeGamePlayerLayout({
       const preset = roomTypeToAmbient[currentRoom.room_type] ?? "exploration";
       crossfadeAmbient(preset);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- only re-run on room change, not on every phase transition
   }, [state.current_room_index, currentRoom?.room_type]);
 
   // Track puzzle solved state for NPC

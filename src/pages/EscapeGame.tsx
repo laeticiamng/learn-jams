@@ -108,6 +108,7 @@ export default function EscapeGame() {
     }
 
     loadAndConvert();
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- only re-run when user id changes, not the full user object
   }, [id, user?.id]);
 
   // Loading

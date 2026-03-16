@@ -25,6 +25,7 @@ import {
   getRenderQuality,
 } from "./scenePerformanceResolver";
 import { createDefaultCameraState, transitionToMode, focusOnObject } from "./cameraSystem";
+import type { PerformanceProfile, PedagogicalObject } from "@/domain/cognitio/immersiveEngine.types";
 
 // ==================== DEPENDENCY GRAPH ====================
 
@@ -412,8 +413,8 @@ describe("ScenePerformanceResolver", () => {
   });
 
   it("returns correct render quality", () => {
-    expect(getRenderQuality({ render_mode: "full_3d" } as any)).toBe(1.0);
-    expect(getRenderQuality({ render_mode: "fallback_2d" } as any)).toBe(0);
+    expect(getRenderQuality({ render_mode: "full_3d" } as PerformanceProfile)).toBe(1.0);
+    expect(getRenderQuality({ render_mode: "fallback_2d" } as PerformanceProfile)).toBe(0);
   });
 });
 
@@ -450,7 +451,7 @@ describe("CameraSystem", () => {
     const mockObj = {
       position: { x: 3, y: 1, z: -2 },
       scale: 1,
-    } as any;
+    } as PedagogicalObject;
 
     const focused = focusOnObject(state, mockObj);
     expect(focused.mode).toBe("inspect");
