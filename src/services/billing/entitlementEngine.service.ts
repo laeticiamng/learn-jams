@@ -76,15 +76,15 @@ const PLAN_FORMAT_MATRIX: PlanFormatEntry[] = [
   { plan_key: "family_plus", feature_key: "premium_export",            availability: "included", monthly_quota: -1,  overage_allowed: false, topup_eligible: false },
 
   // ── school ────────────────────────────────────────────────────────────────
-  { plan_key: "school", feature_key: "dynamic_sheet_generation",  availability: "included", monthly_quota: -1,  overage_allowed: false, topup_eligible: false },
-  { plan_key: "school", feature_key: "animated_story_generation", availability: "included", monthly_quota: -1,  overage_allowed: false, topup_eligible: false },
-  { plan_key: "school", feature_key: "escape_game_generation",    availability: "included", monthly_quota: 500, overage_allowed: false, topup_eligible: true  },
-  { plan_key: "school", feature_key: "music_generation",          availability: "included", monthly_quota: 500, overage_allowed: false, topup_eligible: true  },
-  { plan_key: "school", feature_key: "video_generation_ai_seconds", availability: "included", monthly_quota: 600, overage_allowed: false, topup_eligible: true },
-  { plan_key: "school", feature_key: "video_template_render",     availability: "included", monthly_quota: 100, overage_allowed: false, topup_eligible: true  },
-  { plan_key: "school", feature_key: "guardian_sms",              availability: "included", monthly_quota: 100, overage_allowed: false, topup_eligible: true  },
-  { plan_key: "school", feature_key: "guardian_email",            availability: "included", monthly_quota: 500, overage_allowed: false, topup_eligible: true  },
-  { plan_key: "school", feature_key: "premium_export",            availability: "included", monthly_quota: -1,  overage_allowed: false, topup_eligible: false },
+  { plan_key: "school", feature_key: "dynamic_sheet_generation",    availability: "included", monthly_quota: -1, overage_allowed: false, topup_eligible: false },
+  { plan_key: "school", feature_key: "animated_story_generation",   availability: "included", monthly_quota: -1, overage_allowed: false, topup_eligible: false },
+  { plan_key: "school", feature_key: "escape_game_generation",      availability: "included", monthly_quota: -1, overage_allowed: false, topup_eligible: false },
+  { plan_key: "school", feature_key: "music_generation",            availability: "included", monthly_quota: -1, overage_allowed: false, topup_eligible: false },
+  { plan_key: "school", feature_key: "video_generation_ai_seconds", availability: "included", monthly_quota: -1, overage_allowed: false, topup_eligible: false },
+  { plan_key: "school", feature_key: "video_template_render",       availability: "included", monthly_quota: -1, overage_allowed: false, topup_eligible: false },
+  { plan_key: "school", feature_key: "guardian_sms",                availability: "included", monthly_quota: -1, overage_allowed: false, topup_eligible: false },
+  { plan_key: "school", feature_key: "guardian_email",              availability: "included", monthly_quota: -1, overage_allowed: false, topup_eligible: false },
+  { plan_key: "school", feature_key: "premium_export",              availability: "included", monthly_quota: -1, overage_allowed: false, topup_eligible: false },
 ];
 
 // ---------- Helpers ----------

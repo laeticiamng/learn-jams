@@ -38,7 +38,11 @@ WHERE NOT (
   ))
 );
 
--- 5. Create entitlement snapshot for admin with school plan (unlimited access)
+-- 5. Remove any previous entitlement snapshots for this admin (idempotent)
+DELETE FROM public.user_entitlement_snapshots
+WHERE user_id = (SELECT id FROM auth.users WHERE email = 'm.laeticia@hotmail.fr');
+
+-- 6. Create entitlement snapshot for admin with school plan (unlimited access, all features)
 INSERT INTO public.user_entitlement_snapshots (user_id, plan_key, entitlements_json, flex_credits_json)
 SELECT
   id,

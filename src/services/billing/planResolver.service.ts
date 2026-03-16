@@ -71,12 +71,12 @@ const PLAN_QUOTAS: Record<PlanKey, Record<FeatureKey, number>> = {
   school: {
     dynamic_sheet_generation: -1,
     animated_story_generation: -1,
-    escape_game_generation: 500,
-    music_generation: 500,
-    video_generation_ai_seconds: 600,
-    video_template_render: 100,
-    guardian_sms: 100,
-    guardian_email: 500,
+    escape_game_generation: -1,
+    music_generation: -1,
+    video_generation_ai_seconds: -1,
+    video_template_render: -1,
+    guardian_sms: -1,
+    guardian_email: -1,
     premium_export: -1,
   },
 };
