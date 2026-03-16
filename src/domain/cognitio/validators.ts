@@ -3,6 +3,7 @@
 // ============================================================
 
 import { z } from "zod";
+import { SECOND_PASS_THRESHOLDS } from "./secondPassThresholds";
 
 // ---------- Quality Band ----------
 
@@ -222,11 +223,17 @@ export function runSemanticSuccessGate(params: {
   const analysisMode = params.analysis_mode ?? "full";
   const blockReasons: string[] = [];
 
-  // Mode-aware thresholds
+  // Mode-aware thresholds — sourced from centralized SECOND_PASS_THRESHOLDS
   const isBodyOnly = analysisMode === "body_only";
-  const minValidConcepts = isBodyOnly ? 1 : 2;
-  const minBodyConcepts = isBodyOnly ? 0 : 1; // body-only: all concepts are from body by definition
-  const maxArtifactRatio = isBodyOnly ? 0.9 : 0.8;
+  const minValidConcepts = isBodyOnly
+    ? SECOND_PASS_THRESHOLDS.MIN_VALID_CONCEPTS_BODY_ONLY
+    : SECOND_PASS_THRESHOLDS.MIN_VALID_CONCEPTS_FULL;
+  const minBodyConcepts = isBodyOnly
+    ? SECOND_PASS_THRESHOLDS.MIN_BODY_CONCEPTS_BODY_ONLY
+    : SECOND_PASS_THRESHOLDS.MIN_BODY_CONCEPTS_FULL;
+  const maxArtifactRatio = isBodyOnly
+    ? SECOND_PASS_THRESHOLDS.MAX_ARTIFACT_RATIO_BODY_ONLY
+    : SECOND_PASS_THRESHOLDS.MAX_ARTIFACT_RATIO_FULL;
   const thresholdProfile = isBodyOnly ? "body_only_relaxed" : "full_strict";
 
   // Normalize and compute signals
@@ -316,8 +323,8 @@ export function runSemanticSuccessGate(params: {
 export function runMissionGate(signals: SemanticGateSignals, mainTopic: string): MissionGateResult {
   const blockReasons: string[] = [];
 
-  if (signals.valid_concepts_count < 2) {
-    blockReasons.push(`Minimum 2 concepts valides requis pour une mission (trouvé : ${signals.valid_concepts_count})`);
+  if (signals.valid_concepts_count < SECOND_PASS_THRESHOLDS.MISSION_MIN_VALID_CONCEPTS) {
+    blockReasons.push(`Minimum ${SECOND_PASS_THRESHOLDS.MISSION_MIN_VALID_CONCEPTS} concepts valides requis pour une mission (trouvé : ${signals.valid_concepts_count})`);
   }
   if (signals.body_concepts_count < 1) {
     blockReasons.push("Au moins 1 concept du corps du document est requis pour une mission");
@@ -328,7 +335,7 @@ export function runMissionGate(signals: SemanticGateSignals, mainTopic: string):
   if (signals.main_topic_is_editorial_artifact) {
     blockReasons.push("Le sujet principal est un artefact éditorial — la mission ne peut pas être thématisée");
   }
-  if (signals.editorial_artifact_ratio >= 0.7) {
+  if (signals.editorial_artifact_ratio >= SECOND_PASS_THRESHOLDS.MISSION_MAX_ARTIFACT_RATIO) {
     blockReasons.push("Trop de concepts sont des artefacts éditoriaux pour construire une mission fiable");
   }
 

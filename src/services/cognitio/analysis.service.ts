@@ -36,6 +36,7 @@ import {
 import { filterEditorialNoise, detectFrontMatter, computeSegmentNoiseScore } from "./editorialNoiseFilter";
 import { runDocumentUnderstanding, deriveMissionUniverseHint, classifyDomainFromText } from "./documentUnderstandingLayer";
 import { extractAndCleanTopic, validateTopic, cleanTopicString } from "./topicCleaner";
+import { SECOND_PASS_THRESHOLDS } from "@/domain/cognitio/secondPassThresholds";
 
 // ---------- Body-Only Topic Extraction Helper ----------
 
@@ -2047,28 +2048,8 @@ export function shouldTriggerBodyOnlySecondPass(
 }
 
 // ---------- Second Pass Thresholds ----------
-// Centralized constants to avoid magic numbers scattered across conditions
-
-export const SECOND_PASS_THRESHOLDS = {
-  /** Artifact ratio above which second pass is triggered */
-  HIGH_ARTIFACT_RATIO: 0.8,
-  /** Minimum valid concepts for semantic gate (full analysis) */
-  MIN_VALID_CONCEPTS_FULL: 2,
-  /** Minimum valid concepts for semantic gate (body-only second pass) */
-  MIN_VALID_CONCEPTS_BODY_ONLY: 1,
-  /** Minimum body concepts for semantic gate (full analysis) */
-  MIN_BODY_CONCEPTS_FULL: 1,
-  /** Minimum body concepts for semantic gate (body-only second pass) — relaxed since all concepts are from body */
-  MIN_BODY_CONCEPTS_BODY_ONLY: 0,
-  /** Editorial artifact ratio above which gate blocks (full) */
-  MAX_ARTIFACT_RATIO_FULL: 0.8,
-  /** Editorial artifact ratio above which gate blocks (body-only) */
-  MAX_ARTIFACT_RATIO_BODY_ONLY: 0.9,
-  /** Mission gate: minimum valid concepts */
-  MISSION_MIN_VALID_CONCEPTS: 2,
-  /** Mission gate: max artifact ratio */
-  MISSION_MAX_ARTIFACT_RATIO: 0.7,
-} as const;
+// Re-exported from the shared domain module for backward compatibility
+export { SECOND_PASS_THRESHOLDS } from "@/domain/cognitio/secondPassThresholds";
 
 // ---------- Segment 0 Quarantine ----------
 

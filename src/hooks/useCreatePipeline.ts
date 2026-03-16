@@ -751,7 +751,7 @@ export function useCreatePipeline() {
 
         if (selectedFormat === "music") {
           try {
-            metrics.record("m5.generation_started" as any, 1, { format: "music" });
+            metrics.record("m5.generation_started", 1, { format: "music" });
 
             // Build lyrics from course content using LLM
             const lang = currentProfile?.language ?? "fr";
@@ -759,7 +759,7 @@ export function useCreatePipeline() {
             const systemPrompt = assembleSystemPrompt(modules);
             const userPrompt = buildUserPrompt({
               text: m1Result.clean_text,
-              style: (input as any).music_style ?? "pop",
+              style: input.music_style ?? "pop",
               title: m2Result.main_topic,
               targetLangName: lang === "fr" ? "français" : "English",
               subject: m2Result.main_topic,
@@ -788,7 +788,7 @@ export function useCreatePipeline() {
             const musicGenResult: MusicResult = await sunoMusicProvider.generateMusic({
               title: songTitle,
               lyrics,
-              style: (input as any).music_style ?? "pop",
+              style: input.music_style ?? "pop",
             });
 
             // Persist song to database
@@ -797,7 +797,7 @@ export function useCreatePipeline() {
               const { data: songRow, error: insertError } = await supabase.from("songs").insert({
                 user_id: userId,
                 title: songTitle,
-                style: (input as any).music_style ?? "pop",
+                style: input.music_style ?? "pop",
                 original_text: m1Result.clean_text.slice(0, 5000),
                 generated_lyrics: lyrics,
                 subject: m2Result.main_topic,
@@ -808,7 +808,7 @@ export function useCreatePipeline() {
                 setMusicResult({
                   song_id: songRow.id,
                   title: songTitle,
-                  style: (input as any).music_style ?? "pop",
+                  style: input.music_style ?? "pop",
                   status: "generating",
                 });
 
@@ -841,7 +841,7 @@ export function useCreatePipeline() {
           }
         } else if (selectedFormat === "video") {
           try {
-            metrics.record("m5.generation_started" as any, 1, { format: "video" });
+            metrics.record("m5.generation_started", 1, { format: "video" });
 
             // Build a video script/prompt from the course content and concepts
             const conceptLabels = m2Result.key_concepts.slice(0, 10).map(c => c.label).join(", ");
