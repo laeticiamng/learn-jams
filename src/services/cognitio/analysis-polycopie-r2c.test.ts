@@ -53,11 +53,14 @@ describe("shouldTriggerBodyOnlySecondPass", () => {
       concepts_from_segment_0: 0, // post-filter: all rejected
       raw_concepts_from_segment_0: 5, // pre-filter: 5 raw concepts from seg0
       concepts_from_body: 0,
+      valid_body_concepts_count: 0,
+      valid_concepts_count: 2,   // some valid concepts exist globally (skips Condition C)
       main_topic_is_editorial_artifact: false,
-      artifact_ratio: 0.8,
+      artifact_ratio: 0.5, // below 0.8 so high_artifact_ratio does not fire first
       all_concepts_uncertain: false,
       raw_concepts_count: 5,
-      filtered_concepts_count: 0,
+      filtered_concepts_count: 2, // some survived filtering globally (skips Condition G)
+      editorial_body_concepts_count: 0,
       segments_count: 3,
     });
     expect(result.trigger).toBe(true);
@@ -70,11 +73,14 @@ describe("shouldTriggerBodyOnlySecondPass", () => {
       concepts_from_segment_0: 5, // post-filter: survived
       raw_concepts_from_segment_0: 5,
       concepts_from_body: 0,
+      valid_body_concepts_count: 0,
+      valid_concepts_count: 5,
       main_topic_is_editorial_artifact: false,
       artifact_ratio: 0.3,
       all_concepts_uncertain: false,
       raw_concepts_count: 5,
       filtered_concepts_count: 5,
+      editorial_body_concepts_count: 0,
       segments_count: 3,
     });
     expect(result.trigger).toBe(true);
@@ -87,11 +93,14 @@ describe("shouldTriggerBodyOnlySecondPass", () => {
       concepts_from_segment_0: 3,
       raw_concepts_from_segment_0: 3,
       concepts_from_body: 2,
+      valid_body_concepts_count: 2,
+      valid_concepts_count: 5,
       main_topic_is_editorial_artifact: true,
       artifact_ratio: 0.3,
       all_concepts_uncertain: false,
       raw_concepts_count: 5,
       filtered_concepts_count: 5,
+      editorial_body_concepts_count: 0,
       segments_count: 3,
     });
     expect(result.trigger).toBe(true);
@@ -104,11 +113,14 @@ describe("shouldTriggerBodyOnlySecondPass", () => {
       concepts_from_segment_0: 1,
       raw_concepts_from_segment_0: 4,
       concepts_from_body: 1,
+      valid_body_concepts_count: 1,
+      valid_concepts_count: 2,
       main_topic_is_editorial_artifact: false,
       artifact_ratio: 0.85,
       all_concepts_uncertain: false,
       raw_concepts_count: 5,
       filtered_concepts_count: 2,
+      editorial_body_concepts_count: 0,
       segments_count: 3,
     });
     expect(result.trigger).toBe(true);
@@ -121,11 +133,14 @@ describe("shouldTriggerBodyOnlySecondPass", () => {
       concepts_from_segment_0: 2,
       raw_concepts_from_segment_0: 3,
       concepts_from_body: 1,
+      valid_body_concepts_count: 1,
+      valid_concepts_count: 1,  // > 0 so Condition C (zero_valid_concepts) does not fire first
       main_topic_is_editorial_artifact: false,
       artifact_ratio: 0.2,
       all_concepts_uncertain: true,
       raw_concepts_count: 3,
       filtered_concepts_count: 3,
+      editorial_body_concepts_count: 0,
       segments_count: 3,
     });
     expect(result.trigger).toBe(true);
@@ -138,11 +153,14 @@ describe("shouldTriggerBodyOnlySecondPass", () => {
       concepts_from_segment_0: 0,
       raw_concepts_from_segment_0: 5,
       concepts_from_body: 0,
+      valid_body_concepts_count: 0,
+      valid_concepts_count: 0,
       main_topic_is_editorial_artifact: false,
       artifact_ratio: 1,
       all_concepts_uncertain: false,
       raw_concepts_count: 5,
       filtered_concepts_count: 0,
+      editorial_body_concepts_count: 0,
       segments_count: 3,
     });
     expect(result.trigger).toBe(true);
@@ -154,11 +172,14 @@ describe("shouldTriggerBodyOnlySecondPass", () => {
       concepts_from_segment_0: 5,
       raw_concepts_from_segment_0: 5,
       concepts_from_body: 0,
+      valid_body_concepts_count: 0,
+      valid_concepts_count: 0,
       main_topic_is_editorial_artifact: true,
       artifact_ratio: 1,
       all_concepts_uncertain: true,
       raw_concepts_count: 5,
       filtered_concepts_count: 0,
+      editorial_body_concepts_count: 0,
       segments_count: 1,
     });
     expect(result.trigger).toBe(false);
@@ -171,11 +192,14 @@ describe("shouldTriggerBodyOnlySecondPass", () => {
       concepts_from_segment_0: 2,
       raw_concepts_from_segment_0: 3,
       concepts_from_body: 5,
+      valid_body_concepts_count: 5,
+      valid_concepts_count: 7,
       main_topic_is_editorial_artifact: false,
       artifact_ratio: 0.1,
       all_concepts_uncertain: false,
       raw_concepts_count: 8,
       filtered_concepts_count: 7,
+      editorial_body_concepts_count: 0,
       segments_count: 4,
     });
     expect(result.trigger).toBe(false);
@@ -189,11 +213,14 @@ describe("shouldTriggerBodyOnlySecondPass", () => {
       concepts_from_segment_0: 0, // ALL rejected by artifact filter
       raw_concepts_from_segment_0: 5, // 5 raw concepts EXISTED from seg0
       concepts_from_body: 0,
+      valid_body_concepts_count: 0,
+      valid_concepts_count: 0,
       main_topic_is_editorial_artifact: true,
       artifact_ratio: 1,
       all_concepts_uncertain: false,
       raw_concepts_count: 5,
       filtered_concepts_count: 0,
+      editorial_body_concepts_count: 0,
       segments_count: 3,
     });
     expect(result.trigger).toBe(true);
