@@ -44,6 +44,7 @@ export default function EscapeGamePlayerLayout({
     narrativeMessage,
     debrief,
     totalProgress,
+    puzzleAccessibility,
     startGame,
     enterRoom,
     startPuzzle,
@@ -53,6 +54,8 @@ export default function EscapeGamePlayerLayout({
     proceedToNextRoom,
     tryCodeUnlock,
     examineItem,
+    useItem,
+    discoverElement,
   } = useEscapeGame(session);
 
   // Timer for current puzzle
@@ -238,6 +241,8 @@ export default function EscapeGamePlayerLayout({
               inventory={inventory}
               totalItems={totalItems}
               onExamine={examineItem}
+              onUseItem={useItem}
+              lockedRoomIndices={rooms.filter(r => !r.unlocked).map(r => r.room_index)}
             />
           </div>
         </aside>
@@ -297,6 +302,8 @@ export default function EscapeGamePlayerLayout({
                     inventory={inventory}
                     totalItems={totalItems}
                     onExamine={examineItem}
+                    onUseItem={useItem}
+                    lockedRoomIndices={rooms.filter(r => !r.unlocked).map(r => r.room_index)}
                   />
                 )}
               </motion.aside>
@@ -332,38 +339,104 @@ export default function EscapeGamePlayerLayout({
                   </p>
                 </div>
 
+                {/* Discoverable elements — exploration zone */}
+                {currentRoom.discoverables && currentRoom.discoverables.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground/80 font-medium uppercase tracking-wider">
+                      Explorer la salle
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {currentRoom.discoverables
+                        .filter(d => !d.visible_after_puzzle_id || state.puzzles_solved.includes(d.visible_after_puzzle_id))
+                        .map(disc => (
+                        <motion.button
+                          key={disc.id}
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => !disc.discovered && discoverElement(disc.id)}
+                          disabled={disc.discovered}
+                          className={`text-left p-3 rounded-xl border transition-all ${
+                            disc.discovered
+                              ? "border-amber-500/20 bg-amber-500/5 opacity-60"
+                              : disc.type === "secret"
+                                ? "border-purple-500/30 bg-purple-500/5 hover:border-purple-500/50 animate-pulse"
+                                : "border-border/20 hover:border-amber-500/30 hover:bg-amber-500/5"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm">{
+                              disc.discovered ? "✓" :
+                              disc.type === "secret" ? "?" :
+                              disc.type === "document" ? "📄" :
+                              disc.type === "environment" ? "🔍" : "📦"
+                            }</span>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-medium truncate">
+                                {disc.discovered ? disc.label : (disc.type === "secret" ? "??? (objet caché)" : disc.label)}
+                              </p>
+                              {disc.discovered && (
+                                <p className="text-[10px] text-muted-foreground truncate mt-0.5">
+                                  {disc.discovery_text.slice(0, 50)}…
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </motion.button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Puzzle list */}
                 <div className="space-y-2">
-                  {currentRoom.puzzles.map((puzzle, index) => (
-                    <button
-                      key={puzzle.id}
-                      onClick={() => !puzzle.solved && startPuzzle(index)}
-                      disabled={puzzle.solved}
-                      className={`w-full text-left p-4 rounded-xl border transition-all ${
-                        puzzle.solved
-                          ? "border-green-500/20 bg-green-500/5 opacity-75"
-                          : "border-border/20 hover:border-primary/30 hover:bg-primary/5"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                  <p className="text-xs text-muted-foreground/80 font-medium uppercase tracking-wider">
+                    Puzzles
+                  </p>
+                  {currentRoom.puzzles.map((puzzle, index) => {
+                    const accessibility = puzzleAccessibility.find(a => a.puzzleId === puzzle.id);
+                    const isLocked = accessibility && !accessibility.canAttempt && !puzzle.solved;
+
+                    return (
+                      <button
+                        key={puzzle.id}
+                        onClick={() => !puzzle.solved && !isLocked && startPuzzle(index)}
+                        disabled={puzzle.solved || !!isLocked}
+                        className={`w-full text-left p-4 rounded-xl border transition-all ${
                           puzzle.solved
-                            ? "bg-green-500 text-white"
-                            : "bg-primary/10 text-primary"
-                        }`}>
-                          {puzzle.solved ? "✓" : index + 1}
+                            ? "border-green-500/20 bg-green-500/5 opacity-75"
+                            : isLocked
+                              ? "border-border/10 bg-border/5 opacity-50 cursor-not-allowed"
+                              : "border-border/20 hover:border-primary/30 hover:bg-primary/5"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                            puzzle.solved
+                              ? "bg-green-500 text-white"
+                              : isLocked
+                                ? "bg-border/20 text-muted-foreground"
+                                : "bg-primary/10 text-primary"
+                          }`}>
+                            {puzzle.solved ? "✓" : isLocked ? "🔒" : index + 1}
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-sm font-medium">
+                              {getPuzzleTypeLabel(puzzle.puzzle_type)}
+                              {puzzle.id.includes("bonus") && (
+                                <span className="ml-2 text-[10px] text-purple-500 font-semibold">BONUS</span>
+                              )}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground truncate">
+                              {isLocked ? "Résolvez les puzzles précédents" : puzzle.prompt.slice(0, 60) + "…"}
+                            </p>
+                          </div>
+                          {puzzle.required_items && puzzle.required_items.length > 0 && !puzzle.solved && (
+                            <span className="text-[10px] text-amber-500">Objets requis</span>
+                          )}
                         </div>
-                        <div className="flex-1">
-                          <p className="text-sm font-medium">
-                            {getPuzzleTypeLabel(puzzle.puzzle_type)}
-                          </p>
-                          <p className="text-[10px] text-muted-foreground truncate">
-                            {puzzle.prompt.slice(0, 60)}…
-                          </p>
-                        </div>
-                      </div>
-                    </button>
-                  ))}
+                      </button>
+                    );
+                  })}
                 </div>
 
                 {/* Complete room button */}

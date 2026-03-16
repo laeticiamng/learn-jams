@@ -92,6 +92,25 @@ export interface InventoryItem {
 
 // ---------- Escape Room ----------
 
+/** A discoverable element in a room — hidden clue, document, or environmental detail */
+export interface RoomDiscoverable {
+  id: string;
+  /** What the player sees before discovering */
+  label: string;
+  /** Type: inspectable object, document, environmental clue */
+  type: "object" | "document" | "environment" | "secret";
+  /** Text revealed on click/discovery */
+  discovery_text: string;
+  /** Optional item granted on discovery */
+  grants_item_id?: string;
+  /** Optional hint toward a puzzle */
+  hints_at_puzzle_id?: string;
+  /** Whether this has been discovered */
+  discovered: boolean;
+  /** Optional: only visible after a condition is met */
+  visible_after_puzzle_id?: string;
+}
+
 export interface EscapeRoom {
   room_index: number;
   id: string;
@@ -111,6 +130,8 @@ export interface EscapeRoom {
   rewards: InventoryItem[];
   /** Progressive hints for the room (4 levels) */
   hints: EscapeHint[];
+  /** Discoverable elements in the room (hidden clues, documents, etc.) */
+  discoverables: RoomDiscoverable[];
   /** Concepts targeted by this room */
   target_concepts: string[];
   /** Difficulty level 1-5 */

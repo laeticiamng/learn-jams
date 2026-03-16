@@ -16,6 +16,8 @@ interface InventoryPanelProps {
   inventory: InventoryItem[];
   totalItems: number;
   onExamine: (itemId: string) => string | null;
+  onUseItem?: (itemId: string, targetRoomIndex: number) => boolean;
+  lockedRoomIndices?: number[];
 }
 
 const ITEM_ICONS: Record<InventoryItemType, typeof FileText> = {
@@ -55,6 +57,8 @@ export default function InventoryPanel({
   inventory,
   totalItems,
   onExamine,
+  onUseItem,
+  lockedRoomIndices,
 }: InventoryPanelProps) {
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [examineText, setExamineText] = useState<string>("");

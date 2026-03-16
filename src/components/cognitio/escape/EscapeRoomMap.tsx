@@ -4,7 +4,7 @@
 // ============================================================
 
 import { motion } from "framer-motion";
-import { Lock, Unlock, CheckCircle2, MapPin, ChevronRight } from "lucide-react";
+import { Lock, Unlock, CheckCircle2, MapPin, ChevronRight, Key, Hash, Target, Shield } from "lucide-react";
 import type { EscapeRoom } from "@/domain/cognitio/escapeEngine.types";
 
 interface EscapeRoomMapProps {
@@ -67,8 +67,13 @@ export default function EscapeRoomMap({
                   </p>
                 )}
                 {isLocked && (
-                  <p className="text-[10px] text-muted-foreground/50 mt-0.5 truncate">
-                    {room.lock.lock_description}
+                  <p className="text-[10px] text-muted-foreground/50 mt-0.5 truncate flex items-center gap-1">
+                    {room.lock.type === "code_lock" && <Hash className="w-2.5 h-2.5 inline" />}
+                    {room.lock.type === "key_item" && <Key className="w-2.5 h-2.5 inline" />}
+                    {room.lock.type === "multi_key" && <Key className="w-2.5 h-2.5 inline" />}
+                    {room.lock.type === "score_gate" && <Target className="w-2.5 h-2.5 inline" />}
+                    {room.lock.type === "puzzle_gate" && <Shield className="w-2.5 h-2.5 inline" />}
+                    {room.lock.lock_description.slice(0, 50)}
                   </p>
                 )}
               </div>

@@ -11,6 +11,7 @@ import type {
   InventoryItem,
   EscapeHint,
   EscapeGameState,
+  RoomDiscoverable,
 } from "@/domain/cognitio/escapeEngine.types";
 import type { BrickType } from "@/domain/cognitio/types";
 import type { NormalizedConcept } from "./conceptNormalizer";
@@ -93,6 +94,9 @@ export function generateEscapeRooms(input: RoomGenerationInput): EscapeRoom[] {
     // Create 4-level hints
     const hints = generateRoomHints(roomConcepts, roomType, difficulty);
 
+    // Create discoverable elements (hidden clues, environmental objects)
+    const discoverables = generateRoomDiscoverables(roomConcepts, roomType, puzzles, i);
+
     rooms.push({
       room_index: i,
       id: roomId,
@@ -105,6 +109,7 @@ export function generateEscapeRooms(input: RoomGenerationInput): EscapeRoom[] {
       puzzles,
       rewards,
       hints,
+      discoverables,
       target_concepts: roomConcepts.map(c => c.normalized_label),
       difficulty,
       time_limit_sec: computeRoomTimeLimit(puzzles.length, difficulty),
@@ -152,6 +157,30 @@ function createRoomLock(
       lock_description: `Un verrou à code bloque cette salle. Combinez les indices des salles précédentes.`,
       unlock_hint: `Le code est composé de ${codeParts.length} éléments trouvés dans les salles précédentes.`,
     };
+  }
+
+  // Score gate for the final room — require minimum 60% accuracy
+  if (roomIndex === previousRooms.length && previousRooms.length >= 3) {
+    return {
+      type: "score_gate",
+      min_score: 0.6,
+      lock_description: "Votre précision doit atteindre au moins 60% pour accéder à l'épreuve finale.",
+      unlock_hint: "Améliorez votre score en répondant correctement aux puzzles précédents.",
+    };
+  }
+
+  // Key item lock for rooms after the 3rd — requires key from 2 rooms prior
+  if (roomIndex >= 3 && roomIndex % 3 === 0 && previousRooms.length >= 2) {
+    const sourceRoom = previousRooms[roomIndex - 2];
+    const keyItem = sourceRoom?.rewards.find(r => r.is_key_item);
+    if (keyItem) {
+      return {
+        type: "key_item",
+        required_item_id: keyItem.id,
+        lock_description: `Cette salle nécessite un objet clé. Cherchez dans les salles précédentes.`,
+        unlock_hint: `L'objet "${keyItem.name}" de la salle "${sourceRoom.title}" est nécessaire.`,
+      };
+    }
   }
 
   // Most rooms use puzzle_gate (must complete previous room)
@@ -305,7 +334,47 @@ function generateRoomPuzzles(
     puzzles.push(createSynthesisPuzzle(synthConcepts, roomIndex, difficulty));
   }
 
+  // Add a surprise bonus puzzle in the middle room (hidden challenge)
+  if (roomIndex === Math.floor(totalRooms / 2) && concepts.length >= 1) {
+    puzzles.push(createBonusPuzzle(concepts[0], roomIndex, difficulty));
+  }
+
   return puzzles;
+}
+
+/**
+ * Create a meta-puzzle that requires combining all fragments collected.
+ * This is the true "final puzzle" of the escape game.
+ */
+export function createMetaPuzzle(
+  allConcepts: NormalizedConcept[],
+  totalRooms: number,
+  difficulty: number
+): EscapePuzzle {
+  const keyConceptLabels = allConcepts.slice(0, Math.min(allConcepts.length, 6)).map(c => c.normalized_label);
+  const keywords = allConcepts.slice(0, 6).flatMap(c => {
+    const words = (c.compressed_definition || c.definition).split(/\s+/);
+    return words.filter(w => w.length > 4).slice(0, 2);
+  });
+
+  return {
+    id: `puzzle_meta_final_${crypto.randomUUID().slice(0, 8)}`,
+    puzzle_type: "active_generation",
+    brick_type: "DECISION",
+    prompt: `[ÉPREUVE FINALE — MÉTA-PUZZLE] Tous les fragments collectés doivent maintenant être assemblés. En utilisant les concepts clés découverts tout au long de la mission (${keyConceptLabels.join(", ")}), formulez une synthèse globale qui relie l'ensemble de vos découvertes.`,
+    instructions: "Cette épreuve finale évalue votre compréhension globale. Votre réponse doit intégrer le maximum de concepts découverts dans les salles précédentes. Rédigez 3-5 phrases.",
+    input_type: "textarea",
+    correct_answer: keyConceptLabels.join(", "),
+    validation_keywords: [...new Set(keywords)].slice(0, 10),
+    explanation: `La synthèse attendue devait relier : ${keyConceptLabels.join(", ")}. Chaque fragment collecté représentait un aspect du sujet.`,
+    concept_key: keyConceptLabels[0],
+    bloom_level: "create",
+    difficulty: Math.min(5, difficulty + 2),
+    solved: false,
+    attempts: 0,
+    // Requires all fragment items to be collected
+    required_items: Array.from({ length: Math.min(totalRooms - 1, 4) }, (_, i) => `item_${i}`),
+  };
 }
 
 function createSynthesisPuzzle(
@@ -489,6 +558,121 @@ function buildHintLevel4(concepts: NormalizedConcept[]): string {
   const answer = concept.normalized_label;
   const firstPart = answer.slice(0, Math.ceil(answer.length * 0.6));
   return `La réponse est "${firstPart}…". ${concept.compressed_definition || concept.definition}`;
+}
+
+// ---------- Bonus / Surprise Puzzles ----------
+
+function createBonusPuzzle(
+  concept: NormalizedConcept,
+  roomIndex: number,
+  difficulty: number
+): EscapePuzzle {
+  const label = concept.normalized_label;
+  return {
+    id: `puzzle_bonus_${roomIndex}_${crypto.randomUUID().slice(0, 8)}`,
+    puzzle_type: "interpretation",
+    brick_type: "OBSERVATION",
+    prompt: `[DÉFI BONUS] Un message chiffré apparaît sur le mur : « ${scrambleText(label)} ». Déchiffrez le concept caché.`,
+    instructions: "Ce défi bonus est optionnel mais rapporte des points supplémentaires. Identifiez le concept dissimulé.",
+    options: shuffleArray([label, ...generateDecoys(label, 3)]),
+    correct_answer: label,
+    explanation: `Le concept caché était "${label}". ${concept.compressed_definition || concept.definition}`,
+    concept_key: label,
+    bloom_level: "analyze",
+    difficulty: Math.min(5, difficulty + 1),
+    solved: false,
+    attempts: 0,
+  };
+}
+
+/** Scramble text to create a cipher-like puzzle */
+function scrambleText(text: string): string {
+  const words = text.split(/\s+/);
+  return words.map(w => {
+    if (w.length <= 3) return w;
+    const first = w[0];
+    const last = w[w.length - 1];
+    const middle = w.slice(1, -1).split("").sort(() => Math.random() - 0.5).join("");
+    return `${first}${middle}${last}`;
+  }).join(" ");
+}
+
+/** Generate decoy answers for scrambled puzzles */
+function generateDecoys(correctLabel: string, count: number): string[] {
+  const decoys: string[] = [];
+  const words = correctLabel.split(/\s+/);
+  for (let i = 0; i < count; i++) {
+    const modified = words.map(w => {
+      if (w.length <= 2) return w;
+      const chars = w.split("");
+      const idx = Math.floor(Math.random() * (chars.length - 1));
+      chars[idx] = String.fromCharCode(97 + Math.floor(Math.random() * 26));
+      return chars.join("");
+    }).join(" ");
+    decoys.push(modified);
+  }
+  return decoys;
+}
+
+// ---------- Discoverable Generation ----------
+
+function generateRoomDiscoverables(
+  concepts: NormalizedConcept[],
+  roomType: string,
+  puzzles: EscapePuzzle[],
+  roomIndex: number
+): RoomDiscoverable[] {
+  const discoverables: RoomDiscoverable[] = [];
+
+  // Environmental element — always present, provides context
+  const envDescriptions: Record<string, { label: string; text: string }> = {
+    briefing: { label: "Tableau de briefing", text: "Un tableau blanc couvert de notes. Certaines informations semblent liées aux épreuves à venir." },
+    exploration: { label: "Tiroir entrouvert", text: "Un tiroir laissé entrouvert contient des documents partiellement visibles. Peut-être un indice ?" },
+    analysis: { label: "Écran de monitoring", text: "Un écran affiche des données en temps réel. Un motif se répète dans les résultats…" },
+    diagnostic: { label: "Dossier annoté", text: "Un dossier avec des annotations manuscrites. Les marques soulignent des mots clés importants." },
+    decision: { label: "Post-it sur le mur", text: "Plusieurs post-it colorés sont collés au mur. Ils semblent organiser une réflexion en arbre de décision." },
+    synthesis: { label: "Schéma au tableau", text: "Un schéma relie plusieurs concepts entre eux. Les connexions dessinent une logique d'ensemble." },
+    final: { label: "Coffre-fort entrouvert", text: "Un coffre-fort dont la porte est légèrement ouverte. À l'intérieur, un dernier indice…" },
+  };
+
+  const env = envDescriptions[roomType] ?? { label: "Élément suspect", text: "Quelque chose attire votre attention. Examinez plus attentivement." };
+  discoverables.push({
+    id: `disc_env_${roomIndex}`,
+    label: env.label,
+    type: "environment",
+    discovery_text: env.text,
+    discovered: false,
+  });
+
+  // Document clue — concept-based, hints at first puzzle answer
+  if (concepts.length > 0) {
+    const concept = concepts[0];
+    const defSnippet = (concept.compressed_definition || concept.definition).slice(0, 100);
+    discoverables.push({
+      id: `disc_doc_${roomIndex}`,
+      label: `Document: ${concept.normalized_label}`,
+      type: "document",
+      discovery_text: `Ce document révèle : "${defSnippet}…" — cette information pourrait être utile pour résoudre un puzzle.`,
+      hints_at_puzzle_id: puzzles[0]?.id,
+      discovered: false,
+    });
+  }
+
+  // Hidden object — appears after solving first puzzle, grants a clue
+  if (puzzles.length >= 2 && concepts.length >= 2) {
+    const hiddenConcept = concepts[Math.min(1, concepts.length - 1)];
+    discoverables.push({
+      id: `disc_secret_${roomIndex}`,
+      label: "Objet caché",
+      type: "secret",
+      discovery_text: `Vous découvrez un indice caché ! Il mentionne "${hiddenConcept.normalized_label}" — cela éclaire le puzzle suivant.`,
+      hints_at_puzzle_id: puzzles[1]?.id,
+      visible_after_puzzle_id: puzzles[0]?.id,
+      discovered: false,
+    });
+  }
+
+  return discoverables;
 }
 
 // ---------- Helper Functions ----------

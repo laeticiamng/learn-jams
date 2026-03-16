@@ -17,7 +17,14 @@ import type {
 } from "@/domain/cognitio/escapeEngine.types";
 import { canUnlockRoom, attemptCodeUnlock, checkUnlockableRooms } from "@/services/cognitio/escapeRoomEngine";
 import { collectRoomRewards, collectItem } from "@/services/cognitio/escapeInventoryEngine";
-import { validatePuzzleAnswer, buildConceptResults } from "@/services/cognitio/escapePuzzleEngine";
+import {
+  validatePuzzleAnswer,
+  buildConceptResults,
+  buildPuzzleDependencyGraph,
+  canAttemptPuzzle,
+  getNewlyAvailablePuzzles,
+  type PuzzleDependency,
+} from "@/services/cognitio/escapePuzzleEngine";
 import { generateEscapeDebrief } from "@/services/cognitio/escapeSpacedRepetition";
 import { generateEventNarrative } from "@/services/cognitio/escapeNarrativeEngine";
 
@@ -33,6 +40,12 @@ export function useEscapeGame(session: EscapeGameSession | null) {
   const [debrief, setDebrief] = useState<EscapeDebrief | null>(null);
   const startTimeRef = useRef(Date.now());
   const puzzleStartRef = useRef(Date.now());
+
+  // ---------- Puzzle Dependency Graph ----------
+
+  const puzzleDependencyGraph = useMemo((): PuzzleDependency[] => {
+    return buildPuzzleDependencyGraph(rooms);
+  }, [rooms]);
 
   // ---------- Current Room & Puzzle ----------
 
@@ -100,13 +113,29 @@ export function useEscapeGame(session: EscapeGameSession | null) {
   // ---------- Puzzle Interaction ----------
 
   const startPuzzle = useCallback((puzzleIndex: number) => {
+    if (!currentRoom) return;
+    const puzzle = currentRoom.puzzles[puzzleIndex];
+    if (!puzzle) return;
+
+    // Check puzzle dependencies before allowing attempt
+    const { canAttempt, blockedBy } = canAttemptPuzzle(puzzle, puzzleDependencyGraph, state);
+    if (!canAttempt) {
+      const missingItems = blockedBy.filter(id => id.startsWith("item_"));
+      if (missingItems.length > 0) {
+        setNarrativeMessage("Il vous manque des objets pour tenter ce puzzle. Explorez les salles précédentes.");
+      } else {
+        setNarrativeMessage("Résolvez d'abord les puzzles précédents pour débloquer celui-ci.");
+      }
+      return;
+    }
+
     puzzleStartRef.current = Date.now();
     setState(prev => ({
       ...prev,
       current_puzzle_index: puzzleIndex,
       phase: "puzzle",
     }));
-  }, []);
+  }, [currentRoom, puzzleDependencyGraph, state]);
 
   const submitAnswer = useCallback((
     answer: string | string[],
@@ -202,8 +231,24 @@ export function useEscapeGame(session: EscapeGameSession | null) {
       handlePuzzleUnlock(currentPuzzle.unlocks);
     }
 
+    // Check for newly available puzzles via dependency graph
+    if (result.is_correct) {
+      const newlyAvailable = getNewlyAvailablePuzzles(
+        currentPuzzle.id,
+        puzzleDependencyGraph,
+        { ...state, puzzles_solved: [...state.puzzles_solved, currentPuzzle.id] }
+      );
+      if (newlyAvailable.length > 0) {
+        setNarrativeMessage(
+          newlyAvailable.length === 1
+            ? "Un nouveau puzzle est maintenant accessible !"
+            : `${newlyAvailable.length} nouveaux puzzles sont maintenant accessibles !`
+        );
+      }
+    }
+
     return result;
-  }, [currentPuzzle, currentRoom, state.current_room_index]);
+  }, [currentPuzzle, currentRoom, state.current_room_index, puzzleDependencyGraph, state]);
 
   // ---------- Hints ----------
 
@@ -383,6 +428,97 @@ export function useEscapeGame(session: EscapeGameSession | null) {
     return item.examine_text ?? item.description;
   }, [inventory]);
 
+  /** Discover a hidden element in the current room */
+  const discoverElement = useCallback((discoverableId: string): string | null => {
+    if (!currentRoom) return null;
+
+    const discoverable = currentRoom.discoverables?.find(d => d.id === discoverableId);
+    if (!discoverable || discoverable.discovered) return null;
+
+    // Check visibility condition
+    if (discoverable.visible_after_puzzle_id && !state.puzzles_solved.includes(discoverable.visible_after_puzzle_id)) {
+      return null; // Not visible yet
+    }
+
+    // Mark as discovered
+    setRooms(prev => prev.map(r => {
+      if (r.room_index !== state.current_room_index) return r;
+      return {
+        ...r,
+        discoverables: r.discoverables?.map(d =>
+          d.id === discoverableId ? { ...d, discovered: true } : d
+        ) ?? [],
+      };
+    }));
+
+    // Record event
+    setState(prev => ({
+      ...prev,
+      events: [...prev.events, {
+        type: "item_collected" as const,
+        timestamp: new Date().toISOString(),
+        room_index: state.current_room_index,
+        item_id: discoverableId,
+        details: { discovery_type: discoverable.type, label: discoverable.label },
+      }],
+    }));
+
+    // If it grants an item, collect it
+    if (discoverable.grants_item_id) {
+      const newItems = collectItem(inventory, discoverable.grants_item_id, rooms);
+      if (newItems.length > inventory.length) {
+        setInventory(newItems);
+        setState(prev => ({
+          ...prev,
+          inventory_collected: [...prev.inventory_collected, discoverable.grants_item_id!],
+        }));
+      }
+    }
+
+    setNarrativeMessage(discoverable.discovery_text);
+    return discoverable.discovery_text;
+  }, [currentRoom, state, rooms, inventory]);
+
+  /** Use an inventory item on a locked room — validates key_item / multi_key locks */
+  const useItem = useCallback((itemId: string, targetRoomIndex: number): boolean => {
+    const room = rooms[targetRoomIndex];
+    if (!room || room.unlocked) return false;
+
+    const lock = room.lock;
+    if (lock.type === "key_item" && lock.required_item_id === itemId) {
+      if (state.inventory_collected.includes(itemId)) {
+        enterRoom(targetRoomIndex);
+        setNarrativeMessage("L'objet a déverrouillé la salle !");
+        return true;
+      }
+    }
+
+    if (lock.type === "multi_key" && lock.required_item_ids?.includes(itemId)) {
+      const allPresent = lock.required_item_ids.every(id => state.inventory_collected.includes(id));
+      if (allPresent) {
+        enterRoom(targetRoomIndex);
+        setNarrativeMessage("Tous les objets requis sont combinés — salle déverrouillée !");
+        return true;
+      } else {
+        const remaining = lock.required_item_ids.filter(id => !state.inventory_collected.includes(id)).length;
+        setNarrativeMessage(`Il manque encore ${remaining} objet(s) pour déverrouiller cette salle.`);
+        return false;
+      }
+    }
+
+    setNarrativeMessage("Cet objet ne peut pas être utilisé ici.");
+    return false;
+  }, [rooms, state.inventory_collected, enterRoom]);
+
+  /** Check puzzle accessibility for current puzzle */
+  const puzzleAccessibility = useMemo(() => {
+    if (!currentRoom) return [];
+    return currentRoom.puzzles.map(puzzle => {
+      const { canAttempt, blockedBy } = canAttemptPuzzle(puzzle, puzzleDependencyGraph, state);
+      return { puzzleId: puzzle.id, canAttempt, blockedBy };
+    });
+  }, [currentRoom, puzzleDependencyGraph, state]);
+
   // ---------- Return ----------
 
   return {
@@ -396,6 +532,7 @@ export function useEscapeGame(session: EscapeGameSession | null) {
     debrief,
     totalProgress,
     currentHintLevel,
+    puzzleAccessibility,
 
     // Actions
     startGame,
@@ -408,6 +545,8 @@ export function useEscapeGame(session: EscapeGameSession | null) {
     tryCodeUnlock,
     finishGame,
     examineItem,
+    useItem,
+    discoverElement,
   };
 }
 
