@@ -54,6 +54,15 @@ import type { EducationStage, ExplanationStyle } from "@/domain/cognitio/learner
 import { DEFAULT_LEARNER_PROFILE } from "@/domain/cognitio/learner-profile.types";
 import type { AmbiguousZone } from "@/domain/cognitio/types";
 import { useAuth } from "@/hooks/useAuth";
+import { getFormatAvailability } from "@/services/billing/entitlementEngine.service";
+import { FORMAT_CONFIGS, type CreateFormat as CF } from "@/lib/create-format-config";
+
+/** Compute which formats are locked for the current plan */
+function computeLockedFormats(plan: import("@/domain/billing/pricing.types").PlanKey): CF[] {
+  return (Object.values(FORMAT_CONFIGS) as { key: CF; featureKey: import("@/domain/billing/pricing.types").FeatureKey }[])
+    .filter((c) => getFormatAvailability(plan, c.featureKey) === "locked")
+    .map((c) => c.key);
+}
 
 export default function Create() {
   const { t } = useTranslation();
@@ -189,6 +198,10 @@ export default function Create() {
                 <FormatSelector
                   selectedFormat={selectedFormat}
                   onSelectFormat={handleFormatSelect}
+                  lockedFormats={computeLockedFormats(plan)}
+                  onLockedClick={(f) => {
+                    quotaGuard.checkBeforeGenerate(f);
+                  }}
                 />
               </section>
 

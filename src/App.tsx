@@ -11,6 +11,7 @@ import CommandPalette from "@/components/CommandPalette";
 import CookieConsent from "./components/CookieConsent";
 import PageLoadingFallback from "@/components/PageLoadingFallback";
 import { DevDiagnosticsPanel } from "@/components/DevDiagnosticsPanel";
+import AdminRoute from "@/components/AdminRoute";
 import Index from "./pages/Index";
 
 // Lazy-loaded routes for code splitting
@@ -82,7 +83,7 @@ const App = () => (
               <Route path="/mission/:id/analysis" element={<ProtectedRoute><MissionAnalysis /></ProtectedRoute>} />
               <Route path="/transformation/:id" element={<ProtectedRoute><TransformationView /></ProtectedRoute>} />
               <Route path="/cognitio-library" element={<ProtectedRoute><CognitioLibrary /></ProtectedRoute>} />
-              <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+              <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
               <Route path="/guardian-settings" element={<ProtectedRoute><GuardianSettings /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>

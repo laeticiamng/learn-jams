@@ -7,13 +7,17 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
+import { useUserPlan } from "@/hooks/useUserPlan";
 import { validateClientEnv } from "@/security/env";
 import { isAdmin } from "@/security/roles";
+import { getFormatAvailability } from "@/services/billing/entitlementEngine.service";
+import { FORMAT_CONFIGS } from "@/lib/create-format-config";
 
 export function DevDiagnosticsPanel() {
   const [visible, setVisible] = useState(false);
   const { user, session, loading: authLoading } = useAuth();
   const { flags, loading: flagsLoading } = useFeatureFlags();
+  const { plan, loading: planLoading } = useUserPlan(user?.id ?? null);
 
   const userIsAdmin = useMemo(() => isAdmin(user?.user_metadata), [user?.user_metadata]);
   const canAccess = import.meta.env.DEV || userIsAdmin;
@@ -74,7 +78,14 @@ export function DevDiagnosticsPanel() {
         <Section title="Plan & Access">
           <Row label="Admin" value={userIsAdmin ? "YES" : "no"} status={userIsAdmin ? "ok" : "neutral"} />
           <Row label="Role" value={String(user?.user_metadata?.role ?? "—")} />
-          <Row label="Plan Key" value={String(user?.user_metadata?.plan_key ?? "—")} />
+          <Row label="Plan Key (meta)" value={String(user?.user_metadata?.plan_key ?? "—")} />
+          <Row label="Resolved Plan" value={planLoading ? "loading…" : plan} status={plan === "school" ? "ok" : plan === "free" ? "warn" : "neutral"} />
+          {Object.values(FORMAT_CONFIGS).map((fmt) => {
+            const avail = getFormatAvailability(plan, fmt.featureKey);
+            return (
+              <Row key={fmt.key} label={fmt.key} value={avail} status={avail === "included" ? "ok" : avail === "limited" ? "warn" : "error"} />
+            );
+          })}
         </Section>
 
         {/* 3D Capabilities */}
