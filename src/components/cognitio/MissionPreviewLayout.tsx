@@ -4,7 +4,7 @@
 // ============================================================
 
 import { useNavigate } from "react-router-dom";
-import { Gamepad2, DoorOpen, Crown, AlertTriangle, Shield, Play, XCircle } from "lucide-react";
+import { Gamepad2, DoorOpen, Crown, AlertTriangle, Shield, Play, XCircle, Compass } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { GenerateExperienceOutput } from "@/domain/cognitio/contracts";
@@ -41,14 +41,25 @@ export function MissionPreviewLayout({ output }: MissionPreviewLayoutProps) {
           Mission Interactive
         </h3>
         {isPlayable && (
-          <Button
-            size="sm"
-            onClick={() => navigate(`/mission/${mission_id}/play`)}
-            className="gap-2 gradient-bg-premium rounded-xl"
-          >
-            <Play className="h-3.5 w-3.5" />
-            Jouer
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => navigate(`/mission/${mission_id}/escape`)}
+              className="gap-2 rounded-xl border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+            >
+              <Compass className="h-3.5 w-3.5" />
+              Escape Game
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => navigate(`/mission/${mission_id}/play`)}
+              className="gap-2 gradient-bg-premium rounded-xl"
+            >
+              <Play className="h-3.5 w-3.5" />
+              Jouer
+            </Button>
+          </div>
         )}
       </div>
 

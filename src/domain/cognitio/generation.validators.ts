@@ -192,6 +192,40 @@ export function validateGenerationNotEmpty(output: M5_Output): EmptyGenerationGa
   };
 }
 
+// ---------- Music Generation Gate ----------
+
+export interface MusicGenerationGateResult {
+  passed: boolean;
+  reason: string;
+}
+
+export function validateMusicGenerationNotEmpty(lyrics: string | null | undefined, songId: string | null | undefined): MusicGenerationGateResult {
+  if (!lyrics || lyrics.trim().length < 50) {
+    return { passed: false, reason: "Les paroles générées sont trop courtes ou vides." };
+  }
+  if (!songId) {
+    return { passed: false, reason: "L'enregistrement du morceau a échoué." };
+  }
+  return { passed: true, reason: `Génération musicale valide : ${lyrics.length} caractères de paroles.` };
+}
+
+// ---------- Video Generation Gate ----------
+
+export interface VideoGenerationGateResult {
+  passed: boolean;
+  reason: string;
+}
+
+export function validateVideoGenerationNotEmpty(generationId: string | null | undefined, status: string | null | undefined): VideoGenerationGateResult {
+  if (!generationId) {
+    return { passed: false, reason: "La génération vidéo n'a pas retourné d'identifiant." };
+  }
+  if (status === "failed") {
+    return { passed: false, reason: "La génération vidéo a échoué côté fournisseur." };
+  }
+  return { passed: true, reason: `Génération vidéo lancée : id=${generationId}, status=${status}.` };
+}
+
 // ---------- Input Validation ----------
 
 export function validateM5Input(input: M5_Input): M5ValidationResult {

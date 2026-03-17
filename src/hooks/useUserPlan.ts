@@ -30,6 +30,7 @@ export function useUserPlan(userId: string | null): UserPlanState {
     setLoading(true);
     try {
       // Check if user is admin (admins get school plan)
+      // Uses getUser() which fetches fresh data from Supabase (not cached session)
       const { data: { user } } = await supabase.auth.getUser();
       const meta = user?.user_metadata;
       if (meta?.is_admin === true || meta?.role === "admin") {
@@ -64,6 +65,19 @@ export function useUserPlan(userId: string | null): UserPlanState {
   }, [userId]);
 
   useEffect(() => { refresh(); }, [refresh]);
+
+  // Re-check plan on auth state changes (e.g. admin metadata updated without logout)
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event) => {
+        // Refresh on any user update or token refresh — catches metadata changes
+        if (event === "USER_UPDATED" || event === "TOKEN_REFRESHED" || event === "SIGNED_IN") {
+          refresh();
+        }
+      }
+    );
+    return () => { subscription.unsubscribe(); };
+  }, [refresh]);
 
   return { plan, loading, usage, refresh };
 }

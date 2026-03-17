@@ -1,5 +1,24 @@
 // ============================================================
 // Entitlement Engine — Snapshot computation, format availability, paywall context
+//
+// ENTITLEMENT PRECEDENCE MODEL (authoritative):
+//   1. Admin metadata override (user_metadata.is_admin === true OR role === "admin")
+//      → useUserPlan resolves to plan_key from metadata (default: "school")
+//      → "school" plan has ALL features as "included" with quota = -1 (unlimited)
+//   2. Active subscription plan (from subscriptions table, status = "active")
+//      → currently maps to "core" plan
+//   3. Default: "free" plan
+//
+// UNLIMITED CONVENTION:
+//   quota = -1 means unlimited everywhere:
+//     - PlanFormatEntry.monthly_quota
+//     - EntitlementEntry.quota_total / quota_remaining / effective_remaining
+//     - PLAN_QUOTAS in planResolver.service.ts
+//   This convention is enforced in resolveQuotaRemaining() and resolveEffectiveRemaining().
+//
+// FEATURE GATING:
+//   All feature gates MUST use checkEntitlement() or getFormatAvailability() against
+//   the snapshot. Direct quota lookups bypass flex credits and top-ups.
 // ============================================================
 
 import type { PlanKey, FeatureKey } from "@/domain/billing/pricing.types";

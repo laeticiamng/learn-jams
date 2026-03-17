@@ -90,6 +90,7 @@ export type IngestInput = {
   objective: LearningObjective;
   language?: string;
   learner_profile?: LearnerAudienceProfile;
+  music_style?: string;
 };
 
 export type IngestOutput = M1_Output;

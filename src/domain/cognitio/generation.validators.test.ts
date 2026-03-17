@@ -2,6 +2,8 @@ import { describe, it, expect } from "vitest";
 import {
   validateM5Input,
   validateM5Output,
+  validateMusicGenerationNotEmpty,
+  validateVideoGenerationNotEmpty,
   MIN_FINAL_TEST_QUESTIONS,
   MIN_BLOOM_LEVELS_IN_TEST,
   MAX_NEW_ELEMENTS_PER_BLOCK,
@@ -400,5 +402,52 @@ describe("validateM5Output", () => {
     });
     const result = validateM5Output(output, 10000);
     expect(result.warnings.some(w => w.code === "UNANCHORED_CRITICAL")).toBe(true);
+  });
+});
+
+// ============================================================
+// Music Generation Gate
+// ============================================================
+
+describe("validateMusicGenerationNotEmpty", () => {
+  it("passes with valid lyrics and songId", () => {
+    const result = validateMusicGenerationNotEmpty("A".repeat(100), "song-123");
+    expect(result.passed).toBe(true);
+  });
+
+  it("fails with empty lyrics", () => {
+    expect(validateMusicGenerationNotEmpty("", "song-123").passed).toBe(false);
+    expect(validateMusicGenerationNotEmpty(null, "song-123").passed).toBe(false);
+    expect(validateMusicGenerationNotEmpty(undefined, "song-123").passed).toBe(false);
+  });
+
+  it("fails with short lyrics", () => {
+    expect(validateMusicGenerationNotEmpty("short", "song-123").passed).toBe(false);
+  });
+
+  it("fails with no songId", () => {
+    expect(validateMusicGenerationNotEmpty("A".repeat(100), null).passed).toBe(false);
+    expect(validateMusicGenerationNotEmpty("A".repeat(100), undefined).passed).toBe(false);
+  });
+});
+
+// ============================================================
+// Video Generation Gate
+// ============================================================
+
+describe("validateVideoGenerationNotEmpty", () => {
+  it("passes with valid generation id and status", () => {
+    expect(validateVideoGenerationNotEmpty("gen-123", "pending").passed).toBe(true);
+    expect(validateVideoGenerationNotEmpty("gen-123", "processing").passed).toBe(true);
+    expect(validateVideoGenerationNotEmpty("gen-123", "completed").passed).toBe(true);
+  });
+
+  it("fails with no generation id", () => {
+    expect(validateVideoGenerationNotEmpty(null, "pending").passed).toBe(false);
+    expect(validateVideoGenerationNotEmpty(undefined, "pending").passed).toBe(false);
+  });
+
+  it("fails with failed status", () => {
+    expect(validateVideoGenerationNotEmpty("gen-123", "failed").passed).toBe(false);
   });
 });
