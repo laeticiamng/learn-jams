@@ -390,13 +390,13 @@ function makeSegment(
 
 async function logOps(supabase: any, eventType: string, severity: string, documentId: string, userId: string, payload: any) {
   try {
-    await supabase.from("ops_events").insert({
+    await supabase.from("ops_events").insert([{
       event_type: eventType,
       severity,
       document_id: documentId,
       user_id: userId,
       payload_json: payload,
-    });
+    }]);
   } catch (e) {
     console.error("Ops log failed:", e);
   }

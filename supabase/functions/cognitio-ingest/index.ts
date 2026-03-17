@@ -280,7 +280,7 @@ function errorResponse(status: number, message: string) {
 }
 
 async function logOps(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   eventType: string,
   severity: string,
   documentId?: string,
@@ -288,13 +288,13 @@ async function logOps(
   payload?: Record<string, unknown>
 ) {
   try {
-    await supabase.from("ops_events").insert({
+    await supabase.from("ops_events").insert([{
       event_type: eventType,
       severity,
       document_id: documentId || null,
       user_id: userId || null,
       payload_json: payload || {},
-    });
+    }]);
   } catch {
     // Ops logging failure should never block the pipeline
     console.error("Ops logging failed for:", eventType);

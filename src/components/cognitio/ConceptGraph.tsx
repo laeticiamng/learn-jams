@@ -169,26 +169,32 @@ export function ConceptGraph({ concepts, confusionPairs = [] }: ConceptGraphProp
   );
 }
 
-function ConceptNode({
-  concept,
-  edges,
-  confusions,
-  conceptMap,
-  isSelected,
-  onSelect,
-}: {
+interface ConceptNodeProps {
   concept: AnalyzedConcept;
   edges: { from: string; to: string; type: string }[];
   confusions: AnalyzedConfusionPair[];
   conceptMap: Map<string, AnalyzedConcept>;
   isSelected: boolean;
   onSelect: () => void;
-}) {
+}
+
+const ConceptNode = forwardRef<HTMLButtonElement, ConceptNodeProps>(function ConceptNode(
+  {
+    concept,
+    edges,
+    confusions,
+    conceptMap,
+    isSelected,
+    onSelect,
+  }: ConceptNodeProps,
+  ref,
+) {
   const critColor = CRITICALITY_COLORS[concept.criticality] ?? CRITICALITY_COLORS[5];
   const connectionCount = edges.length + confusions.length;
 
   return (
     <motion.button
+      ref={ref}
       onClick={onSelect}
       className={`text-left p-3 rounded-lg border-2 transition-all ${critColor} ${
         isSelected ? "ring-2 ring-primary/40 shadow-md" : "hover:shadow-sm"
@@ -212,7 +218,6 @@ function ConceptNode({
         </div>
       </div>
 
-      {/* Expanded details */}
       {isSelected && (
         <motion.div
           initial={{ opacity: 0, height: 0 }}
@@ -229,7 +234,6 @@ function ConceptNode({
             )}
           </div>
 
-          {/* Relations from this node */}
           {edges.length > 0 && (
             <div className="space-y-0.5">
               {edges.map((edge, i) => {
@@ -248,7 +252,6 @@ function ConceptNode({
             </div>
           )}
 
-          {/* Confusion pairs */}
           {confusions.length > 0 && (
             <div className="space-y-0.5">
               {confusions.map((cp, i) => {
@@ -269,4 +272,6 @@ function ConceptNode({
       )}
     </motion.button>
   );
-}
+});
+
+ConceptNode.displayName = "ConceptNode";
