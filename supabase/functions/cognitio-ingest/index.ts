@@ -645,10 +645,17 @@ function filterEditorialArtifacts(text: string): string {
       continue;
     }
 
-    // Clean inline Rang labels
+    // Clean inline Rang labels and color coding
     let cleanedLine = trimmed;
     cleanedLine = cleanedLine.replace(/\s*\(?\s*Rang\s+[A-Z]\s*\)?\s*/gi, " ");
     cleanedLine = cleanedLine.replace(/\s*[-–—]\s*R2C\s*:\s*Rang\s+[A-Z]\s*/gi, " ");
+    cleanedLine = cleanedLine.replace(/\s*\(?\s*en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)\s*\)?\s*/gi, " ");
+    // Remove CODEX/S-ECN branding inline
+    cleanedLine = cleanedLine.replace(/CODEX\s*[.:,]+\s*/gi, "");
+    cleanedLine = cleanedLine.replace(/S[\s-]*ECN(?:\.COM)?\s*/gi, "");
+    cleanedLine = cleanedLine.replace(/R2C\s*:\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)(?:\s*[-–—]\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON))*/gi, "");
+    // Remove Révision dates inline
+    cleanedLine = cleanedLine.replace(/Révision\s+\d{1,2}\/\d{1,2}\/\d{2,4}/gi, "");
     cleanedLine = cleanedLine.replace(/\s{2,}/g, " ").trim();
 
     if (cleanedLine.length >= 3) {

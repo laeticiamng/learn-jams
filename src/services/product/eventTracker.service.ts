@@ -34,11 +34,13 @@ export async function trackEvent(
     await supabase.from("product_events").insert([{
       user_id: userId ?? null,
       anonymous_id: userId ? null : getAnonymousId(),
-      transformation_id: input.transformation_id ?? null,
       event_name: input.event_name,
-      audience_level: input.audience_level ?? null,
-      format: input.format ?? null,
-      metadata_json: (input.metadata ?? {}) as unknown as Json,
+      metadata_json: ({
+        ...(input.metadata ?? {}),
+        ...(input.transformation_id ? { transformation_id: input.transformation_id } : {}),
+        ...(input.audience_level ? { audience_level: input.audience_level } : {}),
+        ...(input.format ? { format: input.format } : {}),
+      }) as unknown as Json,
     }]);
   } catch {
     // Event tracking must never break the app
