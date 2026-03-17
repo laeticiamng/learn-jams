@@ -3,12 +3,23 @@
 // Contains floor, walls, ambient lighting, fog, and slots
 // for pedagogical objects. Room appearance adapts to the
 // universe theme and room purpose.
+// Enhanced with holographic grid, scan-line walls, firefly
+// particles, and portal effects.
 // ============================================================
 
 import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { Text, MeshReflectorMaterial, Float } from "@react-three/drei";
 import * as THREE from "three";
+import type { Group, Mesh, Points as PointsType } from "three";
+import type {
+  RoomTemplate,
+  LightingConfig,
+  FogConfig,
+  PedagogicalObject,
+  RenderMode,
+} from "@/domain/cognitio/immersiveEngine.types";
+import { HolographicGrid, ScanLineWall, PortalEffect, FireflyParticles } from "./ShaderEffects";
 import type { Group, Mesh, Points as PointsType } from "three";
 import type {
   RoomTemplate,
