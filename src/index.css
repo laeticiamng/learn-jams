@@ -311,6 +311,103 @@
     z-index: 1;
   }
 
+  /* Cinematic page transition wrapper */
+  .scene-enter {
+    animation: scene-fade-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  @keyframes scene-fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+      filter: blur(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+      filter: blur(0);
+    }
+  }
+
+  /* Cinematic reveal — for important content reveals */
+  .reveal-up {
+    animation: reveal-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  @keyframes reveal-up {
+    from {
+      opacity: 0;
+      transform: translateY(24px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Success pulse — for correct answers, completions */
+  .success-pulse {
+    animation: success-glow 0.6s ease-out;
+  }
+
+  @keyframes success-glow {
+    0% {
+      box-shadow: 0 0 0 0 hsl(142 70% 45% / 0.3);
+    }
+    50% {
+      box-shadow: 0 0 24px 8px hsl(142 70% 45% / 0.15);
+    }
+    100% {
+      box-shadow: 0 0 0 0 hsl(142 70% 45% / 0);
+    }
+  }
+
+  /* Error shake — for wrong answers */
+  .error-shake {
+    animation: shake 0.4s ease-out;
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-4px); }
+    40% { transform: translateX(4px); }
+    60% { transform: translateX(-3px); }
+    80% { transform: translateX(2px); }
+  }
+
+  /* Premium loading shimmer — for skeleton states */
+  .skeleton-shimmer {
+    background: linear-gradient(
+      90deg,
+      hsl(240 12% 7% / 0.8) 0%,
+      hsl(240 12% 12% / 0.8) 50%,
+      hsl(240 12% 7% / 0.8) 100%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-slide 1.8s ease-in-out infinite;
+  }
+
+  @keyframes skeleton-slide {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* Breathing glow — for active/focused elements */
+  .glow-breathe {
+    animation: breathe-glow 3s ease-in-out infinite;
+  }
+
+  @keyframes breathe-glow {
+    0%, 100% {
+      box-shadow: 0 0 20px hsl(265 90% 60% / 0.06),
+                  inset 0 1px 0 hsl(0 0% 100% / 0.03);
+    }
+    50% {
+      box-shadow: 0 0 40px hsl(265 90% 60% / 0.12),
+                  inset 0 1px 0 hsl(0 0% 100% / 0.06);
+    }
+  }
+
   /* Scrollbar hide utility */
   .scrollbar-none::-webkit-scrollbar { display: none; }
   .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }

@@ -111,23 +111,71 @@ export default function EscapeGame() {
   // eslint-disable-next-line react-hooks/exhaustive-deps -- only re-run when user id changes, not the full user object
   }, [id, user?.id]);
 
-  // Loading
+  // Loading — cinematic establishing shot for the escape world
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
         <Navbar />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center space-y-4">
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-            >
-              <Loader2 className="w-8 h-8 text-primary mx-auto" />
-            </motion.div>
-            <p className="text-sm text-muted-foreground">
-              Préparation de l'escape game...
-            </p>
-          </div>
+        <div className="flex-1 flex items-center justify-center relative overflow-hidden">
+          {/* Background pulse */}
+          <motion.div
+            className="absolute inset-0"
+            style={{ background: "radial-gradient(ellipse at 50% 40%, hsl(265 90% 60% / 0.04), transparent 60%)" }}
+            animate={{ opacity: [0.5, 1, 0.5] }}
+            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6 }}
+            className="text-center space-y-6 relative z-10"
+          >
+            {/* Orbital loader */}
+            <div className="relative w-24 h-24 mx-auto">
+              <motion.div
+                className="absolute inset-0 rounded-full border-2 border-primary/10 border-t-primary/40"
+                animate={{ rotate: 360 }}
+                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+              />
+              <motion.div
+                className="absolute inset-3 rounded-full border border-primary/5 border-b-primary/20"
+                animate={{ rotate: -360 }}
+                transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
+              />
+              <motion.div
+                className="absolute inset-6 rounded-full"
+                style={{ background: "radial-gradient(circle, hsl(265 90% 60% / 0.12), transparent 70%)" }}
+                animate={{ scale: [0.8, 1.2, 0.8] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <motion.div
+                  animate={{ opacity: [0.4, 1, 0.4] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                >
+                  <Loader2 className="w-5 h-5 text-primary/60" />
+                </motion.div>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <motion.p
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="text-sm font-medium text-foreground/80 tracking-wide"
+              >
+                Préparation de l'escape game
+              </motion.p>
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
+                className="text-xs text-muted-foreground/50"
+              >
+                Construction du monde immersif...
+              </motion.p>
+            </div>
+          </motion.div>
         </div>
         <Footer />
       </div>

@@ -55,16 +55,27 @@ export default function SceneCamera({
       camera.position.lerp(positionVec.current, delta * 1.2);
     }
 
-    // Idle drift — gentle orbit when user hasn't interacted
+    // Idle drift — cinematic breathing when user hasn't interacted
+    // Creates a gentle, intentional "camera presence" feel
     if (enableDrift && !isUserInteracting.current && !isTransitioning && renderMode === "full_3d") {
       idleTimer.current += delta;
-      if (idleTimer.current > 4) {
-        const driftAngle = state.clock.getElapsedTime() * 0.08;
-        const driftRadius = 0.15;
-        const offsetX = Math.sin(driftAngle) * driftRadius;
-        const offsetY = Math.cos(driftAngle * 0.7) * driftRadius * 0.3;
+      if (idleTimer.current > 3) {
+        const t = state.clock.getElapsedTime();
+        // Primary orbit — slow, wide
+        const primaryAngle = t * 0.06;
+        const primaryRadius = 0.12;
+        // Secondary breathing — slower vertical oscillation
+        const breathAngle = t * 0.04;
+        const breathAmplitude = 0.06;
+
+        const offsetX = Math.sin(primaryAngle) * primaryRadius;
+        const offsetY = Math.cos(breathAngle) * breathAmplitude;
+        // Subtle depth shift for parallax
+        const offsetZ = Math.sin(primaryAngle * 0.5) * 0.04;
+
         camera.position.x += offsetX * delta;
         camera.position.y += offsetY * delta;
+        camera.position.z += offsetZ * delta;
       }
     }
 

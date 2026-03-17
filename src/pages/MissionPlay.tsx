@@ -100,17 +100,48 @@ export default function MissionPlay() {
     [runId, mission, id, user?.id]
   );
 
-  // Loading screen
+  // Loading screen — establishing shot: entering the mission space
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
         <Navbar />
         <div className="flex-1 flex items-center justify-center">
           <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+            className="text-center space-y-6"
           >
-            <Loader2 className="w-8 h-8 text-primary" />
+            {/* Central loading orb with depth */}
+            <div className="relative w-20 h-20 mx-auto">
+              <motion.div
+                className="absolute inset-0 rounded-full"
+                style={{ background: "radial-gradient(circle, hsl(265 90% 60% / 0.15), transparent 70%)" }}
+                animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0.2, 0.5] }}
+                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+              />
+              <motion.div
+                className="absolute inset-2 rounded-full border-2 border-primary/20 border-t-primary"
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }}
+              />
+              <motion.div
+                className="absolute inset-4 rounded-full border border-primary/10 border-b-primary/30"
+                animate={{ rotate: -360 }}
+                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+              />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Gamepad2 className="w-5 h-5 text-primary/60" />
+              </div>
+            </div>
+            <motion.p
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="text-sm text-muted-foreground font-medium tracking-wide"
+            >
+              {t("mission.loading", { defaultValue: "Chargement de la mission..." })}
+            </motion.p>
           </motion.div>
         </div>
         <Footer />
