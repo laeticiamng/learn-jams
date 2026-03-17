@@ -187,19 +187,15 @@ export default function MissionIntroScreen({
   );
 }
 
-function StatCard({
-  icon: Icon,
-  value,
-  label,
-  delay,
-}: {
+const StatCard = forwardRef<HTMLDivElement, {
   icon: typeof DoorOpen;
   value: string | number;
   label: string;
   delay: number;
-}) {
+}>(({ icon: Icon, value, label, delay }, ref) => {
   return (
     <motion.div
+      ref={ref}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay }}
@@ -210,4 +206,6 @@ function StatCard({
       <p className="text-[10px] text-muted-foreground">{label}</p>
     </motion.div>
   );
-}
+});
+
+StatCard.displayName = "StatCard";
