@@ -29,10 +29,12 @@ import type { M4_Output } from "@/domain/cognitio/format.contracts";
 import type { AmbiguousZone, DetailedSourceType, DetectedStructureType } from "@/domain/cognitio/types";
 import type { FormatOverride, FormatDecisionModule, CostLevel } from "@/domain/cognitio/format.types";
 import type { ChosenFormat } from "@/domain/cognitio/types";
+import { usePageSEO } from "@/hooks/usePageSEO";
 
 export default function MissionAnalysis() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  usePageSEO({ title: "Analyse de mission", description: "Résultats détaillés de votre mission", noindex: true });
   const [loading, setLoading] = useState(true);
   const [m1Output, setM1Output] = useState<M1_Output | null>(null);
   const [m2Output, setM2Output] = useState<M2_Output | null>(null);

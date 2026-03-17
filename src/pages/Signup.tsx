@@ -91,7 +91,7 @@ export default function Signup() {
           <h1 className="font-display text-2xl font-bold tracking-tight">{t("auth.signup_title")}</h1>
           <p className="text-muted-foreground mt-2 text-sm">{t("auth.signup_subtitle")}</p>
         </div>
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-5" aria-label="Formulaire d'inscription">
           <div className="space-y-2">
             <Label htmlFor="name" className="text-sm font-medium">{t("auth.name")}</Label>
             <Input id="name" placeholder={t("auth.name_placeholder")} value={displayName} onChange={(e) => setDisplayName(e.target.value)} required

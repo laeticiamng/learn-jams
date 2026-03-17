@@ -13,6 +13,7 @@ import Footer from "@/components/Footer";
 import { useAuth } from "@/hooks/useAuth";
 import { getUserTransformations } from "@/services/cognitio/dynamic-sheet.service";
 import { useTranslation } from "react-i18next";
+import { usePageSEO } from "@/hooks/usePageSEO";
 
 interface TransformationSummary {
   id: string;
@@ -27,6 +28,7 @@ export default function CognitioLibrary() {
   const { session } = useAuth();
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
+  usePageSEO({ title: "Bibliothèque Cognitio", description: "Consultez vos documents analysés et missions générées", noindex: true });
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<TransformationSummary[]>([]);
 

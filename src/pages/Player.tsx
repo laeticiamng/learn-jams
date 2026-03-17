@@ -59,11 +59,18 @@ export default function Player() {
   useEffect(() => {
     if (!id || !user) return;
     const fetchSong = async () => {
-      const { data } = await supabase.from("songs").select("*").eq("id", id).single();
-      if (data) setSong(data as unknown as Song);
-      const { data: favData } = await supabase.from("favorites").select("id").eq("user_id", user.id).eq("song_id", id);
-      setIsFav((favData?.length ?? 0) > 0);
-      setLoading(false);
+      try {
+        const { data, error } = await supabase.from("songs").select("*").eq("id", id).single();
+        if (error) { console.error("[Player] Failed to fetch song:", error); }
+        else if (data) setSong(data as unknown as Song);
+
+        const { data: favData, error: favErr } = await supabase.from("favorites").select("id").eq("user_id", user.id).eq("song_id", id);
+        if (!favErr) setIsFav((favData?.length ?? 0) > 0);
+      } catch (err: unknown) {
+        console.error("[Player] Unexpected error:", err);
+      } finally {
+        setLoading(false);
+      }
     };
     fetchSong();
   }, [id, user]);
@@ -109,9 +116,16 @@ export default function Player() {
 
   const toggleFav = async () => {
     if (!user || !id) return;
-    if (isFav) await supabase.from("favorites").delete().eq("user_id", user.id).eq("song_id", id);
-    else await supabase.from("favorites").insert([{ user_id: user.id, song_id: id }]);
-    setIsFav(!isFav);
+    const prev = isFav;
+    setIsFav(!prev); // optimistic update
+    try {
+      const { error } = prev
+        ? await supabase.from("favorites").delete().eq("user_id", user.id).eq("song_id", id)
+        : await supabase.from("favorites").insert([{ user_id: user.id, song_id: id }]);
+      if (error) { setIsFav(prev); console.error("[Player] Favorite toggle failed:", error); }
+    } catch {
+      setIsFav(prev); // rollback on error
+    }
   };
 
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, "0")}`;
@@ -251,6 +265,7 @@ export default function Player() {
                 whileHover={{ scale: 1.15 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={toggleFav}
+                aria-label={isFav ? t("player.remove_favorite", "Retirer des favoris") : t("player.add_favorite", "Ajouter aux favoris")}
                 className="text-muted-foreground hover:text-primary transition-all duration-300"
               >
                 <Heart className={`w-6 h-6 transition-all duration-300 ${isFav ? "fill-primary text-primary" : ""}`} />
@@ -260,6 +275,7 @@ export default function Player() {
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={() => skip(-10)}
+                aria-label={t("player.skip_back", "Reculer de 10 secondes")}
                 className="text-muted-foreground hover:text-foreground transition-colors"
               >
                 <SkipBack className="w-5 h-5" />
@@ -269,6 +285,7 @@ export default function Player() {
                 whileTap={{ scale: 0.92 }}
                 whileHover={{ scale: 1.05 }}
                 onClick={togglePlay}
+                aria-label={playing ? t("player.pause", "Pause") : t("player.play", "Lecture")}
                 className={`w-20 h-20 rounded-full bg-gradient-to-br ${gradient} flex items-center justify-center transition-all duration-500`}
                 style={{
                   boxShadow: playing
@@ -283,6 +300,7 @@ export default function Player() {
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={() => skip(10)}
+                aria-label={t("player.skip_forward", "Avancer de 10 secondes")}
                 className="text-muted-foreground hover:text-foreground transition-colors"
               >
                 <SkipForward className="w-5 h-5" />
@@ -293,7 +311,7 @@ export default function Player() {
 
             {/* Volume */}
             <div className="flex items-center gap-3 max-w-xs mx-auto mb-14">
-              <button onClick={() => setVolume(v => v > 0 ? 0 : 80)} className="text-muted-foreground hover:text-foreground transition-colors">
+              <button onClick={() => setVolume(v => v > 0 ? 0 : 80)} aria-label={volume === 0 ? t("player.unmute", "Rétablir le son") : t("player.mute", "Couper le son")} className="text-muted-foreground hover:text-foreground transition-colors">
                 {volume === 0 ? <VolumeX className="w-4 h-4 shrink-0" /> : <Volume2 className="w-4 h-4 shrink-0" />}
               </button>
               <Slider value={[volume]} max={100} step={1} onValueChange={(v) => setVolume(v[0])} />

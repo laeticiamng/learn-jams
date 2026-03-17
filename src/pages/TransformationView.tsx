@@ -9,10 +9,12 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { DynamicSheetLayout } from "@/components/cognitio/DynamicSheetLayout";
 import { useGeneratedTransformation } from "@/hooks/useGeneratedTransformation";
+import { usePageSEO } from "@/hooks/usePageSEO";
 
 export default function TransformationView() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  usePageSEO({ title: "Vue transformation", description: "Consultez votre contenu généré", noindex: true });
   const { loading, error, data } = useGeneratedTransformation(id);
 
   if (loading) {

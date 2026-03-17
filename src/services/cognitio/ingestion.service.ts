@@ -11,6 +11,7 @@ import { validateWordCount, WORD_COUNT_THRESHOLDS } from "@/domain/cognitio/vali
 import { createCognitioError } from "@/lib/cognitio-errors";
 import { toSourceDocument } from "@/domain/cognitio/mappers";
 import { buildStoragePath } from "@/security/storagePaths";
+import { sanitizeFilename } from "@/security/fileValidation";
 import { extractTextFromFile, type ExtractionResult } from "./file-extractor.service";
 
 // ---------- Upload ----------
@@ -40,10 +41,29 @@ export async function uploadDocument(
       .upload(fileName, input.file);
 
     if (!uploadError) {
-      storagePath = fileName;
-      bucketUsed = "source-raw";
-    } else {
-      console.warn("[COGNITIO] source-raw upload failed, trying course-uploads:", uploadError.message);
+      // Verify file was actually stored (non-blocking — if list fails, trust the upload)
+      try {
+        const { data: fileList } = await supabase.storage.from("source-raw").list(
+          fileName.substring(0, fileName.lastIndexOf("/")),
+          { limit: 1, search: fileName.substring(fileName.lastIndexOf("/") + 1) }
+        );
+        if (fileList && fileList.length === 0) {
+          console.warn("[COGNITIO] Upload reported success but file not found in source-raw — treating as failed");
+          // Fall through to try course-uploads
+        } else {
+          storagePath = fileName;
+          bucketUsed = "source-raw";
+        }
+      } catch {
+        // list() not available or network issue — trust the upload succeeded
+        storagePath = fileName;
+        bucketUsed = "source-raw";
+      }
+    }
+
+    if (!storagePath) {
+      const primaryError = uploadError?.message ?? "verification failed";
+      console.warn("[COGNITIO] source-raw upload failed, trying course-uploads:", primaryError);
 
       // Fallback to course-uploads bucket
       const { error: uploadError2 } = await supabase.storage
@@ -54,7 +74,7 @@ export async function uploadDocument(
         storagePath = fileName;
         bucketUsed = "course-uploads";
       } else {
-        storageError = `source-raw: ${uploadError.message} | course-uploads: ${uploadError2.message}`;
+        storageError = `source-raw: ${primaryError} | course-uploads: ${uploadError2.message}`;
         console.error("[COGNITIO] Both storage buckets failed:", storageError);
 
         // CRITICAL FIX: If text was already extracted client-side, storage is non-fatal.
@@ -75,7 +95,7 @@ export async function uploadDocument(
     .from("source_documents")
     .insert([{
       user_id: userId,
-      original_filename: input.file?.name ?? null,
+      original_filename: input.file?.name ? sanitizeFilename(input.file.name) : null,
       content_type: input.content_type,
       ingestion_status: "pending",
       raw_storage_path: storagePath,
@@ -120,7 +140,11 @@ export async function runIngestion(
     return data as M1_Output;
   } catch (err: unknown) {
     console.warn("[COGNITIO] Edge function failed, falling back to local ingestion:", err);
-    return runLocalIngestion(documentId, input);
+    const result = await runLocalIngestion(documentId, input);
+    // Mark the result so UI can inform the user
+    result._fallback_used = true;
+    result._fallback_reason = err instanceof Error ? err.message : "Service distant indisponible";
+    return result;
   }
 }
 

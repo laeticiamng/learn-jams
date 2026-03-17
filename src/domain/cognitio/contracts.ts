@@ -63,6 +63,9 @@ export interface M1_Output {
   issues: SourceIssue[];
   segments: SegmentOutput[];
   learner_profile?: LearnerAudienceProfile;
+  /** Set when edge function failed and local fallback was used */
+  _fallback_used?: boolean;
+  _fallback_reason?: string;
 }
 
 export interface SourceIssue {

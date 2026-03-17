@@ -73,17 +73,36 @@ serve(async (req) => {
       });
     }
 
+    // Idempotence: check replay protection table
+    const { data: existing } = await supabase
+      .from("webhook_replay_protection")
+      .select("id")
+      .eq("event_id", event.id)
+      .maybeSingle();
+    if (existing) {
+      log("info", "event_already_processed", { type: event.type, id: event.id });
+      return new Response(JSON.stringify({ received: true, deduplicated: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    await supabase.from("webhook_replay_protection").insert([{
+      event_id: event.id,
+      provider: "stripe",
+      event_type: event.type,
+    }]);
+
     // Process event
-    const obj = event.data.object as any;
+    const obj = event.data.object as Record<string, unknown>;
 
     switch (event.type) {
       case "checkout.session.completed": {
-        const userId = obj.metadata?.user_id ?? obj.client_reference_id;
+        const metadata = obj.metadata as Record<string, string> | undefined;
+        const userId = metadata?.user_id ?? (obj.client_reference_id as string | undefined);
         if (userId) {
           await supabase.from("subscriptions").upsert({
             user_id: userId,
-            stripe_customer_id: obj.customer,
-            stripe_subscription_id: obj.subscription,
+            stripe_customer_id: obj.customer as string,
+            stripe_subscription_id: obj.subscription as string,
             status: "active",
             current_period_start: new Date().toISOString(),
           }, { onConflict: "user_id" });
@@ -92,7 +111,7 @@ serve(async (req) => {
       }
 
       case "invoice.paid": {
-        const subId = obj.subscription;
+        const subId = obj.subscription as string | undefined;
         if (subId) {
           await supabase.from("subscriptions")
             .update({ status: "active" })
@@ -102,20 +121,22 @@ serve(async (req) => {
       }
 
       case "customer.subscription.updated": {
+        const periodStart = obj.current_period_start as number | undefined;
+        const periodEnd = obj.current_period_end as number | undefined;
         await supabase.from("subscriptions")
           .update({
-            status: obj.status,
-            current_period_start: new Date(obj.current_period_start * 1000).toISOString(),
-            current_period_end: new Date(obj.current_period_end * 1000).toISOString(),
+            status: obj.status as string,
+            ...(periodStart ? { current_period_start: new Date(periodStart * 1000).toISOString() } : {}),
+            ...(periodEnd ? { current_period_end: new Date(periodEnd * 1000).toISOString() } : {}),
           })
-          .eq("stripe_subscription_id", obj.id);
+          .eq("stripe_subscription_id", obj.id as string);
         break;
       }
 
       case "customer.subscription.deleted": {
         await supabase.from("subscriptions")
           .update({ status: "canceled" })
-          .eq("stripe_subscription_id", obj.id);
+          .eq("stripe_subscription_id", obj.id as string);
         break;
       }
     }

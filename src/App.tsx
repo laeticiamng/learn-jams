@@ -44,7 +44,18 @@ const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const GuardianSettings = lazy(() => import("./pages/GuardianSettings"));
 const EscapeGame = lazy(() => import("./pages/EscapeGame"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 min — avoid redundant refetches
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+    mutations: {
+      retry: 0,
+    },
+  },
+});
 
 const App = () => (
   <ErrorBoundary>
