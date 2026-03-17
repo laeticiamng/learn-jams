@@ -195,9 +195,24 @@ export default function LearningRoom3D({
         </>
       )}
 
-      {/* Floating dust particles */}
+      {/* Enhanced firefly particles (replaces basic dust) */}
       {!isLite && !isLocked && (
-        <RoomDustParticles dimensions={dimensions} color={colorAccent} />
+        <FireflyParticles
+          count={isCurrent ? 80 : 30}
+          bounds={dimensions}
+          color={colorAccent}
+          speed={isCurrent ? 1.2 : 0.6}
+        />
+      )}
+
+      {/* Portal effect at room entrance */}
+      {!isLite && isCurrent && (
+        <PortalEffect
+          position={[0, dimensions.h / 2, dimensions.d / 2 - 0.5]}
+          color={colorPrimary}
+          radius={Math.min(dimensions.w, dimensions.h) * 0.25}
+          active={true}
+        />
       )}
 
       {/* Current room indicator — pulsing ring with glow */}
