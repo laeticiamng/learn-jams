@@ -248,7 +248,8 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error("Analysis error:", error);
-    return errorResponse(500, error.message || "Internal error");
+    const message = error instanceof Error ? error.message : "Internal error";
+    return errorResponse(500, message);
   }
 });
 
