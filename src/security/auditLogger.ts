@@ -69,14 +69,14 @@ export async function logAuditEvent(
 ): Promise<void> {
   try {
     const safeMetadata = redactObject(event.metadata);
-    await supabase.from("security_audit_events").insert({
+    await supabase.from("security_audit_events").insert([{
       event_type: event.event_type,
       severity: event.severity,
       user_id: event.user_id,
       ip_hash: event.ip_hash,
       metadata_json: safeMetadata,
-    });
-  } catch (err) {
+    }]);
+  } catch (err: unknown) {
     // Audit logging should never crash the main flow
     console.error("[audit] Failed to log event:", event.event_type, err);
   }
@@ -92,12 +92,12 @@ export async function flagSuspiciousActivity(
   details: Record<string, unknown>,
 ): Promise<void> {
   try {
-    await supabase.from("suspicious_activity_flags").insert({
+    await supabase.from("suspicious_activity_flags").insert([{
       user_id: userId,
       flag_type: flagType,
       status: "open",
       details_json: redactObject(details),
-    });
+    }]);
 
     await logAuditEvent(supabase, {
       event_type: "cost_anomaly_detected",
@@ -106,7 +106,7 @@ export async function flagSuspiciousActivity(
       ip_hash: null,
       metadata: { flag_type: flagType, ...details },
     });
-  } catch (err) {
+  } catch (err: unknown) {
     console.error("[audit] Failed to flag activity:", flagType, err);
   }
 }

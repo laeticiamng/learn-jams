@@ -119,7 +119,7 @@ export async function executeWithFailover<T>(
       provider_key: resolution.resolved.provider_key,
       is_fallback: resolution.resolved.is_fallback,
     };
-  } catch (primaryError) {
+  } catch (primaryError: unknown) {
     // If already on fallback, re-throw
     if (resolution.resolved.is_fallback || !resolution.fallback_available) {
       throw primaryError;
@@ -137,10 +137,12 @@ export async function executeWithFailover<T>(
         provider_key: route.fallback_provider_key,
         is_fallback: true,
       };
-    } catch (fallbackError) {
+    } catch (fallbackError: unknown) {
       // Both failed — throw primary error with context
+      const primaryMessage = primaryError instanceof Error ? primaryError.message : "Internal error";
+      const fallbackMessage = fallbackError instanceof Error ? fallbackError.message : "Internal error";
       throw new Error(
-        `Provider failover exhausted for ${domain}. Primary: ${(primaryError as Error).message}. Fallback: ${(fallbackError as Error).message}`,
+        `Provider failover exhausted for ${domain}. Primary: ${primaryMessage}. Fallback: ${fallbackMessage}`,
       );
     }
   }

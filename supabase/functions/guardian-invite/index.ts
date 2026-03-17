@@ -62,12 +62,12 @@ serve(async (req) => {
       // Create new guardian
       const { data: newGuardian, error: createError } = await supabase
         .from("guardians")
-        .insert({
+        .insert([{
           email: body.guardian_email,
           display_name: body.guardian_name ?? null,
           invite_token: inviteToken,
           invite_expires_at: expiresAt,
-        })
+        }])
         .select("id")
         .single();
 
@@ -91,21 +91,21 @@ serve(async (req) => {
     } else if (!existingLink) {
       await supabase
         .from("user_guardians")
-        .insert({
+        .insert([{
           user_id: body.minor_user_id,
           guardian_id: guardianId,
           relationship: body.relationship,
           status: "pending",
-        });
+        }]);
     }
 
     // Record consent event
-    await supabase.from("consent_events").insert({
+    await supabase.from("consent_events").insert([{
       user_id: body.minor_user_id,
       guardian_id: guardianId,
       event_type: "guardian_invited",
       metadata_json: { guardian_email: body.guardian_email, relationship: body.relationship },
-    });
+    }]);
 
     return new Response(
       JSON.stringify({ guardian_id: guardianId, invite_token: inviteToken }),

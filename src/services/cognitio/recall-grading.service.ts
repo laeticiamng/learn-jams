@@ -65,7 +65,7 @@ export async function persistRecallAttempt(
 ): Promise<string> {
   const { data, error } = await supabase
     .from("recall_attempts")
-    .insert({
+    .insert([{
       id: gradeOutput.attempt_id,
       recall_test_id: recallTestId,
       user_id: userId,
@@ -74,7 +74,7 @@ export async function persistRecallAttempt(
       confidence_score: gradeOutput.confidence_score,
       calibration_gap: gradeOutput.calibration_gap,
       composite_score: gradeOutput.composite_score.total,
-    })
+    }])
     .select("id")
     .single();
 

@@ -87,7 +87,7 @@ async function extractFromTxt(file: File): Promise<ExtractionResult> {
       warnings: [],
       success: true,
     };
-  } catch (err) {
+  } catch (err: unknown) {
     return {
       text: "",
       method: "plain_text",
@@ -166,7 +166,7 @@ async function extractFromPdf(file: File): Promise<ExtractionResult> {
       warnings,
       success: true,
     };
-  } catch (err) {
+  } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     // If pdfjs fails, try basic text extraction as last resort
     try {
@@ -236,7 +236,7 @@ async function extractFromDocx(file: File): Promise<ExtractionResult> {
       warnings,
       success: true,
     };
-  } catch (err) {
+  } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     return {
       text: "",

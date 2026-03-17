@@ -89,13 +89,13 @@ export async function upsertFormatEffectiveness(
   } else {
     const { data, error } = await supabase
       .from("learner_format_effectiveness")
-      .insert({
+      .insert([{
         user_id: userId,
         format,
         objective,
         audience_level: audienceLevel,
         ...updates,
-      })
+      }])
       .select("*")
       .single();
     if (error) throw new Error(`Format effectiveness insert failed: ${error.message}`);

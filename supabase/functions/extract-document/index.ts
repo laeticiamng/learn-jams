@@ -149,7 +149,7 @@ serve(async (req) => {
     return new Response(JSON.stringify({ text: extractedText, fileName: file.name }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (e) {
+  } catch (e: unknown) {
     console.error("extract-document error:", e);
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Erreur inconnue" }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },

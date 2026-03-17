@@ -147,7 +147,7 @@ export function useAnimatedStoryGeneration() {
 
         setResult(output);
         return output;
-      } catch (err) {
+      } catch (err: unknown) {
         const message =
           err instanceof Error ? err.message : "Erreur lors de la génération de l'histoire";
         setError(message);

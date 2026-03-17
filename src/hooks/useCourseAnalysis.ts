@@ -97,7 +97,7 @@ export function useCourseAnalysis() {
 
       setResult(m2Output);
       return m2Output;
-    } catch (err) {
+    } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Erreur lors de l'analyse";
       setError(message);
       setSteps((prev) =>

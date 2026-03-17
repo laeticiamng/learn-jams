@@ -106,7 +106,7 @@ serve(async (req) => {
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (err) {
+  } catch (err: unknown) {
     console.error("M5 dynamic sheet error:", err);
     const message = err instanceof Error ? err.message : String(err);
     return new Response(JSON.stringify({ error: message }), {
@@ -374,5 +374,5 @@ function compressDefEdge(rawDef: string, maxLen = 200): string {
 async function logOps(supabase: any, eventType: string, severity: string, documentId: string, userId: string, payload: any) {
   try {
     await supabase.from("ops_events").insert([{ event_type: eventType, severity, document_id: documentId, user_id: userId, payload_json: payload }]);
-  } catch (e) { console.error("Ops log failed:", e); }
+  } catch (e: unknown) { console.error("Ops log failed:", e); }
 }

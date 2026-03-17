@@ -9,7 +9,7 @@ import type { GenerationJob, GenerationArtifact, CreateJobInput, JobStatus } fro
 export async function createJob(input: CreateJobInput): Promise<GenerationJob> {
   const { data, error } = await supabase
     .from("generation_jobs")
-    .insert({
+    .insert([{
       user_id: input.user_id ?? null,
       domain: input.domain,
       job_type: input.job_type,
@@ -17,7 +17,7 @@ export async function createJob(input: CreateJobInput): Promise<GenerationJob> {
       preferred_provider_key: input.preferred_provider_key ?? null,
       input_json: input.input_json as Json,
       max_retries: input.max_retries ?? 3,
-    })
+    }])
     .select("*")
     .single();
 
@@ -116,12 +116,12 @@ export async function addArtifact(
 ): Promise<GenerationArtifact> {
   const { data, error } = await supabase
     .from("generation_artifacts")
-    .insert({
+    .insert([{
       job_id: jobId,
       artifact_type: artifactType,
       storage_path: storagePath,
       metadata_json: (metadata ?? {}) as Json,
-    })
+    }])
     .select("*")
     .single();
 
@@ -148,11 +148,11 @@ export async function logWebhookEvent(
 ): Promise<string> {
   const { data, error } = await supabase
     .from("webhook_events")
-    .insert({
+    .insert([{
       provider_key: providerKey,
       event_type: eventType,
       payload_json: payload as Json,
-    })
+    }])
     .select("id")
     .single();
 

@@ -115,12 +115,12 @@ export default function Studio() {
     if (!user || !newTitle.trim() || !newTopic.trim()) return;
     setCreating(true);
     try {
-      const { data, error } = await supabase.from("collaborative_sessions").insert({
+      const { data, error } = await supabase.from("collaborative_sessions").insert([{
         creator_id: user.id, title: newTitle, topic: newTopic, style: newStyle,
-      }).select().single();
+      }]).select().single();
       if (error) throw error;
       // Creator joins as participant
-      await supabase.from("session_participants").insert({ session_id: data.id, user_id: user.id });
+      await supabase.from("session_participants").insert([{ session_id: data.id, user_id: user.id }]);
       setShowCreate(false);
       setNewTitle(""); setNewTopic(""); setNewStyle("pop");
       setActiveSession(data as Session);
@@ -144,9 +144,9 @@ export default function Studio() {
         .single();
       if (findErr || !session) { toast.error(t("studio.not_found", "Session not found or closed")); return; }
 
-      const { error: joinErr } = await supabase.from("session_participants").insert({
+      const { error: joinErr } = await supabase.from("session_participants").insert([{
         session_id: session.id, user_id: user.id,
-      });
+      }]);
       if (joinErr) {
         if (joinErr.message.includes("duplicate")) toast.error(t("studio.already_joined", "You already joined this session"));
         else throw joinErr;

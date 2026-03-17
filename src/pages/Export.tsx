@@ -90,7 +90,7 @@ function generateSCORMHtml(song: Song) {
       try {
         while (win.API == null && win.parent != null && win.parent != win) { win = win.parent; }
         return win.API;
-      } catch (e) { return null; }
+      } catch (e: unknown) { return null; }
     }
     function initSCORM() {
       API = findAPI(window);
@@ -164,8 +164,9 @@ export default function Export() {
       a.click();
       URL.revokeObjectURL(url);
       toast.success(t("export.success", "SCORM package downloaded!"));
-    } catch (err: any) {
-      toast.error(err.message || t("export.error", "Export failed"));
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : "Internal error";
+      toast.error(message || t("export.error", "Export failed"));
     } finally {
       setExporting(null);
     }

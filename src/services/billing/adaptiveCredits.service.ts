@@ -275,14 +275,14 @@ export async function consumeFlexCredit(
       })
       .eq("id", existing.id);
   } else {
-    await supabase.from("adaptive_credit_balances").insert({
+    await supabase.from("adaptive_credit_balances").insert([{
       user_id: userId,
       billing_period_start: periodStart,
       billing_period_end: periodEnd,
       available_flex_credits_json: computeAvailableFlexCredits(plan, currentUsage) as unknown as Json,
       consumed_flex_credits_json: { [feature]: amount } as unknown as Json,
       reallocation_log_json: [entry] as unknown as Json,
-    });
+    }]);
   }
 
   return true;

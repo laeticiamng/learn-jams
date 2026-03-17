@@ -16,8 +16,9 @@ export function verifyStripeSignature(
   try {
     const event = stripe.webhooks.constructEvent(payload, signature, secret);
     return { valid: true, event };
-  } catch (err) {
-    return { valid: false, error: (err as Error).message };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal error";
+    return { valid: false, error: message };
   }
 }
 
@@ -172,8 +173,8 @@ export async function markWebhookProcessed(
 ): Promise<void> {
   if (!externalEventId) return;
 
-  await supabase.from("webhook_replay_protection").insert({
+  await supabase.from("webhook_replay_protection").insert([{
     provider_key: providerKey,
     external_event_id: externalEventId,
-  }).onConflict("provider_key,external_event_id").ignore();
+  }]).onConflict("provider_key,external_event_id").ignore();
 }

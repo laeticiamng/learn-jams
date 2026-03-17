@@ -56,7 +56,7 @@ export function useMissionPlay(missionId: string, userId: string) {
 
       setMission(missionContent);
       setPhase("intro");
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Failed to load mission:", err);
       setPhase("loading");
     }
@@ -66,11 +66,11 @@ export function useMissionPlay(missionId: string, userId: string) {
     try {
       const { data: run, error: runError } = await supabase
         .from("mission_runs")
-        .insert({
+        .insert([{
           mission_id: missionId,
           user_id: userId,
           completion_status: "in_progress",
-        })
+        }])
         .select("id")
         .single();
 
@@ -85,7 +85,7 @@ export function useMissionPlay(missionId: string, userId: string) {
         runId: run.id,
       });
       setPhase("playing");
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Failed to start mission run:", err);
     }
   }, [missionId, userId]);

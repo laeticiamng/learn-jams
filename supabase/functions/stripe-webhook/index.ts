@@ -41,7 +41,7 @@ async function findUserIdByEmail(email: string): Promise<string | null> {
       page++;
       if (page > 10) break; // safety limit: 1000 users max
     }
-  } catch (e) {
+  } catch (e: unknown) {
     log("warn", "auth_admin_lookup_failed", { email: normalizedEmail, error: String(e) });
   }
 
@@ -80,9 +80,10 @@ serve(async (req) => {
   let event: Stripe.Event;
   try {
     event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
-  } catch (err) {
-    log("error", "signature_verification_failed", { error: (err as Error).message });
-    return new Response(`Webhook Error: ${(err as Error).message}`, { status: 400 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal error";
+    log("error", "signature_verification_failed", { error: message });
+    return new Response(`Webhook Error: ${message}`, { status: 400 });
   }
 
   const eventId = event.id;
@@ -224,7 +225,7 @@ serve(async (req) => {
         break;
       }
     }
-  } catch (error) {
+  } catch (error: unknown) {
     log("error", "processing_error", {
       event_id: eventId,
       event_type: eventType,

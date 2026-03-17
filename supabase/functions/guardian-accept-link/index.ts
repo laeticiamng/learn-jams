@@ -94,12 +94,12 @@ serve(async (req) => {
 
       // Record consent events for each link
       for (const link of links) {
-        await supabase.from("consent_events").insert({
+        await supabase.from("consent_events").insert([{
           user_id: link.user_id,
           guardian_id: guardian.id,
           event_type: "guardian_accepted",
           metadata_json: { accepted_by_auth_user: authUserId },
-        });
+        }]);
       }
     }
 

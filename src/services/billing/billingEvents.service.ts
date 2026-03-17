@@ -19,14 +19,14 @@ export async function trackBillingEvent(
   };
 
   // Log to product events table (already exists)
-  await supabase.from("product_events").insert({
+  await supabase.from("product_events").insert([{
     event_name: event.event_type,
     user_id: event.user_id,
     metadata_json: {
       ...event.metadata,
       billing_event: true,
     } as unknown as Json,
-  }).then(() => {});
+  }]).then(() => {});
 }
 
 export async function trackQuotaConsumed(

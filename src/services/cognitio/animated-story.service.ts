@@ -737,7 +737,7 @@ export async function persistStoryTransformation(
 ): Promise<string> {
   const { data: transform, error: tErr } = await supabase
     .from("transformations")
-    .insert({
+    .insert([{
       id: output.transformation_id,
       user_id: userId,
       document_id: output.metadata.document_id,
@@ -749,7 +749,7 @@ export async function persistStoryTransformation(
       published_status: "draft",
       qa_status: "pending",
       estimated_duration_sec: output.metadata.estimated_duration_sec,
-    })
+    }])
     .select("id")
     .single();
 
@@ -757,7 +757,7 @@ export async function persistStoryTransformation(
 
   const { error: cErr } = await supabase
     .from("generated_contents")
-    .insert({
+    .insert([{
       transformation_id: output.transformation_id,
       version: 1,
       content_json: output.scenes as unknown as Json,
@@ -775,7 +775,7 @@ export async function persistStoryTransformation(
         narrative_necessity: output.narrative_necessity,
         audience_adaptation: output.audience_adaptation,
       } as unknown as Json,
-    });
+    }]);
 
   if (cErr) throw new Error(`Failed to persist story content: ${cErr.message}`);
 

@@ -199,7 +199,7 @@ export function useMissionGeneration() {
         });
 
         setResult(missionResult);
-      } catch (err) {
+      } catch (err: unknown) {
         const message = err instanceof Error ? err.message : "Erreur inattendue";
         setError(message);
         // Mark current running step as error

@@ -56,7 +56,7 @@ export function usePipelineRetry(): UsePipelineRetryReturn {
       const succeeded = await retryFn();
       setBudget(prev => recordRetryAttempt(prev, step, decision.strategy, decision.delay_ms, error, succeeded));
       return succeeded;
-    } catch (retryErr) {
+    } catch (retryErr: unknown) {
       const retryMsg = retryErr instanceof Error ? retryErr.message : String(retryErr);
       setBudget(prev => recordRetryAttempt(prev, step, decision.strategy, decision.delay_ms, retryMsg, false));
       return false;

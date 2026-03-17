@@ -70,7 +70,7 @@ export function useQuotaGuard(
         });
         return false;
       }
-    } catch (err) {
+    } catch (err: unknown) {
       // On network error, allow generation (fail open for UX)
       console.warn("[QuotaGuard] Check failed, allowing generation:", err);
       setGuardResult({

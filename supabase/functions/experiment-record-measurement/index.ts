@@ -40,12 +40,12 @@ serve(async (req) => {
 
     const { error } = await supabase
       .from("experiment_measurements")
-      .insert({
+      .insert([{
         experiment_run_id: body.experiment_run_id,
         measure_key: body.measure_key,
         measure_value_numeric: body.value_numeric ?? null,
         measure_value_text: body.value_text ?? null,
-      });
+      }]);
 
     if (error) throw error;
 

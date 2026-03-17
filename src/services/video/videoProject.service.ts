@@ -10,7 +10,7 @@ import type {
 export async function createVideoProject(input: CreateVideoProjectInput): Promise<VideoProject> {
   const { data, error } = await supabase
     .from("video_projects")
-    .insert({
+    .insert([{
       user_id: input.user_id,
       project_type: input.project_type,
       title: input.title,
@@ -18,7 +18,7 @@ export async function createVideoProject(input: CreateVideoProjectInput): Promis
       mode: input.mode ?? "pedagogical_template_video",
       provider_requested: input.provider_requested ?? null,
       status: "draft",
-    })
+    }])
     .select("*")
     .single();
 

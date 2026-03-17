@@ -27,7 +27,7 @@ export async function uploadAsset(
 
   const { data, error } = await supabase
     .from("video_assets")
-    .insert({
+    .insert([{
       project_id: projectId,
       asset_type: assetType,
       storage_path: storagePath,
@@ -37,7 +37,7 @@ export async function uploadAsset(
         size_bytes: file.size,
         ...metadata,
       } as Json,
-    })
+    }])
     .select("*")
     .single();
 
@@ -53,12 +53,12 @@ export async function linkExternalAsset(
 ): Promise<VideoAsset> {
   const { data, error } = await supabase
     .from("video_assets")
-    .insert({
+    .insert([{
       project_id: projectId,
       asset_type: assetType,
       storage_path: storagePath,
       metadata_json: (metadata ?? {}) as Json,
-    })
+    }])
     .select("*")
     .single();
 

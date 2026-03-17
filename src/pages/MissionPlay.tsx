@@ -53,7 +53,7 @@ export default function MissionPlay() {
           : data.mission_json) as MissionContent;
 
         setMission(missionContent);
-      } catch (err) {
+      } catch (err: unknown) {
         console.error("Failed to load mission:", err);
       } finally {
         setLoading(false);
@@ -69,7 +69,7 @@ export default function MissionPlay() {
     try {
       const newRunId = await createMissionRun(id, user.id);
       setRunId(newRunId);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Failed to create mission run:", err);
     }
   }, [id, user?.id]);
@@ -93,7 +93,7 @@ export default function MissionPlay() {
           last_saved_at: null,
         };
         await completeMissionRun(state, mission);
-      } catch (err) {
+      } catch (err: unknown) {
         console.error("Failed to complete mission run:", err);
       }
     },

@@ -48,7 +48,7 @@ serve(async (req) => {
       userId = user?.id ?? null;
     }
 
-    const { error } = await supabase.from("product_events").insert({
+    const { error } = await supabase.from("product_events").insert([{
       user_id: userId,
       anonymous_id: userId ? null : (body.anonymous_id ?? null),
       transformation_id: body.transformation_id ?? null,
@@ -56,7 +56,7 @@ serve(async (req) => {
       audience_level: body.audience_level ?? null,
       format: body.format ?? null,
       metadata_json: body.metadata ?? {},
-    });
+    }]);
 
     if (error) throw error;
 

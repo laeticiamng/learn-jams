@@ -231,7 +231,7 @@ export async function persistFormatDecision(
 ): Promise<string> {
   const { data, error } = await supabase
     .from("format_decisions")
-    .insert({
+    .insert([{
       id: output.decision_id,
       architecture_id: output.architecture_id,
       document_id: documentId,
@@ -247,7 +247,7 @@ export async function persistFormatDecision(
       overrides_applied_json: output.overrides_applied as unknown as Json,
       cost_level: output.cost_level,
       decision_trace_json: output.decision_trace as unknown as Json,
-    })
+    }])
     .select("id")
     .single();
 

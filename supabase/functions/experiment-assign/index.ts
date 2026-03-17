@@ -68,12 +68,12 @@ serve(async (req) => {
 
     const { data, error } = await supabase
       .from("experiment_assignments")
-      .insert({
+      .insert([{
         user_id: userId,
         anonymous_id: body.anonymous_id ?? null,
         experiment_key: body.experiment_key,
         variant,
-      })
+      }])
       .select("*")
       .single();
 

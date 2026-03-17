@@ -16,13 +16,13 @@ export async function createProviderRun(
 ): Promise<VideoProviderRun> {
   const { data, error } = await supabase
     .from("video_provider_runs")
-    .insert({
+    .insert([{
       project_id: projectId,
       provider_key: providerKey,
       run_type: runType,
       status: "pending",
       request_json: requestJson as Json,
-    })
+    }])
     .select("*")
     .single();
 
@@ -92,9 +92,10 @@ export async function executeVideoRun(
     });
 
     return { run: { ...run, status: "completed", provider_key }, provider_key, is_fallback };
-  } catch (err) {
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal error";
     await updateProviderRun(run.id, "failed", undefined, {
-      message: (err as Error).message,
+      message,
     });
     throw err;
   }

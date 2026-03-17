@@ -509,7 +509,7 @@ export async function persistMemoryArchitecture(
 ): Promise<string> {
   const { data, error } = await supabase
     .from("memory_architectures")
-    .insert({
+    .insert([{
       id: output.architecture_id,
       document_id: output.document_id,
       course_profile_id: output.course_profile_id,
@@ -526,7 +526,7 @@ export async function persistMemoryArchitecture(
       split_modules_json: (output.split_modules ?? null) as unknown as Json,
       reasoning_type: output.reasoning_type,
       objective: output.objective,
-    })
+    }])
     .select("id")
     .single();
 

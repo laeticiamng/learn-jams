@@ -116,13 +116,13 @@ async function incrementUsage(userId: string, feature: FeatureKey, amount: numbe
       .update({ counters_json: counters, updated_at: now.toISOString() })
       .eq("id", existing.id);
   } else {
-    await supabase.from("usage_quotas_v2").insert({
+    await supabase.from("usage_quotas_v2").insert([{
       user_id: userId,
       billing_period_start: periodStart,
       billing_period_end: periodEnd,
       counters_json: { [feature]: amount },
       plan_snapshot_json: {},
-    });
+    }]);
   }
 }
 

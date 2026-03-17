@@ -46,7 +46,7 @@ export async function runExperienceGenerator(
     await updateIngestionStatus(input.document_id, "generated");
 
     return result;
-  } catch (err) {
+  } catch (err: unknown) {
     await updateIngestionStatus(input.document_id, "error");
     throw err;
   }
@@ -417,7 +417,7 @@ export async function saveMission(
 ) {
   const { error } = await supabase
     .from("generated_missions")
-    .insert({
+    .insert([{
       id: result.mission_id,
       user_id: input.user_id,
       document_id: input.document_id,
@@ -432,7 +432,7 @@ export async function saveMission(
       qa_score: 0,
       mission_json: result.mission_json as unknown as Json,
       published_status: "draft",
-    });
+    }]);
 
   if (error) throw new Error(`Mission save failed: ${error.message}`);
 }

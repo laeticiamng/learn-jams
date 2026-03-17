@@ -34,11 +34,11 @@ export default function Contact() {
     if (now - lastSubmit < 60000) { toast.error(t("contact.rate_limit", "Please wait before sending another message.")); return; }
     setSending(true);
     try {
-      const { error } = await supabase.from("contact_messages").insert({
+      const { error } = await supabase.from("contact_messages").insert([{
         name: name.trim(),
         email: email.trim(),
         message: message.trim(),
-      });
+      }]);
       if (error) throw error;
       toast.success(t("contact.sent"));
       setName(""); setEmail(""); setMessage("");

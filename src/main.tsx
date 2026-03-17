@@ -13,7 +13,7 @@ try {
     </AccessibilityProvider>
   );
   console.info("[COGNITIO] app boot success — React root mounted");
-} catch (err) {
+} catch (err: unknown) {
   console.error("[COGNITIO] app boot failed:", err);
   const root = document.getElementById("root");
   if (root) {

@@ -99,7 +99,7 @@ export default function EscapeGame() {
 
         setDomain(resolvedDomain);
         setSession(escapeSession);
-      } catch (err) {
+      } catch (err: unknown) {
         console.error("Failed to load escape game:", err);
         setError("Impossible de charger la mission. Veuillez réessayer.");
       } finally {

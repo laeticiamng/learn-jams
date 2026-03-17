@@ -175,7 +175,7 @@ serve(async (req) => {
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (err) {
+  } catch (err: unknown) {
     console.error("Format selector error:", err);
     const message = err instanceof Error ? err.message : String(err);
     return new Response(JSON.stringify({ error: message }), {
@@ -257,7 +257,7 @@ async function logOps(supabase: any, eventType: string, severity: string, docume
       user_id: userId,
       payload_json: payload,
     }]);
-  } catch (e) {
+  } catch (e: unknown) {
     console.error("Ops log failed:", e);
   }
 }
