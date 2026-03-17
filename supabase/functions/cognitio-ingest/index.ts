@@ -243,7 +243,7 @@ serve(async (req) => {
     };
 
     return jsonResponse(result);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Ingestion error:", error);
     const message = error instanceof Error ? error.message : String(error);
     // Include error source hints for client-side diagnostics
@@ -343,7 +343,7 @@ async function extractText(fileData: Blob, contentType: string, issues: SourceIs
       }
       issues.push({ code: "DOCX_BASIC", message: "Extraction DOCX via XML", severity: "info" });
       return text;
-    } catch (err) {
+    } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       issues.push({
         code: "DOCX_BASIC",

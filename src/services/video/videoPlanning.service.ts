@@ -23,14 +23,14 @@ export async function createGenerationPlan(
 
   const { data, error } = await supabase
     .from("video_generation_plans")
-    .insert({
+    .insert([{
       project_id: projectId,
       scenes_json: scenes as unknown as Json,
       shot_list_json: shots as unknown as Json,
       visual_direction_json: visualDirection as unknown as Json,
       subtitle_plan_json: subtitlePlan as unknown as Json,
       fallback_render_plan_json: fallbackPlan as unknown as Json,
-    })
+    }])
     .select("*")
     .single();
 

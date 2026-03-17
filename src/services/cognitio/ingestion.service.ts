@@ -72,7 +72,7 @@ export async function uploadDocument(
 
   const { data, error } = await supabase
     .from("source_documents")
-    .insert({
+    .insert([{
       user_id: userId,
       original_filename: input.file?.name ?? null,
       content_type: input.content_type,
@@ -81,7 +81,7 @@ export async function uploadDocument(
       warnings_json: (storageError
         ? [{ code: "STORAGE_UPLOAD_FAILED", message: `Upload fichier échoué (non bloquant): ${storageError}`, severity: "info" }]
         : []) as unknown as Json,
-    })
+    }])
     .select("id")
     .single();
 
@@ -117,7 +117,7 @@ export async function runIngestion(
     }
 
     return data as M1_Output;
-  } catch (err) {
+  } catch (err: unknown) {
     console.warn("[COGNITIO] Edge function failed, falling back to local ingestion:", err);
     return runLocalIngestion(documentId, input);
   }
@@ -225,7 +225,7 @@ export async function runLocalIngestion(
         }))
       );
     }
-  } catch (dbErr) {
+  } catch (dbErr: unknown) {
     console.error("DB persist failed during local ingestion:", dbErr);
   }
 

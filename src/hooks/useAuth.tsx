@@ -132,7 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
       });
       return { error: error as Error | null };
-    } catch (err) {
+    } catch (err: unknown) {
       return { error: err instanceof Error ? err : new Error(String(err)) };
     }
   };
@@ -170,7 +170,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       console.info("[COGNITIO] signIn — success");
       return { error: null };
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("[COGNITIO] signIn — unexpected throw:", err);
       return { error: classifyAuthError(err) };
     }
@@ -186,7 +186,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         redirectTo: `${window.location.origin}/reset-password`,
       });
       return { error: error as Error | null };
-    } catch (err) {
+    } catch (err: unknown) {
       return { error: err instanceof Error ? err : new Error(String(err)) };
     }
   };
@@ -195,7 +195,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const { error } = await supabase.auth.updateUser({ password });
       return { error: error as Error | null };
-    } catch (err) {
+    } catch (err: unknown) {
       return { error: err instanceof Error ? err : new Error(String(err)) };
     }
   };

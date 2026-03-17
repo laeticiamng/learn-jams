@@ -29,7 +29,7 @@ export function useGeneratedTransformation(transformationId: string | undefined)
           setData(result);
           if (!result) setError("Fiche non trouvée");
         }
-      } catch (err) {
+      } catch (err: unknown) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : "Erreur de chargement");
         }

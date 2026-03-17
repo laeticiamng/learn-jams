@@ -266,7 +266,7 @@ export function useDocumentIngestion() {
 
       setResult(m1Output);
       return m1Output;
-    } catch (err) {
+    } catch (err: unknown) {
       let message: string;
       let technicalDetail = "";
       let rootCause = "unknown";

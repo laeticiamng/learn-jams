@@ -55,11 +55,11 @@ serve(async (req) => {
     // Log webhook event
     const { data: eventRecord } = await supabase
       .from("webhook_events")
-      .insert({
+      .insert([{
         provider_key: "stripe",
         event_type: event.type,
         payload_json: event.data.object as Record<string, unknown>,
-      })
+      }])
       .select("id")
       .single();
 

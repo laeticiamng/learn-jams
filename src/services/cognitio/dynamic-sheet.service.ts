@@ -738,7 +738,7 @@ export async function persistTransformation(
   // 1. Insert transformation
   const { data: transform, error: tErr } = await supabase
     .from("transformations")
-    .insert({
+    .insert([{
       id: output.transformation_id,
       user_id: userId,
       document_id: output.metadata.document_id,
@@ -750,7 +750,7 @@ export async function persistTransformation(
       published_status: "draft",
       qa_status: "pending",
       estimated_duration_sec: output.metadata.estimated_duration_sec,
-    })
+    }])
     .select("id")
     .single();
 
@@ -759,7 +759,7 @@ export async function persistTransformation(
   // 2. Insert generated content
   const { error: cErr } = await supabase
     .from("generated_contents")
-    .insert({
+    .insert([{
       transformation_id: output.transformation_id,
       version: 1,
       content_json: output.content_blocks as unknown as Json,
@@ -767,7 +767,7 @@ export async function persistTransformation(
       coverage_json: output.metadata.coverage as unknown as Json,
       generation_flags_json: output.metadata.quality_flags as unknown as Json,
       internal_summary_json: output.internal_summary as unknown as Json,
-    });
+    }]);
 
   if (cErr) throw new Error(`Failed to persist generated content: ${cErr.message}`);
 
@@ -775,12 +775,12 @@ export async function persistTransformation(
   const bloomLevels = new Set(output.final_test.map(q => q.bloom_level));
   const { error: ftErr } = await supabase
     .from("final_tests")
-    .insert({
+    .insert([{
       transformation_id: output.transformation_id,
       questions_json: output.final_test as unknown as Json,
       bloom_levels_count: bloomLevels.size,
       question_count: output.final_test.length,
-    });
+    }]);
 
   if (ftErr) throw new Error(`Failed to persist final test: ${ftErr.message}`);
 

@@ -150,13 +150,13 @@ export async function persistDebrief(
 ): Promise<string> {
   const { data, error } = await supabase
     .from("debrief_reports")
-    .insert({
+    .insert([{
       id: debrief.id,
       user_id: userId,
       transformation_id: debrief.transformation_id,
       recall_attempt_id: debrief.recall_attempt_id,
       report_json: debrief as unknown as Json,
-    })
+    }])
     .select("id")
     .single();
 

@@ -28,7 +28,7 @@ export const openaiVideoProvider: VideoProvider = {
         }
         data = result.data;
         break;
-      } catch (err) {
+      } catch (err: unknown) {
         lastError = err instanceof Error ? err : new Error(String(err));
         if (attempt < 2) {
           await new Promise(r => setTimeout(r, 1000 * Math.pow(2, attempt)));

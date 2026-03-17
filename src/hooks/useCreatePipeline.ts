@@ -140,7 +140,7 @@ export function useCreatePipeline() {
       let m1Result;
       try {
         m1Result = await ingestion.ingest(input);
-      } catch (ingestErr) {
+      } catch (ingestErr: unknown) {
         const errMsg = ingestErr instanceof Error ? ingestErr.message : String(ingestErr);
         setPipelineError({ source: "ingestion", message: errMsg, phase: "ingesting" });
         setPhase("result");
@@ -826,7 +826,7 @@ export function useCreatePipeline() {
             // Persist song to database
             const userId = session?.user?.id;
             if (userId) {
-              const { data: songRow, error: insertError } = await supabase.from("songs").insert({
+              const { data: songRow, error: insertError } = await supabase.from("songs").insert([{
                 user_id: userId,
                 title: songTitle,
                 style: input.music_style ?? "pop",
@@ -834,7 +834,7 @@ export function useCreatePipeline() {
                 generated_lyrics: lyrics,
                 subject: m2Result.main_topic,
                 status: "generating",
-              }).select("id").single();
+              }]).select("id").single();
 
               if (!insertError && songRow) {
                 setMusicResult({
@@ -860,7 +860,7 @@ export function useCreatePipeline() {
             counters.final_generation_status = "success";
             counters.generator_called = "music_direct";
             counters.final_format_decision = "music";
-          } catch (musicErr) {
+          } catch (musicErr: unknown) {
             const errMsg = musicErr instanceof Error ? musicErr.message : "Échec de la génération musicale";
             metrics.record("m5.generation_failed", 1, { format: "music", error: errMsg });
             counters.generation_success = false;
@@ -899,7 +899,7 @@ export function useCreatePipeline() {
             counters.final_generation_status = "success";
             counters.generator_called = "video_direct";
             counters.final_format_decision = "video";
-          } catch (videoErr) {
+          } catch (videoErr: unknown) {
             const errMsg = videoErr instanceof Error ? videoErr.message : "Échec de la génération vidéo";
             metrics.record("m5.generation_failed", 1, { format: "video", error: errMsg });
             counters.generation_success = false;
@@ -1055,7 +1055,7 @@ export function useCreatePipeline() {
             missionInput,
             m5cResult
           );
-        } catch (missionErr) {
+        } catch (missionErr: unknown) {
           const errMsg = missionErr instanceof Error ? missionErr.message : "Échec de la génération de la mission";
           setPipelineError({ source: "generation", message: errMsg, phase: "generating" });
           setPhase("result");

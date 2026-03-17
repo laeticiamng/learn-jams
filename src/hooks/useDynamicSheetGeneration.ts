@@ -116,7 +116,7 @@ export function useDynamicSheetGeneration() {
 
       setResult(output);
       return output;
-    } catch (err) {
+    } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Erreur lors de la génération";
       setError(message);
       setSteps((prev) =>

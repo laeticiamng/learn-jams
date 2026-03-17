@@ -233,7 +233,7 @@ export default function MissionAnalysis() {
             }
           }
         }
-      } catch (err) {
+      } catch (err: unknown) {
         setError(err instanceof Error ? err.message : "Erreur lors du chargement");
       } finally {
         setLoading(false);

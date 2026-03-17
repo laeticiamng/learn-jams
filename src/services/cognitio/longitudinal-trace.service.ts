@@ -18,7 +18,7 @@ export async function getOrCreateLearnerProfile(userId: string): Promise<Learner
 
   const { data: created, error } = await supabase
     .from("learner_profiles")
-    .insert({
+    .insert([{
       user_id: userId,
       profile_status: "estimated",
       cognitive_profile_json: {
@@ -28,7 +28,7 @@ export async function getOrCreateLearnerProfile(userId: string): Promise<Learner
         weakness_areas: [],
         avg_session_duration_sec: 0,
       } as Json,
-    })
+    }])
     .select("*")
     .single();
 
@@ -94,7 +94,7 @@ export async function updateKnowledgeGraph(
     } else {
       await supabase
         .from("learner_knowledge_graph")
-        .insert({
+        .insert([{
           user_id,
           concept_stable_key: result.concept_key,
           mastery_score: newScore,
@@ -103,7 +103,7 @@ export async function updateKnowledgeGraph(
           next_review_at: nextReview,
           observations_count: 1,
           confusion_hits: illusion ? 1 : 0,
-        });
+        }]);
     }
 
     updatedConcepts.push({

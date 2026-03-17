@@ -19,7 +19,7 @@ export function useSongs(userId: string | undefined) {
       if (favsRes.error) console.error("Failed to fetch favorites:", favsRes.error.message);
       if (songsRes.data) setSongs(songsRes.data as Song[]);
       if (favsRes.data) setFavorites(new Set(favsRes.data.map((f) => f.song_id)));
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("useSongs fetch error:", err);
     } finally {
       setLoading(false);
@@ -93,7 +93,7 @@ export function useSongs(userId: string | undefined) {
           return n;
         });
       } else {
-        await supabase.from("favorites").insert({ user_id: userId, song_id: songId });
+        await supabase.from("favorites").insert([{ user_id: userId, song_id: songId }]);
         setFavorites((prev) => new Set(prev).add(songId));
       }
     },

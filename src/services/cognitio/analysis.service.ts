@@ -177,7 +177,7 @@ export async function runAnalysis(input: M2_Input): Promise<M2_Output> {
     trace.final_concepts_count = result.key_concepts.length;
     emitDiagnosticTrace(trace, result);
     return result;
-  } catch (err) {
+  } catch (err: unknown) {
     trace.remote_call_status = "EXCEPTION";
     trace.local_fallback_triggered = true;
     console.warn(`[COGNITIO][M2] m2_remote_call_status=EXCEPTION, m2_fallback_used=yes, error=`, err);

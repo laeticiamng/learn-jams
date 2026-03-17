@@ -90,12 +90,12 @@ export async function persistUsageProfile(
       })
       .eq("id", existing.id);
   } else {
-    await supabase.from("user_usage_profiles").insert({
+    await supabase.from("user_usage_profiles").insert([{
       user_id: userId,
       dominant_usage_profile: profile,
       rolling_30d_usage_json: usage,
       last_detected_at: now,
-    });
+    }]);
   }
 
   return profile;

@@ -116,7 +116,7 @@ serve(async (req) => {
     // Create notification record
     const { data: notification, error: notifError } = await supabase
       .from("guardian_notifications")
-      .insert({
+      .insert([{
         guardian_id: body.guardian_id,
         user_id: body.user_id,
         notification_type: "weekly_summary",
@@ -125,7 +125,7 @@ serve(async (req) => {
         body_json: summaryPayload,
         status: "sent",
         sent_at: new Date().toISOString(),
-      })
+      }])
       .select("id")
       .single();
 

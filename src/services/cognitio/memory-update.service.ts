@@ -206,11 +206,11 @@ async function upsertConceptNode(
   } else {
     const { data, error } = await supabase
       .from("learner_knowledge_graph")
-      .insert({
+      .insert([{
         user_id: userId,
         concept_stable_key: result.concept_key,
         ...nodeData,
-      })
+      }])
       .select("*")
       .single();
     if (error) throw new Error(`Knowledge graph insert failed: ${error.message}`);
@@ -271,14 +271,14 @@ async function updateConfusionEdges(
 
       const { data, error } = await supabase
         .from("learner_confusion_edges")
-        .insert({
+        .insert([{
           user_id: userId,
           concept_a_key: keyA,
           concept_b_key: keyB,
           hits_count: entry.confusion_count,
           last_hit_at: now,
           severity_score: severity,
-        })
+        }])
         .select("*")
         .single();
 

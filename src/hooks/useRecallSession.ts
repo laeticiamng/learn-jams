@@ -151,7 +151,7 @@ export function useRecallSession() {
       }
 
       setPhase("completed");
-    } catch (err) {
+    } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Erreur lors de la correction");
     } finally {
       setIsSubmitting(false);

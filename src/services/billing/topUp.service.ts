@@ -37,12 +37,12 @@ export async function provisionCredits(
 
   const entries = Object.entries(pack.credits_json) as [FeatureKey, number][];
   for (const [creditType, amount] of entries) {
-    await supabase.from("user_credit_balances").insert({
+    await supabase.from("user_credit_balances").insert([{
       user_id: userId,
       credit_type: creditType,
       remaining: amount,
       expires_at: null, // No expiration by default
       purchase_id: purchaseId,
-    });
+    }]);
   }
 }

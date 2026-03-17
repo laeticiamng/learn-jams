@@ -58,7 +58,7 @@ export function useRetentionMetrics() {
       });
 
       setData(retention);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Failed to fetch retention metrics:", err);
     } finally {
       setLoading(false);

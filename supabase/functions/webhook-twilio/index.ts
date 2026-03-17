@@ -40,11 +40,11 @@ serve(async (req) => {
     // Log webhook event
     const { data: eventRecord } = await supabase
       .from("webhook_events")
-      .insert({
+      .insert([{
         provider_key: "twilio",
         event_type: messageStatus,
         payload_json: payload as unknown as Record<string, unknown>,
-      })
+      }])
       .select("id")
       .single();
 

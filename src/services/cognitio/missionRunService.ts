@@ -68,11 +68,11 @@ export async function createMissionRun(
 ): Promise<string> {
   const { data, error } = await supabase
     .from("mission_runs")
-    .insert({
+    .insert([{
       mission_id: missionId,
       user_id: userId,
       completion_status: "in_progress",
-    })
+    }])
     .select("id")
     .single();
 

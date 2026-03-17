@@ -66,7 +66,7 @@ serve(async (req) => {
       JSON.stringify({ flags }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
-  } catch (err) {
+  } catch (err: unknown) {
     return new Response(
       JSON.stringify({ flags: DEFAULT_FLAGS }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },

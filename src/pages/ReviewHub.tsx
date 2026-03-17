@@ -68,7 +68,7 @@ export default function ReviewHub() {
         }));
 
         setSources(songSources);
-      } catch (err) {
+      } catch (err: unknown) {
         console.error("Failed to fetch quiz sources:", err);
       } finally {
         setLoading(false);

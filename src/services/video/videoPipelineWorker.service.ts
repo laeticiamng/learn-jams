@@ -95,14 +95,15 @@ export async function runVideoPipeline(projectId: string): Promise<PipelineResul
       // AI provider failed — fallback to FFmpeg template
       return await renderFallbackTemplate(projectId, project);
     }
-  } catch (err) {
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal error";
     await updateVideoProjectStatus(projectId, "failed");
     return {
       project_id: projectId,
       status: "failed",
       provider_used: "none",
       is_fallback: false,
-      error: (err as Error).message,
+      error: message,
     };
   }
 }

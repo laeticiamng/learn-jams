@@ -34,7 +34,7 @@ export function useLongitudinalMemory() {
       setKnowledgeGraph(kg as unknown as LearnerKnowledgeNode[]);
       setFragileConcepts(fc as unknown as LearnerKnowledgeNode[]);
       setDueReviews(dr as unknown as LearnerKnowledgeNode[]);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Failed to load learner memory:", err);
     } finally {
       setLoading(false);

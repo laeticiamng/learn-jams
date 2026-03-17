@@ -31,7 +31,7 @@ export async function trackEvent(
   if (!isValidEventName(input.event_name)) return;
 
   try {
-    await supabase.from("product_events").insert({
+    await supabase.from("product_events").insert([{
       user_id: userId ?? null,
       anonymous_id: userId ? null : getAnonymousId(),
       transformation_id: input.transformation_id ?? null,
@@ -39,7 +39,7 @@ export async function trackEvent(
       audience_level: input.audience_level ?? null,
       format: input.format ?? null,
       metadata_json: (input.metadata ?? {}) as unknown as Json,
-    });
+    }]);
   } catch {
     // Event tracking must never break the app
   }

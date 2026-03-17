@@ -10,7 +10,7 @@ import { ESTIMATED_UNIT_COSTS } from "@/domain/billing/pricing.types";
 // ---------- Record a cost event ----------
 
 export async function recordCostEvent(event: CostEvent): Promise<void> {
-  await supabase.from("cost_events").insert({
+  await supabase.from("cost_events").insert([{
     user_id: event.user_id,
     transformation_id: event.transformation_id,
     feature_key: event.feature_key,
@@ -18,7 +18,7 @@ export async function recordCostEvent(event: CostEvent): Promise<void> {
     estimated_cost_usd: event.estimated_cost_usd,
     actual_cost_usd: event.actual_cost_usd,
     metadata_json: event.metadata_json as unknown as Json,
-  });
+  }]);
 }
 
 // ---------- Record with estimated cost ----------

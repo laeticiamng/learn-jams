@@ -102,7 +102,7 @@ serve(async (req) => {
     if (ANTHROPIC_API_KEY) {
       try {
         analysisResult = await analyzeWithClaude(clean_text, segments, user_objective || "discovery", source_type, confidence_level);
-      } catch (err) {
+      } catch (err: unknown) {
         console.error("Claude API error, falling back to local:", err);
         await logOps(supabase, "analyze_llm_fallback", "warning", document_id, user_id, { error: String(err) });
         analysisResult = buildFallbackAnalysis(clean_text, segments, confidence_level);
@@ -246,7 +246,7 @@ serve(async (req) => {
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Analysis error:", error);
     const message = error instanceof Error ? error.message : "Internal error";
     return errorResponse(500, message);

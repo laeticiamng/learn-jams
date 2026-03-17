@@ -563,7 +563,7 @@ export async function persistQAReport(
 
   const { error: qaErr } = await supabase
     .from("qa_reports")
-    .insert({
+    .insert([{
       id: qa_report.id,
       user_id: userId,
       transformation_id: qa_report.transformation_id,
@@ -573,20 +573,20 @@ export async function persistQAReport(
       violations_json: qa_report.violations as unknown as Json,
       recommendations_json: qa_report.recommendations as unknown as Json,
       publish_blocked: qa_report.publish_blocked,
-    });
+    }]);
 
   if (qaErr) throw new Error(`QA report save failed: ${qaErr.message}`);
 
   const { error: pdErr } = await supabase
     .from("publish_decisions")
-    .insert({
+    .insert([{
       id: publish_decision.id,
       transformation_id: publish_decision.transformation_id,
       qa_report_id: publish_decision.qa_report_id,
       user_id: userId,
       status: publish_decision.decision_status,
       reason: publish_decision.reason,
-    });
+    }]);
 
   if (pdErr) throw new Error(`Publish decision save failed: ${pdErr.message}`);
 

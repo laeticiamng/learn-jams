@@ -110,7 +110,7 @@ export default function Player() {
   const toggleFav = async () => {
     if (!user || !id) return;
     if (isFav) await supabase.from("favorites").delete().eq("user_id", user.id).eq("song_id", id);
-    else await supabase.from("favorites").insert({ user_id: user.id, song_id: id });
+    else await supabase.from("favorites").insert([{ user_id: user.id, song_id: id }]);
     setIsFav(!isFav);
   };
 

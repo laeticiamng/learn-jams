@@ -54,7 +54,7 @@ export function GuardianInviteForm({ minorUserId, onInviteSent }: GuardianInvite
       setEmail("");
       setName("");
       onInviteSent?.();
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error(t("guardian.invite_error"));
     } finally {
       setLoading(false);

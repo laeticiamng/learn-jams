@@ -164,8 +164,9 @@ export default function Export() {
       a.click();
       URL.revokeObjectURL(url);
       toast.success(t("export.success", "SCORM package downloaded!"));
-    } catch (err: any) {
-      toast.error(err.message || t("export.error", "Export failed"));
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : "Internal error";
+      toast.error(message || t("export.error", "Export failed"));
     } finally {
       setExporting(null);
     }
