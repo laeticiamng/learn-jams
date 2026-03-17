@@ -10,6 +10,7 @@ import type { DetailedSourceType, DetectedStructureType, SourceDocument } from "
 import { validateWordCount, WORD_COUNT_THRESHOLDS } from "@/domain/cognitio/validators";
 import { createCognitioError } from "@/lib/cognitio-errors";
 import { toSourceDocument } from "@/domain/cognitio/mappers";
+import { buildStoragePath } from "@/security/storagePaths";
 import { extractTextFromFile, type ExtractionResult } from "./file-extractor.service";
 
 // ---------- Upload ----------
