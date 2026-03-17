@@ -4,10 +4,10 @@
 // narrative, and game flow into a cohesive layout.
 // ============================================================
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Package, Map, X } from "lucide-react";
+import { ArrowLeft, Package, Map, X, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { EscapeGameSession } from "@/domain/cognitio/escapeEngine.types";
 import { useEscapeGame } from "@/hooks/useEscapeGame";
@@ -21,6 +21,10 @@ import EscapeCodeLock from "./EscapeCodeLock";
 import EscapeDebriefView from "./EscapeDebriefView";
 import EscapeNPCCompanion from "./EscapeNPCCompanion";
 import EscapeAudioControl from "./EscapeAudioControl";
+
+// Lazy-load 3D scene to avoid bundling Three.js when not needed
+const Adaptive3DScene = lazy(() => import("@/components/cognitio/immersive/Adaptive3DScene"));
+const EscapeRoom3DScene = lazy(() => import("./EscapeRoom3DScene"));
 
 interface EscapeGamePlayerLayoutProps {
   session: EscapeGameSession;
@@ -41,6 +45,7 @@ export default function EscapeGamePlayerLayout({
   const [sidebarTab, setSidebarTab] = useState<"map" | "inventory">("map");
   const [elapsed, setElapsed] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [immersive3D, setImmersive3D] = useState(false);
 
   const {
     state,
@@ -262,6 +267,18 @@ export default function EscapeGamePlayerLayout({
           {/* Audio control */}
           <EscapeAudioControl muted={muted} onToggle={toggleMute} />
 
+          {/* 3D immersive toggle */}
+          <Button
+            variant={immersive3D ? "default" : "ghost"}
+            size="sm"
+            onClick={() => setImmersive3D(prev => !prev)}
+            className={`p-2 gap-1.5 text-xs ${immersive3D ? "bg-primary/20 text-primary" : "text-muted-foreground"}`}
+            title={immersive3D ? "Désactiver le mode 3D" : "Activer le mode 3D immersif"}
+          >
+            <Layers className="w-4 h-4" />
+            <span className="hidden sm:inline">3D</span>
+          </Button>
+
           {/* Mobile toggles */}
           <div className="flex items-center gap-1 lg:hidden">
             <Button
@@ -295,10 +312,25 @@ export default function EscapeGamePlayerLayout({
         </div>
       </div>
 
+      {/* 3D immersive backdrop */}
+      {immersive3D && state.phase !== "briefing" && state.phase !== "debrief" && (
+        <div className="fixed inset-0 z-0 pointer-events-none" style={{ top: "52px" }}>
+          <Suspense fallback={null}>
+            <EscapeRoom3DScene
+              roomIndex={state.current_room_index}
+              roomType={currentRoom?.room_type ?? "exploration"}
+              roomTitle={currentRoom?.title ?? ""}
+              totalRooms={rooms.length}
+              completedRooms={rooms.filter(r => r.completed).length}
+            />
+          </Suspense>
+        </div>
+      )}
+
       {/* Main content */}
-      <div className="flex-1 flex">
+      <div className={`flex-1 flex ${immersive3D ? "relative z-10" : ""}`}>
         {/* Sidebar (desktop) */}
-        <aside className="hidden lg:block w-72 shrink-0 border-r border-border/10 p-4 space-y-6 overflow-y-auto" style={{ maxHeight: "calc(100vh - 52px)" }}>
+        <aside className={`hidden lg:block w-72 shrink-0 border-r border-border/10 p-4 space-y-6 overflow-y-auto ${immersive3D ? "bg-background/80 backdrop-blur-xl" : ""}`} style={{ maxHeight: "calc(100vh - 52px)" }}>
           <EscapeRoomMap2D
             rooms={rooms}
             currentRoomIndex={state.current_room_index}
@@ -381,7 +413,7 @@ export default function EscapeGamePlayerLayout({
         </AnimatePresence>
 
         {/* Main game area */}
-        <main className="flex-1 max-w-3xl mx-auto px-4 py-6 space-y-6">
+        <main className={`flex-1 max-w-3xl mx-auto px-4 py-6 space-y-6 ${immersive3D ? "bg-background/70 backdrop-blur-lg" : ""}`}>
           {/* Boss room indicator */}
           {currentRoom?.room_type === "final" && state.phase !== "room_complete" && state.phase !== "debrief" && (
             <motion.div

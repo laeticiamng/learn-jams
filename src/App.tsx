@@ -88,7 +88,7 @@ const App = () => (
             </Routes>
           </Suspense>
           <CookieConsent />
-          {import.meta.env.DEV && <DevDiagnosticsPanel />}
+          <DevDiagnosticsPanel />
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
