@@ -8,11 +8,32 @@ const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
+/** Boot health-check: log env status so issues are easy to diagnose. */
+function logEnvStatus() {
+  const hasUrl = !!SUPABASE_URL;
+  const hasKey = !!SUPABASE_PUBLISHABLE_KEY;
+
+  if (hasUrl && hasKey) {
+    console.info(
+      "[COGNITIO] env loaded — VITE_SUPABASE_URL ✓ | VITE_SUPABASE_PUBLISHABLE_KEY ✓"
+    );
+  } else {
+    const missing: string[] = [];
+    if (!hasUrl) missing.push("VITE_SUPABASE_URL");
+    if (!hasKey) missing.push("VITE_SUPABASE_PUBLISHABLE_KEY");
+    console.warn(
+      `[COGNITIO] env missing — ${missing.join(", ")}. Supabase will use a placeholder client.`
+    );
+  }
+}
+
 function createSafeClient(): SupabaseClient<Database> {
+  logEnvStatus();
+
   if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
     console.error(
-      "[Supabase] Missing environment variables: VITE_SUPABASE_URL or VITE_SUPABASE_PUBLISHABLE_KEY. " +
-      "The app will not be able to connect to Supabase."
+      "[COGNITIO] supabase init failed — missing environment variables. " +
+      "The app will show a configuration error screen."
     );
     // Return a client with a placeholder URL so the module doesn't throw at load time.
     // The EnvValidationGuard will show a proper error UI before any Supabase call is made.
@@ -23,13 +44,16 @@ function createSafeClient(): SupabaseClient<Database> {
     );
   }
 
-  return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+  const client = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
     auth: {
       storage: localStorage,
       persistSession: true,
       autoRefreshToken: true,
     }
   });
+
+  console.info("[COGNITIO] supabase init success");
+  return client;
 }
 
 export const supabase = createSafeClient();
