@@ -356,7 +356,7 @@ function checkNoDocumentArtifactLeak(m: EscapeGameMission): MissionQACheck {
     // Check all options/choices
     const choices = item.options ?? [];
     for (const choice of choices) {
-      const choiceText = typeof choice === "string" ? choice : choice.label ?? "";
+      const choiceText = typeof choice === "string" ? choice : "";
       const choiceNoise = detectDocumentNoise(choiceText);
       if (choiceNoise.noisy) {
         leaks.push(`Option: "${choiceText.slice(0, 50)}..." → ${choiceNoise.matches.join(", ")}`);

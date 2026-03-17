@@ -199,7 +199,7 @@ function PedagogicalObject3DSlot({
   isLite,
   onClick,
 }: PedagogicalObject3DSlotProps) {
-  const meshRef = useRef<THREE.Mesh>(null);
+  const meshRef = useRef<Mesh>(null);
   const isInteractable = object.state === "available" || object.state === "discovered";
 
   // Subtle hover animation

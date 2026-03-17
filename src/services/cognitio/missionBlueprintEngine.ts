@@ -508,8 +508,10 @@ function sanitizeMissionItem(item: MissionItem): MissionItem {
   return {
     ...item,
     prompt: stripDocumentNoise(item.prompt),
-    options: item.options.map(o => stripDocumentNoise(o)).filter(o => o.length >= 2),
-    correct_answer: stripDocumentNoise(item.correct_answer),
+    options: (item.options ?? []).map(o => stripDocumentNoise(o)).filter(o => o.length >= 2),
+    correct_answer: Array.isArray(item.correct_answer)
+      ? item.correct_answer.map(answer => stripDocumentNoise(answer)).filter(answer => answer.length >= 1)
+      : stripDocumentNoise(item.correct_answer),
     explanation: item.explanation ? stripDocumentNoise(item.explanation) : item.explanation,
   };
 }

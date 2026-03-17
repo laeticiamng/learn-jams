@@ -138,7 +138,7 @@ function extractQuickConcepts(text: string, segments: SegmentOutput[]): QuickCon
   const capitalPattern = /\b([A-Z][a-zéèêëàâîïôûùç]+(?:\s+[A-Z][a-zéèêëàâîïôûùç]+)+)\b/g;
   while ((match = capitalPattern.exec(text)) !== null) {
     const label = normalizeConceptLabel(match[1]);
-    if (label.length >= 5 && label.length <= 60) {
+    if (label && label.length >= 5 && label.length <= 60) {
       candidates.add(label);
     }
   }

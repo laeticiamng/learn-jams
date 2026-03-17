@@ -485,7 +485,9 @@ export function buildImmersiveEscapeSession(
     original_label: c.label,
     definition: c.definition,
     compressed_definition: c.definition.slice(0, 120),
-    stable_key: c.stable_key,
+    concept_type: "principal",
+    quality_score: 1,
+    rejection: null,
   }));
 
   // 3. Build standard escape game session with domain for narrative enrichment

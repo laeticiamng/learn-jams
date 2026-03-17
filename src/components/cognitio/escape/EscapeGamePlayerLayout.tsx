@@ -313,7 +313,7 @@ export default function EscapeGamePlayerLayout({
       </div>
 
       {/* 3D immersive backdrop */}
-      {immersive3D && state.phase !== "briefing" && state.phase !== "debrief" && (
+      {immersive3D && state.phase !== "debrief" && (
         <div className="fixed inset-0 z-0 pointer-events-none" style={{ top: "52px" }}>
           <Suspense fallback={null}>
             <EscapeRoom3DScene
