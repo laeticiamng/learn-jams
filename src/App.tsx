@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { EnvValidationGuard } from "@/components/EnvValidationGuard";
 import CommandPalette from "@/components/CommandPalette";
 import CookieConsent from "./components/CookieConsent";
 import PageLoadingFallback from "@/components/PageLoadingFallback";
@@ -47,6 +48,7 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <ErrorBoundary>
+  <EnvValidationGuard>
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
@@ -93,6 +95,7 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
+  </EnvValidationGuard>
   </ErrorBoundary>
 );
 

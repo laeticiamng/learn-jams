@@ -139,6 +139,9 @@
     "error_email_not_confirmed": "بريدك الإلكتروني غير مؤكد بعد.",
     "error_invalid_credentials": "بريد إلكتروني أو كلمة مرور غير صحيحة.",
     "error_too_many_requests": "محاولات كثيرة. حاول لاحقاً.",
+    "error_config": "خدمة تسجيل الدخول غير مُعدّة بشكل صحيح.",
+    "error_service_unreachable": "تعذّر الوصول إلى خدمة تسجيل الدخول حالياً.",
+    "error_unexpected": "حدث خطأ غير متوقع أثناء تسجيل الدخول.",
     "error_accept_terms": "يجب قبول الشروط", "error_password_min": "كلمة المرور 6 أحرف على الأقل",
     "error_passwords_mismatch": "كلمتا المرور غير متطابقتين",
     "success_signup": "تم إنشاء الحساب! تحقق من بريدك.", "success_password_updated": "تم تحديث كلمة المرور!"

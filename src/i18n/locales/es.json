@@ -139,6 +139,9 @@
     "error_email_not_confirmed": "Tu email aún no está confirmado. Revisa tu bandeja de entrada.",
     "error_invalid_credentials": "Email o contraseña incorrectos.",
     "error_too_many_requests": "Demasiados intentos. Inténtalo en unos minutos.",
+    "error_config": "El servicio de conexión no está configurado correctamente.",
+    "error_service_unreachable": "No se puede contactar el servicio de conexión en este momento.",
+    "error_unexpected": "Ocurrió un error inesperado durante la conexión.",
     "error_accept_terms": "Debes aceptar los términos para continuar", "error_password_min": "La contraseña debe tener al menos 6 caracteres",
     "error_passwords_mismatch": "Las contraseñas no coinciden",
     "success_signup": "¡Cuenta creada! Revisa tu email para confirmar tu registro.", "success_password_updated": "¡Contraseña actualizada!"

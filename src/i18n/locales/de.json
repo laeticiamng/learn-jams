@@ -139,6 +139,9 @@
     "error_email_not_confirmed": "Deine E-Mail ist noch nicht bestätigt. Überprüfe deinen Posteingang.",
     "error_invalid_credentials": "Ungültige E-Mail oder Passwort.",
     "error_too_many_requests": "Zu viele Versuche. Versuche es in ein paar Minuten erneut.",
+    "error_config": "Der Anmeldedienst ist nicht korrekt konfiguriert.",
+    "error_service_unreachable": "Der Anmeldedienst ist derzeit nicht erreichbar.",
+    "error_unexpected": "Ein unerwarteter Fehler ist bei der Anmeldung aufgetreten.",
     "error_accept_terms": "Du musst die AGB akzeptieren", "error_password_min": "Passwort muss mindestens 6 Zeichen lang sein",
     "error_passwords_mismatch": "Passwörter stimmen nicht überein",
     "success_signup": "Konto erstellt! Überprüfe deine E-Mail zur Bestätigung.", "success_password_updated": "Passwort aktualisiert!"
