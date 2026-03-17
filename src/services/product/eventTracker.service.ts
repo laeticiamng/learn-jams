@@ -58,11 +58,13 @@ export async function trackEventBatch(
     const rows = valid.map((e) => ({
       user_id: userId ?? null,
       anonymous_id: userId ? null : getAnonymousId(),
-      transformation_id: e.transformation_id ?? null,
       event_name: e.event_name,
-      audience_level: e.audience_level ?? null,
-      format: e.format ?? null,
-      metadata_json: (e.metadata ?? {}) as unknown as Json,
+      metadata_json: ({
+        ...(e.metadata ?? {}),
+        ...(e.transformation_id ? { transformation_id: e.transformation_id } : {}),
+        ...(e.audience_level ? { audience_level: e.audience_level } : {}),
+        ...(e.format ? { format: e.format } : {}),
+      }) as unknown as Json,
     }));
     await supabase.from("product_events").insert(rows);
   } catch {
