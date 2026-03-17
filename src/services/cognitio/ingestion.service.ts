@@ -291,7 +291,15 @@ function cleanRawText(text: string): string {
   cleaned = cleaned.replace(/^\s*\d{1,4}\s*$/gm, "");
   cleaned = cleaned.replace(/[ \t]+/g, " ");
   cleaned = cleaned.replace(/\n{3,}/g, "\n\n");
-  return cleaned.trim();
+  cleaned = cleaned.trim();
+
+  // SAFETY GUARD: If cleaning removed >70% of content, keep original
+  if (text.trim().length > 0 && cleaned.length / text.trim().length < 0.3) {
+    console.warn(`[COGNITIO] cleanRawText removed ${Math.round((1 - cleaned.length / text.trim().length) * 100)}% of text — reverting to original`);
+    return text.trim();
+  }
+
+  return cleaned;
 }
 
 function detectLanguage(text: string): string {
