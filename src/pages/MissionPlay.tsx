@@ -7,7 +7,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { Loader2, ArrowLeft, Gamepad2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
 import Navbar from "@/components/Navbar";
@@ -149,6 +149,18 @@ export default function MissionPlay() {
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
       <main className="flex-1">
+        {/* CTA: Switch to immersive escape game mode */}
+        <div className="max-w-3xl mx-auto px-4 pt-4 flex justify-end">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate(`/mission/${id}/escape`)}
+            className="gap-2"
+          >
+            <Gamepad2 className="w-4 h-4" />
+            {t("mission.escape_mode", { defaultValue: "Mode Escape Game" })}
+          </Button>
+        </div>
         <MissionPlayerLayout
           mission={mission}
           missionId={id ?? ""}
