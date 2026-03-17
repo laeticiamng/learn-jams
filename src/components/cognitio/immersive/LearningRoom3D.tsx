@@ -112,7 +112,7 @@ export default function LearningRoom3D({
           depth={dimensions.d}
           color={colorPrimary}
           accentColor={colorAccent}
-          opacity={isCurrent ? 0.2 : 0.1}
+          opacity={isCurrent ? 0.35 : 0.15}
           gridSize={1.5}
         />
       )}
@@ -198,7 +198,7 @@ export default function LearningRoom3D({
       {/* Enhanced firefly particles (replaces basic dust) */}
       {!isLite && !isLocked && (
         <FireflyParticles
-          count={isCurrent ? 80 : 30}
+          count={isCurrent ? 120 : 40}
           bounds={dimensions}
           color={colorAccent}
           speed={isCurrent ? 1.2 : 0.6}
@@ -389,14 +389,14 @@ function NeonEdgeTrims({
   accentColor: string;
   isCurrent: boolean;
 }) {
-  const intensity = isCurrent ? 0.8 : 0.3;
-  const trimOpacity = isCurrent ? 0.6 : 0.25;
+  const intensity = isCurrent ? 1.5 : 0.6;
+  const trimOpacity = isCurrent ? 0.8 : 0.4;
 
   return (
     <>
       {/* Back wall base trim */}
       <mesh position={[0, 0.05, -dimensions.d / 2 + 0.12]}>
-        <boxGeometry args={[dimensions.w - 0.4, 0.04, 0.04]} />
+        <boxGeometry args={[dimensions.w - 0.4, 0.08, 0.08]} />
         <meshStandardMaterial
           color={color}
           emissive={color}
@@ -407,7 +407,7 @@ function NeonEdgeTrims({
       </mesh>
       {/* Left wall base trim */}
       <mesh position={[-dimensions.w / 2 + 0.12, 0.05, 0]} rotation={[0, Math.PI / 2, 0]}>
-        <boxGeometry args={[dimensions.d - 0.4, 0.04, 0.04]} />
+        <boxGeometry args={[dimensions.d - 0.4, 0.08, 0.08]} />
         <meshStandardMaterial
           color={accentColor}
           emissive={accentColor}
@@ -418,7 +418,7 @@ function NeonEdgeTrims({
       </mesh>
       {/* Right wall base trim */}
       <mesh position={[dimensions.w / 2 - 0.12, 0.05, 0]} rotation={[0, Math.PI / 2, 0]}>
-        <boxGeometry args={[dimensions.d - 0.4, 0.04, 0.04]} />
+        <boxGeometry args={[dimensions.d - 0.4, 0.08, 0.08]} />
         <meshStandardMaterial
           color={accentColor}
           emissive={accentColor}
@@ -429,7 +429,7 @@ function NeonEdgeTrims({
       </mesh>
       {/* Top trim on back wall */}
       <mesh position={[0, dimensions.h - 0.05, -dimensions.d / 2 + 0.12]}>
-        <boxGeometry args={[dimensions.w - 0.4, 0.02, 0.02]} />
+        <boxGeometry args={[dimensions.w - 0.4, 0.05, 0.05]} />
         <meshStandardMaterial
           color={color}
           emissive={color}
@@ -462,13 +462,13 @@ function CeilingLight({
       </mesh>
       {/* Light bulb glow */}
       <mesh position={[0, -0.08, 0]}>
-        <sphereGeometry args={[0.15, 12, 12]} />
+        <sphereGeometry args={[0.2, 12, 12]} />
         <meshStandardMaterial
           color={lightColor}
           emissive={lightColor}
-          emissiveIntensity={intensity * 2}
+          emissiveIntensity={intensity * 4}
           transparent
-          opacity={0.8}
+          opacity={0.9}
         />
       </mesh>
       {/* Volumetric cone */}
@@ -477,9 +477,10 @@ function CeilingLight({
         <meshBasicMaterial
           color={lightColor}
           transparent
-          opacity={0.01}
+          opacity={0.04}
           side={THREE.DoubleSide}
           depthWrite={false}
+          blending={THREE.AdditiveBlending}
         />
       </mesh>
     </group>
@@ -693,7 +694,7 @@ function PedagogicalObject3DSlot({
           <meshStandardMaterial
             color={color}
             emissive={color}
-            emissiveIntensity={isInteractable ? 0.4 : 0.1}
+            emissiveIntensity={isInteractable ? 0.8 : 0.2}
             transparent={objOpacity < 1}
             opacity={objOpacity}
             metalness={0.5}
@@ -737,9 +738,9 @@ function PedagogicalObject3DSlot({
       {isInteractable && !isLite && (
         <pointLight
           position={[0, 0.1, 0]}
-          intensity={0.15}
+          intensity={0.4}
           color={color}
-          distance={2}
+          distance={3}
           decay={2}
         />
       )}

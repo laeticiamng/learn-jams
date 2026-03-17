@@ -15,6 +15,8 @@ import {
   computeHeaderNoiseScore,
   computeConceptSemanticValidityScore,
   scoreConceptCandidate,
+  sanitizeMissionDisplayText,
+  hasEditorialNoise,
 } from "./cognitio-semantic-cleaning";
 
 // ---------- cleanSourceNoise ----------
@@ -428,5 +430,140 @@ describe("rejectConceptArtifact — P0 scoring", () => {
       definition: "Concept extrait du document : CODEX.:, S-ECN.COM R2C : Rang A",
     });
     expect(result.rejected).toBe(true);
+  });
+});
+
+// ---------- sanitizeMissionDisplayText ----------
+
+describe("sanitizeMissionDisplayText", () => {
+  it("strips CODEX.:, S-ECN.- - Révision 5/1/2024 pattern", () => {
+    const input = "CODEX.:, S-ECN.- - Révision 5/1/2024 Pneumonie aiguë communautaire";
+    const result = sanitizeMissionDisplayText(input);
+    expect(result).not.toContain("CODEX");
+    expect(result).not.toContain("S-ECN");
+    expect(result).not.toContain("Révision");
+    expect(result).not.toContain("5/1/2024");
+    expect(result).toContain("Pneumonie aiguë communautaire");
+  });
+
+  it("strips CODEX.:, S-ECN.COM R2C : - pattern", () => {
+    const input = "CODEX.:, S-ECN.COM R2C : - Diagnostic étiologique";
+    const result = sanitizeMissionDisplayText(input);
+    expect(result).not.toContain("CODEX");
+    expect(result).not.toContain("S-ECN");
+    expect(result).not.toContain("R2C");
+    expect(result).toContain("Diagnostic étiologique");
+  });
+
+  it("strips inline Rang A labels", () => {
+    const input = "La pneumonie (Rang A) est une infection";
+    const result = sanitizeMissionDisplayText(input);
+    expect(result).not.toContain("Rang A");
+    expect(result).toContain("pneumonie");
+    expect(result).toContain("infection");
+  });
+
+  it("strips inline color coding", () => {
+    const input = "Symptômes (en NOIR) principaux du diagnostic";
+    const result = sanitizeMissionDisplayText(input);
+    expect(result).not.toContain("en NOIR");
+    expect(result).toContain("Symptômes");
+    expect(result).toContain("principaux");
+  });
+
+  it("strips ITEM numbers", () => {
+    const input = "ITEM 151 Pneumonie aiguë communautaire";
+    const result = sanitizeMissionDisplayText(input);
+    expect(result).not.toContain("ITEM 151");
+    expect(result).toContain("Pneumonie aiguë communautaire");
+  });
+
+  it("preserves clean medical text unchanged", () => {
+    const input = "La pneumonie aiguë communautaire (PAC) est une infection du parenchyme pulmonaire";
+    const result = sanitizeMissionDisplayText(input);
+    expect(result).toBe(input);
+  });
+
+  it("handles empty/null input gracefully", () => {
+    expect(sanitizeMissionDisplayText("")).toBe("");
+    expect(sanitizeMissionDisplayText("   ")).toBe("   ");
+  });
+
+  it("applies safety guard for over-aggressive cleaning", () => {
+    // If the entire text is noise patterns, safety guard should kick in
+    const pureNoise = "CODEX";
+    const result = sanitizeMissionDisplayText(pureNoise);
+    // For very short pure-noise strings, the safety guard should return original
+    // since cleaning would remove >70%
+    expect(result).toBeDefined();
+    expect(result.length).toBeGreaterThan(0);
+  });
+
+  it("strips multiple branding artifacts from a single line", () => {
+    const input = "CODEX S-ECN.COM R2C Révision 5/1/2024 — Traitement de la PAC par amoxicilline";
+    const result = sanitizeMissionDisplayText(input);
+    expect(result).not.toContain("CODEX");
+    expect(result).not.toContain("S-ECN");
+    expect(result).not.toContain("R2C");
+    expect(result).not.toContain("Révision");
+    expect(result).toContain("Traitement de la PAC par amoxicilline");
+  });
+});
+
+// ---------- hasEditorialNoise ----------
+
+describe("hasEditorialNoise", () => {
+  it("detects CODEX in text", () => {
+    expect(hasEditorialNoise("CODEX.:, S-ECN.- - Révision 5/1/2024")).toBe(true);
+  });
+
+  it("detects S-ECN.COM in text", () => {
+    expect(hasEditorialNoise("S-ECN.COM R2C : Rang A")).toBe(true);
+  });
+
+  it("detects R2C classification", () => {
+    expect(hasEditorialNoise("R2C : Rang A en NOIR")).toBe(true);
+  });
+
+  it("returns false for clean medical text", () => {
+    expect(hasEditorialNoise("Pneumonie aiguë communautaire")).toBe(false);
+  });
+
+  it("returns false for null/empty", () => {
+    expect(hasEditorialNoise("")).toBe(false);
+  });
+});
+
+// ---------- cleanSourceNoise — inline noise reinforcement ----------
+
+describe("cleanSourceNoise — inline branding removal", () => {
+  it("removes inline CODEX branding from lines", () => {
+    const input = "CODEX.:, Pneumonie aiguë communautaire";
+    const result = cleanSourceNoise(input);
+    expect(result).not.toContain("CODEX");
+    expect(result).toContain("Pneumonie aiguë communautaire");
+  });
+
+  it("removes inline S-ECN.COM from lines", () => {
+    const input = "S-ECN.COM R2C Diagnostic étiologique de la PAC";
+    const result = cleanSourceNoise(input);
+    expect(result).not.toContain("S-ECN");
+    expect(result).not.toContain("R2C");
+    expect(result).toContain("Diagnostic étiologique de la PAC");
+  });
+
+  it("removes inline Révision dates", () => {
+    const input = "Révision 5/1/2024 Traitement antibiotique";
+    const result = cleanSourceNoise(input);
+    expect(result).not.toContain("Révision");
+    expect(result).not.toContain("5/1/2024");
+    expect(result).toContain("Traitement antibiotique");
+  });
+
+  it("removes inline color labels", () => {
+    const input = "Symptômes (en NOIR) de la pneumonie";
+    const result = cleanSourceNoise(input);
+    expect(result).not.toContain("en NOIR");
+    expect(result).toContain("Symptômes");
   });
 });

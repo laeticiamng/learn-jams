@@ -5,7 +5,7 @@
 // cinematic camera transitions, and dynamic skybox.
 // ============================================================
 
-import { useState, useCallback, useMemo, useEffect, useRef } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef, lazy, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type {
   ImmersiveGameConfig,
@@ -14,11 +14,14 @@ import type {
   DependencyNode,
 } from "@/domain/cognitio/immersiveEngine.types";
 import Adaptive3DScene from "./Adaptive3DScene";
+import LearningRoom3D from "./LearningRoom3D";
 import KnowledgeWorldMap from "./KnowledgeWorldMap";
 import ObjectInspectPanel from "./ObjectInspectPanel";
 import MissionProgressHUD from "./MissionProgressHUD";
 import NarrativeOverlay from "./NarrativeOverlay";
 import AdaptiveHintPanel from "./AdaptiveHintPanel";
+
+const SceneCamera = lazy(() => import("./SceneCamera"));
 
 interface ImmersiveMissionSceneProps {
   config: ImmersiveGameConfig;
@@ -115,6 +118,38 @@ export default function ImmersiveMissionScene({
     }
   }, [selectedObjectId, onObjectInteract]);
 
+  // Build room data for 3D rendering
+  const roomsData = useMemo(() =>
+    clusterIds.map((clusterId, index) => {
+      const nodesInRoom = config.dependency_graph.nodes.filter(n => n.room_cluster_id === clusterId);
+      const template = config.universe_config.room_templates[index % config.universe_config.room_templates.length];
+      const roomTitle = nodesInRoom.length > 0
+        ? nodesInRoom.find(n => n.is_gate)?.label ?? nodesInRoom[0].label
+        : `Salle ${index + 1}`;
+      return {
+        clusterId,
+        index,
+        title: roomTitle,
+        purpose: template?.purpose ?? "exploration",
+        template: template ?? { purpose: "exploration", geometry: "rectangular" as const, size: "medium" as const, aesthetic_tags: [], max_objects: 6 },
+        objects: config.pedagogical_objects.filter(o => o.room_id === clusterId),
+        isCurrent: index === currentRoomIndex,
+        isCompleted: completedRooms.includes(clusterId),
+        isLocked: index > currentRoomIndex && !completedRooms.includes(clusterId),
+      };
+    }),
+    [clusterIds, config, currentRoomIndex, completedRooms]
+  );
+
+  // Camera target for current room (rooms laid out along negative Z)
+  const currentRoomTarget = useMemo((): [number, number, number] => {
+    const roomDim = roomsData[currentRoomIndex]?.template.size === "small" ? 8
+      : roomsData[currentRoomIndex]?.template.size === "large" ? 16 : 12;
+    const gap = 4;
+    const z = currentRoomIndex * -(roomDim + gap);
+    return [0, 2, z];
+  }, [currentRoomIndex, roomsData]);
+
   // Dynamic progression tint (gets brighter as rooms are completed)
   const progressionOpacity = completedRooms.length / Math.max(totalRooms, 1);
 
@@ -133,7 +168,7 @@ export default function ImmersiveMissionScene({
         renderMode={renderMode}
       />
 
-      {/* Cinematic transition overlay */}
+      {/* Cinematic transition overlay — semi-transparent to keep 3D visible */}
       <AnimatePresence>
         {isTransitioning && (
           <motion.div
@@ -141,7 +176,7 @@ export default function ImmersiveMissionScene({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.4 }}
-            className="absolute inset-0 z-20 bg-background/80 backdrop-blur-md flex items-center justify-center"
+            className="absolute inset-0 z-20 bg-background/40 backdrop-blur-sm flex items-center justify-center pointer-events-none"
           >
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
@@ -157,11 +192,11 @@ export default function ImmersiveMissionScene({
         )}
       </AnimatePresence>
 
-      {/* Progression glow overlay */}
+      {/* Progression glow overlay — subtle, non-blocking */}
       <div
-        className="absolute inset-0 pointer-events-none z-10 transition-opacity duration-1000"
+        className="absolute inset-0 pointer-events-none z-[1] transition-opacity duration-1000"
         style={{
-          background: `radial-gradient(ellipse at center bottom, hsl(var(--primary) / ${progressionOpacity * 0.06}), transparent 70%)`,
+          background: `radial-gradient(ellipse at center bottom, hsl(var(--primary) / ${progressionOpacity * 0.04}), transparent 60%)`,
         }}
       />
 
@@ -187,12 +222,33 @@ export default function ImmersiveMissionScene({
             onRenderModeChange={setRenderMode}
             className="w-full h-full"
           >
-            <ambientLight intensity={config.universe_config.lighting.ambient_intensity} />
+            {/* Camera with orbit controls and room transitions */}
+            <Suspense fallback={null}>
+              <SceneCamera
+                roomTarget={currentRoomTarget}
+                isTransitioning={isTransitioning}
+                enableDrift={renderMode === "full_3d"}
+                renderMode={renderMode === "fallback_2d" ? "lite_3d" : renderMode}
+              />
+            </Suspense>
+
+            {/* Scene lighting */}
+            <ambientLight intensity={Math.max(config.universe_config.lighting.ambient_intensity, 0.3)} />
             <directionalLight
-              position={[5, 10, 5]}
-              intensity={config.universe_config.lighting.directional_intensity}
+              position={[5, 12, 8]}
+              intensity={Math.max(config.universe_config.lighting.directional_intensity, 0.6)}
               castShadow={config.performance_profile.shadows_enabled}
+              shadow-mapSize-width={1024}
+              shadow-mapSize-height={1024}
+              shadow-camera-far={50}
+              shadow-camera-near={1}
             />
+            {/* Hemisphere fill light for ambient color */}
+            <hemisphereLight
+              args={[config.universe_config.color_palette.primary, config.universe_config.color_palette.background, 0.15]}
+            />
+
+            {/* Fog */}
             {config.universe_config.fog.enabled && (
               <fog
                 attach="fog"
@@ -203,6 +259,27 @@ export default function ImmersiveMissionScene({
                 ]}
               />
             )}
+
+            {/* Render all rooms — visible rooms centered on current */}
+            {roomsData.map((room) => (
+              <LearningRoom3D
+                key={room.clusterId}
+                roomIndex={room.index}
+                roomTitle={room.title}
+                roomPurpose={room.purpose}
+                template={room.template}
+                lighting={config.universe_config.lighting}
+                fog={config.universe_config.fog}
+                objects={room.objects}
+                colorPrimary={config.universe_config.color_palette.primary}
+                colorAccent={config.universe_config.color_palette.accent}
+                isCurrent={room.isCurrent}
+                isCompleted={room.isCompleted}
+                isLocked={room.isLocked}
+                renderMode={renderMode}
+                onObjectClick={handleObjectClick}
+              />
+            ))}
           </Adaptive3DScene>
         )}
       </div>

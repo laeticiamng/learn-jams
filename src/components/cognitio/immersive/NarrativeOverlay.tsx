@@ -18,7 +18,7 @@ export default function NarrativeOverlay({ message, onDismiss }: NarrativeOverla
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="absolute inset-0 z-40 bg-black/70 backdrop-blur-sm flex items-center justify-center p-8"
+      className="absolute inset-0 z-40 bg-black/50 backdrop-blur-sm flex items-center justify-center p-8"
       onClick={onDismiss}
     >
       <motion.div

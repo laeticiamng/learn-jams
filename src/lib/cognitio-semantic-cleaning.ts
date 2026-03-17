@@ -105,8 +105,10 @@ export function computeNoiseScore(text: string): number {
 
 /**
  * Strip document noise from a text string, keeping only pedagogical content.
+ * Includes safety guard ratio to prevent over-cleaning.
  */
 export function stripDocumentNoise(text: string): string {
+  const original = text;
   let cleaned = text;
 
   // Remove blacklisted fragments
@@ -119,6 +121,17 @@ export function stripDocumentNoise(text: string): string {
 
   // Remove leading/trailing punctuation artifacts
   cleaned = cleaned.replace(/^[\s;:.,\-–—•]+/, '').replace(/[\s;:.,\-–—•]+$/, '').trim();
+
+  // Safety guard: if cleaning removed >70% of content, keep original
+  const ratio = cleaned.length / Math.max(1, original.length);
+  if (ratio < 0.3) {
+    console.warn("[SAFETY] stripDocumentNoise too aggressive, fallback", {
+      originalLength: original.length,
+      cleanedLength: cleaned.length,
+      ratio,
+    });
+    return original;
+  }
 
   return cleaned;
 }
@@ -231,9 +244,17 @@ export function cleanSourceNoise(text: string): string {
       continue;
     }
 
-    // Skip editorial artifact lines
+    // Skip lines that are PURELY editorial artifacts.
+    // If a line starts with branding but has substantial content after,
+    // don't skip it — clean it inline instead.
     if (isEditorialArtifact(trimmed)) {
-      continue;
+      // Check if the line has enough non-noise content to be worth salvaging
+      const afterInlineCleaning = cleanInlineNoise(trimmed);
+      if (afterInlineCleaning.length < 15 || afterInlineCleaning === trimmed || isEditorialArtifact(afterInlineCleaning)) {
+        // Pure noise, inline cleaning didn't help, or residual is still editorial — skip
+        continue;
+      }
+      // Has salvageable content — fall through to inline cleaning
     }
 
     // Clean inline noise from the line
@@ -248,7 +269,22 @@ export function cleanSourceNoise(text: string): string {
   }
 
   // Collapse excessive blank lines
-  return cleaned.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+  const result = cleaned.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+
+  // Safety guard: if cleaning removed >90% of content, keep original.
+  // This is a line-level filter (not regex), so it's expected to remove
+  // large portions of heavily noisy documents. Use a low threshold.
+  const ratio = result.length / Math.max(1, text.length);
+  if (ratio < 0.1) {
+    console.warn("[SAFETY] cleanSourceNoise too aggressive, fallback", {
+      originalLength: text.length,
+      cleanedLength: result.length,
+      ratio,
+    });
+    return text;
+  }
+
+  return result;
 }
 
 /**
@@ -267,21 +303,147 @@ export function isEditorialArtifact(line: string): boolean {
 
 /**
  * Clean inline editorial noise from a text line.
+ * Handles branding, classification, color coding, revision metadata, etc.
  */
 function cleanInlineNoise(line: string): string {
   let cleaned = line;
 
   // Remove inline Rang labels
   cleaned = cleaned.replace(/\s*\(?\s*Rang\s+[A-Z]\s*\)?\s*/gi, " ");
-  cleaned = cleaned.replace(/\s*[-–—]\s*R2C\s*:\s*Rang\s+[A-Z]\s*/gi, " ");
+  cleaned = cleaned.replace(/\s*[-–—]\s*R2C\s*:\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON|Rang\s+[A-Z])(?:\s*[-–—]\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON|Rang\s+[A-Z]))*/gi, " ");
+
+  // Remove inline color coding
+  cleaned = cleaned.replace(/\s*\(?\s*en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)\s*\)?\s*/gi, " ");
+
+  // Remove inline platform branding (CODEX, S-ECN, etc.)
+  cleaned = cleaned.replace(/\bCODEX\b[.:;,\s-]*/gi, "");
+  cleaned = cleaned.replace(/\bS[\s-]*ECN(?:\.\s*COM|\.\s*-|\.COM)?\b[.:;,\s-]*/gi, "");
+  cleaned = cleaned.replace(/\bMED[\s-]*LINE\b[.:;,\s-]*/gi, "");
+  cleaned = cleaned.replace(/\biKB\b[.:;,\s-]*/gi, "");
+  cleaned = cleaned.replace(/\bPREP['']?ECN\b[.:;,\s-]*/gi, "");
+  cleaned = cleaned.replace(/\bELLIPSES\b[.:;,\s-]*/gi, "");
+  cleaned = cleaned.replace(/\bVERNAZOBRES[\s-]*GREGO?\b[.:;,\s-]*/gi, "");
+  cleaned = cleaned.replace(/\bECN\.COM\b[.:;,\s-]*/gi, "");
+
+  // Remove inline R2C / classification
+  cleaned = cleaned.replace(/\bR2C\b\s*/gi, "");
+  cleaned = cleaned.replace(/\bCOM\s+R2C\b\s*/gi, "");
+
+  // Remove inline ITEM numbers
+  cleaned = cleaned.replace(/\bITEM\s+\d+\s*/gi, "");
+
+  // Remove inline revision/date metadata
+  cleaned = cleaned.replace(/\bRévision\s+\d[\d/]*\b\s*/gi, "");
+  cleaned = cleaned.replace(/\b\d{1,2}[/.\-]\d{1,2}[/.\-]\d{2,4}\b\s*/g, "");
 
   // Remove trailing page refs
   cleaned = cleaned.replace(/\s*\(\s*p\.\s*\d+\s*\)\s*$/i, "");
 
-  // Collapse multiple spaces
+  // Remove reference numbers [1,2,3]
+  cleaned = cleaned.replace(/\s*\[\s*\d+(?:\s*,\s*\d+)*\s*\]\s*/g, " ");
+
+  // Collapse multiple spaces and clean leading/trailing punctuation artifacts
+  // Note: preserve trailing periods (sentence endings) — only strip noise punctuation
   cleaned = cleaned.replace(/\s{2,}/g, " ").trim();
+  cleaned = cleaned.replace(/^[\s;:,\-–—]+/, "").replace(/[\s;:,\-–—]+$/, "").trim();
 
   return cleaned;
+}
+
+// ---------- Mission Display Text Sanitization ----------
+
+/**
+ * INLINE_EDITORIAL_PATTERNS: Patterns stripped from text before mission display.
+ * These are applied as a terminal guard — even if upstream cleaning missed them.
+ */
+const DISPLAY_NOISE_PATTERNS: { pattern: RegExp; replacement: string }[] = [
+  // Platform branding
+  { pattern: /\bCODEX\b[.:;,]?\s*/gi, replacement: "" },
+  { pattern: /\bS[\s-]*ECN(?:\.\s*COM|\.\s*-|\.COM)?\b[.:;,\s-]*/gi, replacement: "" },
+  { pattern: /\bMED[\s-]*LINE\b\s*/gi, replacement: "" },
+  { pattern: /\biKB\b\s*/gi, replacement: "" },
+  { pattern: /\bPREP['']?ECN\b\s*/gi, replacement: "" },
+  { pattern: /\bELLIPSES\b\s*/gi, replacement: "" },
+  { pattern: /\bVERNAZOBRES[\s-]*GREGO?\b\s*/gi, replacement: "" },
+  { pattern: /\bECN\.COM\b\s*/gi, replacement: "" },
+  // Classification / Rang
+  { pattern: /\bR2C\s*:?\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON|Rang\s+[A-Z])(?:\s*[-–—]\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON|Rang\s+[A-Z]))*/gi, replacement: "" },
+  { pattern: /\bCOM\s+R2C\b[.:;,]?\s*/gi, replacement: "" },
+  { pattern: /\bR2C\b[.:;,]?\s*/gi, replacement: "" },
+  { pattern: /\s*\(?\s*Rang\s+[A-Z]\s*\)?\s*/gi, replacement: " " },
+  { pattern: /\s*\(?\s*en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)\s*\)?\s*/gi, replacement: " " },
+  // Standalone color labels NOT in medical context
+  { pattern: /^(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)\s*[-–—:]\s*/i, replacement: "" },
+  // Revision / date metadata
+  { pattern: /\bRévision\s+\d[\d/]*\b\s*/gi, replacement: "" },
+  { pattern: /\bmise\s+à\s+jour\s*[:—–\-]\s*\d[\d/.]*/gi, replacement: "" },
+  { pattern: /\bMAJ\s*[:—–\-]\s*\d[\d/.]*/gi, replacement: "" },
+  // ITEM numbers
+  { pattern: /\bITEM\s+\d+\s*[-–—:]?\s*/gi, replacement: "" },
+  // Inline dates (standalone, not part of medical data)
+  { pattern: /\b\d{1,2}[/.\-]\d{1,2}[/.\-]\d{2,4}\b\s*/g, replacement: "" },
+  // Page references
+  { pattern: /\bPage\s+\d+\b\s*/gi, replacement: "" },
+  { pattern: /\s*\(\s*p\.\s*\d+\s*\)\s*/gi, replacement: "" },
+  // Reference numbers
+  { pattern: /\s*\[\s*\d+(?:\s*,\s*\d+)*\s*\]\s*/g, replacement: " " },
+  // URLs
+  { pattern: /\bhttps?:\/\/\S+/gi, replacement: "" },
+  { pattern: /\bwww\.\S+/gi, replacement: "" },
+];
+
+/**
+ * Terminal sanitization guard for mission display text.
+ * Applied as a last line of defense before any text reaches the UI:
+ * - intro narrative
+ * - puzzle prompt
+ * - response options
+ * - feedback / explanation
+ *
+ * This does NOT replace source-level cleaning — it catches residual leaks.
+ * Includes a safety guard ratio to prevent over-cleaning.
+ */
+export function sanitizeMissionDisplayText(text: string): string {
+  if (!text || text.trim().length === 0) return text;
+
+  const original = text;
+  let cleaned = text;
+
+  for (const { pattern, replacement } of DISPLAY_NOISE_PATTERNS) {
+    cleaned = cleaned.replace(pattern, replacement);
+  }
+
+  // Collapse whitespace
+  cleaned = cleaned.replace(/\s{2,}/g, " ").trim();
+
+  // Clean leading/trailing punctuation artifacts left by removals
+  cleaned = cleaned.replace(/^[\s;:.,\-–—•]+/, "").replace(/[\s;:.,\-–—•]+$/, "").trim();
+
+  // Safety guard: if cleaning removed >70% of content, keep original
+  const ratio = cleaned.length / Math.max(1, original.length);
+  if (ratio < 0.3) {
+    console.warn("[SAFETY] sanitizeMissionDisplayText too aggressive, fallback", {
+      originalLength: original.length,
+      cleanedLength: cleaned.length,
+      ratio,
+    });
+    return original;
+  }
+
+  return cleaned;
+}
+
+/**
+ * Check if a text string contains editorial noise patterns.
+ * Useful for trace logging without modifying the text.
+ */
+export function hasEditorialNoise(text: string): boolean {
+  if (!text) return false;
+  return DISPLAY_NOISE_PATTERNS.some(({ pattern }) => {
+    // Reset lastIndex for global regexes
+    pattern.lastIndex = 0;
+    return pattern.test(text);
+  });
 }
 
 // ---------- Concept Label Normalization ----------

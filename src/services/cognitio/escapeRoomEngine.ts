@@ -15,6 +15,7 @@ import type {
 } from "@/domain/cognitio/escapeEngine.types";
 import type { BrickType } from "@/domain/cognitio/types";
 import type { NormalizedConcept } from "./conceptNormalizer";
+import { sanitizeMissionDisplayText, hasEditorialNoise } from "@/lib/cognitio-semantic-cleaning";
 
 // ---------- Room Templates ----------
 
@@ -102,6 +103,15 @@ export function generateEscapeRooms(input: RoomGenerationInput): EscapeRoom[] {
       puzzles.push(createMetaPuzzle(concepts, roomCount, difficulty));
     }
 
+    // [MISSION_TRACE] Log editorial noise detection for each room's content
+    for (const concept of roomConcepts) {
+      const labelHasNoise = hasEditorialNoise(concept.normalized_label);
+      const defHasNoise = hasEditorialNoise(concept.compressed_definition || concept.definition);
+      if (labelHasNoise || defHasNoise) {
+        console.warn(`[MISSION_TRACE] room=${i} concept="${concept.normalized_label.slice(0, 40)}" labelNoise=${labelHasNoise} defNoise=${defHasNoise}`);
+      }
+    }
+
     rooms.push({
       room_index: i,
       id: roomId,
@@ -115,7 +125,7 @@ export function generateEscapeRooms(input: RoomGenerationInput): EscapeRoom[] {
       rewards,
       hints,
       discoverables,
-      target_concepts: roomConcepts.map(c => c.normalized_label),
+      target_concepts: roomConcepts.map(c => sanitizeMissionDisplayText(c.normalized_label) || c.normalized_label),
       difficulty,
       time_limit_sec: computeRoomTimeLimit(puzzles.length, difficulty),
       unlocked: i === 0, // Only first room is unlocked initially
@@ -313,15 +323,21 @@ function generateRoomPuzzles(
 
     const options = shuffleArray([concept.normalized_label, ...distractors]);
 
+    // Sanitize all display text to prevent editorial noise from reaching the UI
+    const sanitizedPrompt = sanitizeMissionDisplayText(buildPuzzlePrompt(brick, concept, puzzleType));
+    const sanitizedOptions = options.map(o => sanitizeMissionDisplayText(o)).filter(o => o.length >= 2);
+    const sanitizedAnswer = sanitizeMissionDisplayText(concept.normalized_label);
+    const sanitizedExplanation = sanitizeMissionDisplayText(concept.compressed_definition || concept.definition);
+
     puzzles.push({
       id: puzzleId,
       puzzle_type: puzzleType,
       brick_type: brick,
-      prompt: buildPuzzlePrompt(brick, concept, puzzleType),
+      prompt: sanitizedPrompt,
       instructions: buildPuzzleInstructions(puzzleType),
-      options,
-      correct_answer: concept.normalized_label,
-      explanation: concept.compressed_definition || concept.definition,
+      options: sanitizedOptions.length >= 2 ? sanitizedOptions : options,
+      correct_answer: sanitizedAnswer || concept.normalized_label,
+      explanation: sanitizedExplanation || concept.compressed_definition || concept.definition,
       concept_key: concept.normalized_label,
       bloom_level: mapDifficultyToBloom(difficulty),
       difficulty,
@@ -357,9 +373,9 @@ export function createMetaPuzzle(
   totalRooms: number,
   difficulty: number
 ): EscapePuzzle {
-  const keyConceptLabels = allConcepts.slice(0, Math.min(allConcepts.length, 6)).map(c => c.normalized_label);
+  const keyConceptLabels = allConcepts.slice(0, Math.min(allConcepts.length, 6)).map(c => sanitizeMissionDisplayText(c.normalized_label) || c.normalized_label);
   const keywords = allConcepts.slice(0, 6).flatMap(c => {
-    const words = (c.compressed_definition || c.definition).split(/\s+/);
+    const words = sanitizeMissionDisplayText(c.compressed_definition || c.definition).split(/\s+/);
     return words.filter(w => w.length > 4).slice(0, 2);
   });
 
@@ -367,12 +383,12 @@ export function createMetaPuzzle(
     id: `puzzle_meta_final_${crypto.randomUUID().slice(0, 8)}`,
     puzzle_type: "active_generation",
     brick_type: "DECISION",
-    prompt: `[ÉPREUVE FINALE — MÉTA-PUZZLE] Tous les fragments collectés doivent maintenant être assemblés. En utilisant les concepts clés découverts tout au long de la mission (${keyConceptLabels.join(", ")}), formulez une synthèse globale qui relie l'ensemble de vos découvertes.`,
+    prompt: sanitizeMissionDisplayText(`[ÉPREUVE FINALE — MÉTA-PUZZLE] Tous les fragments collectés doivent maintenant être assemblés. En utilisant les concepts clés découverts tout au long de la mission (${keyConceptLabels.join(", ")}), formulez une synthèse globale qui relie l'ensemble de vos découvertes.`),
     instructions: "Cette épreuve finale évalue votre compréhension globale. Votre réponse doit intégrer le maximum de concepts découverts dans les salles précédentes. Rédigez 3-5 phrases.",
     input_type: "textarea",
     correct_answer: keyConceptLabels.join(", "),
     validation_keywords: [...new Set(keywords)].slice(0, 10),
-    explanation: `La synthèse attendue devait relier : ${keyConceptLabels.join(", ")}. Chaque fragment collecté représentait un aspect du sujet.`,
+    explanation: sanitizeMissionDisplayText(`La synthèse attendue devait relier : ${keyConceptLabels.join(", ")}. Chaque fragment collecté représentait un aspect du sujet.`),
     concept_key: keyConceptLabels[0],
     bloom_level: "create",
     difficulty: Math.min(5, difficulty + 2),
@@ -388,9 +404,9 @@ function createSynthesisPuzzle(
   roomIndex: number,
   difficulty: number
 ): EscapePuzzle {
-  const conceptLabels = concepts.map(c => c.normalized_label);
+  const conceptLabels = concepts.map(c => sanitizeMissionDisplayText(c.normalized_label) || c.normalized_label);
   const keywords = concepts.flatMap(c => {
-    const words = (c.compressed_definition || c.definition).split(/\s+/);
+    const words = sanitizeMissionDisplayText(c.compressed_definition || c.definition).split(/\s+/);
     return words.filter(w => w.length > 4).slice(0, 3);
   });
 
@@ -398,12 +414,12 @@ function createSynthesisPuzzle(
     id: `puzzle_synth_${roomIndex}_${crypto.randomUUID().slice(0, 8)}`,
     puzzle_type: "active_generation",
     brick_type: "DECISION",
-    prompt: `En vous basant sur les concepts "${conceptLabels.join('", "')}", formulez une explication synthétique qui relie ces notions.`,
+    prompt: sanitizeMissionDisplayText(`En vous basant sur les concepts "${conceptLabels.join('", "')}", formulez une explication synthétique qui relie ces notions.`),
     instructions: "Rédigez votre réponse en 2-3 phrases. Votre réponse sera évaluée sur la présence des concepts clés.",
     input_type: "textarea",
     correct_answer: conceptLabels.join(", "),
     validation_keywords: [...new Set(keywords)].slice(0, 8),
-    explanation: `Les concepts clés à intégrer étaient : ${conceptLabels.join(", ")}.`,
+    explanation: sanitizeMissionDisplayText(`Les concepts clés à intégrer étaient : ${conceptLabels.join(", ")}.`),
     concept_key: conceptLabels[0],
     bloom_level: "create",
     difficulty: Math.min(5, difficulty + 1),
@@ -425,17 +441,19 @@ function generateRoomRewards(
   if (concepts.length > 0) {
     const concept = concepts[0];
     const itemType = getItemTypeForRoom(roomType);
+    const cleanLabel = sanitizeMissionDisplayText(concept.normalized_label) || concept.normalized_label;
+    const cleanDesc = sanitizeMissionDisplayText(concept.compressed_definition || concept.definition.slice(0, 120));
 
     rewards.push({
       id: `item_${roomIndex}_${crypto.randomUUID().slice(0, 8)}`,
       type: itemType,
-      name: buildItemName(concept, itemType),
-      description: concept.compressed_definition || concept.definition.slice(0, 120),
+      name: buildItemName({ ...concept, normalized_label: cleanLabel }, itemType),
+      description: cleanDesc || concept.compressed_definition || concept.definition.slice(0, 120),
       icon: getItemIcon(itemType),
       source_room_index: roomIndex,
       is_key_item: roomIndex < 3, // First rooms give key items
       concept_key: concept.normalized_label,
-      examine_text: `Cet objet contient des informations essentielles sur "${concept.normalized_label}".`,
+      examine_text: `Cet objet contient des informations essentielles sur "${cleanLabel}".`,
       collected: false,
     });
   }
@@ -548,22 +566,26 @@ function buildHintLevel1(roomType: string, concepts: NormalizedConcept[]): strin
 function buildHintLevel2(concepts: NormalizedConcept[]): string {
   if (concepts.length === 0) return "Concentrez-vous sur les éléments fondamentaux.";
   const concept = concepts[0];
-  const defPreview = (concept.compressed_definition || concept.definition).slice(0, 80);
-  return `Pensez au concept "${concept.normalized_label}". Rappelez-vous : ${defPreview}…`;
+  const label = sanitizeMissionDisplayText(concept.normalized_label) || concept.normalized_label;
+  const defPreview = sanitizeMissionDisplayText((concept.compressed_definition || concept.definition).slice(0, 80));
+  return `Pensez au concept "${label}". Rappelez-vous : ${defPreview}…`;
 }
 
 function buildHintLevel3(concepts: NormalizedConcept[]): string {
   if (concepts.length === 0) return "La réponse est liée aux définitions fondamentales.";
   const concept = concepts[0];
-  return `La réponse est directement liée à "${concept.normalized_label}" : ${concept.compressed_definition || concept.definition}`;
+  const label = sanitizeMissionDisplayText(concept.normalized_label) || concept.normalized_label;
+  const def = sanitizeMissionDisplayText(concept.compressed_definition || concept.definition);
+  return `La réponse est directement liée à "${label}" : ${def}`;
 }
 
 function buildHintLevel4(concepts: NormalizedConcept[]): string {
   if (concepts.length === 0) return "Consultez les indices collectés dans votre inventaire.";
   const concept = concepts[0];
-  const answer = concept.normalized_label;
+  const answer = sanitizeMissionDisplayText(concept.normalized_label) || concept.normalized_label;
   const firstPart = answer.slice(0, Math.ceil(answer.length * 0.6));
-  return `La réponse est "${firstPart}…". ${concept.compressed_definition || concept.definition}`;
+  const def = sanitizeMissionDisplayText(concept.compressed_definition || concept.definition);
+  return `La réponse est "${firstPart}…". ${def}`;
 }
 
 // ---------- Bonus / Surprise Puzzles ----------
@@ -573,7 +595,8 @@ function createBonusPuzzle(
   roomIndex: number,
   difficulty: number
 ): EscapePuzzle {
-  const label = concept.normalized_label;
+  const label = sanitizeMissionDisplayText(concept.normalized_label) || concept.normalized_label;
+  const explanation = sanitizeMissionDisplayText(concept.compressed_definition || concept.definition);
   return {
     id: `puzzle_bonus_${roomIndex}_${crypto.randomUUID().slice(0, 8)}`,
     puzzle_type: "interpretation",
@@ -582,7 +605,7 @@ function createBonusPuzzle(
     instructions: "Ce défi bonus est optionnel mais rapporte des points supplémentaires. Identifiez le concept dissimulé.",
     options: shuffleArray([label, ...generateDecoys(label, 3)]),
     correct_answer: label,
-    explanation: `Le concept caché était "${label}". ${concept.compressed_definition || concept.definition}`,
+    explanation: `Le concept caché était "${label}". ${explanation}`,
     concept_key: label,
     bloom_level: "analyze",
     difficulty: Math.min(5, difficulty + 1),
@@ -653,10 +676,11 @@ function generateRoomDiscoverables(
   // Document clue — concept-based, hints at first puzzle answer
   if (concepts.length > 0) {
     const concept = concepts[0];
-    const defSnippet = (concept.compressed_definition || concept.definition).slice(0, 100);
+    const cleanLabel = sanitizeMissionDisplayText(concept.normalized_label) || concept.normalized_label;
+    const defSnippet = sanitizeMissionDisplayText((concept.compressed_definition || concept.definition).slice(0, 100));
     discoverables.push({
       id: `disc_doc_${roomIndex}`,
-      label: `Document: ${concept.normalized_label}`,
+      label: `Document: ${cleanLabel}`,
       type: "document",
       discovery_text: `Ce document révèle : "${defSnippet}…" — cette information pourrait être utile pour résoudre un puzzle.`,
       hints_at_puzzle_id: puzzles[0]?.id,
@@ -667,11 +691,12 @@ function generateRoomDiscoverables(
   // Hidden object — appears after solving first puzzle, grants a clue
   if (puzzles.length >= 2 && concepts.length >= 2) {
     const hiddenConcept = concepts[Math.min(1, concepts.length - 1)];
+    const cleanHiddenLabel = sanitizeMissionDisplayText(hiddenConcept.normalized_label) || hiddenConcept.normalized_label;
     discoverables.push({
       id: `disc_secret_${roomIndex}`,
       label: "Objet caché",
       type: "secret",
-      discovery_text: `Vous découvrez un indice caché ! Il mentionne "${hiddenConcept.normalized_label}" — cela éclaire le puzzle suivant.`,
+      discovery_text: `Vous découvrez un indice caché ! Il mentionne "${cleanHiddenLabel}" — cela éclaire le puzzle suivant.`,
       hints_at_puzzle_id: puzzles[1]?.id,
       visible_after_puzzle_id: puzzles[0]?.id,
       discovered: false,
@@ -708,8 +733,8 @@ function buildPuzzlePrompt(
   concept: NormalizedConcept,
   puzzleType: string
 ): string {
-  const label = concept.normalized_label;
-  const defPreview = (concept.compressed_definition || concept.definition).slice(0, 60);
+  const label = sanitizeMissionDisplayText(concept.normalized_label) || concept.normalized_label;
+  const defPreview = sanitizeMissionDisplayText((concept.compressed_definition || concept.definition).slice(0, 60));
 
   switch (brick) {
     case "OBSERVATION":

@@ -66,7 +66,7 @@ export default function ObjectInspectPanel({
       initial={{ opacity: 0, x: 300 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 300 }}
-      className="absolute right-0 top-0 bottom-0 w-80 z-20 bg-background/95 backdrop-blur-xl border-l border-border/20 p-4 overflow-y-auto"
+      className="absolute right-0 top-0 bottom-0 w-80 z-20 bg-background/60 backdrop-blur-xl border-l border-border/10 p-4 overflow-y-auto"
     >
       {/* Header */}
       <div className="flex items-start justify-between mb-4">

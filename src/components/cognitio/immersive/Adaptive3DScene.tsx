@@ -90,15 +90,15 @@ export default function Adaptive3DScene({
             shadows={profile?.shadows_enabled ?? false}
             gl={{
               antialias: renderMode === "full_3d",
-              alpha: true,
+              alpha: false,
               powerPreference: renderMode === "full_3d" ? "high-performance" : "low-power",
               toneMapping: 4, // ACESFilmicToneMapping
-              toneMappingExposure: 1.2,
+              toneMappingExposure: 1.4,
             }}
-            camera={{ position: [0, 5, 10], fov: 60 }}
+            camera={{ position: [0, 6, 10], fov: 55, near: 0.5, far: 100 }}
             style={{ width: "100%", height: "100%" }}
             onCreated={({ gl }) => {
-              gl.setClearColor(0x000000, 0);
+              gl.setClearColor(0x0a0a1a, 1);
             }}
           >
             {/* Environment map for realistic reflections (full_3d only) */}
