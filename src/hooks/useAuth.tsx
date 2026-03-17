@@ -131,7 +131,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           emailRedirectTo: window.location.origin,
         },
       });
-      return { error: error as Error | null };
+      return { error: error instanceof Error ? error : null };
     } catch (err: unknown) {
       return { error: err instanceof Error ? err : new Error(String(err)) };
     }
@@ -185,7 +185,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/reset-password`,
       });
-      return { error: error as Error | null };
+      return { error: error instanceof Error ? error : null };
     } catch (err: unknown) {
       return { error: err instanceof Error ? err : new Error(String(err)) };
     }
@@ -194,7 +194,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const updatePassword = async (password: string) => {
     try {
       const { error } = await supabase.auth.updateUser({ password });
-      return { error: error as Error | null };
+      return { error: error instanceof Error ? error : null };
     } catch (err: unknown) {
       return { error: err instanceof Error ? err : new Error(String(err)) };
     }

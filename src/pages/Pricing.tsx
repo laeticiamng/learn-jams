@@ -110,7 +110,7 @@ export default function Pricing() {
           toast.error(t("pricing.error"));
         }
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
       toast.error(t("pricing.error"));
     } finally {

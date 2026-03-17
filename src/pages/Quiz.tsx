@@ -42,9 +42,10 @@ export default function Quiz() {
       if (error) throw error;
       if (data?.questions) setQuestions(data.questions);
       else throw new Error("Invalid quiz format");
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
-      toast.error(e.message || t("quiz.impossible"));
+      const message = e instanceof Error ? e.message : "Internal error";
+      toast.error(message || t("quiz.impossible"));
     } finally { setLoading(false); }
   };
 

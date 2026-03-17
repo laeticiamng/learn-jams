@@ -126,8 +126,9 @@ export default function Studio() {
       setActiveSession(data as Session);
       toast.success(t("studio.created", "Session created!"));
       fetchSessions();
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Internal error";
+      toast.error(message);
     } finally {
       setCreating(false);
     }
@@ -156,8 +157,9 @@ export default function Studio() {
       setActiveSession(session as Session);
       toast.success(t("studio.joined", "Joined session!"));
       fetchSessions();
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Internal error";
+      toast.error(message);
     }
   };
 
@@ -171,8 +173,9 @@ export default function Studio() {
       if (error) throw error;
       toast.success(t("studio.verse_saved", "Verse saved!"));
       loadParticipants(activeSession.id);
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Internal error";
+      toast.error(message);
     }
   };
 

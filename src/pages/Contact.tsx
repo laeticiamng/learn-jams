@@ -43,7 +43,7 @@ export default function Contact() {
       toast.success(t("contact.sent"));
       setName(""); setEmail(""); setMessage("");
       setLastSubmit(Date.now());
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Contact form error:", err);
       toast.error(t("contact.error", "Une erreur est survenue. Réessaye plus tard."));
     } finally {
