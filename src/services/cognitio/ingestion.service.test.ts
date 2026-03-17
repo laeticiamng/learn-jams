@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { extractAndAnalyzeText } from "./ingestion.service";
+import { extractAndAnalyzeText, uploadDocument } from "./ingestion.service";
 
 describe("extractAndAnalyzeText", () => {
   it("returns blocking issue for empty text", () => {
