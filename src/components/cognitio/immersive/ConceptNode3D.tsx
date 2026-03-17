@@ -73,6 +73,10 @@ export default function ConceptNode3D({
   const meshRef = useRef<Mesh>(null);
   const orbitalRef = useRef<Mesh>(null);
   const [hovered, setHovered] = useState(false);
+  const [justRevealed, setJustRevealed] = useState(false);
+  const meshRef = useRef<Mesh>(null);
+  const orbitalRef = useRef<Mesh>(null);
+  const [hovered, setHovered] = useState(false);
 
   const color = ROLE_COLORS[node.role] ?? "#6b7280";
   const accent = ROLE_ACCENT[node.role] ?? "#9ca3af";
