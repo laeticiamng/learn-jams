@@ -5,6 +5,8 @@ import App from "./App.tsx";
 import "./index.css";
 import "./i18n";
 
+console.info("[COGNITIO] app boot start");
+
 try {
   createRoot(document.getElementById("root")!).render(
     <EnvValidationGuard>
@@ -13,8 +15,9 @@ try {
       </AccessibilityProvider>
     </EnvValidationGuard>
   );
+  console.info("[COGNITIO] app boot success — React root mounted");
 } catch (err) {
-  console.error("[COGNITIO] Fatal boot error:", err);
+  console.error("[COGNITIO] app boot failed:", err);
   const root = document.getElementById("root");
   if (root) {
     root.innerHTML =
