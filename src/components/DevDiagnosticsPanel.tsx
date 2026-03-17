@@ -80,6 +80,9 @@ export function DevDiagnosticsPanel() {
           <Row label="Role" value={String(user?.user_metadata?.role ?? "—")} />
           <Row label="Plan Key (meta)" value={String(user?.user_metadata?.plan_key ?? "—")} />
           <Row label="Resolved Plan" value={planLoading ? "loading…" : plan} status={plan === "school" ? "ok" : plan === "free" ? "warn" : "neutral"} />
+          {userIsAdmin && plan !== "school" && !planLoading && (
+            <Row label="MIGRATION" value="admin detected but plan != school — check SQL migration" status="error" />
+          )}
           {Object.values(FORMAT_CONFIGS).map((fmt) => {
             const avail = getFormatAvailability(plan, fmt.featureKey);
             return (

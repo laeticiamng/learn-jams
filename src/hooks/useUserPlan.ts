@@ -30,14 +30,31 @@ export function useUserPlan(userId: string | null): UserPlanState {
     setLoading(true);
     try {
       // Check if user is admin (admins get school plan)
-      // Uses getUser() which fetches fresh data from Supabase (not cached session)
-      const { data: { user } } = await supabase.auth.getUser();
-      const meta = user?.user_metadata;
+      // Strategy: try getUser() (network-fresh), fall back to getSession() (cached JWT)
+      let meta: Record<string, unknown> | undefined;
+
+      const { data: getUserData, error: getUserError } = await supabase.auth.getUser();
+      if (!getUserError && getUserData?.user?.user_metadata) {
+        meta = getUserData.user.user_metadata as Record<string, unknown>;
+      } else {
+        // Fallback to cached session if getUser() fails (network issue)
+        const { data: sessionData } = await supabase.auth.getSession();
+        meta = sessionData?.session?.user?.user_metadata as Record<string, unknown> | undefined;
+        if (getUserError) {
+          console.warn("[useUserPlan] getUser() failed, using cached session:", getUserError.message);
+        }
+      }
+
       if (meta?.is_admin === true || meta?.role === "admin") {
         const adminPlan: PlanKey = (meta.plan_key as PlanKey) ?? "school";
         setPlan(adminPlan);
-        const summary = await getUserUsageSummary(userId, adminPlan);
-        setUsage(summary);
+        try {
+          const summary = await getUserUsageSummary(userId, adminPlan);
+          setUsage(summary);
+        } catch {
+          // Usage summary failure should not block admin plan resolution
+          setUsage(null);
+        }
         setLoading(false);
         return;
       }
