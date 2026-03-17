@@ -90,7 +90,7 @@ function generateSCORMHtml(song: Song) {
       try {
         while (win.API == null && win.parent != null && win.parent != win) { win = win.parent; }
         return win.API;
-      } catch (e: unknown) { return null; }
+      } catch (e) { return null; }
     }
     function initSCORM() {
       API = findAPI(window);
