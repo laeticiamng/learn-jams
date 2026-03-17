@@ -100,9 +100,9 @@ serve(async (req) => {
         .download(doc.raw_storage_path);
 
       if (fileError) {
-        // Fallback to course-documents bucket
+        // Fallback to course-uploads bucket
         const { data: fileData2, error: fileError2 } = await supabase.storage
-          .from("course-documents")
+          .from("course-uploads")
           .download(doc.raw_storage_path);
 
         if (fileError2) {
