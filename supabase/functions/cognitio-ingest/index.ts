@@ -657,18 +657,33 @@ function filterEditorialArtifacts(text: string): string {
       continue;
     }
 
-    // Clean inline Rang labels and color coding
+    // Clean inline editorial noise
     let cleanedLine = trimmed;
+    // Rang labels and color coding
     cleanedLine = cleanedLine.replace(/\s*\(?\s*Rang\s+[A-Z]\s*\)?\s*/gi, " ");
-    cleanedLine = cleanedLine.replace(/\s*[-–—]\s*R2C\s*:\s*Rang\s+[A-Z]\s*/gi, " ");
+    cleanedLine = cleanedLine.replace(/\s*[-–—]\s*R2C\s*:?\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON|Rang\s+[A-Z])(?:\s*[-–—]\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON|Rang\s+[A-Z]))*/gi, " ");
     cleanedLine = cleanedLine.replace(/\s*\(?\s*en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)\s*\)?\s*/gi, " ");
-    // Remove CODEX/S-ECN branding inline
-    cleanedLine = cleanedLine.replace(/CODEX\s*[.:,]+\s*/gi, "");
-    cleanedLine = cleanedLine.replace(/S[\s-]*ECN(?:\.COM)?\s*/gi, "");
-    cleanedLine = cleanedLine.replace(/R2C\s*:\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)(?:\s*[-–—]\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON))*/gi, "");
-    // Remove Révision dates inline
-    cleanedLine = cleanedLine.replace(/Révision\s+\d{1,2}\/\d{1,2}\/\d{2,4}/gi, "");
+    // Platform branding inline (CODEX, S-ECN, etc.)
+    cleanedLine = cleanedLine.replace(/\bCODEX\b[.:;,]?\s*/gi, "");
+    cleanedLine = cleanedLine.replace(/\bS[\s-]*ECN(?:\.\s*COM|\.\s*-|\.COM)?\b[.:;,\s-]*/gi, "");
+    cleanedLine = cleanedLine.replace(/\bMED[\s-]*LINE\b\s*/gi, "");
+    cleanedLine = cleanedLine.replace(/\biKB\b\s*/gi, "");
+    cleanedLine = cleanedLine.replace(/\bPREP['']?ECN\b\s*/gi, "");
+    cleanedLine = cleanedLine.replace(/\bELLIPSES\b\s*/gi, "");
+    cleanedLine = cleanedLine.replace(/\bVERNAZOBRES[\s-]*GREGO?\b\s*/gi, "");
+    cleanedLine = cleanedLine.replace(/\bECN\.COM\b\s*/gi, "");
+    // R2C classification blocks
+    cleanedLine = cleanedLine.replace(/\bR2C\s*:?\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)(?:\s*[-–—]\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON))*/gi, "");
+    cleanedLine = cleanedLine.replace(/\bCOM\s+R2C\b[.:;,]?\s*/gi, "");
+    cleanedLine = cleanedLine.replace(/\bR2C\b[.:;,]?\s*/gi, "");
+    // Revision dates inline (including partial date formats)
+    cleanedLine = cleanedLine.replace(/\bRévision\s+\d[\d/]*\b\s*/gi, "");
+    cleanedLine = cleanedLine.replace(/\b\d{1,2}[/.\-]\d{1,2}[/.\-]\d{2,4}\b\s*/g, "");
+    // ITEM numbers inline
+    cleanedLine = cleanedLine.replace(/\bITEM\s+\d+\s*/gi, "");
+    // Collapse whitespace and trim residual punctuation
     cleanedLine = cleanedLine.replace(/\s{2,}/g, " ").trim();
+    cleanedLine = cleanedLine.replace(/^[\s;:.,\-–—]+/, "").replace(/[\s;:.,\-–—]+$/, "").trim();
 
     if (cleanedLine.length >= 3) {
       cleaned.push(cleanedLine);

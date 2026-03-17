@@ -23,7 +23,7 @@ import {
 } from "@/domain/cognitio/validators";
 import type { UniverseSelectionResult } from "./missionUniverseSelector";
 import type { NormalizedConcept } from "./conceptNormalizer";
-import { detectDocumentNoise, computeNoiseScore, stripDocumentNoise, cleanMainTopic, isEditorialArtifact } from "@/lib/cognitio-semantic-cleaning";
+import { detectDocumentNoise, computeNoiseScore, stripDocumentNoise, cleanMainTopic, isEditorialArtifact, hasEditorialNoise, sanitizeMissionDisplayText } from "@/lib/cognitio-semantic-cleaning";
 
 // ---------- Types ----------
 
@@ -296,9 +296,26 @@ export function buildMissionBlueprint(input: BlueprintInput): BlueprintOutput {
     ? cleanedTopic
     : "Apprentissage";
 
+  // [MISSION_TRACE] Diagnostic logs for mission content sources
+  console.debug(`[MISSION_TRACE] intro source=narrative_intro len=${narrativeIntro.length} hasEditorialNoise=${hasEditorialNoise(narrativeIntro)}`);
+  for (const room of rooms) {
+    for (let idx = 0; idx < room.items.length; idx++) {
+      const item = room.items[idx];
+      const promptNoise = hasEditorialNoise(item.prompt);
+      const optionsNoise = (item.options ?? []).some(o => hasEditorialNoise(o));
+      const explNoise = item.explanation ? hasEditorialNoise(item.explanation) : false;
+      if (promptNoise || optionsNoise || explNoise) {
+        console.warn(`[MISSION_TRACE] room="${room.title}" item=${idx} promptNoise=${promptNoise} optionsNoise=${optionsNoise} explNoise=${explNoise}`);
+      }
+    }
+  }
+
+  // Apply terminal sanitization to narrative intro
+  const sanitizedIntro = sanitizeMissionDisplayText(narrativeIntro);
+
   const mission_json: MissionContent = {
     title: `Mission: ${safeTopic}`,
-    narrative_intro: narrativeIntro,
+    narrative_intro: sanitizedIntro || narrativeIntro,
     rooms,
     boss,
     learning_contract: input.learning_contract,
@@ -503,16 +520,18 @@ function buildNarrativeIntro(
 
 /**
  * Last-resort sanitization: strip document noise from a built mission item.
+ * Uses both stripDocumentNoise and sanitizeMissionDisplayText for thorough cleaning.
  */
 function sanitizeMissionItem(item: MissionItem): MissionItem {
+  const cleanText = (t: string) => sanitizeMissionDisplayText(stripDocumentNoise(t)) || t;
   return {
     ...item,
-    prompt: stripDocumentNoise(item.prompt),
-    options: (item.options ?? []).map(o => stripDocumentNoise(o)).filter(o => o.length >= 2),
+    prompt: cleanText(item.prompt),
+    options: (item.options ?? []).map(o => cleanText(o)).filter(o => o.length >= 2),
     correct_answer: Array.isArray(item.correct_answer)
-      ? item.correct_answer.map(answer => stripDocumentNoise(answer)).filter(answer => answer.length >= 1)
-      : stripDocumentNoise(item.correct_answer),
-    explanation: item.explanation ? stripDocumentNoise(item.explanation) : item.explanation,
+      ? item.correct_answer.map(answer => cleanText(answer)).filter(answer => answer.length >= 1)
+      : cleanText(item.correct_answer),
+    explanation: item.explanation ? cleanText(item.explanation) : item.explanation,
   };
 }
 

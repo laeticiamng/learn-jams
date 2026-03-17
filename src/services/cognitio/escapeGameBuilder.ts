@@ -30,6 +30,7 @@ import { buildImmersiveEscapeGame } from "./immersiveEscapeEngine";
 import type { ImmersiveEngineOutput } from "./immersiveEscapeEngine";
 import type { NormalizedConcept } from "./conceptNormalizer";
 import type { BlueprintOutput } from "./missionBlueprintEngine";
+import { sanitizeMissionDisplayText, hasEditorialNoise } from "@/lib/cognitio-semantic-cleaning";
 
 // ---------- Types ----------
 
@@ -71,8 +72,11 @@ export function buildEscapeGameSession(input: EscapeGameBuildInput): EscapeGameS
     domain,
   } = input;
 
+  // 0. Sanitize main_topic to prevent editorial noise in narrative
+  const cleanTopic = sanitizeMissionDisplayText(main_topic) || main_topic;
+
   // 1. Get sub-theme for narrative context
-  const subTheme = selectMissionSubTheme(mission_family, main_topic);
+  const subTheme = selectMissionSubTheme(mission_family, cleanTopic);
 
   // 2. Determine room count based on quality
   const roomCount = Math.max(3, blueprint.room_count);
@@ -98,7 +102,7 @@ export function buildEscapeGameSession(input: EscapeGameBuildInput): EscapeGameS
 
   // 5. Generate narrative arc (enriched with immersive universe profiles)
   const narrative = generateNarrativeArc({
-    main_topic,
+    main_topic: cleanTopic,
     mission_family,
     sub_theme: subTheme,
     rooms,
@@ -140,7 +144,8 @@ export function convertMissionToEscapeGame(
   mainTopic: string,
   domain?: string,
 ): EscapeGameSession {
-  const subTheme = selectMissionSubTheme(missionFamily, mainTopic);
+  const cleanMainTopic = sanitizeMissionDisplayText(mainTopic) || mainTopic;
+  const subTheme = selectMissionSubTheme(missionFamily, cleanMainTopic);
 
   // Convert existing rooms to escape rooms
   const escapeRooms: EscapeRoom[] = mission.rooms.map((room, index) =>
@@ -156,7 +161,7 @@ export function convertMissionToEscapeGame(
 
   // Generate narrative (enriched with immersive universe profiles)
   const narrative = generateNarrativeArc({
-    main_topic: mainTopic,
+    main_topic: cleanMainTopic,
     mission_family: missionFamily,
     sub_theme: subTheme,
     rooms: escapeRooms,
@@ -267,15 +272,23 @@ function convertMissionItem(
     DECISION: "decision",
   };
 
+  // Sanitize all display-facing text to prevent editorial noise leaking to UI
+  const sanitizedPrompt = sanitizeMissionDisplayText(item.prompt);
+  const sanitizedOptions = (item.options ?? []).map(o => sanitizeMissionDisplayText(o)).filter(o => o.length >= 2);
+  const sanitizedExplanation = item.explanation ? sanitizeMissionDisplayText(item.explanation) : item.explanation;
+  const sanitizedAnswer = Array.isArray(item.correct_answer)
+    ? item.correct_answer.map(a => sanitizeMissionDisplayText(a)).filter(a => a.length >= 1)
+    : sanitizeMissionDisplayText(item.correct_answer);
+
   return {
     id: item.id,
     puzzle_type: puzzleTypeMap[item.type] ?? "observation",
     brick_type: item.type,
-    prompt: item.prompt,
+    prompt: sanitizedPrompt || item.prompt,
     instructions: buildInstructionsForBrick(item.type),
-    options: item.options,
-    correct_answer: item.correct_answer,
-    explanation: item.explanation,
+    options: sanitizedOptions.length >= 2 ? sanitizedOptions : item.options,
+    correct_answer: (Array.isArray(sanitizedAnswer) ? sanitizedAnswer.length >= 1 : sanitizedAnswer.length >= 1) ? sanitizedAnswer : item.correct_answer,
+    explanation: sanitizedExplanation || item.explanation,
     concept_key: item.concept_key,
     bloom_level: item.bloom_level,
     difficulty: item.difficulty,
@@ -480,18 +493,20 @@ export function buildImmersiveEscapeSession(
   });
 
   // 2. Convert analyzed concepts to normalized concepts for the standard builder
+  // Sanitize labels and definitions to prevent editorial noise
   const normalizedConcepts: NormalizedConcept[] = input.concepts.map(c => ({
-    normalized_label: c.label,
+    normalized_label: sanitizeMissionDisplayText(c.label) || c.label,
     original_label: c.label,
     definition: c.definition,
-    compressed_definition: c.definition.slice(0, 120),
+    compressed_definition: sanitizeMissionDisplayText(c.definition.slice(0, 120)) || c.definition.slice(0, 120),
     concept_type: "principal",
     quality_score: 1,
     rejection: null,
   }));
 
   // 3. Build standard escape game session with domain for narrative enrichment
-  const subTheme = selectMissionSubTheme(input.mission_family, input.main_topic);
+  const cleanImmersiveTopic = sanitizeMissionDisplayText(input.main_topic) || input.main_topic;
+  const subTheme = selectMissionSubTheme(input.mission_family, cleanImmersiveTopic);
   const roomCount = Math.max(3, immersive.session_metadata.total_rooms + 2);
 
   const rooms = generateEscapeRooms({
@@ -503,7 +518,7 @@ export function buildImmersiveEscapeSession(
   });
 
   const narrative = generateNarrativeArc({
-    main_topic: input.main_topic,
+    main_topic: cleanImmersiveTopic,
     mission_family: input.mission_family,
     sub_theme: subTheme,
     rooms,

@@ -326,12 +326,20 @@ const INLINE_NOISE_REPLACEMENTS: { pattern: RegExp; replacement: string }[] = [
   { pattern: /\s*\[\s*\d+(?:\s*,\s*\d+)*\s*\]\s*/g, replacement: " " }, // Reference numbers [1,2,3]
   { pattern: /\s*\(\s*(?:source|réf|ref)\s*[:.]?\s*[^)]{0,30}\)\s*/gi, replacement: " " },
   // P0: Strip inline platform branding
-  { pattern: /\bCODEX\b[.;]?\s*/gi, replacement: " " },
-  { pattern: /\bS[\s-]*ECN(?:\.COM)?\b\s*/gi, replacement: " " },
+  { pattern: /\bCODEX\b[.:;,]?\s*/gi, replacement: " " },
+  { pattern: /\bS[\s-]*ECN(?:\.\s*COM|\.\s*-|\.COM)?\b[.:;,\s-]*/gi, replacement: " " },
+  { pattern: /\bECN\.COM\b[.:;,]?\s*/gi, replacement: " " },
   { pattern: /\bR2C\s+Révision\s+\d[\d\/]*\b\s*/gi, replacement: " " },
+  { pattern: /\bR2C\b[.:;,]?\s*/gi, replacement: " " },
+  { pattern: /\bCOM\s+R2C\b[.:;,]?\s*/gi, replacement: " " },
   { pattern: /\bITEM\s+\d+\s*/gi, replacement: " " },
-  { pattern: /\bMED-LINE\b\s*/gi, replacement: " " },
+  { pattern: /\bMED[\s-]*LINE\b\s*/gi, replacement: " " },
   { pattern: /\biKB\b\s*/gi, replacement: " " },
+  { pattern: /\bPREP['']?ECN\b\s*/gi, replacement: " " },
+  { pattern: /\bELLIPSES\b\s*/gi, replacement: " " },
+  { pattern: /\bVERNAZOBRES[\s-]*GREGO?\b\s*/gi, replacement: " " },
+  { pattern: /\bRévision\s+\d[\d\/]*\b\s*/gi, replacement: " " },
+  { pattern: /\b\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4}\b\s*/g, replacement: " " },
 ];
 
 // ---------- Main Filter ----------
@@ -389,6 +397,26 @@ export function filterEditorialNoise(text: string): EditorialFilterResult {
   }
 
   const cleanedText = cleaned.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+
+  // Safety guard: if cleaning removed >95% of a LARGE document, keep original.
+  // This is a line-level editorial filter — it's expected to remove
+  // large portions of documents that are mostly editorial headers.
+  // Only bail out for large documents where nearly all content was removed.
+  const ratio = cleanedText.length / Math.max(1, rawLength);
+  if (ratio < 0.05 && rawLength > 500) {
+    console.warn("[SAFETY] filterEditorialNoise too aggressive, fallback", {
+      originalLength: rawLength,
+      cleanedLength: cleanedText.length,
+      ratio,
+    });
+    return {
+      cleaned_text: text,
+      raw_text_length: rawLength,
+      cleaned_text_length: text.length,
+      removed_lines_count: 0,
+      removed_patterns: [],
+    };
+  }
 
   return {
     cleaned_text: cleanedText,
