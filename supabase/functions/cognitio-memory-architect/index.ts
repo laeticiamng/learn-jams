@@ -136,7 +136,8 @@ serve(async (req) => {
     });
   } catch (err) {
     console.error("Memory architect error:", err);
-    return new Response(JSON.stringify({ error: err.message }), {
+    const message = err instanceof Error ? err.message : String(err);
+    return new Response(JSON.stringify({ error: message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
@@ -389,13 +390,13 @@ function makeSegment(
 
 async function logOps(supabase: any, eventType: string, severity: string, documentId: string, userId: string, payload: any) {
   try {
-    await supabase.from("ops_events").insert({
+    await supabase.from("ops_events").insert([{
       event_type: eventType,
       severity,
       document_id: documentId,
       user_id: userId,
       payload_json: payload,
-    });
+    }]);
   } catch (e) {
     console.error("Ops log failed:", e);
   }

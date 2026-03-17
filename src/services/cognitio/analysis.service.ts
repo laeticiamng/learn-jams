@@ -1684,14 +1684,14 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
     confidence,
     prerequis: [],
     structure_type: structureType as any,
-    source_issues: [
+    source_issues: ([
       { code: "FALLBACK_ANALYSIS", message: "Analyse locale heuristique (LLM non disponible)", severity: "warning" },
       ...(_dbg_fallback_level === "emergency" ? [{ code: "EMERGENCY_EXTRACTION" as const, message: `Extraction de secours utilisée — ${Object.entries(rejectReasons).map(([r, c]) => `${r}:${c}`).join(", ")}`, severity: "warning" as const }] : []),
-      ...(_dbg_fallback_level === "heuristic_secours" ? [{ code: "HEURISTIC_LAST_RESORT" as const, message: `Mode secours heuristique activé — toutes les méthodes standard ont échoué sur ${clean_text.length} caractères`, severity: "error" as const }] : []),
-      ...(_dbg_fallback_level === "absolute_last_resort" ? [{ code: "ABSOLUTE_LAST_RESORT" as const, message: `Mode secours absolu activé — extraction brute sans scoring sur ${clean_text.length} caractères. Vérifier la qualité des concepts.`, severity: "error" as const }] : []),
+      ...(_dbg_fallback_level === "heuristic_secours" ? [{ code: "HEURISTIC_LAST_RESORT" as const, message: `Mode secours heuristique activé — toutes les méthodes standard ont échoué sur ${clean_text.length} caractères`, severity: "blocking" as const }] : []),
+      ...(_dbg_fallback_level === "absolute_last_resort" ? [{ code: "ABSOLUTE_LAST_RESORT" as const, message: `Mode secours absolu activé — extraction brute sans scoring sur ${clean_text.length} caractères. Vérifier la qualité des concepts.`, severity: "blocking" as const }] : []),
       ...(concepts.length === 0 && clean_text.length > 50 ? [{ code: "ALL_CONCEPTS_REJECTED" as const, message: `Le moteur d'extraction a épuisé toutes ses méthodes automatiques (front matter, quarantaine seg0, second pass corps, recalcul domaine, fallback compréhension). Diagnostic : front_matter=${segment0Quarantined}, body_pass=${_dbg_body_only_second_pass_triggered}, llm_fallback=${_diag_llm_fallback_triggered}, body_concepts=${_dbg_body_only_second_pass_concepts_count}.`, severity: "blocking" as const }] : []),
       ...(concepts.length === 1 && concepts[0]?.uncertain ? [{ code: "SINGLE_UNCERTAIN_CONCEPT" as const, message: `Un seul concept incertain détecté — qualité insuffisante pour une fiche standard.`, severity: "warning" as const }] : []),
-    ],
+    ] satisfies SourceIssue[]),
     total_concepts: concepts.length,
     critical_count: concepts.filter((c) => c.criticality === 1).length,
     estimated_complexity: estimatedComplexity,

@@ -619,8 +619,8 @@ export function getRoomAtmosphere(
   profile: PremiumUniverseProfile,
   roomType: string,
 ): RoomAtmosphere {
-  const atmos = profile.room_atmospheres as Record<string, RoomAtmosphere>;
-  return atmos[roomType] ?? profile.room_atmospheres.exploration;
+  const atmos = profile.room_atmospheres;
+  return atmos[roomType as keyof RoomAtmosphereSet] ?? atmos.exploration;
 }
 
 export function pickSensoryDetail(profile: PremiumUniverseProfile): string {

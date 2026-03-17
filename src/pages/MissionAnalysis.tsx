@@ -204,10 +204,11 @@ export default function MissionAnalysis() {
               .single();
 
             if (decision) {
+              const chosenFormat = decision.chosen_format as unknown as ChosenFormat;
               const m4: M4_Output = {
                 decision_id: decision.id,
                 architecture_id: decision.architecture_id ?? '',
-                chosen_format: decision.chosen_format as unknown as ChosenFormat,
+                chosen_format: chosenFormat,
                 justification: decision.justification ?? '',
                 matrix_reasoning: decision.matrix_reasoning ?? '',
                 estimated_duration_sec: decision.estimated_duration_sec ?? 0,
@@ -216,7 +217,17 @@ export default function MissionAnalysis() {
                 modules: decision.modules_json as unknown as FormatDecisionModule[] | undefined,
                 overrides_applied: decision.overrides_applied_json as unknown as FormatOverride[],
                 cost_level: decision.cost_level as unknown as CostLevel,
-                decision_trace: decision.decision_trace_json as unknown as M4_Output["decision_trace"],
+                system_recommended_format: chosenFormat,
+                fallback_candidates: [],
+                override_requires_confirmation: false,
+                decision_trace: (decision.decision_trace_json as unknown as M4_Output["decision_trace"]) ?? {
+                  reasoning_type: "declaratif",
+                  objective: "discovery",
+                  matrix_result: chosenFormat,
+                  overrides_checked: [],
+                  final_format: chosenFormat,
+                  user_intent_respected: true,
+                },
               };
               setM4Output(m4);
             }

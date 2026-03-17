@@ -8,7 +8,7 @@
 import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { Text, MeshReflectorMaterial, Float } from "@react-three/drei";
-import type { Group } from "three";
+import type { Group, Mesh } from "three";
 import type {
   RoomTemplate,
   LightingConfig,
@@ -199,7 +199,7 @@ function PedagogicalObject3DSlot({
   isLite,
   onClick,
 }: PedagogicalObject3DSlotProps) {
-  const meshRef = useRef<THREE.Mesh>(null);
+  const meshRef = useRef<Mesh>(null);
   const isInteractable = object.state === "available" || object.state === "discovered";
 
   // Subtle hover animation

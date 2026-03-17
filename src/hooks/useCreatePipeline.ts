@@ -786,7 +786,7 @@ export function useCreatePipeline() {
             metrics.record("m5.generation_started", 1, { format: "music" });
 
             // Build lyrics from course content using LLM
-            const lang = currentProfile?.language ?? "fr";
+            const lang = currentProfile?.language_preference ?? "fr";
             const modules = buildPromptModules(lang, null);
             const systemPrompt = assembleSystemPrompt(modules);
             const userPrompt = buildUserPrompt({

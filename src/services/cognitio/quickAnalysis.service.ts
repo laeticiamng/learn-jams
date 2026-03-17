@@ -65,8 +65,9 @@ export function runQuickAnalysis(
   // 2. Chapter detection
   const chapters = reconstructChapterHierarchy(segments.map(s => ({
     title: s.title,
+    content: s.content,
     hierarchy_level: s.hierarchy_level,
-  })));
+  }))).map(chapter => chapter.title);
 
   // 3. Quick concept extraction via heuristics
   const concepts = extractQuickConcepts(cleanText, segments);
@@ -117,7 +118,7 @@ function extractQuickConcepts(text: string, segments: SegmentOutput[]): QuickCon
   for (const seg of segments) {
     if (seg.title && seg.hierarchy_level >= 2) {
       const label = normalizeConceptLabel(seg.title);
-      if (label.length >= 3 && label.length <= 60) {
+      if (label && label.length >= 3 && label.length <= 60) {
         candidates.add(label);
       }
     }
@@ -128,7 +129,7 @@ function extractQuickConcepts(text: string, segments: SegmentOutput[]): QuickCon
   let match;
   while ((match = boldPattern.exec(text)) !== null) {
     const label = normalizeConceptLabel(match[1]);
-    if (label.length >= 3 && label.length <= 60) {
+    if (label && label.length >= 3 && label.length <= 60) {
       candidates.add(label);
     }
   }
@@ -137,7 +138,7 @@ function extractQuickConcepts(text: string, segments: SegmentOutput[]): QuickCon
   const capitalPattern = /\b([A-Z][a-zéèêëàâîïôûùç]+(?:\s+[A-Z][a-zéèêëàâîïôûùç]+)+)\b/g;
   while ((match = capitalPattern.exec(text)) !== null) {
     const label = normalizeConceptLabel(match[1]);
-    if (label.length >= 5 && label.length <= 60) {
+    if (label && label.length >= 5 && label.length <= 60) {
       candidates.add(label);
     }
   }
