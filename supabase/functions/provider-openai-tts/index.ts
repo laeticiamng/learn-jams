@@ -52,7 +52,7 @@ serve(async (req) => {
     }
 
     const audioBuffer = await response.arrayBuffer();
-    const audioBase64 = base64Encode(new Uint8Array(audioBuffer));
+    const audioBase64 = base64Encode(audioBuffer);
 
     return new Response(JSON.stringify({
       audio_base64: audioBase64,
