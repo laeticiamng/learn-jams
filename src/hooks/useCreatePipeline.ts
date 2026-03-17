@@ -1164,7 +1164,7 @@ export function useCreatePipeline() {
 
   // Aggregate all steps for the progress display
   // Prefix step names with phase to avoid duplicate React keys (e.g. multiple "saving")
-  const prefixSteps = (steps: typeof ingestion.steps, prefix: string) =>
+  const prefixSteps = (steps: Array<{ name: string; label: string; status: string; message?: string; progress?: number }>, prefix: string) =>
     steps.map((s) => ({ ...s, name: `${prefix}_${s.name}` }));
 
   const allSteps = [
