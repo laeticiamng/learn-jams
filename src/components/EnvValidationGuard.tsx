@@ -97,13 +97,18 @@ const codeStyle: React.CSSProperties = {
 };
 
 export function EnvValidationGuard({ children }: Props) {
-  const validation = useMemo<EnvValidationResult>(() => validateClientEnv(), []);
+  const status = useMemo(() => getSupabaseConfigStatus(), []);
 
-  if (!validation.valid) {
+  if (!status.configured) {
+    const missing: string[] = [];
+    if (!status.hasUrl) missing.push("VITE_SUPABASE_URL");
+    if (!status.hasKey) missing.push("VITE_SUPABASE_PUBLISHABLE_KEY");
+    const warnings: string[] = [];
+    if (status.hasUrl && !status.urlValid) warnings.push(status.diagnosticMessage);
+
     return (
       <div style={containerStyle}>
         <div style={cardStyle}>
-          {/* Header */}
           <div style={headerStyle}>
             <div style={iconStyle}>&#9888;&#65039;</div>
             <h1 style={titleStyle}>Configuration Error</h1>
@@ -112,24 +117,24 @@ export function EnvValidationGuard({ children }: Props) {
             </p>
           </div>
 
-          {/* Missing variables */}
-          <div style={boxStyle("#7f1d1d80")}>
-            <h2 style={labelStyle("#fca5a5")}>Missing variables:</h2>
-            <ul style={listStyle}>
-              {validation.missing.map((key) => (
-                <li key={key} style={listItemStyle("#f87171")}>
-                  &bull; {key}
-                </li>
-              ))}
-            </ul>
-          </div>
+          {missing.length > 0 && (
+            <div style={boxStyle("#7f1d1d80")}>
+              <h2 style={labelStyle("#fca5a5")}>Missing variables:</h2>
+              <ul style={listStyle}>
+                {missing.map((key: string) => (
+                  <li key={key} style={listItemStyle("#f87171")}>
+                    &bull; {key}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
-          {/* Warnings */}
-          {validation.warnings.length > 0 && (
+          {warnings.length > 0 && (
             <div style={boxStyle("#78350f80")}>
               <h2 style={labelStyle("#fcd34d")}>Warnings:</h2>
               <ul style={listStyle}>
-                {validation.warnings.map((w) => (
+                {warnings.map((w: string) => (
                   <li key={w} style={listItemStyle("#fbbf24")}>
                     &bull; {w}
                   </li>
@@ -138,7 +143,6 @@ export function EnvValidationGuard({ children }: Props) {
             </div>
           )}
 
-          {/* How to fix — Lovable */}
           <div style={boxStyle("#6d28d980")}>
             <h2 style={labelStyle("#c4b5fd")}>Fix on Lovable:</h2>
             <ol style={stepsStyle}>
@@ -155,7 +159,6 @@ export function EnvValidationGuard({ children }: Props) {
             </ol>
           </div>
 
-          {/* How to fix — Local */}
           <div style={boxStyle("#374151")}>
             <h2 style={labelStyle("#d1d5db")}>Fix locally:</h2>
             <ol style={stepsStyle}>
