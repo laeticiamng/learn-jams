@@ -1,10 +1,11 @@
 // ============================================================
 // ImmersiveMissionScene — Top-level scene component that
 // renders the complete escape game experience with rooms,
-// objects, HUD, narrative overlay, and adaptive rendering.
+// objects, HUD, narrative overlay, adaptive rendering,
+// cinematic camera transitions, and dynamic skybox.
 // ============================================================
 
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type {
   ImmersiveGameConfig,
@@ -46,6 +47,8 @@ export default function ImmersiveMissionScene({
   const [selectedObjectId, setSelectedObjectId] = useState<string | null>(null);
   const [showMap, setShowMap] = useState(false);
   const [showNarrative, setShowNarrative] = useState(!!narrativeMessage);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const prevRoomRef = useRef(currentRoomIndex);
 
   // Get cluster IDs for room mapping
   const clusterIds = useMemo(() =>
@@ -86,6 +89,18 @@ export default function ImmersiveMissionScene({
   ).length;
 
   // Show narrative on change
+  // Cinematic room transition
+  useEffect(() => {
+    if (currentRoomIndex !== prevRoomRef.current) {
+      setIsTransitioning(true);
+      const timer = setTimeout(() => {
+        setIsTransitioning(false);
+        prevRoomRef.current = currentRoomIndex;
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [currentRoomIndex]);
+
   useEffect(() => {
     if (narrativeMessage) setShowNarrative(true);
   }, [narrativeMessage]);
@@ -100,6 +115,9 @@ export default function ImmersiveMissionScene({
     }
   }, [selectedObjectId, onObjectInteract]);
 
+  // Dynamic progression tint (gets brighter as rooms are completed)
+  const progressionOpacity = completedRooms.length / Math.max(totalRooms, 1);
+
   return (
     <div className="relative w-full h-full min-h-[500px]">
       {/* HUD */}
@@ -113,6 +131,38 @@ export default function ImmersiveMissionScene({
         completedRooms={completedRooms.length}
         onToggleMap={() => setShowMap(!showMap)}
         renderMode={renderMode}
+      />
+
+      {/* Cinematic transition overlay */}
+      <AnimatePresence>
+        {isTransitioning && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
+            className="absolute inset-0 z-20 bg-background/80 backdrop-blur-md flex items-center justify-center"
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 1.2, opacity: 0 }}
+              transition={{ duration: 0.5 }}
+              className="text-center space-y-2"
+            >
+              <p className="text-xs text-primary font-semibold uppercase tracking-widest">Salle {currentRoomIndex + 1}</p>
+              <div className="w-12 h-0.5 bg-primary/40 mx-auto rounded-full" />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Progression glow overlay */}
+      <div
+        className="absolute inset-0 pointer-events-none z-10 transition-opacity duration-1000"
+        style={{
+          background: `radial-gradient(ellipse at center bottom, hsl(var(--primary) / ${progressionOpacity * 0.06}), transparent 70%)`,
+        }}
       />
 
       {/* Main 3D/2D scene area */}

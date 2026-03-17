@@ -1,8 +1,7 @@
 // ============================================================
 // ConceptNode3D — 3D representation of a concept node in the
-// dependency graph. Supports inspect, hover, and connection
-// visualization. Each node's appearance reflects its role
-// and mastery level.
+// dependency graph. Enhanced with Fresnel glow shader, orbital
+// particles, animated connections, and reveal burst effects.
 // ============================================================
 
 import { useRef, useState, useMemo } from "react";
@@ -15,6 +14,7 @@ import type {
   DependencyEdge,
   MasteryLevel,
 } from "@/domain/cognitio/immersiveEngine.types";
+import { FresnelMesh, OrbitalParticles, RevealBurst } from "./ShaderEffects";
 
 interface ConceptNode3DProps {
   node: DependencyNode;
@@ -73,6 +73,8 @@ export default function ConceptNode3D({
   const meshRef = useRef<Mesh>(null);
   const orbitalRef = useRef<Mesh>(null);
   const [hovered, setHovered] = useState(false);
+  const [justRevealed, setJustRevealed] = useState(false);
+
 
   const color = ROLE_COLORS[node.role] ?? "#6b7280";
   const accent = ROLE_ACCENT[node.role] ?? "#9ca3af";
@@ -127,46 +129,92 @@ export default function ConceptNode3D({
         </mesh>
       )}
 
-      {/* Main node mesh */}
-      <mesh
-        ref={meshRef}
-        onClick={(e) => {
-          e.stopPropagation();
-          onClick(node.id);
-        }}
-        onPointerEnter={(e) => {
-          e.stopPropagation();
-          setHovered(true);
-          onHover(node.id);
-          document.body.style.cursor = "pointer";
-        }}
-        onPointerLeave={() => {
-          setHovered(false);
-          onHover(null);
-          document.body.style.cursor = "auto";
-        }}
-        castShadow
-      >
-        {node.is_gate ? (
-          <octahedronGeometry args={[0.5, renderQuality === "low" ? 0 : 1]} />
-        ) : node.is_synthesis_target ? (
-          <icosahedronGeometry args={[0.5, renderQuality === "low" ? 0 : 1]} />
-        ) : (
-          <sphereGeometry args={[0.4, segments, segments]} />
-        )}
-        <meshStandardMaterial
-          color={color}
-          emissive={color}
-          emissiveIntensity={emissiveIntensity}
-          metalness={0.5}
-          roughness={0.2}
-          transparent={opacity < 1}
-          opacity={opacity}
-        />
-      </mesh>
+      {/* Main node mesh — Fresnel glow for high quality, standard for low */}
+      {isHighQuality ? (
+        <group
+          ref={meshRef as any}
+          onClick={(e: any) => {
+            e.stopPropagation();
+            onClick(node.id);
+          }}
+          onPointerEnter={(e: any) => {
+            e.stopPropagation();
+            setHovered(true);
+            onHover(node.id);
+            document.body.style.cursor = "pointer";
+          }}
+          onPointerLeave={() => {
+            setHovered(false);
+            onHover(null);
+            document.body.style.cursor = "auto";
+          }}
+        >
+          <FresnelMesh
+            color={color}
+            glowColor={accent}
+            fresnelPower={node.is_gate ? 1.5 : 2.5}
+            glowIntensity={emissiveIntensity + 0.3}
+            opacity={opacity}
+            pulse={isSelected || hovered ? 1 : 0}
+          >
+            {node.is_gate ? (
+              <octahedronGeometry args={[0.5, 1]} />
+            ) : node.is_synthesis_target ? (
+              <icosahedronGeometry args={[0.5, 1]} />
+            ) : (
+              <sphereGeometry args={[0.4, segments, segments]} />
+            )}
+          </FresnelMesh>
+        </group>
+      ) : (
+        <mesh
+          ref={meshRef}
+          onClick={(e) => {
+            e.stopPropagation();
+            onClick(node.id);
+          }}
+          onPointerEnter={(e) => {
+            e.stopPropagation();
+            setHovered(true);
+            onHover(node.id);
+            document.body.style.cursor = "pointer";
+          }}
+          onPointerLeave={() => {
+            setHovered(false);
+            onHover(null);
+            document.body.style.cursor = "auto";
+          }}
+          castShadow
+        >
+          {node.is_gate ? (
+            <octahedronGeometry args={[0.5, 0]} />
+          ) : node.is_synthesis_target ? (
+            <icosahedronGeometry args={[0.5, 0]} />
+          ) : (
+            <sphereGeometry args={[0.4, segments, segments]} />
+          )}
+          <meshStandardMaterial
+            color={color}
+            emissive={color}
+            emissiveIntensity={emissiveIntensity}
+            metalness={0.5}
+            roughness={0.2}
+            transparent={opacity < 1}
+            opacity={opacity}
+          />
+        </mesh>
+      )}
 
-      {/* Orbital ring — visible on interaction/gates */}
-      {showOrbital && (
+      {/* Orbital particles — replace static torus rings */}
+      {showOrbital && isHighQuality && (
+        <OrbitalParticles
+          count={node.is_gate ? 16 : 10}
+          radius={scale * 0.9}
+          color={accent}
+          speed={isSelected ? 1.5 : 0.8}
+        />
+      )}
+      {showOrbital && !isHighQuality && (
         <mesh ref={orbitalRef}>
           <torusGeometry args={[scale * 0.9, 0.015, 8, 48]} />
           <meshStandardMaterial
@@ -181,18 +229,23 @@ export default function ConceptNode3D({
         </mesh>
       )}
 
-      {/* Second orbital (selected nodes only) */}
+      {/* Second orbital layer (selected, high quality) */}
       {isSelected && isHighQuality && (
-        <mesh rotation={[Math.PI / 3, Math.PI / 4, 0]}>
-          <torusGeometry args={[scale * 1.1, 0.01, 8, 48]} />
-          <meshBasicMaterial
-            color={accent}
-            transparent
-            opacity={0.2}
-            depthWrite={false}
-          />
-        </mesh>
+        <OrbitalParticles
+          count={8}
+          radius={scale * 1.1}
+          color={color}
+          speed={0.5}
+        />
       )}
+
+      {/* Reveal burst effect when node becomes available */}
+      <RevealBurst
+        position={[0, 0, 0]}
+        color={accent}
+        active={justRevealed}
+        particleCount={24}
+      />
 
       {/* Mastery ring — enhanced with gradient effect */}
       {mastery !== "unknown" && (

@@ -1,15 +1,16 @@
+import { forwardRef } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Brain } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
-export default function Footer() {
+const Footer = forwardRef<HTMLElement>((_props, ref) => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const year = new Date().getFullYear();
 
   return (
-    <footer className="border-t border-border/15 py-10 sm:py-14 px-4 relative pb-[calc(2.5rem+env(safe-area-inset-bottom,0px))] md:pb-14">
+    <footer ref={ref} className="border-t border-border/15 py-10 sm:py-14 px-4 relative pb-[calc(2.5rem+env(safe-area-inset-bottom,0px))] md:pb-14">
       <div className="container mx-auto">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 sm:gap-10 mb-10">
           <div className="col-span-2 md:col-span-1">
@@ -67,4 +68,7 @@ export default function Footer() {
       </div>
     </footer>
   );
-}
+});
+
+Footer.displayName = "Footer";
+export default Footer;

@@ -2,15 +2,26 @@
 // Adaptive3DScene — Root 3D scene wrapper that adapts to
 // device performance. Lazy-loads Three.js, provides fallback
 // for non-WebGL devices, and manages render quality.
+// Includes post-processing for full_3d mode.
 // ============================================================
 
-import { Suspense, lazy, useMemo, useState, useEffect, useCallback } from "react";
+import { Suspense, lazy, useState, useEffect, useCallback } from "react";
 import type { PerformanceProfile, RenderMode } from "@/domain/cognitio/immersiveEngine.types";
-import { detectPerformanceProfile, shouldDowngrade } from "@/services/cognitio/scenePerformanceResolver";
+import { detectPerformanceProfile, canUsePostProcessing } from "@/services/cognitio/scenePerformanceResolver";
 
 // Lazy-load the Canvas to avoid bundling Three.js for 2D fallback
 const ThreeCanvas = lazy(() =>
   import("@react-three/fiber").then(mod => ({ default: mod.Canvas }))
+);
+
+// Lazy-load post-processing
+const PostProcessingEffects = lazy(() =>
+  import("./PostProcessingEffects").then(mod => ({ default: mod.PostProcessingEffects }))
+);
+
+// Lazy-load Environment from drei
+const EnvironmentMap = lazy(() =>
+  import("@react-three/drei").then(mod => ({ default: mod.Environment }))
 );
 
 interface Adaptive3DSceneProps {
@@ -59,6 +70,8 @@ export default function Adaptive3DScene({
       : Math.min(profile.device_pixel_ratio, 1.5)
     : 1;
 
+  const usePostProcessing = profile ? canUsePostProcessing(profile) : false;
+
   return (
     <div className={className}>
       <Suspense
@@ -79,6 +92,8 @@ export default function Adaptive3DScene({
               antialias: renderMode === "full_3d",
               alpha: true,
               powerPreference: renderMode === "full_3d" ? "high-performance" : "low-power",
+              toneMapping: 4, // ACESFilmicToneMapping
+              toneMappingExposure: 1.2,
             }}
             camera={{ position: [0, 5, 10], fov: 60 }}
             style={{ width: "100%", height: "100%" }}
@@ -86,7 +101,21 @@ export default function Adaptive3DScene({
               gl.setClearColor(0x000000, 0);
             }}
           >
+            {/* Environment map for realistic reflections (full_3d only) */}
+            {renderMode === "full_3d" && (
+              <Suspense fallback={null}>
+                <EnvironmentMap preset="night" background={false} />
+              </Suspense>
+            )}
+
             {children}
+
+            {/* Post-processing effects (full_3d + capable GPU only) */}
+            {usePostProcessing && (
+              <Suspense fallback={null}>
+                <PostProcessingEffects />
+              </Suspense>
+            )}
           </ThreeCanvas>
         </ErrorBoundary3D>
       </Suspense>

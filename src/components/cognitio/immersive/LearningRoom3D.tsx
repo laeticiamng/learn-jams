@@ -3,6 +3,8 @@
 // Contains floor, walls, ambient lighting, fog, and slots
 // for pedagogical objects. Room appearance adapts to the
 // universe theme and room purpose.
+// Enhanced with holographic grid, scan-line walls, firefly
+// particles, and portal effects.
 // ============================================================
 
 import { useMemo, useRef } from "react";
@@ -17,6 +19,7 @@ import type {
   PedagogicalObject,
   RenderMode,
 } from "@/domain/cognitio/immersiveEngine.types";
+import { HolographicGrid, ScanLineWall, PortalEffect, FireflyParticles } from "./ShaderEffects";
 
 interface LearningRoom3DProps {
   roomIndex: number;
@@ -102,11 +105,29 @@ export default function LearningRoom3D({
         )}
       </mesh>
 
-      {/* Floor grid overlay */}
-      {!isLite && <RoomFloorGrid width={dimensions.w} depth={dimensions.d} color={colorPrimary} />}
+      {/* Holographic floor grid overlay (replaces basic line grid) */}
+      {!isLite && (
+        <HolographicGrid
+          width={dimensions.w}
+          depth={dimensions.d}
+          color={colorPrimary}
+          accentColor={colorAccent}
+          opacity={isCurrent ? 0.2 : 0.1}
+          gridSize={1.5}
+        />
+      )}
 
-      {/* Walls with premium finish */}
-      <RoomWalls dimensions={dimensions} opacity={opacity} isLite={isLite} isCompleted={isCompleted} />
+      {/* Walls with scan-line effect (full_3d) or standard (lite) */}
+      {isLite ? (
+        <RoomWalls dimensions={dimensions} opacity={opacity} isLite={isLite} isCompleted={isCompleted} />
+      ) : (
+        <ScanLineRoomWalls
+          dimensions={dimensions}
+          opacity={opacity}
+          isCompleted={isCompleted}
+          scanColor={colorPrimary}
+        />
+      )}
 
       {/* Neon edge trims along wall bases */}
       {!isLite && !isLocked && (
@@ -174,9 +195,24 @@ export default function LearningRoom3D({
         </>
       )}
 
-      {/* Floating dust particles */}
+      {/* Enhanced firefly particles (replaces basic dust) */}
       {!isLite && !isLocked && (
-        <RoomDustParticles dimensions={dimensions} color={colorAccent} />
+        <FireflyParticles
+          count={isCurrent ? 80 : 30}
+          bounds={dimensions}
+          color={colorAccent}
+          speed={isCurrent ? 1.2 : 0.6}
+        />
+      )}
+
+      {/* Portal effect at room entrance */}
+      {!isLite && isCurrent && (
+        <PortalEffect
+          position={[0, dimensions.h / 2, dimensions.d / 2 - 0.5]}
+          color={colorPrimary}
+          radius={Math.min(dimensions.w, dimensions.h) * 0.25}
+          active={true}
+        />
       )}
 
       {/* Current room indicator — pulsing ring with glow */}
@@ -297,7 +333,50 @@ function RoomWalls({
   );
 }
 
-// ---------- Neon Edge Trims ----------
+// ---------- Scan-Line Enhanced Walls ----------
+
+function ScanLineRoomWalls({
+  dimensions,
+  opacity,
+  isCompleted,
+  scanColor,
+}: {
+  dimensions: { w: number; h: number; d: number };
+  opacity: number;
+  isCompleted: boolean;
+  scanColor: string;
+}) {
+  const wallColor = isCompleted ? "#1a2e24" : "#16213e";
+  return (
+    <>
+      <ScanLineWall
+        position={[0, dimensions.h / 2, -dimensions.d / 2]}
+        args={[dimensions.w, dimensions.h, 0.2]}
+        wallColor={wallColor}
+        scanColor={scanColor}
+        opacity={opacity * 0.85}
+      />
+      <ScanLineWall
+        position={[-dimensions.w / 2, dimensions.h / 2, 0]}
+        rotation={[0, Math.PI / 2, 0]}
+        args={[dimensions.d, dimensions.h, 0.2]}
+        wallColor={wallColor}
+        scanColor={scanColor}
+        opacity={opacity * 0.8}
+      />
+      <ScanLineWall
+        position={[dimensions.w / 2, dimensions.h / 2, 0]}
+        rotation={[0, -Math.PI / 2, 0]}
+        args={[dimensions.d, dimensions.h, 0.2]}
+        wallColor={wallColor}
+        scanColor={scanColor}
+        opacity={opacity * 0.8}
+      />
+    </>
+  );
+}
+
+
 
 function NeonEdgeTrims({
   dimensions,
