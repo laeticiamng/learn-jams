@@ -31,7 +31,7 @@ export function useLearnerProfile() {
 
   const refresh = useCallback(async () => {
     await Promise.all([memory.refresh(), refreshFormats()]);
-  }, [memory.refresh, refreshFormats]);
+  }, [memory, refreshFormats]);
 
   return {
     ...memory,

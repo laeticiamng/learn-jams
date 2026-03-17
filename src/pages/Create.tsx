@@ -129,7 +129,7 @@ export default function Create() {
       } as any,
       selectedFormat,
     );
-  }, [sourceData, selectedFormat, objective, educationStage, explanationStyle, pipeline, quotaGuard]);
+  }, [sourceData, selectedFormat, objective, educationStage, explanationStyle, pipeline, quotaGuard, musicStyle]);
 
   const { phase, ingestion, analysis, memory, format, generation, storyGeneration, missionResult, musicResult, videoResult, qa } = pipeline;
 

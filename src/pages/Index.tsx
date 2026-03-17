@@ -109,7 +109,7 @@ export default function Index() {
 
   useEffect(() => {
     track({ event_name: "landing_viewed" });
-  }, []);
+  }, [track]);
 
   return (
     <div className="min-h-screen bg-background overflow-hidden">

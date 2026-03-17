@@ -98,6 +98,29 @@ export function useEscapeAudio(enabled = true) {
 
   // ---------- Ambient ----------
 
+  const stopAmbient = useCallback(() => {
+    const nodes = ambientNodesRef.current;
+    if (!nodes) return;
+
+    const ctx = audioCtxRef.current;
+    if (ctx) {
+      nodes.gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 1);
+      setTimeout(() => {
+        try {
+          nodes.osc.stop();
+          nodes.lfo.stop();
+        } catch { /* already stopped */ }
+      }, 1200);
+    } else {
+      try {
+        nodes.osc.stop();
+        nodes.lfo.stop();
+      } catch { /* already stopped */ }
+    }
+    ambientNodesRef.current = null;
+    setCurrentPreset(null);
+  }, []);
+
   const startAmbient = useCallback((preset: AmbientPreset) => {
     const ctx = getAudioContext();
     if (!ctx) return;
@@ -144,30 +167,7 @@ export function useEscapeAudio(enabled = true) {
 
     ambientNodesRef.current = { osc, gain, lfo, lfoGain };
     setCurrentPreset(preset);
-  }, [getAudioContext]);
-
-  const stopAmbient = useCallback(() => {
-    const nodes = ambientNodesRef.current;
-    if (!nodes) return;
-
-    const ctx = audioCtxRef.current;
-    if (ctx) {
-      nodes.gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 1);
-      setTimeout(() => {
-        try {
-          nodes.osc.stop();
-          nodes.lfo.stop();
-        } catch { /* already stopped */ }
-      }, 1200);
-    } else {
-      try {
-        nodes.osc.stop();
-        nodes.lfo.stop();
-      } catch { /* already stopped */ }
-    }
-    ambientNodesRef.current = null;
-    setCurrentPreset(null);
-  }, []);
+  }, [getAudioContext, stopAmbient]);
 
   const crossfadeAmbient = useCallback((preset: AmbientPreset) => {
     if (currentPreset === preset) return;

@@ -520,7 +520,7 @@ async function extractFileFromZip(data: Uint8Array, targetName: string): Promise
           let totalLen = 0;
 
           // Read all chunks synchronously via async iteration
-          // eslint-disable-next-line no-constant-condition
+           
           while (true) {
             const { done, value } = await reader.read();
             if (done) break;

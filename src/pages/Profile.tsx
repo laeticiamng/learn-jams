@@ -62,7 +62,7 @@ export default function Profile() {
   const progressSnapshots = useProgressSnapshots();
   const { track } = useProductTracking();
 
-  useEffect(() => { track({ event_name: "profile_viewed" }); }, []);
+  useEffect(() => { track({ event_name: "profile_viewed" }); }, [track]);
 
   useEffect(() => {
     if (!user) return;
