@@ -430,13 +430,13 @@ export function PortalEffect({
     <group position={position}>
       {/* Outer energy ring */}
       <mesh ref={ringRef}>
-        <torusGeometry args={[radius, 0.04, 16, 64]} />
+        <torusGeometry args={[radius, 0.06, 16, 64]} />
         <meshStandardMaterial
           color={color}
           emissive={color}
-          emissiveIntensity={1.5}
+          emissiveIntensity={2.5}
           transparent
-          opacity={0.6}
+          opacity={0.8}
           metalness={0.8}
           roughness={0.1}
         />
@@ -454,7 +454,7 @@ export function PortalEffect({
         />
       </mesh>
       {/* Portal point light */}
-      <pointLight color={color} intensity={0.5} distance={radius * 3} decay={2} />
+      <pointLight color={color} intensity={1.2} distance={radius * 4} decay={2} />
     </group>
   );
 }
@@ -521,10 +521,10 @@ export function FireflyParticles({
         <bufferAttribute attach="attributes-position" count={count} array={positions} itemSize={3} />
       </bufferGeometry>
       <pointsMaterial
-        size={0.06}
+        size={0.1}
         color={color}
         transparent
-        opacity={0.7}
+        opacity={0.8}
         sizeAttenuation
         depthWrite={false}
         blending={THREE.AdditiveBlending}

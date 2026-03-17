@@ -35,7 +35,7 @@ export default function MissionProgressHUD({
 
   return (
     <div className="absolute top-0 left-0 right-0 z-20 pointer-events-none">
-      <div className="max-w-5xl mx-auto px-4 py-2 flex items-center gap-3 pointer-events-auto">
+      <div className="max-w-5xl mx-auto px-4 py-2 flex items-center gap-3 pointer-events-auto bg-background/40 backdrop-blur-md border-b border-border/10 rounded-b-xl mx-2 mt-1">
         {/* Room indicator */}
         <div className="flex items-center gap-1.5">
           <span className="text-[10px] text-muted-foreground">Salle</span>

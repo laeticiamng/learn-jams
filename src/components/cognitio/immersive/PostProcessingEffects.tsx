@@ -11,18 +11,18 @@ export function PostProcessingEffects() {
   return (
     <EffectComposer multisampling={4}>
       <Bloom
-        intensity={0.4}
-        luminanceThreshold={0.6}
-        luminanceSmoothing={0.9}
+        intensity={0.8}
+        luminanceThreshold={0.3}
+        luminanceSmoothing={0.7}
         mipmapBlur
       />
       <Vignette
-        offset={0.3}
-        darkness={0.6}
+        offset={0.25}
+        darkness={0.5}
         blendFunction={BlendFunction.NORMAL}
       />
       <ChromaticAberration
-        offset={new THREE.Vector2(0.0005, 0.0005)}
+        offset={new THREE.Vector2(0.0003, 0.0003)}
         blendFunction={BlendFunction.NORMAL}
         radialModulation={true}
         modulationOffset={0.5}
