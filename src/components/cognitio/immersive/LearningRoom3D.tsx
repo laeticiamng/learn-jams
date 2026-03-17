@@ -105,11 +105,29 @@ export default function LearningRoom3D({
         )}
       </mesh>
 
-      {/* Floor grid overlay */}
-      {!isLite && <RoomFloorGrid width={dimensions.w} depth={dimensions.d} color={colorPrimary} />}
+      {/* Holographic floor grid overlay (replaces basic line grid) */}
+      {!isLite && (
+        <HolographicGrid
+          width={dimensions.w}
+          depth={dimensions.d}
+          color={colorPrimary}
+          accentColor={colorAccent}
+          opacity={isCurrent ? 0.2 : 0.1}
+          gridSize={1.5}
+        />
+      )}
 
-      {/* Walls with premium finish */}
-      <RoomWalls dimensions={dimensions} opacity={opacity} isLite={isLite} isCompleted={isCompleted} />
+      {/* Walls with scan-line effect (full_3d) or standard (lite) */}
+      {isLite ? (
+        <RoomWalls dimensions={dimensions} opacity={opacity} isLite={isLite} isCompleted={isCompleted} />
+      ) : (
+        <ScanLineRoomWalls
+          dimensions={dimensions}
+          opacity={opacity}
+          isCompleted={isCompleted}
+          scanColor={colorPrimary}
+        />
+      )}
 
       {/* Neon edge trims along wall bases */}
       {!isLite && !isLocked && (
