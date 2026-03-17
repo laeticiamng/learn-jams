@@ -6,7 +6,7 @@
 // ============================================================
 
 import { type ReactNode, useMemo } from "react";
-import { validateClientEnv, type EnvValidationResult } from "@/security/env";
+import { getSupabaseConfigStatus } from "@/integrations/supabase/client";
 
 interface Props {
   children: ReactNode;
