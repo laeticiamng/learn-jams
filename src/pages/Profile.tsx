@@ -67,25 +67,35 @@ export default function Profile() {
   useEffect(() => {
     if (!user) return;
     const fetchData = async () => {
-      const [profileRes, songsRes, favsRes, subRes] = await Promise.all([
-        supabase.from("profiles").select("*").eq("user_id", user.id).single(),
-        supabase.from("songs").select("id", { count: "exact" }).eq("user_id", user.id),
-        supabase.from("favorites").select("id", { count: "exact" }).eq("user_id", user.id),
-        supabase.from("subscriptions").select("status").eq("user_id", user.id).maybeSingle(),
-      ]);
-      if (profileRes.data) {
-        setDisplayName(profileRes.data.display_name || "");
-        setFieldOfStudy(profileRes.data.field_of_study || "");
-        setUniversity((profileRes.data as Record<string, unknown>).university as string || "");
-        setCountry((profileRes.data as Record<string, unknown>).country as string || "");
+      try {
+        const [profileRes, songsRes, favsRes, subRes] = await Promise.all([
+          supabase.from("profiles").select("*").eq("user_id", user.id).single(),
+          supabase.from("songs").select("id", { count: "exact" }).eq("user_id", user.id),
+          supabase.from("favorites").select("id", { count: "exact" }).eq("user_id", user.id),
+          supabase.from("subscriptions").select("status").eq("user_id", user.id).maybeSingle(),
+        ]);
+        if (profileRes.error) console.error("[Profile] Profile fetch error:", profileRes.error);
+        if (profileRes.data) {
+          setDisplayName(profileRes.data.display_name || "");
+          setFieldOfStudy(profileRes.data.field_of_study || "");
+          setUniversity((profileRes.data as Record<string, unknown>).university as string || "");
+          setCountry((profileRes.data as Record<string, unknown>).country as string || "");
+        }
+        if (songsRes.error) console.error("[Profile] Songs count error:", songsRes.error);
+        setSongCount(songsRes.count || 0);
+        if (favsRes.error) console.error("[Profile] Favorites count error:", favsRes.error);
+        setFavCount(favsRes.count || 0);
+        if (subRes.error) console.error("[Profile] Subscription check error:", subRes.error);
+        setIsPro(subRes.data?.status === "active");
+      } catch (err: unknown) {
+        console.error("[Profile] Unexpected error:", err);
+        toast.error(t("common.error", "Une erreur est survenue"));
+      } finally {
+        setLoading(false);
       }
-      setSongCount(songsRes.count || 0);
-      setFavCount(favsRes.count || 0);
-      setIsPro(subRes.data?.status === "active");
-      setLoading(false);
     };
     fetchData();
-  }, [user]);
+  }, [user, t]);
 
   const handleSave = async () => {
     if (!user) return;
@@ -317,9 +327,9 @@ export default function Profile() {
 
             <ProfileStatusCard
               profile={learner.profile}
-              bestFormat={(learner.profile as any).best_format ?? null}
-              guidanceNeed={(learner.profile as any).guidance_need ?? null}
-              calibrationQuality={(learner.profile as any).confidence_calibration_quality ?? null}
+              bestFormat={(learner.profile as Record<string, unknown>).best_format as string ?? null}
+              guidanceNeed={(learner.profile as Record<string, unknown>).guidance_need as string ?? null}
+              calibrationQuality={(learner.profile as Record<string, unknown>).confidence_calibration_quality as string ?? null}
             />
 
             <MasteryOverviewCard stats={learner.stats} />

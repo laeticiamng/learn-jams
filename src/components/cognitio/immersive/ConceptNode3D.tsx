@@ -84,13 +84,13 @@ export default function ConceptNode3D({
   const isHighQuality = renderQuality !== "low";
 
   // Pulse animation for gates and selected nodes
-  useFrame((state, delta) => {
+  useFrame(({ clock }, delta) => {
     if (!meshRef.current) return;
     if (isSelected || node.is_gate) {
       meshRef.current.rotation.y += delta * 0.5;
     }
     if (hovered) {
-      const s = scale * (1 + Math.sin(Date.now() * 0.005) * 0.05);
+      const s = scale * (1 + Math.sin(clock.getElapsedTime() * 5) * 0.05);
       meshRef.current.scale.setScalar(s);
     } else {
       meshRef.current.scale.setScalar(scale);

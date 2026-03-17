@@ -615,7 +615,7 @@ export function AnimatedConnection({
 }: AnimatedConnectionProps) {
   const lineRef = useRef<THREE.Line>(null);
 
-  const { geometry, material } = useMemo(() => {
+  const lineObj = useMemo(() => {
     const geom = new THREE.BufferGeometry().setFromPoints([start, end]);
     // computeLineDistances exists at runtime on BufferGeometry
     (geom as any).computeLineDistances();
@@ -627,7 +627,7 @@ export function AnimatedConnection({
       gapSize: dashSize * 0.8,
       linewidth: 1,
     });
-    return { geometry: geom, material: mat };
+    return new THREE.Line(geom, mat);
   }, [start, end, color, dashSize]);
 
   useFrame(({ clock }) => {
@@ -637,7 +637,7 @@ export function AnimatedConnection({
     }
   });
 
-  return <primitive ref={lineRef} object={new THREE.Line(geometry, material)} />;
+  return <primitive ref={lineRef} object={lineObj} />;
 }
 
 // ==================== REVEAL BURST PARTICLES ====================

@@ -53,6 +53,7 @@ export default function League() {
   const [myPoints, setMyPoints] = useState(0);
   const [myRank, setMyRank] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [tab, setTab] = useState("global");
 
   const currentWeek = useMemo(() => getCurrentWeek(), []);
@@ -60,62 +61,73 @@ export default function League() {
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
+      setFetchError(false);
 
-      // Get this week's points aggregated by user
-      const { data: pointsData } = await supabase
-        .from("league_points")
-        .select("user_id, points")
-        .eq("week", currentWeek);
+      try {
+        // Get this week's points aggregated by user
+        const { data: pointsData, error: pointsErr } = await supabase
+          .from("league_points")
+          .select("user_id, points")
+          .eq("week", currentWeek);
 
-      // Aggregate points per user
-      const pointsMap = new Map<string, number>();
-      (pointsData || []).forEach((p: any) => {
-        pointsMap.set(p.user_id, (pointsMap.get(p.user_id) || 0) + p.points);
-      });
+        if (pointsErr) throw pointsErr;
 
-      // Get profiles for all users with points
-      const userIds = Array.from(pointsMap.keys());
-      const profilesMap = new Map<string, { display_name: string | null; university: string | null; country: string | null }>();
-      if (userIds.length > 0) {
-        const { data: profiles } = await supabase
-          .from("profiles")
-          .select("user_id, display_name, university, country")
-          .in("user_id", userIds);
-        (profiles || []).forEach((p: any) => {
-          profilesMap.set(p.user_id, { display_name: p.display_name, university: p.university, country: p.country });
+        // Aggregate points per user
+        const pointsMap = new Map<string, number>();
+        (pointsData || []).forEach((p) => {
+          pointsMap.set(p.user_id, (pointsMap.get(p.user_id) || 0) + p.points);
         });
+
+        // Get profiles for all users with points
+        const userIds = Array.from(pointsMap.keys());
+        const profilesMap = new Map<string, { display_name: string | null; university: string | null; country: string | null }>();
+        if (userIds.length > 0) {
+          const { data: profiles, error: profilesErr } = await supabase
+            .from("profiles")
+            .select("user_id, display_name, university, country")
+            .in("user_id", userIds);
+          if (profilesErr) throw profilesErr;
+          (profiles || []).forEach((p) => {
+            profilesMap.set(p.user_id, { display_name: p.display_name, university: (p as Record<string, unknown>).university as string | null, country: (p as Record<string, unknown>).country as string | null });
+          });
+        }
+
+        // Build leaderboard
+        const board: LeaderboardEntry[] = userIds
+          .map(uid => ({
+            user_id: uid,
+            total_points: pointsMap.get(uid) || 0,
+            ...(profilesMap.get(uid) || { display_name: null, university: null, country: null }),
+          }))
+          .sort((a, b) => b.total_points - a.total_points)
+          .slice(0, 50);
+
+        setLeaderboard(board);
+
+        // My stats
+        if (user) {
+          const myPts = pointsMap.get(user.id) || 0;
+          setMyPoints(myPts);
+          const rank = board.findIndex(e => e.user_id === user.id);
+          setMyRank(rank >= 0 ? rank + 1 : null);
+        }
+
+        // Featured songs (public songs with highest ratings)
+        const { data: publicSongs, error: songsErr } = await supabase
+          .from("songs")
+          .select("id, title, style, cover_image_url, user_id")
+          .eq("is_public", true)
+          .eq("status", "ready")
+          .limit(6);
+        if (songsErr) throw songsErr;
+
+        setFeatured((publicSongs as FeaturedSong[]) || []);
+      } catch (err: unknown) {
+        console.error("[League] Failed to fetch data:", err);
+        setFetchError(true);
+      } finally {
+        setLoading(false);
       }
-
-      // Build leaderboard
-      const board: LeaderboardEntry[] = userIds
-        .map(uid => ({
-          user_id: uid,
-          total_points: pointsMap.get(uid) || 0,
-          ...(profilesMap.get(uid) || { display_name: null, university: null, country: null }),
-        }))
-        .sort((a, b) => b.total_points - a.total_points)
-        .slice(0, 50);
-
-      setLeaderboard(board);
-
-      // My stats
-      if (user) {
-        const myPts = pointsMap.get(user.id) || 0;
-        setMyPoints(myPts);
-        const rank = board.findIndex(e => e.user_id === user.id);
-        setMyRank(rank >= 0 ? rank + 1 : null);
-      }
-
-      // Featured songs (public songs with highest ratings)
-      const { data: publicSongs } = await supabase
-        .from("songs")
-        .select("id, title, style, cover_image_url, user_id")
-        .eq("is_public", true)
-        .eq("status", "ready")
-        .limit(6);
-
-      setFeatured((publicSongs as FeaturedSong[]) || []);
-      setLoading(false);
     };
 
     fetchData();
@@ -179,7 +191,13 @@ export default function League() {
 
           {/* Global leaderboard */}
           <TabsContent value="global" className="space-y-3">
-            {loading ? (
+            {fetchError ? (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-16">
+                <Trophy className="w-16 h-16 text-destructive/20 mx-auto mb-4" />
+                <h3 className="font-display text-xl font-semibold mb-2">{t("common.error", "Erreur")}</h3>
+                <p className="text-muted-foreground mb-6">{t("league.fetch_error", "Impossible de charger le classement. Réessaie plus tard.")}</p>
+              </motion.div>
+            ) : loading ? (
               <div className="space-y-3">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <div key={i} className="glass-card p-4 animate-pulse flex items-center gap-4">

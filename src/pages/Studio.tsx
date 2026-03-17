@@ -65,23 +65,31 @@ export default function Studio() {
   const fetchSessions = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    // Get sessions where user is creator or participant
-    const { data: participantSessions } = await supabase
-      .from("session_participants")
-      .select("session_id")
-      .eq("user_id", user.id);
+    try {
+      // Get sessions where user is creator or participant
+      const { data: participantSessions, error: partErr } = await supabase
+        .from("session_participants")
+        .select("session_id")
+        .eq("user_id", user.id);
+      if (partErr) throw partErr;
 
-    const sessionIds = participantSessions?.map(p => p.session_id) || [];
+      const sessionIds = participantSessions?.map(p => p.session_id) || [];
 
-    const { data } = await supabase
-      .from("collaborative_sessions")
-      .select("*")
-      .or(`creator_id.eq.${user.id}${sessionIds.length ? `,id.in.(${sessionIds.join(",")})` : ""}`)
-      .order("created_at", { ascending: false });
+      const { data, error: sessErr } = await supabase
+        .from("collaborative_sessions")
+        .select("*")
+        .or(`creator_id.eq.${user.id}${sessionIds.length ? `,id.in.(${sessionIds.join(",")})` : ""}`)
+        .order("created_at", { ascending: false });
+      if (sessErr) throw sessErr;
 
-    setSessions((data as Session[]) || []);
-    setLoading(false);
-  }, [user]);
+      setSessions((data as Session[]) || []);
+    } catch (err: unknown) {
+      console.error("[Studio] Failed to fetch sessions:", err);
+      toast.error(t("common.error", "Une erreur est survenue"));
+    } finally {
+      setLoading(false);
+    }
+  }, [user, t]);
 
   useEffect(() => { fetchSessions(); }, [fetchSessions]);
 
@@ -100,7 +108,8 @@ export default function Studio() {
   }, [activeSession]);
 
   const loadParticipants = async (sessionId: string) => {
-    const { data } = await supabase.from("session_participants").select("*").eq("session_id", sessionId);
+    const { data, error } = await supabase.from("session_participants").select("*").eq("session_id", sessionId);
+    if (error) { console.error("[Studio] Failed to load participants:", error); return; }
     const parts = (data as Participant[]) || [];
     setParticipants(parts);
     // Initialize my subtopic/verse from existing data
@@ -113,14 +122,17 @@ export default function Studio() {
 
   const handleCreate = async () => {
     if (!user || !newTitle.trim() || !newTopic.trim()) return;
+    if (newTitle.trim().length > 100) { toast.error(t("studio.title_too_long", "Le titre est trop long (max 100 caractères)")); return; }
+    if (newTopic.trim().length > 500) { toast.error(t("studio.topic_too_long", "Le sujet est trop long (max 500 caractères)")); return; }
     setCreating(true);
     try {
       const { data, error } = await supabase.from("collaborative_sessions").insert([{
-        creator_id: user.id, title: newTitle, topic: newTopic, style: newStyle,
+        creator_id: user.id, title: newTitle.trim(), topic: newTopic.trim(), style: newStyle,
       }]).select().single();
       if (error) throw error;
       // Creator joins as participant
-      await supabase.from("session_participants").insert([{ session_id: data.id, user_id: user.id }]);
+      const { error: joinErr } = await supabase.from("session_participants").insert([{ session_id: data.id, user_id: user.id }]);
+      if (joinErr) console.error("[Studio] Creator join failed:", joinErr);
       setShowCreate(false);
       setNewTitle(""); setNewTopic(""); setNewStyle("pop");
       setActiveSession(data as Session);
@@ -212,7 +224,7 @@ export default function Studio() {
                   </span>
                 </div>
               </div>
-              <button onClick={copyInvite} className="flex items-center gap-2 px-4 py-2.5 rounded-xl glass-card text-sm font-medium hover:bg-muted/20 transition-all shrink-0">
+              <button onClick={copyInvite} aria-label={t("studio.copy_invite", "Copier le code d'invitation")} className="flex items-center gap-2 px-4 py-2.5 rounded-xl glass-card text-sm font-medium hover:bg-muted/20 transition-all shrink-0">
                 {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
                 <span className="font-mono text-xs">{activeSession.invite_code}</span>
               </button>
