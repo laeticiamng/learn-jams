@@ -580,10 +580,17 @@ function cleanRawText(text: string): string {
   cleaned = cleaned.replace(/\n{3,}/g, "\n\n"); // max 2 consecutive newlines
   cleaned = cleaned.trim();
 
-  // Phase 2: Editorial artifact filtering
-  cleaned = filterEditorialArtifacts(cleaned);
+  // Phase 2: Editorial artifact filtering WITH SAFETY GUARD
+  const beforeFilter = cleaned;
+  const filtered = filterEditorialArtifacts(cleaned);
 
-  return cleaned;
+  // SAFETY GUARD: If filtering removed >70% of content, keep original
+  if (beforeFilter.length > 0 && filtered.length / beforeFilter.length < 0.3) {
+    console.warn(`[COGNITIO] filterEditorialArtifacts removed ${Math.round((1 - filtered.length / beforeFilter.length) * 100)}% of text — reverting to pre-filter version`);
+    return beforeFilter;
+  }
+
+  return filtered;
 }
 
 /**
