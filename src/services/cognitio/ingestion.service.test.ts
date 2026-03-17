@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { extractAndAnalyzeText } from "./ingestion.service";
+import { extractAndAnalyzeText, uploadDocument } from "./ingestion.service";
 
 describe("extractAndAnalyzeText", () => {
   it("returns blocking issue for empty text", () => {
@@ -112,5 +112,53 @@ describe("extractAndAnalyzeText", () => {
     const text = "Quelques notes rapides sur le cours d'aujourd'hui. Le prof a parlé de la cellule.";
     const result = extractAndAnalyzeText(text);
     expect(result.source_type).toBe("personal_notes");
+  });
+  it("sanitizes unicode-heavy filenames before storage upload", async () => {
+    const file = new File(["contenu"], "ITEM-R2C 147 - FIEVRE AIGUË-V2.pdf", { type: "application/pdf" });
+
+    const uploadCalls: string[] = [];
+    const storageApi = {
+      from: () => ({
+        upload: async (path: string) => {
+          uploadCalls.push(path);
+          return { error: null };
+        },
+      }),
+    };
+
+    const insertApi = {
+      insert: () => ({
+        select: () => ({
+          single: async () => ({ data: { id: "doc-1" }, error: null }),
+        }),
+      }),
+    };
+
+    const { supabase } = await import("@/integrations/supabase/client");
+    const originalStorage = supabase.storage;
+    const originalFrom = supabase.from;
+
+    Object.assign(supabase, {
+      storage: storageApi,
+      from: () => insertApi,
+    });
+
+    try {
+      const result = await uploadDocument("12345678-1234-1234-1234-123456789012", {
+        file,
+        content_type: "application/pdf",
+        objective: "revision",
+      } as any);
+
+      expect(result.storage_path).toBeTruthy();
+      expect(uploadCalls).toHaveLength(1);
+      expect(uploadCalls[0]).toMatch(/12345678-1234-1234-1234-123456789012\/documents\/\d+_ITEM-R2C_147_-_FIEVRE_AIGUE_-V2\.pdf$/);
+      expect(uploadCalls[0]).not.toContain("̈");
+    } finally {
+      Object.assign(supabase, {
+        storage: originalStorage,
+        from: originalFrom,
+      });
+    }
   });
 });

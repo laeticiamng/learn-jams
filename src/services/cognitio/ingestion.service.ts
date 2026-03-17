@@ -10,6 +10,7 @@ import type { DetailedSourceType, DetectedStructureType, SourceDocument } from "
 import { validateWordCount, WORD_COUNT_THRESHOLDS } from "@/domain/cognitio/validators";
 import { createCognitioError } from "@/lib/cognitio-errors";
 import { toSourceDocument } from "@/domain/cognitio/mappers";
+import { buildStoragePath } from "@/security/storagePaths";
 import { extractTextFromFile, type ExtractionResult } from "./file-extractor.service";
 
 // ---------- Upload ----------
@@ -31,7 +32,7 @@ export async function uploadDocument(
   const hasTextFallback = Boolean(input.pasted_text && input.pasted_text.trim().length > 0);
 
   if (input.file) {
-    const fileName = `${userId}/${crypto.randomUUID()}/${input.file.name}`;
+    const fileName = buildStoragePath(userId, "documents", input.file.name);
 
     // Try source-raw bucket first
     const { error: uploadError } = await supabase.storage
@@ -42,18 +43,18 @@ export async function uploadDocument(
       storagePath = fileName;
       bucketUsed = "source-raw";
     } else {
-      console.warn("[COGNITIO] source-raw upload failed, trying course-documents:", uploadError.message);
+      console.warn("[COGNITIO] source-raw upload failed, trying course-uploads:", uploadError.message);
 
-      // Fallback to course-documents bucket
+      // Fallback to course-uploads bucket
       const { error: uploadError2 } = await supabase.storage
-        .from("course-documents")
+        .from("course-uploads")
         .upload(fileName, input.file);
 
       if (!uploadError2) {
         storagePath = fileName;
-        bucketUsed = "course-documents";
+        bucketUsed = "course-uploads";
       } else {
-        storageError = `source-raw: ${uploadError.message} | course-documents: ${uploadError2.message}`;
+        storageError = `source-raw: ${uploadError.message} | course-uploads: ${uploadError2.message}`;
         console.error("[COGNITIO] Both storage buckets failed:", storageError);
 
         // CRITICAL FIX: If text was already extracted client-side, storage is non-fatal.
