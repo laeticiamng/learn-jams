@@ -95,7 +95,7 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
-  </EnvValidationGuard>
+  
   </ErrorBoundary>
 );
 
