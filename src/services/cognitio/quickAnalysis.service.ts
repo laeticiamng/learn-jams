@@ -118,7 +118,7 @@ function extractQuickConcepts(text: string, segments: SegmentOutput[]): QuickCon
   for (const seg of segments) {
     if (seg.title && seg.hierarchy_level >= 2) {
       const label = normalizeConceptLabel(seg.title);
-      if (label.length >= 3 && label.length <= 60) {
+      if (label && label.length >= 3 && label.length <= 60) {
         candidates.add(label);
       }
     }
