@@ -12,9 +12,8 @@ import CookieConsent from "./components/CookieConsent";
 import PageLoadingFallback from "@/components/PageLoadingFallback";
 import { DevDiagnosticsPanel } from "@/components/DevDiagnosticsPanel";
 import AdminRoute from "@/components/AdminRoute";
-import Index from "./pages/Index";
-
 // Lazy-loaded routes for code splitting
+const Index = lazy(() => import("./pages/Index"));
 const Login = lazy(() => import("./pages/Login"));
 const Signup = lazy(() => import("./pages/Signup"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));

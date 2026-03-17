@@ -28,6 +28,7 @@ import UseCasesSection from "@/components/home/UseCasesSection";
 import TrustSection from "@/components/home/TrustSection";
 import SeedDemoSection from "@/components/home/SeedDemoSection";
 import ScienceSection from "@/components/home/ScienceSection";
+import { SectionErrorBoundary } from "@/components/SectionErrorBoundary";
 
 const ease = [0.25, 0.46, 0.45, 0.94] as [number, number, number, number];
 
@@ -116,28 +117,38 @@ export default function Index() {
       <Navbar />
 
       {/* Hero with parallax orbs */}
-      <div ref={heroRef} className="relative">
-        <ParallaxOrbs />
-        <HeroMultimodal />
-      </div>
+      <SectionErrorBoundary name="Hero">
+        <div ref={heroRef} className="relative">
+          <ParallaxOrbs />
+          <HeroMultimodal />
+        </div>
+      </SectionErrorBoundary>
 
       {/* Trust badges */}
-      <TrustSection />
+      <SectionErrorBoundary name="Trust">
+        <TrustSection />
+      </SectionErrorBoundary>
 
       <SectionDivider />
 
       {/* Format chooser — multimodal showcase */}
-      <FormatChooserSection />
+      <SectionErrorBoundary name="FormatChooser">
+        <FormatChooserSection />
+      </SectionErrorBoundary>
 
       <SectionDivider />
 
       {/* Audience adaptation */}
-      <AudienceAdaptationSection />
+      <SectionErrorBoundary name="AudienceAdaptation">
+        <AudienceAdaptationSection />
+      </SectionErrorBoundary>
 
       <SectionDivider />
 
       {/* Learning loop — 4 steps */}
-      <LearningLoopSection />
+      <SectionErrorBoundary name="LearningLoop">
+        <LearningLoopSection />
+      </SectionErrorBoundary>
 
       <SectionDivider />
 
@@ -172,12 +183,16 @@ export default function Index() {
       <SectionDivider />
 
       {/* Science */}
-      <ScienceSection />
+      <SectionErrorBoundary name="Science">
+        <ScienceSection />
+      </SectionErrorBoundary>
 
       <SectionDivider />
 
       {/* Use cases */}
-      <UseCasesSection />
+      <SectionErrorBoundary name="UseCases">
+        <UseCasesSection />
+      </SectionErrorBoundary>
 
       <SectionDivider />
 
@@ -208,7 +223,9 @@ export default function Index() {
       <SectionDivider />
 
       {/* Seed Library */}
-      <SeedDemoSection />
+      <SectionErrorBoundary name="SeedDemo">
+        <SeedDemoSection />
+      </SectionErrorBoundary>
 
       <SectionDivider />
 
