@@ -75,7 +75,8 @@ export default function Library() {
       if (error) throw error;
       toast.success(t("library.retry_started"));
     } catch (err: unknown) {
-      toast.error((err as Error).message || t("common.error"));
+      const message = err instanceof Error ? err.message : "Internal error";
+      toast.error(message || t("common.error"));
     }
   }, [songs, user, i18n.language, t]);
 
@@ -88,7 +89,8 @@ export default function Library() {
       if (error) throw error;
       toast.success(t("library.deleted"));
     } catch (err: unknown) {
-      toast.error((err as Error).message || t("common.error"));
+      const message = err instanceof Error ? err.message : "Internal error";
+      toast.error(message || t("common.error"));
     } finally {
       setDeleteId(null);
     }

@@ -109,8 +109,9 @@ export default function Profile() {
       await signOut();
       toast.success(t("profile.deleted"));
       navigate("/");
-    } catch (err: any) {
-      toast.error(err.message || t("common.error"));
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Internal error";
+      toast.error(message || t("common.error"));
     }
   };
 
@@ -129,8 +130,9 @@ export default function Profile() {
           toast.error(t("common.error"));
         }
       }
-    } catch (err: any) {
-      toast.error(err.message || t("common.error"));
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Internal error";
+      toast.error(message || t("common.error"));
     } finally {
       setManagingSubscription(false);
     }

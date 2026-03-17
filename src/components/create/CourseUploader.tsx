@@ -65,9 +65,10 @@ export default function CourseUploader({ text, onTextChange }: Props) {
       } else {
         throw new Error(t("create.no_text_extracted"));
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Extraction error:", error);
-      toast.error(error.message || t("create.extract_error"));
+      const message = error instanceof Error ? error.message : "Internal error";
+      toast.error(message || t("create.extract_error"));
       setFileName(null);
     } finally {
       setExtracting(false);
