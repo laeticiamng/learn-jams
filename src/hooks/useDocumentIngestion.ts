@@ -227,7 +227,7 @@ export function useDocumentIngestion() {
 
       const m1Output = await runIngestion(uploadResult.document_id, enrichedInput, session.user.id);
 
-      const fallbackUsed = m1Output.issues.some((i) => i.code === "LOCAL_EXTRACTION_USED");
+      const fallbackUsed = m1Output._fallback_used || m1Output.issues.some((i) => i.code === "LOCAL_EXTRACTION_USED");
       updateDebug({
         edge_function_status: "completed",
         fallback_used: fallbackUsed,
@@ -240,7 +240,11 @@ export function useDocumentIngestion() {
       });
 
       // Mark intermediate steps based on output
-      updateStep("cleaning", "completed", `${m1Output.word_count} mots extraits`);
+      updateStep("cleaning", "completed",
+        fallbackUsed
+          ? `${m1Output.word_count} mots extraits (mode local — service distant indisponible)`
+          : `${m1Output.word_count} mots extraits`
+      );
       updateStep("segmentation", "running", "Découpage en sections logiques...");
 
       await new Promise((r) => setTimeout(r, 300));

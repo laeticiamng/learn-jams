@@ -18,6 +18,7 @@ import type { MissionContent } from "@/domain/cognitio/types";
 import type { EscapeGameSession } from "@/domain/cognitio/escapeEngine.types";
 import { convertMissionToEscapeGame } from "@/services/cognitio/escapeGameBuilder";
 import { selectMissionFamily, selectUniverseProfile } from "@/domain/cognitio/escapeGame.types";
+import { usePageSEO } from "@/hooks/usePageSEO";
 
 /** Derive a document domain key from mission family for immersive profile lookup */
 function missionFamilyToDomain(family: string, topic: string): string {
@@ -35,6 +36,7 @@ export default function EscapeGame() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  usePageSEO({ title: "Escape Game", description: "Mission d'apprentissage interactive", noindex: true });
   const [session, setSession] = useState<EscapeGameSession | null>(null);
   const [domain, setDomain] = useState<string | undefined>();
   const [loading, setLoading] = useState(true);

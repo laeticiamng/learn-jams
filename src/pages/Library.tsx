@@ -47,6 +47,8 @@ export default function Library() {
   const { songs, favorites, loading, toggleFavorite } = useSongs(user?.id);
   const { i18n } = useTranslation();
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [retryingId, setRetryingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Handle checkout=success parameter
   useEffect(() => {
@@ -58,10 +60,12 @@ export default function Library() {
   }, [searchParams, setSearchParams, t]);
 
   const handleRetry = useCallback(async (songId: string) => {
+    if (retryingId) return; // prevent double-click
     const song = songs.find(s => s.id === songId);
     if (!song || !user) return;
+    setRetryingId(songId);
     try {
-      await supabase.from("songs").update({ 
+      await supabase.from("songs").update({
         status: "generating",
         generation_error: null,
         generation_error_code: null,
@@ -77,11 +81,14 @@ export default function Library() {
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Internal error";
       toast.error(message || t("common.error"));
+    } finally {
+      setRetryingId(null);
     }
-  }, [songs, user, i18n.language, t]);
+  }, [songs, user, i18n.language, t, retryingId]);
 
   const handleDelete = useCallback(async () => {
-    if (!deleteId || !user) return;
+    if (!deleteId || !user || deletingId) return;
+    setDeletingId(deleteId);
     try {
       // Delete favorites first (foreign key)
       await supabase.from("favorites").delete().eq("song_id", deleteId).eq("user_id", user.id);
@@ -93,8 +100,9 @@ export default function Library() {
       toast.error(message || t("common.error"));
     } finally {
       setDeleteId(null);
+      setDeletingId(null);
     }
-  }, [deleteId, user, t]);
+  }, [deleteId, user, t, deletingId]);
 
   const tabs: { key: FilterTab; label: string; icon: typeof ListMusic; count: number }[] = useMemo(() => [
     { key: "all", label: t("library.tab_all"), icon: ListMusic, count: songs.length },
@@ -307,9 +315,9 @@ export default function Library() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              <Trash2 className="w-4 h-4 mr-2" />
-              {t("library.delete_confirm")}
+            <AlertDialogAction onClick={handleDelete} disabled={!!deletingId} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {deletingId ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Trash2 className="w-4 h-4 mr-2" />}
+              {deletingId ? t("common.deleting", "Suppression...") : t("library.delete_confirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -76,8 +76,8 @@ export default function Profile() {
       if (profileRes.data) {
         setDisplayName(profileRes.data.display_name || "");
         setFieldOfStudy(profileRes.data.field_of_study || "");
-        setUniversity((profileRes.data as any).university || "");
-        setCountry((profileRes.data as any).country || "");
+        setUniversity((profileRes.data as Record<string, unknown>).university as string || "");
+        setCountry((profileRes.data as Record<string, unknown>).country as string || "");
       }
       setSongCount(songsRes.count || 0);
       setFavCount(favsRes.count || 0);
@@ -95,7 +95,7 @@ export default function Profile() {
       field_of_study: fieldOfStudy,
       university: university || null,
       country: country || null,
-    } as any).eq("user_id", user.id);
+    } as Record<string, unknown>).eq("user_id", user.id);
     setSaving(false);
     if (error) toast.error(error.message);
     else toast.success(t("profile.saved"));

@@ -29,7 +29,7 @@ export default function Navbar() {
     }`;
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 glass-nav border-b border-border/10">
+    <nav className="fixed top-0 left-0 right-0 z-50 glass-nav border-b border-border/10" aria-label="Navigation principale">
       <div className="container mx-auto flex items-center justify-between h-16 px-4">
         <Link to="/" className="flex items-center gap-2.5 group">
           <motion.div
@@ -111,7 +111,7 @@ export default function Navbar() {
           {user && <NotificationBell />}
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-xl">
+              <Button variant="ghost" size="icon" className="rounded-xl" aria-label="Ouvrir le menu">
                 <Menu className="w-5 h-5" />
               </Button>
             </SheetTrigger>

@@ -254,7 +254,7 @@ export default function ImmersiveMissionScene({
                 roomTarget={currentRoomTarget}
                 isTransitioning={isTransitioning}
                 enableDrift={renderMode === "full_3d"}
-                renderMode={renderMode === "fallback_2d" ? "lite_3d" : renderMode}
+                renderMode={renderMode}
               />
             </Suspense>
 

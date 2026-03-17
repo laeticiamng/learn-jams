@@ -54,6 +54,7 @@ import type { EducationStage, ExplanationStyle } from "@/domain/cognitio/learner
 import { DEFAULT_LEARNER_PROFILE } from "@/domain/cognitio/learner-profile.types";
 import type { AmbiguousZone } from "@/domain/cognitio/types";
 import { useAuth } from "@/hooks/useAuth";
+import { usePageSEO } from "@/hooks/usePageSEO";
 import { getFormatAvailability } from "@/services/billing/entitlementEngine.service";
 import { FORMAT_CONFIGS, type CreateFormat as CF } from "@/lib/create-format-config";
 
@@ -66,6 +67,7 @@ function computeLockedFormats(plan: import("@/domain/billing/pricing.types").Pla
 
 export default function Create() {
   const { t } = useTranslation();
+  usePageSEO({ title: t("create_page.seo_title", "Créer du contenu"), description: t("create_page.seo_description", "Importe ton cours et génère du contenu pédagogique interactif"), noindex: true });
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { track } = useProductTracking();
@@ -309,7 +311,8 @@ export default function Create() {
                     selectedFormat={selectedFormat}
                     hasSource={hasSource}
                     onClick={handleSubmit}
-                    loading={quotaGuard.checking}
+                    loading={quotaGuard.checking || pipeline.phase !== "import"}
+                    disabled={pipeline.phase !== "import"}
                   />
                 </motion.div>
               )}
@@ -431,6 +434,25 @@ export default function Create() {
                             defaultValue: "Tu peux maintenant consulter et utiliser ta création.",
                           })}
                   </p>
+                </div>
+              )}
+
+              {/* P0: Fallback mode warning — service distant indisponible */}
+              {ingestion.result?._fallback_used && (
+                <div className="border border-amber-500/20 bg-amber-500/5 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="h-5 w-5 text-amber-400 mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-amber-300">
+                        {t("create_page.fallback_warning_title", { defaultValue: "Mode local activé" })}
+                      </p>
+                      <p className="text-xs text-amber-400/80">
+                        {t("create_page.fallback_warning_detail", {
+                          defaultValue: "Le service d'analyse distant n'était pas disponible. L'analyse a été effectuée localement avec une qualité potentiellement réduite. Les résultats sont sauvegardés normalement.",
+                        })}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               )}
 

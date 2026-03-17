@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useTranslation } from "react-i18next";
+import { usePageSEO } from "@/hooks/usePageSEO";
 import {
   getFunnelMetrics,
   getPedagogicalMetrics,
@@ -35,6 +36,7 @@ function getSince(range: TimeRange): string {
 
 export default function AdminDashboard() {
   const { t } = useTranslation();
+  usePageSEO({ title: "Admin Dashboard", description: "Tableau de bord administrateur", noindex: true });
   const [range, setRange] = useState<TimeRange>("7d");
   const [loading, setLoading] = useState(true);
   const [funnel, setFunnel] = useState<FunnelMetrics | null>(null);

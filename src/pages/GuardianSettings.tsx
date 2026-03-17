@@ -11,6 +11,7 @@ import Footer from "@/components/Footer";
 import { useAuth } from "@/hooks/useAuth";
 import { useMinorProfile } from "@/hooks/useMinorProfile";
 import { useTranslation } from "react-i18next";
+import { usePageSEO } from "@/hooks/usePageSEO";
 import { MinorStatusStep } from "@/components/guardian/MinorStatusStep";
 import { GuardianInviteForm } from "@/components/guardian/GuardianInviteForm";
 import { GuardianDashboard } from "@/components/guardian/GuardianDashboard";
@@ -25,6 +26,7 @@ export default function GuardianSettings() {
   const navigate = useNavigate();
   const { profile, updateProfile } = useMinorProfile(user?.id ?? null);
   const { t } = useTranslation();
+  usePageSEO({ title: "Paramètres tuteur", description: "Gérez le mode mineur et le contrôle parental", noindex: true });
 
   const handleMinorUpdate = async (updates: Parameters<typeof updateProfile>[0]) => {
     if (!user) return;

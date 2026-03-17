@@ -87,7 +87,7 @@ export default function Login() {
           <h1 className="font-display text-2xl font-bold tracking-tight">{t("auth.login_title")}</h1>
           <p className="text-muted-foreground mt-2 text-sm">{t("auth.login_subtitle")}</p>
         </div>
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-5" aria-label="Formulaire de connexion">
           <div className="space-y-2">
             <Label htmlFor="email" className="text-sm font-medium">{t("auth.email")}</Label>
             <Input id="email" type="email" placeholder={t("auth.email_placeholder")} value={email} onChange={(e) => setEmail(e.target.value)} required

@@ -120,6 +120,7 @@ export function SongCard({ song, isFavorite, onToggleFavorite, onRetry, onDelete
             e.stopPropagation();
             onToggleFavorite(song.id);
           }}
+          aria-label={isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
           className={`absolute top-3 right-3 p-2 rounded-xl backdrop-blur-sm transition-all duration-300 hover:bg-black/50 ${
             isFavorite ? "opacity-100 bg-black/40" : "opacity-100 sm:opacity-0 sm:group-hover:opacity-100 bg-black/30"
           }`}

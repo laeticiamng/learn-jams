@@ -67,8 +67,10 @@ serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal error";
+    console.error("[feature-flags-resolve] Error resolving flags, returning defaults:", message);
     return new Response(
-      JSON.stringify({ flags: DEFAULT_FLAGS }),
+      JSON.stringify({ flags: DEFAULT_FLAGS, _fallback: true, _error: message }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
