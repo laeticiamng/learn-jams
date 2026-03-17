@@ -65,7 +65,7 @@ const REJECT_PATTERNS: { reason: ConceptRejectionReason; pattern: RegExp }[] = [
   { reason: "punctuation_only", pattern: /^[^a-zA-ZÀ-ÿ]+$/ },
   { reason: "truncated_fragment", pattern: /^[)\]}>]/ },
   { reason: "truncated_fragment", pattern: /\(\s*$/ },
-  { reason: "color_metadata", pattern: /^(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS)\b/i },
+  { reason: "color_metadata", pattern: /^(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)\b/i },
   { reason: "color_metadata", pattern: /^COM\s+R2C\b/i },
   { reason: "non_concept_pattern", pattern: /^(?:Voir|Cf\.?|Tableau|Figure|Annexe)\s/i },
   { reason: "non_concept_pattern", pattern: /^(?:NB|PS|Note)\s*:/i },
@@ -89,7 +89,7 @@ const REJECT_PATTERNS: { reason: ConceptRejectionReason; pattern: RegExp }[] = [
   // P0: Enhanced editorial artifact rejection — catch R2C/Rang ANYWHERE in label
   { reason: "classification_label", pattern: /\bR2C\b/i },
   { reason: "classification_label", pattern: /\bRang\s+[A-Z]\b/i },
-  { reason: "color_metadata", pattern: /(?:NOIR|BLEU|ROUGE|VERT|GRIS)/i },
+  { reason: "color_metadata", pattern: /(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)/i },
   { reason: "document_noise", pattern: /\bITEM\s+\d+/i },
   { reason: "document_noise", pattern: /\bELLIPSES\b/i },
   { reason: "document_noise", pattern: /\bRévision\b/i },
@@ -102,8 +102,8 @@ const LABEL_NOISE: RegExp[] = [
   /^(?:COM\s+)?R2C\s*:\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|Rang\s+[A-Z])\s*[-–—:]\s*/i,
   /\s*[-–—]\s*(?:Rang\s+[A-Z]|en\s+(?:NOIR|BLEU|ROUGE))\s*$/i,
   /^Item\s+\d+\s*[-–—:]\s*/i,
-  /\s*[-–—]\s*en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS)\s*$/i,
-  /^en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS)\s*[-–—]\s*/i,
+  /\s*[-–—]\s*en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)\s*$/i,
+  /^en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)\s*[-–—]\s*/i,
 ];
 
 // Medical acronyms to preserve
