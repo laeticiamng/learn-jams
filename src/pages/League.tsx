@@ -75,7 +75,7 @@ export default function League() {
 
       // Get profiles for all users with points
       const userIds = Array.from(pointsMap.keys());
-      let profilesMap = new Map<string, { display_name: string | null; university: string | null; country: string | null }>();
+      const profilesMap = new Map<string, { display_name: string | null; university: string | null; country: string | null }>();
       if (userIds.length > 0) {
         const { data: profiles } = await supabase
           .from("profiles")

@@ -237,7 +237,7 @@ export function cleanSourceNoise(text: string): string {
     }
 
     // Clean inline noise from the line
-    let cleanedLine = cleanInlineNoise(trimmed);
+    const cleanedLine = cleanInlineNoise(trimmed);
 
     // Skip if cleaning left nothing meaningful
     if (cleanedLine.trim().length < 3) {
