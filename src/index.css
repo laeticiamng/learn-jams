@@ -277,6 +277,40 @@
     100% { height: var(--eq-height, 24px); }
   }
 
+  /* Premium 3D scene backdrop gradient */
+  .scene-3d-backdrop {
+    background: radial-gradient(ellipse at 50% 30%, hsl(265, 90%, 60% / 0.06), transparent 60%),
+                radial-gradient(ellipse at 20% 80%, hsl(215, 80%, 55% / 0.04), transparent 50%),
+                radial-gradient(ellipse at 80% 70%, hsl(300, 70%, 50% / 0.03), transparent 50%),
+                hsl(240, 15%, 4%);
+  }
+
+  /* Pulsing glow for 3D containers */
+  .scene-glow-pulse {
+    animation: scene-pulse 4s ease-in-out infinite;
+  }
+
+  @keyframes scene-pulse {
+    0%, 100% {
+      box-shadow: 0 0 30px hsl(265, 90%, 60% / 0.06),
+                  inset 0 0 20px hsl(265, 90%, 60% / 0.02);
+    }
+    50% {
+      box-shadow: 0 0 50px hsl(265, 90%, 60% / 0.12),
+                  inset 0 0 30px hsl(265, 90%, 60% / 0.04);
+    }
+  }
+
+  /* Premium vignette overlay for immersive scenes */
+  .scene-vignette::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 50%, hsl(240, 15%, 4% / 0.6) 100%);
+    pointer-events: none;
+    z-index: 1;
+  }
+
   /* Scrollbar hide utility */
   .scrollbar-none::-webkit-scrollbar { display: none; }
   .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
