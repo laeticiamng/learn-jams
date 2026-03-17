@@ -20,14 +20,6 @@ import type {
   RenderMode,
 } from "@/domain/cognitio/immersiveEngine.types";
 import { HolographicGrid, ScanLineWall, PortalEffect, FireflyParticles } from "./ShaderEffects";
-import type { Group, Mesh, Points as PointsType } from "three";
-import type {
-  RoomTemplate,
-  LightingConfig,
-  FogConfig,
-  PedagogicalObject,
-  RenderMode,
-} from "@/domain/cognitio/immersiveEngine.types";
 
 interface LearningRoom3DProps {
   roomIndex: number;
