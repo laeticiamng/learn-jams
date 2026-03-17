@@ -123,9 +123,10 @@ serve(async (req) => {
       JSON.stringify({ success: true, guardian_id: guardian.id }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
-  } catch (err) {
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal error";
     return new Response(
-      JSON.stringify({ error: err.message ?? "Internal error" }),
+      JSON.stringify({ error: message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }

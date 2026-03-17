@@ -416,9 +416,7 @@ function FloorGrid({ color }: { color: string }) {
         ];
         const geometry = new THREE.BufferGeometry().setFromPoints(points);
         return (
-          <line key={i} geometry={geometry}>
-            <lineBasicMaterial color={color} transparent opacity={0.04} />
-          </line>
+          <primitive key={i} object={new THREE.Line(geometry, new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.04 }))} />
         );
       })}
     </group>

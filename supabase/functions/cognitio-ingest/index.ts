@@ -508,7 +508,7 @@ async function extractFileFromZip(data: Uint8Array, targetName: string): Promise
         try {
           const compressed = data.slice(dataStart, dataStart + dataSize);
           // In Deno, we can try raw inflate
-          const ds = new DecompressionStream("raw");
+          const ds = new DecompressionStream("deflate-raw");
           const writer = ds.writable.getWriter();
           const reader = ds.readable.getReader();
 
