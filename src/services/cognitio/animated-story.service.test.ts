@@ -117,12 +117,16 @@ function makeInput(conceptCount: number = 6, overrides: Partial<M5B_Input> = {})
       needs_split: false,
       overrides_applied: [],
       cost_level: "medium",
+      system_recommended_format: "histoire_animee",
+      fallback_candidates: [],
+      override_requires_confirmation: false,
       decision_trace: {
         reasoning_type: "declaratif",
         objective: "discovery",
         matrix_result: "histoire_animee",
         overrides_checked: [],
         final_format: "histoire_animee",
+        user_intent_respected: true,
       },
     },
     source_document: {

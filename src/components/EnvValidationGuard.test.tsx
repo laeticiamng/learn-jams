@@ -37,7 +37,7 @@ describe("EnvValidationGuard", () => {
 
     expect(screen.queryByTestId("app")).not.toBeInTheDocument();
     expect(screen.getByText("Configuration Error")).toBeInTheDocument();
-    expect(screen.getByText(/VITE_SUPABASE_URL/)).toBeInTheDocument();
+    expect(screen.getAllByText(/VITE_SUPABASE_URL/).length).toBeGreaterThan(0);
   });
 
   it("shows warnings when present", () => {

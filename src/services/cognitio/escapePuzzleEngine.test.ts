@@ -22,7 +22,7 @@ import type {
 function makePuzzle(overrides: Partial<EscapePuzzle> & { id: string }): EscapePuzzle {
   return {
     puzzle_type: "observation",
-    brick_type: "observation",
+    brick_type: "OBSERVATION",
     prompt: "Test prompt",
     instructions: "Test instructions",
     correct_answer: "answer",
@@ -61,6 +61,7 @@ function makeState(overrides?: Partial<EscapeGameState>): EscapeGameState {
   return {
     current_room_index: 0,
     current_puzzle_index: 0,
+    rooms_unlocked: [0],
     rooms_completed: [],
     puzzles_solved: [],
     inventory_collected: [],
@@ -68,9 +69,9 @@ function makeState(overrides?: Partial<EscapeGameState>): EscapeGameState {
     hints_used: 0,
     score: 0,
     accuracy: 0,
-    time_started: new Date().toISOString(),
+    total_time_sec: 0,
     events: [],
-    phase: "playing",
+    phase: "exploring",
     ...overrides,
   };
 }

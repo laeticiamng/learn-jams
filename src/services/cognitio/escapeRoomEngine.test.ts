@@ -24,6 +24,7 @@ function makeState(overrides?: Partial<EscapeGameState>): EscapeGameState {
   return {
     current_room_index: 0,
     current_puzzle_index: 0,
+    rooms_unlocked: [0],
     rooms_completed: [],
     puzzles_solved: [],
     inventory_collected: [],
@@ -31,9 +32,9 @@ function makeState(overrides?: Partial<EscapeGameState>): EscapeGameState {
     hints_used: 0,
     score: 0,
     accuracy: 0,
-    time_started: new Date().toISOString(),
+    total_time_sec: 0,
     events: [],
-    phase: "playing",
+    phase: "exploring",
     ...overrides,
   };
 }
@@ -65,8 +66,9 @@ function makeConcept(label: string): NormalizedConcept {
     definition: `Definition of ${label}`,
     compressed_definition: `Compressed: ${label}`,
     original_label: label,
-    domain: "general",
-    aliases: [],
+    concept_type: "principal",
+    quality_score: 1,
+    rejection: null,
   };
 }
 

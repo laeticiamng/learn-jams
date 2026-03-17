@@ -129,6 +129,11 @@ export function buildDependencyGraph(
     // Edges from explicit relations
     for (const rel of concept.relations) {
       if (!nodeIndex.has(rel.target_key)) continue;
+      // Skip "prerequisite" relations when already covered by the prerequisites array
+      // to avoid creating a conflicting reverse edge (source→target vs target→source).
+      if (rel.relation_type === "prerequisite" && concept.prerequisites.includes(rel.target_key)) {
+        continue;
+      }
       const relation = RELATION_MAP[rel.relation_type] ?? "supports";
       const key = `${concept.stable_key}->${rel.target_key}->${relation}`;
       if (edgeSet.has(key)) continue;

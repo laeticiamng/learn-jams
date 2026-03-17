@@ -14,7 +14,7 @@ const MEDICAL_CONCEPTS: AnalyzedConcept[] = [
     label: "Hypertension artérielle",
     definition: "Élévation chronique de la pression artérielle systolique ≥ 140 mmHg et/ou diastolique ≥ 90 mmHg.",
     type: "principal",
-    criticality: "critical",
+    criticality: 1,
     criticality_score: 0.95,
     bloom_target: "understand",
     relations: [
@@ -23,7 +23,10 @@ const MEDICAL_CONCEPTS: AnalyzedConcept[] = [
     ],
     prerequisites: ["anatomie_cardiaque", "physiologie_vasculaire"],
     source_confidence: 0.92,
-    source_trace: { segment_indices: [0, 1], source_type: "definition" },
+    source_trace: [
+      { segment_index: 0, excerpt: "Élévation chronique de la pression artérielle" },
+      { segment_index: 1, excerpt: "systolique ≥ 140 mmHg et/ou diastolique ≥ 90 mmHg" },
+    ],
     uncertain: false,
   },
   {
@@ -31,7 +34,7 @@ const MEDICAL_CONCEPTS: AnalyzedConcept[] = [
     label: "Anatomie cardiaque",
     definition: "Structure du cœur : 4 cavités (2 oreillettes, 2 ventricules), valves, coronaires.",
     type: "prerequis",
-    criticality: "important",
+    criticality: 2,
     criticality_score: 0.85,
     bloom_target: "remember",
     relations: [
@@ -39,7 +42,9 @@ const MEDICAL_CONCEPTS: AnalyzedConcept[] = [
     ],
     prerequisites: [],
     source_confidence: 0.95,
-    source_trace: { segment_indices: [0], source_type: "definition" },
+    source_trace: [
+      { segment_index: 0, excerpt: "Structure du cœur : 4 cavités" },
+    ],
     uncertain: false,
   },
   {
@@ -47,7 +52,7 @@ const MEDICAL_CONCEPTS: AnalyzedConcept[] = [
     label: "Physiologie vasculaire",
     definition: "Fonctionnement des vaisseaux sanguins : artères, veines, capillaires. Régulation du débit sanguin.",
     type: "prerequis",
-    criticality: "important",
+    criticality: 2,
     criticality_score: 0.82,
     bloom_target: "understand",
     relations: [
@@ -56,7 +61,9 @@ const MEDICAL_CONCEPTS: AnalyzedConcept[] = [
     ],
     prerequisites: [],
     source_confidence: 0.88,
-    source_trace: { segment_indices: [1], source_type: "definition" },
+    source_trace: [
+      { segment_index: 1, excerpt: "Fonctionnement des vaisseaux sanguins" },
+    ],
     uncertain: false,
   },
   {
@@ -64,13 +71,16 @@ const MEDICAL_CONCEPTS: AnalyzedConcept[] = [
     label: "Système cardiovasculaire",
     definition: "Ensemble fonctionnel comprenant le cœur et les vaisseaux assurant la circulation sanguine.",
     type: "principal",
-    criticality: "critical",
+    criticality: 1,
     criticality_score: 0.92,
     bloom_target: "understand",
     relations: [],
     prerequisites: ["anatomie_cardiaque", "physiologie_vasculaire"],
     source_confidence: 0.9,
-    source_trace: { segment_indices: [0, 1], source_type: "definition" },
+    source_trace: [
+      { segment_index: 0, excerpt: "Ensemble fonctionnel comprenant le cœur" },
+      { segment_index: 1, excerpt: "vaisseaux assurant la circulation sanguine" },
+    ],
     uncertain: false,
   },
   {
@@ -78,7 +88,7 @@ const MEDICAL_CONCEPTS: AnalyzedConcept[] = [
     label: "Traitement antihypertenseur",
     definition: "Classes médicamenteuses : IEC, ARA2, inhibiteurs calciques, diurétiques, bêta-bloquants.",
     type: "principal",
-    criticality: "critical",
+    criticality: 1,
     criticality_score: 0.9,
     bloom_target: "apply",
     relations: [
@@ -87,7 +97,9 @@ const MEDICAL_CONCEPTS: AnalyzedConcept[] = [
     ],
     prerequisites: ["hypertension_arterielle"],
     source_confidence: 0.85,
-    source_trace: { segment_indices: [2], source_type: "procedure" },
+    source_trace: [
+      { segment_index: 2, excerpt: "Classes médicamenteuses : IEC, ARA2" },
+    ],
     uncertain: false,
   },
   {
@@ -95,7 +107,7 @@ const MEDICAL_CONCEPTS: AnalyzedConcept[] = [
     label: "Effets secondaires des antihypertenseurs",
     definition: "Toux (IEC), hyperkaliémie (IEC/ARA2), œdèmes (inhibiteurs calciques), hyponatrémie (diurétiques).",
     type: "secondary",
-    criticality: "important",
+    criticality: 2,
     criticality_score: 0.78,
     bloom_target: "analyze",
     relations: [
@@ -103,7 +115,10 @@ const MEDICAL_CONCEPTS: AnalyzedConcept[] = [
     ],
     prerequisites: ["traitement_antihypertenseur"],
     source_confidence: 0.82,
-    source_trace: { segment_indices: [2, 3], source_type: "example" },
+    source_trace: [
+      { segment_index: 2, excerpt: "Toux (IEC), hyperkaliémie (IEC/ARA2)" },
+      { segment_index: 3, excerpt: "œdèmes (inhibiteurs calciques), hyponatrémie (diurétiques)" },
+    ],
     uncertain: false,
   },
   {
@@ -111,7 +126,7 @@ const MEDICAL_CONCEPTS: AnalyzedConcept[] = [
     label: "Diagnostic de l'HTA",
     definition: "Mesure répétée de la PA au cabinet, MAPA ou automesure. Recherche d'atteinte d'organes cibles.",
     type: "principal",
-    criticality: "critical",
+    criticality: 1,
     criticality_score: 0.88,
     bloom_target: "apply",
     relations: [
@@ -119,7 +134,10 @@ const MEDICAL_CONCEPTS: AnalyzedConcept[] = [
     ],
     prerequisites: ["hypertension_arterielle"],
     source_confidence: 0.87,
-    source_trace: { segment_indices: [1, 2], source_type: "procedure" },
+    source_trace: [
+      { segment_index: 1, excerpt: "Mesure répétée de la PA au cabinet" },
+      { segment_index: 2, excerpt: "MAPA ou automesure" },
+    ],
     uncertain: false,
   },
   {
@@ -127,16 +145,18 @@ const MEDICAL_CONCEPTS: AnalyzedConcept[] = [
     label: "Stratégie thérapeutique de l'HTA",
     definition: "Approche par étapes : règles hygiéno-diététiques puis monothérapie puis bithérapie si besoin.",
     type: "principal",
-    criticality: "critical",
+    criticality: 1,
     criticality_score: 0.93,
     bloom_target: "evaluate",
     relations: [
-      { target_key: "traitement_antihypertenseur", relation_type: "requires" },
-      { target_key: "diagnostic_hta", relation_type: "requires" },
+      { target_key: "traitement_antihypertenseur", relation_type: "prerequisite" },
+      { target_key: "diagnostic_hta", relation_type: "prerequisite" },
     ],
     prerequisites: ["traitement_antihypertenseur", "diagnostic_hta"],
     source_confidence: 0.86,
-    source_trace: { segment_indices: [3], source_type: "procedure" },
+    source_trace: [
+      { segment_index: 3, excerpt: "Approche par étapes : règles hygiéno-diététiques" },
+    ],
     uncertain: false,
   },
 ];
@@ -181,7 +201,7 @@ const CS_CONCEPTS: AnalyzedConcept[] = [
     label: "Algorithme",
     definition: "Suite finie et ordonnée d'opérations permettant de résoudre un problème.",
     type: "prerequis",
-    criticality: "critical",
+    criticality: 1,
     criticality_score: 0.95,
     bloom_target: "understand",
     relations: [
@@ -189,7 +209,9 @@ const CS_CONCEPTS: AnalyzedConcept[] = [
     ],
     prerequisites: [],
     source_confidence: 0.95,
-    source_trace: { segment_indices: [0], source_type: "definition" },
+    source_trace: [
+      { segment_index: 0, excerpt: "Suite finie et ordonnée d'opérations" },
+    ],
     uncertain: false,
   },
   {
@@ -197,15 +219,18 @@ const CS_CONCEPTS: AnalyzedConcept[] = [
     label: "Structures de données",
     definition: "Organisation des données en mémoire : tableaux, listes chaînées, piles, files, arbres, graphes.",
     type: "prerequis",
-    criticality: "critical",
+    criticality: 1,
     criticality_score: 0.92,
     bloom_target: "understand",
     relations: [
-      { target_key: "algorithme", relation_type: "supports" },
+      { target_key: "algorithme", relation_type: "related" },
     ],
     prerequisites: [],
     source_confidence: 0.92,
-    source_trace: { segment_indices: [0, 1], source_type: "definition" },
+    source_trace: [
+      { segment_index: 0, excerpt: "Organisation des données en mémoire" },
+      { segment_index: 1, excerpt: "tableaux, listes chaînées, piles, files" },
+    ],
     uncertain: false,
   },
   {
@@ -213,15 +238,17 @@ const CS_CONCEPTS: AnalyzedConcept[] = [
     label: "Complexité algorithmique",
     definition: "Mesure des ressources (temps, espace) nécessaires à l'exécution d'un algorithme en fonction de la taille de l'entrée.",
     type: "principal",
-    criticality: "critical",
+    criticality: 1,
     criticality_score: 0.9,
     bloom_target: "analyze",
     relations: [
-      { target_key: "algorithme", relation_type: "requires" },
+      { target_key: "algorithme", relation_type: "prerequisite" },
     ],
     prerequisites: ["algorithme"],
     source_confidence: 0.88,
-    source_trace: { segment_indices: [1], source_type: "definition" },
+    source_trace: [
+      { segment_index: 1, excerpt: "Mesure des ressources nécessaires à l'exécution" },
+    ],
     uncertain: false,
   },
   {
@@ -229,16 +256,18 @@ const CS_CONCEPTS: AnalyzedConcept[] = [
     label: "Algorithmes de tri",
     definition: "Tri par insertion, sélection, fusion, rapide. Complexité moyenne et pire cas.",
     type: "principal",
-    criticality: "important",
+    criticality: 2,
     criticality_score: 0.85,
     bloom_target: "apply",
     relations: [
-      { target_key: "complexite_algorithmique", relation_type: "requires" },
-      { target_key: "structure_donnees", relation_type: "requires" },
+      { target_key: "complexite_algorithmique", relation_type: "prerequisite" },
+      { target_key: "structure_donnees", relation_type: "prerequisite" },
     ],
     prerequisites: ["complexite_algorithmique", "structure_donnees"],
     source_confidence: 0.85,
-    source_trace: { segment_indices: [2], source_type: "procedure" },
+    source_trace: [
+      { segment_index: 2, excerpt: "Tri par insertion, sélection, fusion, rapide" },
+    ],
     uncertain: false,
   },
   {
@@ -246,16 +275,19 @@ const CS_CONCEPTS: AnalyzedConcept[] = [
     label: "Algorithmes de recherche",
     definition: "Recherche séquentielle O(n), recherche dichotomique O(log n). Application aux tableaux triés.",
     type: "principal",
-    criticality: "important",
+    criticality: 2,
     criticality_score: 0.83,
     bloom_target: "apply",
     relations: [
-      { target_key: "complexite_algorithmique", relation_type: "requires" },
+      { target_key: "complexite_algorithmique", relation_type: "prerequisite" },
       { target_key: "tri_algorithmes", relation_type: "related" },
     ],
     prerequisites: ["complexite_algorithmique"],
     source_confidence: 0.84,
-    source_trace: { segment_indices: [2, 3], source_type: "procedure" },
+    source_trace: [
+      { segment_index: 2, excerpt: "Recherche séquentielle O(n)" },
+      { segment_index: 3, excerpt: "recherche dichotomique O(log n)" },
+    ],
     uncertain: false,
   },
   {
@@ -263,16 +295,18 @@ const CS_CONCEPTS: AnalyzedConcept[] = [
     label: "Récursivité",
     definition: "Technique de programmation où une fonction s'appelle elle-même. Cas de base et cas récursif.",
     type: "principal",
-    criticality: "critical",
+    criticality: 1,
     criticality_score: 0.88,
     bloom_target: "apply",
     relations: [
-      { target_key: "algorithme", relation_type: "requires" },
-      { target_key: "tri_algorithmes", relation_type: "supports" },
+      { target_key: "algorithme", relation_type: "prerequisite" },
+      { target_key: "tri_algorithmes", relation_type: "related" },
     ],
     prerequisites: ["algorithme"],
     source_confidence: 0.9,
-    source_trace: { segment_indices: [3], source_type: "definition" },
+    source_trace: [
+      { segment_index: 3, excerpt: "Technique de programmation où une fonction s'appelle elle-même" },
+    ],
     uncertain: false,
   },
   {
@@ -280,16 +314,18 @@ const CS_CONCEPTS: AnalyzedConcept[] = [
     label: "Optimisation algorithmique",
     definition: "Techniques pour améliorer les performances : mémoïsation, programmation dynamique, diviser pour régner.",
     type: "principal",
-    criticality: "critical",
+    criticality: 1,
     criticality_score: 0.87,
     bloom_target: "evaluate",
     relations: [
-      { target_key: "complexite_algorithmique", relation_type: "requires" },
-      { target_key: "recursivite", relation_type: "requires" },
+      { target_key: "complexite_algorithmique", relation_type: "prerequisite" },
+      { target_key: "recursivite", relation_type: "prerequisite" },
     ],
     prerequisites: ["complexite_algorithmique", "recursivite"],
     source_confidence: 0.83,
-    source_trace: { segment_indices: [4], source_type: "procedure" },
+    source_trace: [
+      { segment_index: 4, excerpt: "mémoïsation, programmation dynamique, diviser pour régner" },
+    ],
     uncertain: false,
   },
 ];

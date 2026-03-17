@@ -43,7 +43,7 @@ export default function MissionPlay() {
         const { data, error } = await supabase
           .from("generated_missions")
           .select("mission_json")
-          .eq("id", id)
+          .eq("id", id!)
           .single();
 
         if (error) throw error;
