@@ -3,6 +3,7 @@
 // rules, room overview, and start button
 // ============================================================
 
+import { forwardRef } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
 import {
