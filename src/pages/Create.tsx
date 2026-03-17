@@ -177,18 +177,29 @@ export default function Create() {
               exit={{ opacity: 0, y: -20 }}
               className="space-y-6"
             >
-              {/* Header */}
-              <div className="text-center mb-2">
-                <div className="flex items-center justify-center gap-2.5 mb-2">
-                  <Brain className="h-6 w-6 text-primary" />
-                  <h1 className="text-2xl font-bold">
+              {/* Header — cinematic scene entrance */}
+              <motion.div
+                className="text-center mb-4"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <div className="flex items-center justify-center gap-3 mb-3">
+                  <motion.div
+                    className="w-10 h-10 rounded-xl gradient-bg-premium flex items-center justify-center shadow-lg shadow-primary/20"
+                    animate={{ rotate: [0, -3, 0] }}
+                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                  >
+                    <Brain className="h-5 w-5 text-primary-foreground" />
+                  </motion.div>
+                  <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight">
                     {t("create_flow.title", { defaultValue: "Crée ton contenu" })}
                   </h1>
                 </div>
-                <p className="text-muted-foreground text-sm max-w-md mx-auto">
+                <p className="text-muted-foreground text-sm max-w-md mx-auto leading-relaxed">
                   {t("create_flow.subtitle", { defaultValue: "Choisis un format, ajoute ton cours, et laisse COGNITIO faire le reste." })}
                 </p>
-              </div>
+              </motion.div>
 
               {/* Progress indicator */}
               <CreateProgressHeader selectedFormat={selectedFormat} hasSource={hasSource} />
@@ -352,12 +363,12 @@ export default function Create() {
 
               {/* Generic error fallback */}
               {!pipeline.pipelineError && pipeline.anyError && (
-                <div className="border border-red-200 bg-red-50 rounded-lg p-4">
+                <div className="border border-red-500/20 bg-red-500/5 rounded-lg p-4">
                   <div className="flex items-start gap-3">
-                    <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5" />
+                    <AlertTriangle className="h-5 w-5 text-red-400 mt-0.5" />
                     <div>
-                      <p className="text-sm font-medium text-red-800">{t("create_page.error_label")}</p>
-                      <p className="text-sm text-red-600">{pipeline.anyError}</p>
+                      <p className="text-sm font-medium text-red-300">{t("create_page.error_label")}</p>
+                      <p className="text-sm text-red-400/80">{pipeline.anyError}</p>
                     </div>
                   </div>
                   <Button variant="outline" size="sm" className="mt-3" onClick={pipeline.reset}>
@@ -395,8 +406,8 @@ export default function Create() {
               {!pipeline.pipelineError && (
                 <div className={`border rounded-lg p-4 ${
                   pipeline.hasBlocking || isEmptyGeneration(pipeline)
-                    ? "bg-orange-50 border-orange-200"
-                    : "bg-muted/30"
+                    ? "bg-orange-500/5 border-orange-500/20"
+                    : "bg-muted/30 border-border/20"
                 }`}>
                   <p className="text-sm font-medium mb-1">
                     {pipeline.hasBlocking
@@ -438,12 +449,12 @@ export default function Create() {
 
               {/* Audience mismatch warning */}
               {analysis.result?.audience_mismatch_risk != null && analysis.result.audience_mismatch_risk >= 0.3 && (
-                <div className="border border-orange-200 bg-orange-50 rounded-lg p-4">
+                <div className="border border-orange-500/20 bg-orange-500/5 rounded-lg p-4">
                   <div className="flex items-start gap-2">
-                    <AlertTriangle className="h-4 w-4 text-orange-600 mt-0.5" />
+                    <AlertTriangle className="h-4 w-4 text-orange-400 mt-0.5" />
                     <div>
-                      <p className="text-sm font-medium text-orange-800">{t("create_page.audience_mismatch")}</p>
-                      <p className="text-xs text-orange-600">
+                      <p className="text-sm font-medium text-orange-300">{t("create_page.audience_mismatch")}</p>
+                      <p className="text-xs text-orange-400/80">
                         {analysis.result.audience_mismatch_message ?? t("create_page.audience_mismatch_default")}
                       </p>
                     </div>
@@ -633,12 +644,12 @@ export default function Create() {
 
               {/* Uncertain concepts warning */}
               {analysis.result && analysis.result.key_concepts.some((c) => c.uncertain) && (
-                <div className="border border-yellow-200 bg-yellow-50 rounded-lg p-4">
+                <div className="border border-yellow-500/20 bg-yellow-500/5 rounded-lg p-4">
                   <div className="flex items-start gap-2">
-                    <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5" />
+                    <AlertTriangle className="h-4 w-4 text-yellow-400 mt-0.5" />
                     <div>
-                      <p className="text-sm font-medium text-yellow-800">{t("create_page.uncertain_concepts")}</p>
-                      <p className="text-xs text-yellow-600">
+                      <p className="text-sm font-medium text-yellow-300">{t("create_page.uncertain_concepts")}</p>
+                      <p className="text-xs text-yellow-400/80">
                         {t("create_page.uncertain_concepts_detail", { count: analysis.result.key_concepts.filter((c) => c.uncertain).length })}
                       </p>
                     </div>
@@ -782,15 +793,15 @@ function PipelineErrorCard({
   const { t } = useTranslation();
 
   return (
-    <div className="border border-red-200 bg-red-50 rounded-lg p-4">
+    <div className="border border-red-500/20 bg-red-500/5 rounded-xl p-4">
       <div className="flex items-start gap-3">
-        <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5" />
+        <AlertTriangle className="h-5 w-5 text-red-400 mt-0.5" />
         <div>
-          <p className="text-sm font-medium text-red-800">
+          <p className="text-sm font-medium text-red-300">
             {t("create_page.error_label")} — {t(`create_page.error_source_${error.source}`, { defaultValue: t("create_page.error_source_default") })}
           </p>
-          <p className="text-sm text-red-600">{error.message}</p>
-          <p className="text-xs text-red-400 mt-1">
+          <p className="text-sm text-red-400/80">{error.message}</p>
+          <p className="text-xs text-red-500/60 mt-1">
             {t("create_page.error_phase_hint", { phase: t(phaseKeys[error.phase] ?? "create_page.phase_default") })}
           </p>
         </div>

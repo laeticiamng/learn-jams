@@ -168,25 +168,51 @@ export default function ImmersiveMissionScene({
         renderMode={renderMode}
       />
 
-      {/* Cinematic transition overlay — semi-transparent to keep 3D visible */}
+      {/* Cinematic room transition — establishing shot for each new room */}
       <AnimatePresence>
         {isTransitioning && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.4 }}
-            className="absolute inset-0 z-20 bg-background/40 backdrop-blur-sm flex items-center justify-center pointer-events-none"
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none"
           >
+            {/* Depth of field blur overlay */}
             <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 1.2, opacity: 0 }}
-              transition={{ duration: 0.5 }}
-              className="text-center space-y-2"
+              className="absolute inset-0 bg-background/30 backdrop-blur-[3px]"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.4 }}
+            />
+
+            {/* Room announcement */}
+            <motion.div
+              initial={{ scale: 0.7, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 1.1, opacity: 0, y: -10 }}
+              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              className="text-center space-y-3 relative z-10"
             >
-              <p className="text-xs text-primary font-semibold uppercase tracking-widest">Salle {currentRoomIndex + 1}</p>
-              <div className="w-12 h-0.5 bg-primary/40 mx-auto rounded-full" />
+              <motion.div
+                className="w-16 h-px mx-auto bg-gradient-to-r from-transparent via-primary/50 to-transparent"
+                initial={{ scaleX: 0 }}
+                animate={{ scaleX: 1 }}
+                transition={{ delay: 0.1, duration: 0.4 }}
+              />
+              <p className="text-xs text-primary font-semibold uppercase tracking-[0.2em]">
+                Salle {currentRoomIndex + 1}
+              </p>
+              <p className="text-[10px] text-muted-foreground/50">
+                {roomsData[currentRoomIndex]?.title ?? ""}
+              </p>
+              <motion.div
+                className="w-16 h-px mx-auto bg-gradient-to-r from-transparent via-primary/50 to-transparent"
+                initial={{ scaleX: 0 }}
+                animate={{ scaleX: 1 }}
+                transition={{ delay: 0.15, duration: 0.4 }}
+              />
             </motion.div>
           </motion.div>
         )}

@@ -179,37 +179,69 @@ export default function MissionPlayerLayout({
   // -------- Render --------
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8 pt-24">
-      {/* Intro screen */}
-      {phase === "intro" && (
-        <>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate("/cognitio-library")}
-            className="gap-2 text-muted-foreground mb-4"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Retour à la bibliothèque
-          </Button>
-          <MissionIntroScreen mission={mission} onStart={handleStart} />
-        </>
-      )}
+    <div className="max-w-3xl mx-auto px-4 py-8 pt-24 relative">
+      {/* Ambient background energy — shifts with progression */}
+      <div
+        className="fixed inset-0 pointer-events-none transition-opacity duration-1000 z-0"
+        style={{
+          background: phase === "boss"
+            ? "radial-gradient(ellipse at 50% 30%, hsl(0 80% 50% / 0.03), transparent 60%)"
+            : phase === "completed"
+              ? "radial-gradient(ellipse at 50% 30%, hsl(142 70% 50% / 0.04), transparent 60%)"
+              : `radial-gradient(ellipse at 50% 30%, hsl(265 90% 60% / ${0.02 + (currentRoomIndex / Math.max(mission.rooms.length, 1)) * 0.02}), transparent 60%)`,
+        }}
+      />
 
-      {/* Playing / Boss */}
-      {(phase === "playing" || phase === "boss") && (
-        <>
-          {/* Header */}
-          <div className="mb-4">
+      {/* Intro screen */}
+      <AnimatePresence mode="wait">
+        {phase === "intro" && (
+          <motion.div
+            key="intro"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, scale: 0.98 }}
+            transition={{ duration: 0.5 }}
+            className="relative z-10"
+          >
             <Button
               variant="ghost"
               size="sm"
               onClick={() => navigate("/cognitio-library")}
-              className="gap-2 text-muted-foreground mb-3"
+              className="gap-2 text-muted-foreground mb-4"
             >
               <ArrowLeft className="w-4 h-4" />
-              Quitter
+              Retour à la bibliothèque
             </Button>
+            <MissionIntroScreen mission={mission} onStart={handleStart} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Playing / Boss */}
+      {(phase === "playing" || phase === "boss") && (
+        <div className="relative z-10">
+          {/* Header with room transition */}
+          <div className="mb-4">
+            <div className="flex items-center justify-between mb-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/cognitio-library")}
+                className="gap-2 text-muted-foreground"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Quitter
+              </Button>
+              {/* Score indicator */}
+              <motion.div
+                key={score.total}
+                animate={{ scale: [1, 1.1, 1] }}
+                transition={{ duration: 0.3 }}
+                className="text-sm font-bold tabular-nums text-primary"
+              >
+                {Math.round(score.total)} pts
+              </motion.div>
+            </div>
             <h1 className="text-lg font-bold">{mission.title}</h1>
           </div>
 
@@ -229,14 +261,15 @@ export default function MissionPlayerLayout({
             />
           </div>
 
-          {/* Gameplay */}
+          {/* Gameplay with cinematic transitions */}
           <AnimatePresence mode="wait">
             {phase === "boss" && mission.boss ? (
               <motion.div
                 key="boss"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
+                initial={{ opacity: 0, y: 24, filter: "blur(6px)" }}
+                animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                exit={{ opacity: 0, y: -16 }}
+                transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
               >
                 <MissionBossView
                   boss={mission.boss}
@@ -248,9 +281,10 @@ export default function MissionPlayerLayout({
             ) : currentRoom && currentItem ? (
               <motion.div
                 key={`room-${currentRoomIndex}-item-${currentItemIndex}`}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
+                initial={{ opacity: 0, y: 24, filter: "blur(6px)" }}
+                animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                exit={{ opacity: 0, y: -16 }}
+                transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
               >
                 <MissionRoomView
                   room={currentRoom}
@@ -264,23 +298,30 @@ export default function MissionPlayerLayout({
               </motion.div>
             ) : null}
           </AnimatePresence>
-        </>
+        </div>
       )}
 
-      {/* End screen */}
+      {/* End screen — completion reveal */}
       {phase === "completed" && (
-        <MissionEndScreen
-          mission={mission}
-          events={events}
-          score={score}
-          roomProgress={roomProgress}
-          totalTimeSec={totalTimeSec}
-          hintsUsedCount={hintsUsedCount}
-          onViewDebrief={() => navigate(`/mission/${missionId}/debrief`)}
-          onBackToLibrary={() => navigate("/cognitio-library")}
-          onReplay={() => window.location.reload()}
-          onEscapeGame={() => navigate(`/mission/${missionId}/escape`)}
-        />
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          className="relative z-10"
+        >
+          <MissionEndScreen
+            mission={mission}
+            events={events}
+            score={score}
+            roomProgress={roomProgress}
+            totalTimeSec={totalTimeSec}
+            hintsUsedCount={hintsUsedCount}
+            onViewDebrief={() => navigate(`/mission/${missionId}/debrief`)}
+            onBackToLibrary={() => navigate("/cognitio-library")}
+            onReplay={() => window.location.reload()}
+            onEscapeGame={() => navigate(`/mission/${missionId}/escape`)}
+          />
+        </motion.div>
       )}
     </div>
   );
