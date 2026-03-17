@@ -128,7 +128,7 @@ export function generateEscapeRooms(input: RoomGenerationInput): EscapeRoom[] {
 
 // ---------- Room Type Sequence ----------
 
-function selectRoomTypeSequence(count: number): string[] {
+function selectRoomTypeSequence(count: number): EscapeRoom["room_type"][] {
   if (count <= 2) return ["briefing", "final"];
   if (count <= 3) return ["briefing", "analysis", "final"];
   if (count <= 4) return ["briefing", "exploration", "analysis", "final"];

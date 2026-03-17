@@ -83,7 +83,7 @@ serve(async (req) => {
       } else {
         await supabase
           .from("learner_knowledge_graph")
-          .insert({
+          .insert([{
             user_id,
             concept_stable_key: concept_key,
             mastery_score: newScore,
@@ -92,7 +92,7 @@ serve(async (req) => {
             next_review_at: nextReview,
             observations_count: 1,
             confusion_hits: illusion ? 1 : 0,
-          });
+          }]);
       }
 
       updatedConcepts.push({

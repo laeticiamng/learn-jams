@@ -44,7 +44,7 @@ export const openaiVideoProvider: VideoProvider = {
       );
     }
 
-    return data as VideoResult;
+    return data as unknown as VideoResult;
   },
 
   async getVideoStatus(generationId) {

@@ -166,12 +166,16 @@ function makeM4Output(): M4_Output {
     needs_split: false,
     overrides_applied: [],
     cost_level: "low",
+    system_recommended_format: "fiche_dynamique",
+    fallback_candidates: [],
+    override_requires_confirmation: false,
     decision_trace: {
       reasoning_type: "declaratif",
       objective: "discovery",
       matrix_result: "fiche_dynamique",
       overrides_checked: [],
       final_format: "fiche_dynamique",
+      user_intent_respected: true,
     },
   };
 }

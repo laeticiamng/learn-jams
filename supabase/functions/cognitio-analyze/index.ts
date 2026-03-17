@@ -129,7 +129,7 @@ serve(async (req) => {
     // Persist course_profile
     const { data: profile, error: profileError } = await supabase
       .from("course_profiles")
-      .insert({
+      .insert([{
         document_id,
         main_topic: analysisResult.main_topic,
         learning_objectives_json: analysisResult.learning_objectives,
@@ -147,7 +147,7 @@ serve(async (req) => {
         total_concepts: reliableConcepts.length,
         critical_count: reliableConcepts.filter((c) => c.criticality === 1).length,
         estimated_complexity: analysisResult.estimated_complexity,
-      })
+      }])
       .select("id")
       .single();
 
@@ -160,7 +160,7 @@ serve(async (req) => {
     for (const concept of reliableConcepts) {
       const { data: row, error: conceptError } = await supabase
         .from("concepts")
-        .insert({
+        .insert([{
           course_profile_id: courseProfileId,
           stable_key: concept.stable_key,
           label: concept.label,
@@ -175,7 +175,7 @@ serve(async (req) => {
           source_trace_json: concept.source_trace,
           relations_json: concept.relations,
           uncertain: concept.uncertain,
-        })
+        }])
         .select("id")
         .single();
 
@@ -186,13 +186,13 @@ serve(async (req) => {
 
     // Persist confusion_pairs
     for (const pair of analysisResult.confusion_pairs) {
-      await supabase.from("confusion_pairs").insert({
+      await supabase.from("confusion_pairs").insert([{
         course_profile_id: courseProfileId,
         concept_a_id: conceptIdMap[pair.concept_a_key] || null,
         concept_b_id: conceptIdMap[pair.concept_b_key] || null,
         distinction_key: pair.distinction_key,
         frequency: pair.frequency,
-      });
+      }]);
     }
 
     // Update document status
@@ -563,11 +563,18 @@ function normalizeAnalysisResult(
     },
     prerequis: asStringArray(raw.prerequis),
     structure_type: typeof raw.structure_type === "string" ? raw.structure_type : "minimal",
-    source_issues: asRecordArray(raw.source_issues).map((issue) => ({
-      code: typeof issue.code === "string" ? issue.code : "UNKNOWN",
-      message: typeof issue.message === "string" ? issue.message : "",
-      severity: typeof issue.severity === "string" ? issue.severity : "info",
-    })),
+    source_issues: asRecordArray(raw.source_issues).map((issue) => {
+      const VALID_SEVERITIES = ["info", "warning", "blocking"] as const;
+      const rawSeverity = typeof issue.severity === "string" ? issue.severity : "info";
+      const severity = VALID_SEVERITIES.includes(rawSeverity as typeof VALID_SEVERITIES[number])
+        ? (rawSeverity as "info" | "warning" | "blocking")
+        : "info";
+      return {
+        code: typeof issue.code === "string" ? issue.code : "UNKNOWN",
+        message: typeof issue.message === "string" ? issue.message : "",
+        severity,
+      };
+    }),
     estimated_complexity: Math.min(10, Math.max(1, typeof raw.estimated_complexity === "number" ? raw.estimated_complexity : 5)),
   };
 }

@@ -52,7 +52,7 @@ export default function EscapeGame() {
         const { data: missionData, error: missionError } = await supabase
           .from("generated_missions")
           .select("mission_json, generation_mode")
-          .eq("id", id)
+          .eq("id", id!)
           .single();
 
         if (missionError) throw missionError;
@@ -65,7 +65,7 @@ export default function EscapeGame() {
         const { data: profileData } = await supabase
           .from("generated_missions")
           .select("course_profile_id")
-          .eq("id", id)
+          .eq("id", id!)
           .single();
 
         let mainTopic = missionContent.title.replace(/^Mission:\s*/i, "");

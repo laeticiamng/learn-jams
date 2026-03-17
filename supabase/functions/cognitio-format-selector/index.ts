@@ -141,7 +141,7 @@ serve(async (req) => {
     // Persist
     const { error: insertError } = await supabase
       .from("format_decisions")
-      .insert({
+      .insert([{
         id: result.decision_id,
         architecture_id: input.architecture_id,
         document_id: input.document_id,
@@ -157,7 +157,7 @@ serve(async (req) => {
         overrides_applied_json: result.overrides_applied,
         cost_level: result.cost_level,
         decision_trace_json: result.decision_trace,
-      });
+      }]);
 
     if (insertError) {
       console.error("DB insert error:", insertError);

@@ -146,12 +146,12 @@ function extractQuickConcepts(text: string, segments: SegmentOutput[]): QuickCon
   // Score and filter
   const concepts: QuickConcept[] = [];
   for (const label of candidates) {
-    if (rejectConceptArtifact(label)) continue;
+    if (rejectConceptArtifact({ label, definition: "" }).rejected) continue;
 
     const scores = scoreConceptCandidate(label, "");
     concepts.push({
       label,
-      confidence: scores.accepted ? scores.semantic_score : 0.2,
+      confidence: scores.accepted ? scores.concept_semantic_validity_score : 0.2,
       is_artifact: scores.editorial_artifact_score >= 0.4 || scores.header_noise_score >= 0.4,
     });
   }
