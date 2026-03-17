@@ -34,6 +34,7 @@ import {
   type ConceptCandidateScores,
 } from "@/lib/cognitio-semantic-cleaning";
 import { filterEditorialNoise, detectFrontMatter, computeSegmentNoiseScore } from "./editorialNoiseFilter";
+import { preNormalizeMedicalText } from "./conceptNormalizer";
 import { runDocumentUnderstanding, deriveMissionUniverseHint, classifyDomainFromText } from "./documentUnderstandingLayer";
 import { extractAndCleanTopic, validateTopic, cleanTopicString } from "./topicCleaner";
 import { SECOND_PASS_THRESHOLDS } from "@/domain/cognitio/secondPassThresholds";
@@ -413,7 +414,11 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
   const originalSegments = rawSegments || segments;
 
   // Apply semantic cleaning before extraction
-  const cleanedText = cleanSourceNoise(clean_text);
+  // For medical polycopiés: pre-normalize abbreviation lists and bullet points first
+  const preMedicalText = input.source_type === "polycopie"
+    ? preNormalizeMedicalText(clean_text)
+    : clean_text;
+  const cleanedText = cleanSourceNoise(preMedicalText);
 
   // P0 AUDIT: Detect if cleanSourceNoise destroyed too much content
   const cleanDelta = clean_text.length - cleanedText.length;
@@ -431,6 +436,8 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
     `  m2_cleaned_length=${cleanedText.length}\n` +
     `  m2_clean_delta=${cleanDelta} chars removed (${(100 - cleanRatio * 100).toFixed(1)}%)\n` +
     `  m2_segments_count=${segments.length}\n` +
+    `  m2_source_type=${input.source_type ?? "unknown"}\n` +
+    `  m2_medical_polycopie_mode=${input.source_type === "polycopie"}\n` +
     `  m2_input_preview_raw="${clean_text.slice(0, 200)}…"\n` +
     `  m2_input_preview_cleaned="${cleanedText.slice(0, 200)}…"`
   );
@@ -1152,15 +1159,17 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
 
   // P0 FIX: Post-heuristic scoring — use LENIENT mode for emergency/heuristic concepts
   // to prevent total concept destruction. Only reject the most obvious artifacts.
+  // Medical polycopié mode uses intermediate thresholds.
   const isEmergencyMode = _dbg_fallback_level === "emergency" || _dbg_fallback_level === "heuristic_secours";
+  const isMedicalPolycopie = input.source_type === "polycopie";
   if (concepts.length > 0) {
     const conceptCountBeforeScoring = concepts.length;
     const scoredConcepts = concepts.filter(c => {
-      // Use lenient scoring for emergency/heuristic concepts
-      const scores = scoreConceptCandidate(c.label, c.definition, isEmergencyMode);
+      // Use lenient scoring for emergency/heuristic concepts, medical mode for polycopiés
+      const scores = scoreConceptCandidate(c.label, c.definition, isEmergencyMode, isMedicalPolycopie);
       if (!scores.accepted) {
         console.warn(
-          `[COGNITIO][M2][POST_SCORE] Rejecting concept "${c.label}" after scoring (lenient=${isEmergencyMode}):\n` +
+          `[COGNITIO][M2][POST_SCORE] Rejecting concept "${c.label}" after scoring (lenient=${isEmergencyMode}, medical=${isMedicalPolycopie}):\n` +
           `  editorial=${scores.editorial_artifact_score}, header=${scores.header_noise_score}, ` +
           `validity=${scores.concept_semantic_validity_score}, reason="${scores.reject_reason}"`
         );
@@ -1181,18 +1190,22 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
     if (scoredConcepts.length === 0 && clean_text.length > 500 && conceptCountBeforeScoring > 0) {
       console.warn(
         `[COGNITIO][M2][SAFEGUARD] Post-scoring would eliminate ALL ${conceptCountBeforeScoring} concepts! ` +
-        `Keeping top ${Math.min(5, conceptCountBeforeScoring)} by semantic validity to prevent total destruction.`
+        `Keeping top ${Math.min(5, conceptCountBeforeScoring)} by semantic validity to prevent total destruction. ` +
+        `(medical=${isMedicalPolycopie})`
       );
       // Sort by semantic validity (descending) and keep at least 3
+      // For medical polycopiés, keep more concepts and use higher confidence floor
+      const keepCount = isMedicalPolycopie ? Math.max(5, Math.min(8, conceptCountBeforeScoring)) : Math.max(3, Math.min(5, conceptCountBeforeScoring));
+      const confidenceFloor = isMedicalPolycopie ? 0.4 : 0.3;
       const rankedConcepts = concepts
-        .map(c => ({ concept: c, validity: scoreConceptCandidate(c.label, c.definition, true).concept_semantic_validity_score }))
+        .map(c => ({ concept: c, validity: scoreConceptCandidate(c.label, c.definition, true, isMedicalPolycopie).concept_semantic_validity_score }))
         .sort((a, b) => b.validity - a.validity);
-      concepts = rankedConcepts.slice(0, Math.max(3, Math.min(5, conceptCountBeforeScoring))).map(r => ({
+      concepts = rankedConcepts.slice(0, keepCount).map(r => ({
         ...r.concept,
-        uncertain: true, // Mark as uncertain since they failed scoring
-        source_confidence: Math.min(r.concept.source_confidence, 0.3),
+        uncertain: !isMedicalPolycopie, // Medical polycopiés: don't mark as uncertain if we're just being lenient
+        source_confidence: isMedicalPolycopie ? Math.max(r.concept.source_confidence, confidenceFloor) : Math.min(r.concept.source_confidence, confidenceFloor),
       }));
-      console.info(`[COGNITIO][M2][SAFEGUARD] Preserved ${concepts.length} concepts from destruction.`);
+      console.info(`[COGNITIO][M2][SAFEGUARD] Preserved ${concepts.length} concepts from destruction (medical=${isMedicalPolycopie}).`);
     } else {
       concepts = scoredConcepts;
     }

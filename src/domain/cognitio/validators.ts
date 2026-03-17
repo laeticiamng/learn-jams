@@ -206,6 +206,19 @@ export function normalizeGateConceptInput(c: SemanticGateConceptInput): {
   };
 }
 
+/** Per-concept diagnostic entry for debugging rejection reasons */
+export interface ConceptDiagnosticEntry {
+  label: string;
+  definition_preview: string;
+  source_confidence: number;
+  uncertain: boolean;
+  scores: { accepted: boolean; editorial_artifact_score: number; header_noise_score: number };
+  is_artifact: boolean;
+  is_uncertain: boolean;
+  is_valid: boolean;
+  reject_reason: string | null;
+}
+
 export function runSemanticSuccessGate(params: {
   concepts: SemanticGateConceptInput[];
   main_topic: string;
@@ -218,23 +231,41 @@ export function runSemanticSuccessGate(params: {
   cleanMainTopic: (text: string) => string;
   /** Ticket 3: analysis mode — body_only uses relaxed thresholds */
   analysis_mode?: "full" | "body_only";
+  /** Source type from M1 — used to detect medical polycopiés */
+  source_type?: string;
 }): SemanticGateResult {
   const { main_topic, scoreConceptCandidate, isEditorialArtifact, cleanMainTopic } = params;
   const analysisMode = params.analysis_mode ?? "full";
   const blockReasons: string[] = [];
 
+  // Detect medical polycopié mode for relaxed thresholds
+  const isMedicalPolycopie = params.source_type === "polycopie";
+
   // Mode-aware thresholds — sourced from centralized SECOND_PASS_THRESHOLDS
   const isBodyOnly = analysisMode === "body_only";
-  const minValidConcepts = isBodyOnly
-    ? SECOND_PASS_THRESHOLDS.MIN_VALID_CONCEPTS_BODY_ONLY
-    : SECOND_PASS_THRESHOLDS.MIN_VALID_CONCEPTS_FULL;
+  const minValidConcepts = isMedicalPolycopie
+    ? SECOND_PASS_THRESHOLDS.MEDICAL_MIN_VALID_CONCEPTS_FULL
+    : isBodyOnly
+      ? SECOND_PASS_THRESHOLDS.MIN_VALID_CONCEPTS_BODY_ONLY
+      : SECOND_PASS_THRESHOLDS.MIN_VALID_CONCEPTS_FULL;
   const minBodyConcepts = isBodyOnly
     ? SECOND_PASS_THRESHOLDS.MIN_BODY_CONCEPTS_BODY_ONLY
     : SECOND_PASS_THRESHOLDS.MIN_BODY_CONCEPTS_FULL;
-  const maxArtifactRatio = isBodyOnly
-    ? SECOND_PASS_THRESHOLDS.MAX_ARTIFACT_RATIO_BODY_ONLY
-    : SECOND_PASS_THRESHOLDS.MAX_ARTIFACT_RATIO_FULL;
-  const thresholdProfile = isBodyOnly ? "body_only_relaxed" : "full_strict";
+  const maxArtifactRatio = isMedicalPolycopie
+    ? SECOND_PASS_THRESHOLDS.MEDICAL_MAX_ARTIFACT_RATIO
+    : isBodyOnly
+      ? SECOND_PASS_THRESHOLDS.MAX_ARTIFACT_RATIO_BODY_ONLY
+      : SECOND_PASS_THRESHOLDS.MAX_ARTIFACT_RATIO_FULL;
+  const thresholdProfile = isMedicalPolycopie
+    ? "medical_polycopie"
+    : isBodyOnly ? "body_only_relaxed" : "full_strict";
+
+  // Artifact/uncertainty thresholds — relaxed for medical polycopiés
+  const artifactEditorialThreshold = isMedicalPolycopie ? 0.6 : 0.4;
+  const artifactHeaderThreshold = isMedicalPolycopie ? 0.6 : 0.4;
+  const uncertaintyConfidenceThreshold = isMedicalPolycopie
+    ? SECOND_PASS_THRESHOLDS.MEDICAL_UNCERTAINTY_CONFIDENCE
+    : 0.4;
 
   // Normalize and compute signals
   let validConceptsCount = 0;
@@ -244,11 +275,21 @@ export function runSemanticSuccessGate(params: {
   let editorialArtifactCount = 0;
 
   const normalizedConcepts = params.concepts.map(normalizeGateConceptInput);
+  const conceptDiagnostics: ConceptDiagnosticEntry[] = [];
 
   for (const c of normalizedConcepts) {
     const scores = scoreConceptCandidate(c.label, c.definition);
-    const isUncertain = c.uncertain === true || c.source_confidence < 0.4;
-    const isArtifact = !scores.accepted || scores.editorial_artifact_score >= 0.4 || scores.header_noise_score >= 0.4;
+    const isUncertain = c.uncertain === true || c.source_confidence < uncertaintyConfidenceThreshold;
+    const isArtifact = !scores.accepted ||
+      scores.editorial_artifact_score >= artifactEditorialThreshold ||
+      scores.header_noise_score >= artifactHeaderThreshold;
+
+    // Build rejection reason for diagnostics
+    let rejectReason: string | null = null;
+    if (!scores.accepted) rejectReason = "scoring_rejected";
+    else if (scores.editorial_artifact_score >= artifactEditorialThreshold) rejectReason = `editorial_score=${scores.editorial_artifact_score}>=threshold(${artifactEditorialThreshold})`;
+    else if (scores.header_noise_score >= artifactHeaderThreshold) rejectReason = `header_score=${scores.header_noise_score}>=threshold(${artifactHeaderThreshold})`;
+    else if (isUncertain) rejectReason = `uncertain(confidence=${c.source_confidence}<${uncertaintyConfidenceThreshold})`;
 
     if (isUncertain) uncertainConceptsCount++;
     if (isArtifact) editorialArtifactCount++;
@@ -263,7 +304,30 @@ export function runSemanticSuccessGate(params: {
     // For body-only mode, if source_trace is empty, count as body concept
     // (body-only retry may not have segment indices set correctly)
     if (isBodyOnly && c.source_trace.length === 0) bodyConceptsCount++;
+
+    // Diagnostic logging per concept
+    conceptDiagnostics.push({
+      label: c.label,
+      definition_preview: c.definition.slice(0, 80),
+      source_confidence: c.source_confidence,
+      uncertain: c.uncertain,
+      scores: { accepted: scores.accepted, editorial_artifact_score: scores.editorial_artifact_score, header_noise_score: scores.header_noise_score },
+      is_artifact: isArtifact,
+      is_uncertain: isUncertain,
+      is_valid: !isArtifact && !isUncertain,
+      reject_reason: rejectReason,
+    });
   }
+
+  // Emit per-concept diagnostic log
+  console.info(
+    `[COGNITIO][GATE] Per-concept diagnostics (${thresholdProfile}, source_type=${params.source_type ?? "unknown"}):\n` +
+    conceptDiagnostics.map((d, i) =>
+      `  [${i}] "${d.label}" → valid=${d.is_valid}, artifact=${d.is_artifact}, uncertain=${d.is_uncertain}, ` +
+      `scores={editorial=${d.scores.editorial_artifact_score}, header=${d.scores.header_noise_score}, accepted=${d.scores.accepted}}, ` +
+      `confidence=${d.source_confidence}, reject=${d.reject_reason ?? "none"}`
+    ).join("\n")
+  );
 
   const editorialArtifactRatio = normalizedConcepts.length > 0 ? editorialArtifactCount / normalizedConcepts.length : 1;
 
@@ -319,6 +383,8 @@ export function runSemanticSuccessGate(params: {
 
 /**
  * P0: Mission-specific gate — stricter than the general semantic gate.
+ * Now supports degraded mission mode: if >= 1 exploitable concept (valid OR uncertain),
+ * generate a degraded mission instead of blocking completely.
  */
 export function runMissionGate(signals: SemanticGateSignals, mainTopic: string): MissionGateResult {
   const blockReasons: string[] = [];
@@ -339,7 +405,29 @@ export function runMissionGate(signals: SemanticGateSignals, mainTopic: string):
     blockReasons.push("Trop de concepts sont des artefacts éditoriaux pour construire une mission fiable");
   }
 
-  const passed = blockReasons.length === 0;
+  // Degraded mission fallback: if gate would block but we have >= 1 exploitable concept
+  // (valid or uncertain), allow a degraded mission instead of total failure
+  const exploitableConcepts = signals.valid_concepts_count + signals.uncertain_concepts_count;
+  const strictPassed = blockReasons.length === 0;
+
+  if (!strictPassed && exploitableConcepts >= SECOND_PASS_THRESHOLDS.DEGRADED_MISSION_MIN_EXPLOITABLE) {
+    // Check we don't have a poisoned topic — that's a hard block
+    if (!signals.main_topic_is_editorial_artifact) {
+      console.warn(
+        `[COGNITIO][MISSION_GATE] DEGRADED FALLBACK: strict gate failed (${blockReasons.join("; ")}), ` +
+        `but ${exploitableConcepts} exploitable concept(s) found (valid=${signals.valid_concepts_count}, ` +
+        `uncertain=${signals.uncertain_concepts_count}). Allowing degraded mission.`
+      );
+      return {
+        passed: true,
+        block_reasons: [],
+        display_message: `Mission dégradée : ${exploitableConcepts} concept(s) exploitable(s) — ` +
+          `mission générée en mode réduit. Raisons initiales : ${blockReasons.join("; ")}`,
+      };
+    }
+  }
+
+  const passed = strictPassed;
 
   return {
     passed,

@@ -667,9 +667,21 @@ describe("runMissionGate — uses SECOND_PASS_THRESHOLDS", () => {
     };
   }
 
-  it("blocks when valid_concepts_count < MISSION_MIN_VALID_CONCEPTS", () => {
+  it("allows degraded mission when valid_concepts_count < MISSION_MIN_VALID_CONCEPTS but exploitable concepts exist", () => {
     const signals = makeSignals({
       valid_concepts_count: SECOND_PASS_THRESHOLDS.MISSION_MIN_VALID_CONCEPTS - 1,
+    });
+    const result = runMissionGate(signals, "Topic");
+    // Degraded fallback: valid(1) + uncertain(0) = 1 >= DEGRADED_MIN_EXPLOITABLE(1) → passes as degraded
+    expect(result.passed).toBe(true);
+    expect(result.display_message).toContain("dégradée");
+  });
+
+  it("blocks when valid_concepts_count = 0 and uncertain = 0 (no exploitable concepts)", () => {
+    const signals = makeSignals({
+      valid_concepts_count: 0,
+      uncertain_concepts_count: 0,
+      body_concepts_count: 0,
     });
     const result = runMissionGate(signals, "Topic");
     expect(result.passed).toBe(false);
@@ -684,11 +696,24 @@ describe("runMissionGate — uses SECOND_PASS_THRESHOLDS", () => {
     expect(result.passed).toBe(true);
   });
 
-  it("blocks when editorial_artifact_ratio >= MISSION_MAX_ARTIFACT_RATIO", () => {
+  it("allows degraded mission when editorial_artifact_ratio high but exploitable concepts exist", () => {
     const signals = makeSignals({
       editorial_artifact_ratio: SECOND_PASS_THRESHOLDS.MISSION_MAX_ARTIFACT_RATIO,
     });
     const result = runMissionGate(signals, "Topic");
+    // Degraded fallback: valid(5) + uncertain(0) = 5 >= 1 → passes as degraded
+    expect(result.passed).toBe(true);
+    expect(result.display_message).toContain("dégradée");
+  });
+
+  it("blocks when editorial_artifact_ratio high with editorial topic and no exploitable concepts", () => {
+    const signals = makeSignals({
+      editorial_artifact_ratio: SECOND_PASS_THRESHOLDS.MISSION_MAX_ARTIFACT_RATIO,
+      valid_concepts_count: 0,
+      uncertain_concepts_count: 0,
+      main_topic_is_editorial_artifact: true,
+    });
+    const result = runMissionGate(signals, "R2C : Rang A");
     expect(result.passed).toBe(false);
     expect(result.block_reasons.some(r => r.includes("artefacts éditoriaux"))).toBe(true);
   });

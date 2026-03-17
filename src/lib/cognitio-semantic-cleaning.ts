@@ -847,19 +847,21 @@ export function computeConceptSemanticValidityScore(label: string, definition: s
  * Full scoring for a concept candidate. Returns all scores plus accept/reject decision.
  * When `lenient` is true (emergency/heuristic mode), thresholds are relaxed to prevent
  * total concept destruction on noisy documents.
+ * When `medical` is true, uses intermediate thresholds for medical polycopiés
+ * that contain legitimate medical content mixed with editorial annotations.
  */
-export function scoreConceptCandidate(label: string, definition: string, lenient: boolean = false): ConceptCandidateScores {
+export function scoreConceptCandidate(label: string, definition: string, lenient: boolean = false, medical: boolean = false): ConceptCandidateScores {
   const editorial_artifact_score = computeEditorialArtifactScore(label);
   const header_noise_score = computeHeaderNoiseScore(label);
   const concept_semantic_validity_score = computeConceptSemanticValidityScore(label, definition);
 
   let reject_reason: string | null = null;
 
-  // P0: Tightened thresholds — in normal mode, be more aggressive about rejecting
-  // editorial artifacts to prevent header concepts from passing through
-  const headerThreshold = lenient ? 0.8 : 0.4;
-  const editorialThreshold = lenient ? 0.85 : 0.5;
-  const validityThreshold = lenient ? 0.05 : 0.2;
+  // Threshold selection: lenient > medical > normal
+  // Medical mode is between normal and lenient — allows more noise but still filters junk
+  const headerThreshold = lenient ? 0.8 : medical ? 0.6 : 0.4;
+  const editorialThreshold = lenient ? 0.85 : medical ? 0.7 : 0.5;
+  const validityThreshold = lenient ? 0.05 : medical ? 0.1 : 0.2;
 
   // Rejection rules
   if (header_noise_score >= headerThreshold) {

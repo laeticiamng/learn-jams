@@ -23,4 +23,22 @@ export const SECOND_PASS_THRESHOLDS = {
   MISSION_MIN_VALID_CONCEPTS: 2,
   /** Mission gate: max artifact ratio */
   MISSION_MAX_ARTIFACT_RATIO: 0.7,
+
+  // --- Medical polycopié relaxed thresholds ---
+  /** Minimum valid concepts for medical polycopié (full analysis) */
+  MEDICAL_MIN_VALID_CONCEPTS_FULL: 1,
+  /** Scoring: editorial artifact threshold for medical polycopiés (more lenient) */
+  MEDICAL_EDITORIAL_THRESHOLD: 0.7,
+  /** Scoring: header noise threshold for medical polycopiés (more lenient) */
+  MEDICAL_HEADER_THRESHOLD: 0.6,
+  /** Scoring: semantic validity threshold for medical polycopiés (more lenient) */
+  MEDICAL_VALIDITY_THRESHOLD: 0.1,
+  /** Scoring: source_confidence threshold for uncertain classification in medical mode */
+  MEDICAL_UNCERTAINTY_CONFIDENCE: 0.3,
+  /** Max artifact ratio for medical polycopiés */
+  MEDICAL_MAX_ARTIFACT_RATIO: 0.9,
+
+  // --- Degraded mission fallback ---
+  /** Minimum exploitable concepts (valid + uncertain) for degraded mission */
+  DEGRADED_MISSION_MIN_EXPLOITABLE: 1,
 } as const;

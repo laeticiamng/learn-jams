@@ -189,9 +189,27 @@ function normalizeSingleConcept(raw: {
     label = label.replace(pattern, "").trim();
   }
 
-  // Check rejection patterns
+  // Check rejection patterns — with length-aware relaxation for inline noise
+  // If a noise token is a small fraction of a longer label, strip it instead of rejecting
   for (const { reason, pattern } of REJECT_PATTERNS) {
     if (pattern.test(label)) {
+      // Length-aware check: if the label is long enough (>= 20 chars) and the noise token
+      // is a small fraction, strip the noise instead of rejecting the whole concept.
+      // This prevents rejecting e.g. "Diagnostic étiologique de l'HTA — Rang A"
+      // when the real concept is "Diagnostic étiologique de l'HTA".
+      const noiseMatch = label.match(pattern);
+      const noiseLength = noiseMatch ? noiseMatch[0].length : 0;
+      const labelWithoutNoise = label.replace(pattern, "").trim();
+      const isMinorNoise = label.length >= 20 && noiseLength < label.length * 0.4 && labelWithoutNoise.length >= 5;
+
+      if (isMinorNoise) {
+        // Strip the noise token and continue validation with cleaned label
+        label = labelWithoutNoise;
+        // Re-clean trailing punctuation/dashes left over
+        label = label.replace(/[\s\-–—:;,]+$/, "").replace(/^[\s\-–—:;,]+/, "").trim();
+        continue; // Skip rejection — try next pattern on cleaned label
+      }
+
       return {
         original_label: raw.label,
         normalized_label: label,
@@ -242,9 +260,11 @@ function normalizeSingleConcept(raw: {
   label = label.replace(/\s*[-–—:]\s*$/, "").trim();
   label = label.replace(/\s{2,}/g, " ");
 
-  // Validate definition
+  // Validate definition — relaxed for short-form medical text
+  // Medical polycopiés often use very short definitions (abbreviations, values)
   const defTrimmed = raw.definition.trim();
-  if (defTrimmed.length < 10) {
+  const minDefLength = label.length >= 5 && /[A-ZÀ-Ÿ]/.test(label) ? 5 : 10;
+  if (defTrimmed.length < minDefLength) {
     return {
       original_label: raw.label,
       normalized_label: label,
@@ -252,7 +272,7 @@ function normalizeSingleConcept(raw: {
       compressed_definition: "",
       concept_type: "detail",
       quality_score: 0.1,
-      rejection: { reason: "definition_too_short", detail: `Definition too short: ${defTrimmed.length} chars` },
+      rejection: { reason: "definition_too_short", detail: `Definition too short: ${defTrimmed.length} chars (min: ${minDefLength})` },
     };
   }
 
@@ -405,6 +425,106 @@ function toTitleCasePreserving(str: string): string {
       return word.charAt(0).toUpperCase() + word.slice(1);
     })
     .join(" ");
+}
+
+// ---------- Medical Polycopié Pre-Normalization ----------
+
+/**
+ * Common French medical abbreviations that should be expanded
+ * to create richer concept labels and definitions.
+ */
+const MEDICAL_ABBREVIATION_MAP: Record<string, string> = {
+  "HTA": "hypertension artérielle",
+  "AVC": "accident vasculaire cérébral",
+  "IDM": "infarctus du myocarde",
+  "EP": "embolie pulmonaire",
+  "TVP": "thrombose veineuse profonde",
+  "BPCO": "bronchopneumopathie chronique obstructive",
+  "IRC": "insuffisance rénale chronique",
+  "IRA": "insuffisance rénale aiguë",
+  "OAP": "œdème aigu du poumon",
+  "NFS": "numération formule sanguine",
+  "CRP": "protéine C réactive",
+  "ECG": "électrocardiogramme",
+  "IRM": "imagerie par résonance magnétique",
+  "TDM": "tomodensitométrie",
+  "ECBU": "examen cytobactériologique des urines",
+  "GDS": "gaz du sang",
+  "DFG": "débit de filtration glomérulaire",
+  "PAC": "pneumonie aiguë communautaire",
+};
+
+/**
+ * Pre-normalize text from dense medical polycopiés before concept extraction.
+ * - Expands bullet-point abbreviation lists into concept-friendly sentences
+ * - Merges orphan abbreviation lines with surrounding context
+ * - Normalizes medical section titles (e.g., "A." → structured heading)
+ */
+export function preNormalizeMedicalText(text: string): string {
+  const lines = text.split("\n");
+  const result: string[] = [];
+  let currentSection = "";
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+
+    // Detect section titles (I., II., A., B., 1., 2., etc.)
+    const sectionMatch = line.match(/^(?:([IVXLC]+|[A-Z]|\d+)[.)]\s*)(.+)/);
+    if (sectionMatch && sectionMatch[2].length >= 3) {
+      currentSection = sectionMatch[2].trim();
+      result.push(line);
+      continue;
+    }
+
+    // Detect abbreviation-only lines (e.g., "- HTA", "• ECG", "NFS CRP VS")
+    const stripped = line.replace(/^[\s•\-–—*]+/, "").trim();
+    if (stripped.length < 30 && /^[A-ZÀ-Ÿ\s,/+()]+$/.test(stripped) && stripped.length >= 2) {
+      // Try to expand known abbreviations
+      const tokens = stripped.split(/[\s,/]+/).filter(t => t.length >= 2);
+      const expanded = tokens.map(t => {
+        const upper = t.toUpperCase().replace(/[()]/g, "");
+        const expansion = MEDICAL_ABBREVIATION_MAP[upper];
+        return expansion ? `${t} (${expansion})` : t;
+      });
+
+      // Merge with section context if available
+      if (currentSection && expanded.length > 0) {
+        result.push(`${expanded.join(", ")} — ${currentSection}`);
+      } else {
+        result.push(expanded.join(", "));
+      }
+      continue;
+    }
+
+    // Detect colon-terminated list headers and merge with next items
+    if (line.endsWith(":") && i + 1 < lines.length) {
+      const header = line.replace(/:$/, "").trim();
+      const nextLine = lines[i + 1]?.trim() ?? "";
+      if (nextLine.startsWith("-") || nextLine.startsWith("•") || nextLine.startsWith("–")) {
+        // Collect list items
+        const items: string[] = [];
+        let j = i + 1;
+        while (j < lines.length) {
+          const item = lines[j].trim();
+          if (item.startsWith("-") || item.startsWith("•") || item.startsWith("–")) {
+            items.push(item.replace(/^[\s•\-–—*]+/, "").trim());
+            j++;
+          } else {
+            break;
+          }
+        }
+        if (items.length > 0) {
+          result.push(`${header} : ${items.join(", ")}`);
+          i = j - 1; // Skip consumed items
+          continue;
+        }
+      }
+    }
+
+    result.push(line);
+  }
+
+  return result.join("\n");
 }
 
 /**

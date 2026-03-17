@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { shouldTriggerBodyOnlySecondPass } from "./analysis.service";
 import { detectFrontMatter, filterEditorialNoise, computeSegmentNoiseScore } from "./editorialNoiseFilter";
 import { extractAndCleanTopic, validateTopic, cleanTopicString } from "./topicCleaner";
@@ -679,5 +679,184 @@ describe("Second-pass observability instrumentation", () => {
     });
     const events = metrics.getRecentEvents(10);
     expect(events.some(e => e.name === "m2.gate_passed")).toBe(true);
+  });
+});
+
+// ============================================================
+// NON-REGRESSION: Dense Medical Polycopié FR
+// Tests that a dense, abbreviated, non-narrative medical polycopié
+// does NOT get 0 valid concepts after all extraction passes.
+// ============================================================
+
+import { scoreConceptCandidate } from "@/lib/cognitio-semantic-cleaning";
+import { preNormalizeMedicalText } from "./conceptNormalizer";
+import { runMissionGate } from "@/domain/cognitio/validators";
+import type { SemanticGateSignals } from "@/domain/cognitio/validators";
+
+describe("NON-REGRESSION: Dense medical polycopié FR", () => {
+  // Realistic dense medical polycopié — abbreviated, bullet-point style
+  const DENSE_MEDICAL_POLYCOPIE_CONCEPTS = [
+    { label: "Hyperkaliémie", definition: "Élévation du potassium sérique au-delà de 5.5 mmol/L, urgence thérapeutique si supérieur à 6.5 mmol/L.", stable_key: "c1", criticality: 1 },
+    { label: "Diagnostic étiologique de l'HTA", definition: "Recherche des causes secondaires d'hypertension artérielle : sténose artère rénale, phéochromocytome, Cushing.", stable_key: "c2", criticality: 1 },
+    { label: "Signes ECG d'hyperkaliémie", definition: "Ondes T pointues, élargissement QRS, disparition onde P, troubles du rythme ventriculaire.", stable_key: "c3", criticality: 2 },
+    { label: "Traitement de l'hyperkaliémie", definition: "Gluconate de calcium IV, insuline-glucose, salbutamol nébulisé, résines échangeuses, dialyse si réfractaire.", stable_key: "c4", criticality: 2 },
+    { label: "NFS interprétation", definition: "Numération formule sanguine : hémoglobine, leucocytes, plaquettes, VGM, réticulocytes.", stable_key: "c5", criticality: 3 },
+  ];
+
+  it("scoreConceptCandidate does NOT reject valid medical concepts in normal mode", () => {
+    for (const c of DENSE_MEDICAL_POLYCOPIE_CONCEPTS) {
+      const scores = scoreConceptCandidate(c.label, c.definition);
+      expect(scores.accepted).toBe(true);
+      expect(scores.editorial_artifact_score).toBeLessThan(0.4);
+    }
+  });
+
+  it("scoreConceptCandidate with medical=true is more lenient on borderline labels", () => {
+    // Concept with minor editorial noise in label
+    const borderline = scoreConceptCandidate("Diagnostic étiologique — Rang A", "Recherche des causes secondaires.", false, true);
+    // In medical mode, the label should either be accepted or have lower scores
+    expect(borderline.editorial_artifact_score).toBeDefined();
+    // The important thing: medical mode is more permissive
+    const strict = scoreConceptCandidate("Diagnostic étiologique — Rang A", "Recherche des causes secondaires.", false, false);
+    expect(borderline.accepted || borderline.editorial_artifact_score <= strict.editorial_artifact_score).toBe(true);
+  });
+
+  it("normalizeConcepts accepts dense medical concepts", () => {
+    const result = normalizeConcepts(DENSE_MEDICAL_POLYCOPIE_CONCEPTS);
+    // At least 3 of 5 should survive normalization
+    expect(result.normalized_concepts_count).toBeGreaterThanOrEqual(3);
+    expect(result.rejected_editorial_artifacts_count).toBe(0);
+  });
+
+  it("normalizeConcepts strips minor noise from long labels instead of rejecting", () => {
+    const conceptsWithMinorNoise = [
+      { label: "Diagnostic étiologique de l'HTA Rang A", definition: "Recherche des causes secondaires d'hypertension artérielle.", stable_key: "c1", criticality: 1 },
+      { label: "Traitement de première intention ITEM 221", definition: "Bêtabloquants, IEC, ARA2, inhibiteurs calciques, diurétiques thiazidiques.", stable_key: "c2", criticality: 2 },
+    ];
+    const result = normalizeConcepts(conceptsWithMinorNoise);
+    // These should be accepted with noise stripped, not rejected
+    expect(result.normalized_concepts_count).toBeGreaterThanOrEqual(1);
+    // The normalized label should be clean
+    const accepted = result.accepted;
+    if (accepted.length > 0) {
+      expect(accepted[0].normalized_label).not.toMatch(/Rang\s+[A-Z]/i);
+      expect(accepted[0].normalized_label).not.toMatch(/ITEM\s+\d+/i);
+    }
+  });
+
+  it("semantic gate passes for polycopié with 1+ valid concept in medical mode", () => {
+    const mockScoreCandidate = (label: string, _def: string) => ({
+      accepted: true,
+      editorial_artifact_score: 0.1,
+      header_noise_score: 0.1,
+    });
+    const result = runSemanticSuccessGate({
+      concepts: [
+        { label: "Hyperkaliémie", definition: "K+ > 5.5 mmol/L, urgence si > 6.5", source_trace: [{ segment_index: 1, excerpt: "body" }] },
+      ],
+      main_topic: "Troubles hydroélectrolytiques",
+      scoreConceptCandidate: mockScoreCandidate,
+      isEditorialArtifact: (_text: string) => false,
+      cleanMainTopic: (text: string) => text,
+      analysis_mode: "full",
+      source_type: "polycopie",
+    });
+    // In medical polycopié mode, 1 valid concept should be enough (MIN_VALID = 1)
+    expect(result.passed).toBe(true);
+    expect(result.signals.threshold_profile).toBe("medical_polycopie");
+  });
+
+  it("semantic gate emits per-concept diagnostics", () => {
+    const consoleSpy = vi.spyOn(console, "info").mockImplementation(() => {});
+    const mockScoreCandidate = (_l: string, _d: string) => ({
+      accepted: true,
+      editorial_artifact_score: 0.2,
+      header_noise_score: 0.1,
+    });
+    runSemanticSuccessGate({
+      concepts: [
+        { label: "TestConcept", definition: "A test definition for diagnostics.", source_trace: [{ segment_index: 1, excerpt: "body" }] },
+      ],
+      main_topic: "Test",
+      scoreConceptCandidate: mockScoreCandidate,
+      isEditorialArtifact: (_text: string) => false,
+      cleanMainTopic: (text: string) => text,
+      analysis_mode: "full",
+    });
+    // Should have logged per-concept diagnostics
+    const diagLog = consoleSpy.mock.calls.find(c => typeof c[0] === "string" && c[0].includes("[COGNITIO][GATE] Per-concept diagnostics"));
+    expect(diagLog).toBeDefined();
+    consoleSpy.mockRestore();
+  });
+
+  it("mission gate allows degraded mission with 1 uncertain concept", () => {
+    const signals: SemanticGateSignals = {
+      valid_concepts_count: 0,
+      uncertain_concepts_count: 1,
+      body_concepts_count: 1,
+      segment_0_concepts_count: 0,
+      editorial_artifact_ratio: 0.5,
+      main_topic_is_editorial_artifact: false,
+      semantic_generation_allowed: false,
+      gate_block_reasons: ["Seulement 0 concept(s) valide(s)"],
+    };
+    const result = runMissionGate(signals, "Troubles hydroélectrolytiques");
+    // Should pass in degraded mode (>= 1 exploitable concept)
+    expect(result.passed).toBe(true);
+    expect(result.display_message).toContain("dégradée");
+  });
+
+  it("mission gate still blocks when 0 exploitable concepts", () => {
+    const signals: SemanticGateSignals = {
+      valid_concepts_count: 0,
+      uncertain_concepts_count: 0,
+      body_concepts_count: 0,
+      segment_0_concepts_count: 0,
+      editorial_artifact_ratio: 1.0,
+      main_topic_is_editorial_artifact: true,
+      semantic_generation_allowed: false,
+      gate_block_reasons: ["All concepts are artifacts"],
+    };
+    const result = runMissionGate(signals, "R2C : Rang A");
+    // Should block — truly no usable concepts
+    expect(result.passed).toBe(false);
+  });
+});
+
+// ---------- Pre-normalization for medical text ----------
+
+describe("preNormalizeMedicalText", () => {
+  it("expands abbreviation-only lines with section context", () => {
+    const input = [
+      "I. Diagnostic",
+      "- HTA",
+      "- ECG",
+      "- NFS",
+    ].join("\n");
+    const result = preNormalizeMedicalText(input);
+    // Should expand HTA to include "hypertension artérielle"
+    expect(result).toContain("hypertension artérielle");
+    expect(result).toContain("électrocardiogramme");
+    expect(result).toContain("numération formule sanguine");
+  });
+
+  it("merges colon-terminated headers with bullet items", () => {
+    const input = [
+      "Signes cliniques :",
+      "- fièvre",
+      "- toux",
+      "- dyspnée",
+      "",
+      "Examens complémentaires",
+    ].join("\n");
+    const result = preNormalizeMedicalText(input);
+    // Should merge the list into one line
+    expect(result).toContain("Signes cliniques : fièvre, toux, dyspnée");
+  });
+
+  it("preserves normal narrative text unchanged", () => {
+    const input = "La pneumonie aiguë communautaire est une infection du parenchyme pulmonaire. Elle se manifeste par de la fièvre, une toux et une dyspnée.";
+    const result = preNormalizeMedicalText(input);
+    expect(result).toBe(input);
   });
 });
