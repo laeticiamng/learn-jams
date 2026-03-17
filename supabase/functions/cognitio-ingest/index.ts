@@ -89,11 +89,13 @@ serve(async (req) => {
 
     let cleanText = "";
     const issues: SourceIssue[] = [];
+    let rawInputLength = 0;
 
     // ---------- Text extraction ----------
 
     if (pasted_text) {
-      cleanText = cleanRawText(pasted_text);
+      rawInputLength = pasted_text.length;
+      cleanText = pasted_text; // Will be cleaned once below
     } else if (doc.raw_storage_path) {
       const { data: fileData, error: fileError } = await supabase.storage
         .from("source-raw")
@@ -114,16 +116,19 @@ serve(async (req) => {
       } else {
         cleanText = await extractText(fileData!, content_type, issues);
       }
+      rawInputLength = cleanText.length;
     }
 
-    // ---------- Cleaning ----------
+    // ---------- Cleaning (single pass) ----------
 
     cleanText = cleanRawText(cleanText);
+
+    console.log(`[COGNITIO] Text pipeline: raw=${rawInputLength} chars → cleaned=${cleanText.length} chars`);
 
     if (!cleanText || cleanText.trim().length === 0) {
       issues.push({ code: "EMPTY_DOCUMENT", message: "Aucun texte exploitable détecté", severity: "blocking", action_required: true });
       await supabase.from("source_documents").update({ ingestion_status: "error", warnings_json: issues }).eq("id", document_id);
-      await logOps(supabase, "ingest_blocked", "error", document_id, user_id, { reason: "empty_document" });
+      await logOps(supabase, "ingest_blocked", "error", document_id, user_id, { reason: "empty_document", raw_input_length: rawInputLength });
       return jsonResponse({ document_id, clean_text: "", word_count: 0, language: "unknown", source_type: "unknown", confidence_level: 0, detected_structure: "minimal", issues, segments: [] });
     }
 
