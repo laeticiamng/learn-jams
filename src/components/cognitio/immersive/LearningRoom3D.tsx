@@ -333,7 +333,50 @@ function RoomWalls({
   );
 }
 
-// ---------- Neon Edge Trims ----------
+// ---------- Scan-Line Enhanced Walls ----------
+
+function ScanLineRoomWalls({
+  dimensions,
+  opacity,
+  isCompleted,
+  scanColor,
+}: {
+  dimensions: { w: number; h: number; d: number };
+  opacity: number;
+  isCompleted: boolean;
+  scanColor: string;
+}) {
+  const wallColor = isCompleted ? "#1a2e24" : "#16213e";
+  return (
+    <>
+      <ScanLineWall
+        position={[0, dimensions.h / 2, -dimensions.d / 2]}
+        args={[dimensions.w, dimensions.h, 0.2]}
+        wallColor={wallColor}
+        scanColor={scanColor}
+        opacity={opacity * 0.85}
+      />
+      <ScanLineWall
+        position={[-dimensions.w / 2, dimensions.h / 2, 0]}
+        rotation={[0, Math.PI / 2, 0]}
+        args={[dimensions.d, dimensions.h, 0.2]}
+        wallColor={wallColor}
+        scanColor={scanColor}
+        opacity={opacity * 0.8}
+      />
+      <ScanLineWall
+        position={[dimensions.w / 2, dimensions.h / 2, 0]}
+        rotation={[0, -Math.PI / 2, 0]}
+        args={[dimensions.d, dimensions.h, 0.2]}
+        wallColor={wallColor}
+        scanColor={scanColor}
+        opacity={opacity * 0.8}
+      />
+    </>
+  );
+}
+
+
 
 function NeonEdgeTrims({
   dimensions,
