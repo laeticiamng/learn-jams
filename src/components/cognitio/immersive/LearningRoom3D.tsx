@@ -8,7 +8,7 @@
 import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { Text, MeshReflectorMaterial, Float } from "@react-three/drei";
-import type { Group } from "three";
+import type { Group, Mesh } from "three";
 import type {
   RoomTemplate,
   LightingConfig,

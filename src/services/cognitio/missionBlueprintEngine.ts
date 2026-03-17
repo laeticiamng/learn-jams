@@ -177,15 +177,17 @@ function validateMissionItem(item: MissionItem): { valid: boolean; issues: strin
   }
 
   // Check each option
-  for (const option of item.options) {
+  for (const option of item.options ?? []) {
     const optionNoise = detectDocumentNoise(option);
     if (optionNoise.noisy) {
       issues.push(`Option "${option.slice(0, 40)}..." contains noise: ${optionNoise.matches.join(", ")}`);
     }
   }
 
-  // Check correct answer
-  const answerNoise = detectDocumentNoise(item.correct_answer);
+  const correctAnswerText = Array.isArray(item.correct_answer)
+    ? item.correct_answer.join(" ")
+    : item.correct_answer;
+  const answerNoise = detectDocumentNoise(correctAnswerText);
   if (answerNoise.noisy) {
     issues.push(`Correct answer contains noise: ${answerNoise.matches.join(", ")}`);
   }

@@ -65,8 +65,9 @@ export function runQuickAnalysis(
   // 2. Chapter detection
   const chapters = reconstructChapterHierarchy(segments.map(s => ({
     title: s.title,
+    content: s.content,
     hierarchy_level: s.hierarchy_level,
-  })));
+  }))).map(chapter => chapter.title);
 
   // 3. Quick concept extraction via heuristics
   const concepts = extractQuickConcepts(cleanText, segments);
