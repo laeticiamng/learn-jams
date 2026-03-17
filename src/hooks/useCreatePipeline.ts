@@ -446,6 +446,7 @@ export function useCreatePipeline() {
         isEditorialArtifact,
         cleanMainTopic,
         analysis_mode: initialGateMode,
+        source_type: m1Result.source_type,
       });
 
       // Ticket 4: record gate evaluation
@@ -544,6 +545,7 @@ export function useCreatePipeline() {
                 isEditorialArtifact,
                 cleanMainTopic,
                 analysis_mode: "body_only",
+                source_type: m1Result.source_type,
               });
 
               // Ticket 4: record body-only retry gate evaluation
