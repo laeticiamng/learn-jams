@@ -41,7 +41,7 @@ export default function Library() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { track } = useProductTracking();
 
-  useEffect(() => { track({ event_name: "library_viewed" }); }, []);
+  useEffect(() => { track({ event_name: "library_viewed" }); }, [track]);
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
   const { songs, favorites, loading, toggleFavorite } = useSongs(user?.id);

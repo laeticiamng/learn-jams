@@ -96,6 +96,7 @@ export default function Studio() {
       .subscribe();
     loadParticipants(activeSession.id);
     return () => { supabase.removeChannel(channel); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- loadParticipants recreated each render; activeSession is the real trigger
   }, [activeSession]);
 
   const loadParticipants = async (sessionId: string) => {

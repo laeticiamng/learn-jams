@@ -77,35 +77,6 @@ export function useRecallSession() {
     setError(null);
   }, []);
 
-  const submitAnswer = useCallback((
-    userAnswer: string,
-    confidence: ConfidenceLevel,
-  ) => {
-    const item = items[currentIndex];
-    if (!item) return;
-
-    const isCorrect = evaluateAnswer(item, userAnswer);
-
-    const answer: RecallAnswer = {
-      item_id: item.id,
-      answer: userAnswer,
-      is_correct: isCorrect,
-      confidence,
-      concepts_tested: item.concepts_tested,
-      time_taken_ms: 0,
-    };
-
-    const newAnswers = [...answers, answer];
-    setAnswers(newAnswers);
-
-    if (currentIndex + 1 < items.length) {
-      setCurrentIndex((i) => i + 1);
-    } else {
-      // All answered — grade
-      gradeAndDebrief(newAnswers);
-    }
-  }, [items, currentIndex, answers]);
-
   const gradeAndDebrief = useCallback(async (finalAnswers: RecallAnswer[]) => {
     setPhase("grading");
     setIsSubmitting(true);
@@ -186,6 +157,35 @@ export function useRecallSession() {
       setIsSubmitting(false);
     }
   }, [concepts, criticalKeys, confusionPairs, traps, testId, transformationId, user, formatUsed, objective]);
+
+  const submitAnswer = useCallback((
+    userAnswer: string,
+    confidence: ConfidenceLevel,
+  ) => {
+    const item = items[currentIndex];
+    if (!item) return;
+
+    const isCorrect = evaluateAnswer(item, userAnswer);
+
+    const answer: RecallAnswer = {
+      item_id: item.id,
+      answer: userAnswer,
+      is_correct: isCorrect,
+      confidence,
+      concepts_tested: item.concepts_tested,
+      time_taken_ms: 0,
+    };
+
+    const newAnswers = [...answers, answer];
+    setAnswers(newAnswers);
+
+    if (currentIndex + 1 < items.length) {
+      setCurrentIndex((i) => i + 1);
+    } else {
+      // All answered — grade
+      gradeAndDebrief(newAnswers);
+    }
+  }, [items, currentIndex, answers, gradeAndDebrief]);
 
   const currentItem = items[currentIndex] ?? null;
   const progress = items.length > 0 ? Math.round(((currentIndex) / items.length) * 100) : 0;

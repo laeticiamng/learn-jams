@@ -72,7 +72,7 @@ export default function CourseUploader({ text, onTextChange }: Props) {
     } finally {
       setExtracting(false);
     }
-  }, [onTextChange, t]);
+  }, [onTextChange, t, i18n.language]);
 
   const clearFile = () => {
     setFileName(null);

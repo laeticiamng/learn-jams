@@ -48,6 +48,7 @@ export default function Quiz() {
     } finally { setLoading(false); }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- fetchQuiz recreated each render; deps [id, user] are the real triggers
   useEffect(() => { fetchQuiz(); }, [id, user]);
 
   const handleSelect = (index: number) => {
