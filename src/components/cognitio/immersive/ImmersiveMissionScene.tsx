@@ -47,6 +47,8 @@ export default function ImmersiveMissionScene({
   const [selectedObjectId, setSelectedObjectId] = useState<string | null>(null);
   const [showMap, setShowMap] = useState(false);
   const [showNarrative, setShowNarrative] = useState(!!narrativeMessage);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const prevRoomRef = useRef(currentRoomIndex);
 
   // Get cluster IDs for room mapping
   const clusterIds = useMemo(() =>
