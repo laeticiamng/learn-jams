@@ -617,7 +617,8 @@ export function AnimatedConnection({
 
   const { geometry, material } = useMemo(() => {
     const geom = new THREE.BufferGeometry().setFromPoints([start, end]);
-    geom.computeLineDistances();
+    // computeLineDistances exists at runtime on BufferGeometry
+    (geom as any).computeLineDistances();
     const mat = new THREE.LineDashedMaterial({
       color,
       transparent: true,
