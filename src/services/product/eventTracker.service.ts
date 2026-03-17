@@ -34,11 +34,13 @@ export async function trackEvent(
     await supabase.from("product_events").insert([{
       user_id: userId ?? null,
       anonymous_id: userId ? null : getAnonymousId(),
-      transformation_id: input.transformation_id ?? null,
       event_name: input.event_name,
-      audience_level: input.audience_level ?? null,
-      format: input.format ?? null,
-      metadata_json: (input.metadata ?? {}) as unknown as Json,
+      metadata_json: ({
+        ...(input.metadata ?? {}),
+        ...(input.transformation_id ? { transformation_id: input.transformation_id } : {}),
+        ...(input.audience_level ? { audience_level: input.audience_level } : {}),
+        ...(input.format ? { format: input.format } : {}),
+      }) as unknown as Json,
     }]);
   } catch {
     // Event tracking must never break the app
@@ -56,11 +58,13 @@ export async function trackEventBatch(
     const rows = valid.map((e) => ({
       user_id: userId ?? null,
       anonymous_id: userId ? null : getAnonymousId(),
-      transformation_id: e.transformation_id ?? null,
       event_name: e.event_name,
-      audience_level: e.audience_level ?? null,
-      format: e.format ?? null,
-      metadata_json: (e.metadata ?? {}) as unknown as Json,
+      metadata_json: ({
+        ...(e.metadata ?? {}),
+        ...(e.transformation_id ? { transformation_id: e.transformation_id } : {}),
+        ...(e.audience_level ? { audience_level: e.audience_level } : {}),
+        ...(e.format ? { format: e.format } : {}),
+      }) as unknown as Json,
     }));
     await supabase.from("product_events").insert(rows);
   } catch {

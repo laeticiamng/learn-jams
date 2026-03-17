@@ -10,12 +10,10 @@ export async function getSeedTransformations(
 ): Promise<SeedTransformationSummary[]> {
   let query = supabase
     .from("seed_transformations")
-    .select("id, title, subject, audience_level, format")
-    .eq("status", "active")
+    .select("id, title, subject, format, difficulty")
     .order("created_at", { ascending: true });
 
   if (filters?.format) query = query.eq("format", filters.format);
-  if (filters?.audience_level) query = query.eq("audience_level", filters.audience_level);
 
   const { data, error } = await query;
   if (error || !data) return [];

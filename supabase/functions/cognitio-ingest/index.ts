@@ -592,9 +592,22 @@ function cleanRawText(text: string): string {
  */
 function filterEditorialArtifacts(text: string): string {
   const ARTIFACT_LINE_PATTERNS: RegExp[] = [
-    // Rang/classification labels (French medical)
-    /^\s*(?:COM\s+)?R2C\s*:\s*Rang\s+[A-Z]\s*$/i,
+    // Platform branding lines (CODEX, S-ECN, iKB, etc.)
+    /^\s*CODEX\b/i,
+    /^\s*S[\s-]*ECN\b/i,
+    /^\s*(?:KB|iKB)\s*[\/|]/i,
+    /^\s*MED[\s-]*LINE\b/i,
+    /^\s*ELLIPSES\b/i,
+    /^\s*VERNAZOBRES/i,
+    /^\s*PREP['']?ECN\b/i,
+    // R2C header lines with color coding instructions
+    /^\s*(?:COM\s+)?R2C\s*:/i,
+    /^\s*R2C\s*:\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|BRUN|MARRON|Rang\s+[A-Z])/i,
+    // Standalone Rang labels
     /^\s*Rang\s+[A-Z]\s*$/i,
+    // Color coding instruction lines
+    /^\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)\s*[-–—]\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)/i,
+    /^\s*en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)\s*$/i,
     // Revision/version metadata
     /^\s*(?:Dernière\s+)?(?:mise\s+à\s+jour|MAJ|révision)\s*[:—–-]\s*\d/i,
     /^\s*Version\s+\d+/i,
@@ -602,6 +615,7 @@ function filterEditorialArtifacts(text: string): string {
     /^\s*\d{1,2}[\/.-]\d{1,2}[\/.-]\d{2,4}\s*$/,
     // Course metadata headers
     /^\s*(?:UE|DFGSM|DFASM|ECN|EDN|iECN)\s*\d/i,
+    /^\s*(?:Item|N°)\s*\d+\s*(?:[-–—:]|$)/i,
     /^\s*Collège\s+(?:national|des)\s/i,
     // Page/copyright
     /^\s*Page\s+\d+/i,
@@ -612,6 +626,8 @@ function filterEditorialArtifacts(text: string): string {
     /^\s*[-–—]+\s*$/,
     /^\s*[)(\]}\[{]\s*[-–—]\s*$/,
     /^\s*[•\-–]\s*$/,
+    // URL/web residues
+    /^\s*(?:www\.|https?:\/\/|mailto)/i,
   ];
 
   const lines = text.split("\n");
@@ -629,10 +645,17 @@ function filterEditorialArtifacts(text: string): string {
       continue;
     }
 
-    // Clean inline Rang labels
+    // Clean inline Rang labels and color coding
     let cleanedLine = trimmed;
     cleanedLine = cleanedLine.replace(/\s*\(?\s*Rang\s+[A-Z]\s*\)?\s*/gi, " ");
     cleanedLine = cleanedLine.replace(/\s*[-–—]\s*R2C\s*:\s*Rang\s+[A-Z]\s*/gi, " ");
+    cleanedLine = cleanedLine.replace(/\s*\(?\s*en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)\s*\)?\s*/gi, " ");
+    // Remove CODEX/S-ECN branding inline
+    cleanedLine = cleanedLine.replace(/CODEX\s*[.:,]+\s*/gi, "");
+    cleanedLine = cleanedLine.replace(/S[\s-]*ECN(?:\.COM)?\s*/gi, "");
+    cleanedLine = cleanedLine.replace(/R2C\s*:\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)(?:\s*[-–—]\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON))*/gi, "");
+    // Remove Révision dates inline
+    cleanedLine = cleanedLine.replace(/Révision\s+\d{1,2}\/\d{1,2}\/\d{2,4}/gi, "");
     cleanedLine = cleanedLine.replace(/\s{2,}/g, " ").trim();
 
     if (cleanedLine.length >= 3) {
