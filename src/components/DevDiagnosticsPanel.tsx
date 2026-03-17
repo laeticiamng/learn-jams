@@ -1,17 +1,22 @@
 // ============================================================
-// DevDiagnosticsPanel — Debug overlay for dev mode only
+// DevDiagnosticsPanel — Debug overlay for admins & dev mode
 // Toggle with Ctrl+Shift+D
+// In production, only available to admin users.
 // ============================================================
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import { validateClientEnv } from "@/security/env";
+import { isAdmin } from "@/security/roles";
 
 export function DevDiagnosticsPanel() {
   const [visible, setVisible] = useState(false);
   const { user, session, loading: authLoading } = useAuth();
   const { flags, loading: flagsLoading } = useFeatureFlags();
+
+  const userIsAdmin = useMemo(() => isAdmin(user?.user_metadata), [user?.user_metadata]);
+  const canAccess = import.meta.env.DEV || userIsAdmin;
 
   const togglePanel = useCallback((e: KeyboardEvent) => {
     if (e.ctrlKey && e.shiftKey && e.key === "D") {
@@ -20,11 +25,12 @@ export function DevDiagnosticsPanel() {
   }, []);
 
   useEffect(() => {
+    if (!canAccess) return;
     window.addEventListener("keydown", togglePanel);
     return () => window.removeEventListener("keydown", togglePanel);
-  }, [togglePanel]);
+  }, [togglePanel, canAccess]);
 
-  if (!visible) return null;
+  if (!visible || !canAccess) return null;
 
   const envResult = validateClientEnv();
 
@@ -62,6 +68,21 @@ export function DevDiagnosticsPanel() {
           {Object.entries(flags).map(([key, val]) => (
             <Row key={key} label={key} value={String(val)} status={val ? "ok" : "neutral"} />
           ))}
+        </Section>
+
+        {/* Admin & Plan Info */}
+        <Section title="Plan & Access">
+          <Row label="Admin" value={userIsAdmin ? "YES" : "no"} status={userIsAdmin ? "ok" : "neutral"} />
+          <Row label="Role" value={String(user?.user_metadata?.role ?? "—")} />
+          <Row label="Plan Key" value={String(user?.user_metadata?.plan_key ?? "—")} />
+        </Section>
+
+        {/* 3D Capabilities */}
+        <Section title="3D Engine">
+          <Row label="WebGL" value={typeof document !== "undefined" && !!document.createElement("canvas").getContext("webgl") ? "available" : "NO"} status={typeof document !== "undefined" && !!document.createElement("canvas").getContext("webgl") ? "ok" : "error"} />
+          <Row label="WebGL2" value={typeof document !== "undefined" && !!document.createElement("canvas").getContext("webgl2") ? "available" : "NO"} status={typeof document !== "undefined" && !!document.createElement("canvas").getContext("webgl2") ? "ok" : "warn"} />
+          <Row label="Pixel Ratio" value={String(window.devicePixelRatio ?? 1)} />
+          <Row label="Reduced Motion" value={window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "yes" : "no"} />
         </Section>
 
         {/* Runtime Info */}
