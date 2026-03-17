@@ -8,29 +8,66 @@ const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
+// ---------------------------------------------------------------------------
+// Configuration status — used by auth helpers to distinguish config errors
+// from real network errors BEFORE making any fetch.
+// ---------------------------------------------------------------------------
+
+const _hasUrl = typeof SUPABASE_URL === "string" && SUPABASE_URL.trim() !== "";
+const _hasKey =
+  typeof SUPABASE_PUBLISHABLE_KEY === "string" &&
+  SUPABASE_PUBLISHABLE_KEY.trim() !== "";
+const _urlLooksValid =
+  _hasUrl && /^https?:\/\/.+\.supabase\.co/.test(SUPABASE_URL);
+
+export interface SupabaseConfigStatus {
+  /** true when both URL and key are present AND the URL looks like a valid Supabase endpoint */
+  configured: boolean;
+  hasUrl: boolean;
+  hasKey: boolean;
+  urlValid: boolean;
+  /** Safe diagnostic — never exposes secrets */
+  diagnosticMessage: string;
+}
+
+export function getSupabaseConfigStatus(): SupabaseConfigStatus {
+  const configured = _hasUrl && _hasKey && _urlLooksValid;
+
+  const parts: string[] = [];
+  if (!_hasUrl) parts.push("VITE_SUPABASE_URL is missing");
+  else if (!_urlLooksValid)
+    parts.push(
+      `VITE_SUPABASE_URL does not look like a valid Supabase URL (starts with: "${SUPABASE_URL.slice(0, 24)}…")`
+    );
+  if (!_hasKey) parts.push("VITE_SUPABASE_PUBLISHABLE_KEY is missing");
+
+  return {
+    configured,
+    hasUrl: _hasUrl,
+    hasKey: _hasKey,
+    urlValid: _urlLooksValid,
+    diagnosticMessage:
+      parts.length > 0 ? parts.join("; ") : "Supabase configuration OK",
+  };
+}
+
 /** Boot health-check: log env status so issues are easy to diagnose. */
 function logEnvStatus() {
-  const hasUrl = !!SUPABASE_URL;
-  const hasKey = !!SUPABASE_PUBLISHABLE_KEY;
+  const status = getSupabaseConfigStatus();
 
-  if (hasUrl && hasKey) {
+  if (status.configured) {
     console.info(
       "[COGNITIO] env loaded — VITE_SUPABASE_URL ✓ | VITE_SUPABASE_PUBLISHABLE_KEY ✓"
     );
   } else {
-    const missing: string[] = [];
-    if (!hasUrl) missing.push("VITE_SUPABASE_URL");
-    if (!hasKey) missing.push("VITE_SUPABASE_PUBLISHABLE_KEY");
-    console.warn(
-      `[COGNITIO] env missing — ${missing.join(", ")}. Supabase will use a placeholder client.`
-    );
+    console.warn(`[COGNITIO] env issue — ${status.diagnosticMessage}`);
   }
 }
 
 function createSafeClient(): SupabaseClient<Database> {
   logEnvStatus();
 
-  if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
+  if (!_hasUrl || !_hasKey) {
     console.error(
       "[COGNITIO] supabase init failed — missing environment variables. " +
       "The app will show a configuration error screen."

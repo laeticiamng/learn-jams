@@ -139,6 +139,9 @@
     "error_email_not_confirmed": "ईमेल पुष्टि नहीं हुई। इनबॉक्स चेक करें।",
     "error_invalid_credentials": "गलत ईमेल या पासवर्ड।",
     "error_too_many_requests": "बहुत अधिक प्रयास। बाद में पुनः प्रयास करें।",
+    "error_config": "लॉगिन सेवा सही ढंग से कॉन्फ़िगर नहीं है।",
+    "error_service_unreachable": "इस समय लॉगिन सेवा उपलब्ध नहीं है।",
+    "error_unexpected": "लॉगिन के दौरान एक अप्रत्याशित त्रुटि हुई।",
     "error_accept_terms": "शर्तें स्वीकार करें", "error_password_min": "पासवर्ड कम से कम 6 अक्षर",
     "error_passwords_mismatch": "पासवर्ड मेल नहीं खाते",
     "success_signup": "अकाउंट बना! ईमेल चेक करें।", "success_password_updated": "पासवर्ड अपडेट!"

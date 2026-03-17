@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { ParallaxOrbs } from "@/components/ParallaxOrbs";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth, type ClassifiedAuthError } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,13 +33,23 @@ export default function Login() {
     if (user) navigate(from, { replace: true });
   }, [user, navigate, from]);
 
-  const humanizeError = (message: string): string => {
-    if (message.includes("Email not confirmed")) return t("auth.error_email_not_confirmed");
-    if (message.includes("Invalid login credentials")) return t("auth.error_invalid_credentials");
-    if (message.includes("Too many requests")) return t("auth.error_too_many_requests");
-    if (message.includes("Failed to fetch") || message.includes("fetch") || message.includes("NetworkError"))
-      return t("auth.error_network", "Erreur réseau. Vérifiez votre connexion internet et réessayez.");
-    return message;
+  /** Map a classified auth error to a user-facing French message. */
+  const userMessage = (err: ClassifiedAuthError): string => {
+    switch (err.kind) {
+      case "invalid_credentials":
+        return t("auth.error_invalid_credentials", "Email ou mot de passe incorrect.");
+      case "email_not_confirmed":
+        return t("auth.error_email_not_confirmed", "Ton email n'est pas encore confirmé. Vérifie ta boîte de réception.");
+      case "too_many_requests":
+        return t("auth.error_too_many_requests", "Trop de tentatives. Réessaie dans quelques minutes.");
+      case "config_error":
+        return t("auth.error_config", "Le service de connexion n'est pas configuré correctement.");
+      case "service_unreachable":
+        return t("auth.error_service_unreachable", "Impossible de joindre le service de connexion pour le moment.");
+      case "unexpected":
+      default:
+        return t("auth.error_unexpected", "Une erreur inattendue est survenue pendant la connexion.");
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -47,7 +57,7 @@ export default function Login() {
     setLoading(true);
     const { error } = await signIn(email, password);
     setLoading(false);
-    if (error) toast.error(humanizeError(error.message));
+    if (error) toast.error(userMessage(error));
     else navigate(from, { replace: true });
   };
 
