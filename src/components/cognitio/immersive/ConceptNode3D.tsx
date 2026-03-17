@@ -129,43 +129,81 @@ export default function ConceptNode3D({
         </mesh>
       )}
 
-      {/* Main node mesh */}
-      <mesh
-        ref={meshRef}
-        onClick={(e) => {
-          e.stopPropagation();
-          onClick(node.id);
-        }}
-        onPointerEnter={(e) => {
-          e.stopPropagation();
-          setHovered(true);
-          onHover(node.id);
-          document.body.style.cursor = "pointer";
-        }}
-        onPointerLeave={() => {
-          setHovered(false);
-          onHover(null);
-          document.body.style.cursor = "auto";
-        }}
-        castShadow
-      >
-        {node.is_gate ? (
-          <octahedronGeometry args={[0.5, renderQuality === "low" ? 0 : 1]} />
-        ) : node.is_synthesis_target ? (
-          <icosahedronGeometry args={[0.5, renderQuality === "low" ? 0 : 1]} />
-        ) : (
-          <sphereGeometry args={[0.4, segments, segments]} />
-        )}
-        <meshStandardMaterial
-          color={color}
-          emissive={color}
-          emissiveIntensity={emissiveIntensity}
-          metalness={0.5}
-          roughness={0.2}
-          transparent={opacity < 1}
-          opacity={opacity}
-        />
-      </mesh>
+      {/* Main node mesh — Fresnel glow for high quality, standard for low */}
+      {isHighQuality ? (
+        <group
+          ref={meshRef as any}
+          onClick={(e: any) => {
+            e.stopPropagation();
+            onClick(node.id);
+          }}
+          onPointerEnter={(e: any) => {
+            e.stopPropagation();
+            setHovered(true);
+            onHover(node.id);
+            document.body.style.cursor = "pointer";
+          }}
+          onPointerLeave={() => {
+            setHovered(false);
+            onHover(null);
+            document.body.style.cursor = "auto";
+          }}
+        >
+          <FresnelMesh
+            color={color}
+            glowColor={accent}
+            fresnelPower={node.is_gate ? 1.5 : 2.5}
+            glowIntensity={emissiveIntensity + 0.3}
+            opacity={opacity}
+            pulse={isSelected || hovered ? 1 : 0}
+          >
+            {node.is_gate ? (
+              <octahedronGeometry args={[0.5, 1]} />
+            ) : node.is_synthesis_target ? (
+              <icosahedronGeometry args={[0.5, 1]} />
+            ) : (
+              <sphereGeometry args={[0.4, segments, segments]} />
+            )}
+          </FresnelMesh>
+        </group>
+      ) : (
+        <mesh
+          ref={meshRef}
+          onClick={(e) => {
+            e.stopPropagation();
+            onClick(node.id);
+          }}
+          onPointerEnter={(e) => {
+            e.stopPropagation();
+            setHovered(true);
+            onHover(node.id);
+            document.body.style.cursor = "pointer";
+          }}
+          onPointerLeave={() => {
+            setHovered(false);
+            onHover(null);
+            document.body.style.cursor = "auto";
+          }}
+          castShadow
+        >
+          {node.is_gate ? (
+            <octahedronGeometry args={[0.5, 0]} />
+          ) : node.is_synthesis_target ? (
+            <icosahedronGeometry args={[0.5, 0]} />
+          ) : (
+            <sphereGeometry args={[0.4, segments, segments]} />
+          )}
+          <meshStandardMaterial
+            color={color}
+            emissive={color}
+            emissiveIntensity={emissiveIntensity}
+            metalness={0.5}
+            roughness={0.2}
+            transparent={opacity < 1}
+            opacity={opacity}
+          />
+        </mesh>
+      )}
 
       {/* Orbital ring — visible on interaction/gates */}
       {showOrbital && (
