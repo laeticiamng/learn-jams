@@ -1163,13 +1163,17 @@ export function useCreatePipeline() {
   }, [ingestion, analysis, memory, format, generation, storyGeneration, qa]);
 
   // Aggregate all steps for the progress display
+  // Prefix step names with phase to avoid duplicate React keys (e.g. multiple "saving")
+  const prefixSteps = (steps: typeof ingestion.steps, prefix: string) =>
+    steps.map((s) => ({ ...s, name: `${prefix}_${s.name}` }));
+
   const allSteps = [
-    ...ingestion.steps,
-    ...(["analyzing", "architecting", "formatting", "generating", "result"].includes(phase) ? analysis.steps : []),
-    ...(["architecting", "formatting", "generating", "result"].includes(phase) ? memory.steps : []),
-    ...(["formatting", "generating", "result"].includes(phase) ? format.steps : []),
-    ...(["generating", "result"].includes(phase) ? generation.steps : []),
-    ...(["generating", "result"].includes(phase) ? storyGeneration.steps : []),
+    ...prefixSteps(ingestion.steps, "ingest"),
+    ...(["analyzing", "architecting", "formatting", "generating", "result"].includes(phase) ? prefixSteps(analysis.steps, "analysis") : []),
+    ...(["architecting", "formatting", "generating", "result"].includes(phase) ? prefixSteps(memory.steps, "memory") : []),
+    ...(["formatting", "generating", "result"].includes(phase) ? prefixSteps(format.steps, "format") : []),
+    ...(["generating", "result"].includes(phase) ? prefixSteps(generation.steps, "gen") : []),
+    ...(["generating", "result"].includes(phase) ? prefixSteps(storyGeneration.steps, "story") : []),
   ];
 
   const hasBlocking = ingestion.result?.issues.some((i) => i.severity === "blocking") ?? false;
