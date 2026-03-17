@@ -37,6 +37,8 @@ export default function Login() {
     if (message.includes("Email not confirmed")) return t("auth.error_email_not_confirmed");
     if (message.includes("Invalid login credentials")) return t("auth.error_invalid_credentials");
     if (message.includes("Too many requests")) return t("auth.error_too_many_requests");
+    if (message.includes("Failed to fetch") || message.includes("fetch") || message.includes("NetworkError"))
+      return t("auth.error_network", "Erreur réseau. Vérifiez votre connexion internet et réessayez.");
     return message;
   };
 
