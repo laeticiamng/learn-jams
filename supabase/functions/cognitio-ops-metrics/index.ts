@@ -44,14 +44,14 @@ serve(async (req) => {
     // Insert event
     const { data: event, error } = await supabase
       .from("ops_events")
-      .insert({
+      .insert([{
         event_type,
         severity: severity || "info",
         mission_id: mission_id || null,
         document_id: document_id || null,
         user_id: user_id || null,
         payload_json: payload || {},
-      })
+      }])
       .select("id")
       .single();
 
@@ -67,7 +67,7 @@ serve(async (req) => {
       alertMessage = threshold.message;
 
       // Log alert event
-      await supabase.from("ops_events").insert({
+      await supabase.from("ops_events").insert([{
         event_type: "alert_triggered",
         severity: "critical",
         payload_json: {
@@ -75,7 +75,7 @@ serve(async (req) => {
           source_event_type: event_type,
           alert_message: alertMessage,
         },
-      });
+      }]);
     }
 
     return new Response(JSON.stringify({

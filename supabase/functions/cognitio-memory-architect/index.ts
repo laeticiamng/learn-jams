@@ -99,7 +99,7 @@ serve(async (req) => {
     // Persist
     const { error: insertError } = await supabase
       .from("memory_architectures")
-      .insert({
+      .insert([{
         id: result.architecture_id,
         document_id: input.document_id,
         course_profile_id: input.course_profile_id,
@@ -116,7 +116,7 @@ serve(async (req) => {
         split_modules_json: result.split_modules ?? null,
         reasoning_type: result.reasoning_type,
         objective: result.objective,
-      });
+      }]);
 
     if (insertError) {
       console.error("DB insert error:", insertError);

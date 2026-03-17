@@ -56,7 +56,7 @@ serve(async (req) => {
     const result = generateDynamicSheet(input);
 
     // Persist transformation
-    const { error: tErr } = await supabase.from("transformations").insert({
+    const { error: tErr } = await supabase.from("transformations").insert([{
       id: result.transformation_id,
       user_id: user.id,
       document_id: result.metadata.document_id,
@@ -68,11 +68,11 @@ serve(async (req) => {
       published_status: "draft",
       qa_status: "pending",
       estimated_duration_sec: result.metadata.estimated_duration_sec,
-    });
+    }]);
     if (tErr) console.error("Transform insert error:", tErr);
 
     // Persist content
-    const { error: cErr } = await supabase.from("generated_contents").insert({
+    const { error: cErr } = await supabase.from("generated_contents").insert([{
       transformation_id: result.transformation_id,
       version: 1,
       content_json: result.content_blocks,
@@ -80,17 +80,17 @@ serve(async (req) => {
       coverage_json: result.metadata.coverage,
       generation_flags_json: result.metadata.quality_flags,
       internal_summary_json: result.internal_summary,
-    });
+    }]);
     if (cErr) console.error("Content insert error:", cErr);
 
     // Persist final test
     const bloomLevels = new Set(result.final_test.map((q: any) => q.bloom_level));
-    const { error: ftErr } = await supabase.from("final_tests").insert({
+    const { error: ftErr } = await supabase.from("final_tests").insert([{
       transformation_id: result.transformation_id,
       questions_json: result.final_test,
       bloom_levels_count: bloomLevels.size,
       question_count: result.final_test.length,
-    });
+    }]);
     if (ftErr) console.error("Final test insert error:", ftErr);
 
     const latency = Date.now() - startTime;
