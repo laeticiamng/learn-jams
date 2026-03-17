@@ -679,11 +679,11 @@ function buildFallbackAnalysis(
 
 /** Noise patterns to remove from text before fallback extraction */
 const EDGE_NOISE_LINE_PATTERNS: RegExp[] = [
-  /^(?:COM\s+)?R2C\s*:\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|Rang\s+[A-Z])\b/i,
+  /^(?:COM\s+)?R2C\s*:\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|BRUN|MARRON|Rang\s+[A-Z])\b/i,
   /^\s*Rang\s+[A-Z]\s*$/i,
   /^COM\s+R2C\b/i,
-  /^en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS)\s*$/i,
-  /^en\s+(?:NOIR|BLEU|ROUGE)\s*[-–—]\s*en\s+(?:NOIR|BLEU|ROUGE)/i,
+  /^en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)\s*$/i,
+  /^en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)\s*[-–—]\s*en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)/i,
   /^(?:Dernière\s+)?(?:mise\s+à\s+jour|MAJ|révision)\s*[:—–\-]\s*\d/i,
   /^Version\s+\d+/i,
   /^(?:UE|DFGSM|DFASM|ECN|EDN|iECN)\s*\d/i,
@@ -713,7 +713,7 @@ function cleanTextForFallback(text: string): string {
     if (EDGE_NOISE_LINE_PATTERNS.some(p => p.test(trimmed))) continue;
     // Clean inline Rang labels
     let cl = trimmed.replace(/\s*\(?\s*Rang\s+[A-Z]\s*\)?\s*/gi, " ");
-    cl = cl.replace(/\s*\(?\s*en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS)\s*\)?\s*/gi, " ");
+    cl = cl.replace(/\s*\(?\s*en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)\s*\)?\s*/gi, " ");
     cl = cl.replace(/\s{2,}/g, " ").trim();
     if (cl.length < 3) continue;
     cleaned.push(cl);
@@ -723,9 +723,9 @@ function cleanTextForFallback(text: string): string {
 
 function cleanTopicForFallback(rawTopic: string): string {
   let topic = rawTopic.trim();
-  topic = topic.replace(/R2C\s*:?\s*(?:Rang\s+[A-Z]\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS)?\s*[-–—]?\s*)+/gi, "").trim();
+  topic = topic.replace(/R2C\s*:?\s*(?:Rang\s+[A-Z]\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)?\s*[-–—]?\s*)+/gi, "").trim();
   topic = topic.replace(/\bCOM\s+R2C\s*:\s*/gi, "");
-  topic = topic.replace(/\s*[-–—]\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS)\b.*/gi, "");
+  topic = topic.replace(/\s*[-–—]\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)\b.*/gi, "");
   topic = topic.replace(/\s*\(?\s*Rang\s+[A-Z]\s*(?:en\s+\w+)?\s*\)?\s*/gi, "");
   topic = topic.replace(/^(?:Item|UE|N°)\s*\d+\s*[-–—:.\s]\s*/i, "");
   topic = topic.replace(/^Sujet\s+principal\s*:\s*/i, "");

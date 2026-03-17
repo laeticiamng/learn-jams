@@ -76,7 +76,7 @@ const FRONT_MATTER_PATTERNS: RegExp[] = [
   /\bR2C\b/i,
   /\bRang\s+[A-Z]\b/i,
   /\bCOM\s+R2C\b/i,
-  /\ben\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS)\b/i,
+  /\ben\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)\b/i,
   // ITEM / course metadata
   /\bITEM\s+\d+/i,
   /\bUE\s*\d+/i,
@@ -103,7 +103,7 @@ const FRONT_MATTER_PATTERNS: RegExp[] = [
   /^©\s/,
   /^Tous\s+droits\s+réservés/i,
   // Color formatting standalone
-  /^en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS)\s*$/i,
+  /^en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)\s*$/i,
   // Page numbers
   /^Page\s+\d+/i,
   /^\d+\s*\/\s*\d+\s*$/,
@@ -116,7 +116,7 @@ const FRONT_MATTER_PATTERNS: RegExp[] = [
   /^.*\bRang\s+[A-Z]\b.*\bRang\s+[A-Z]\b/i, // Multiple Rang on one line
   /^.*\bITEM\s+\d+\b.*\bRang\b/i, // ITEM + Rang composite
   /^.*\bRang\s+[A-Z]\s+en\s+(?:noir|bleu|rouge|vert|gris)\b/i, // Rang A en noir
-  /^.*(?:NOIR|BLEU|ROUGE|VERT|GRIS)\s*[-–—]\s*(?:NOIR|BLEU|ROUGE|VERT|GRIS)/i, // color - color
+  /^.*(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)\s*[-–—]\s*(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)/i, // color - color
   /^\s*(?:Rang\s+[A-Z]\s*[-–—:,]\s*)+$/i, // Lists of Rang labels only
   /^\s*[-–—]\s*$/,  // Standalone dash lines
 ];
@@ -285,7 +285,7 @@ const NOISE_PATTERNS: { type: EditorialNoiseType; pattern: RegExp }[] = [
   { type: "copyright", pattern: /^(?:Source|Adapté de|D'après)\s*:/i },
 
   // Color formatting
-  { type: "color_formatting", pattern: /^en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS)\s*$/i },
+  { type: "color_formatting", pattern: /^en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)\s*$/i },
 
   // Empty structural / punctuation fragments
   { type: "empty_structural", pattern: /^[-–—]+\s*$/ },
@@ -322,7 +322,7 @@ const INLINE_NOISE_REPLACEMENTS: { pattern: RegExp; replacement: string }[] = [
   { pattern: /\s*\(?\s*Rang\s+[A-Z]\s*\)?\s*/gi, replacement: " " },
   { pattern: /\s*[-–—]\s*R2C\s*:\s*Rang\s+[A-Z]\s*/gi, replacement: " " },
   { pattern: /\s*\(\s*p\.\s*\d+\s*\)\s*$/i, replacement: "" },
-  { pattern: /\s*\(?\s*en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS)\s*\)?\s*/gi, replacement: " " },
+  { pattern: /\s*\(?\s*en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)\s*\)?\s*/gi, replacement: " " },
   { pattern: /\s*\[\s*\d+(?:\s*,\s*\d+)*\s*\]\s*/g, replacement: " " }, // Reference numbers [1,2,3]
   { pattern: /\s*\(\s*(?:source|réf|ref)\s*[:.]?\s*[^)]{0,30}\)\s*/gi, replacement: " " },
   // P0: Strip inline platform branding

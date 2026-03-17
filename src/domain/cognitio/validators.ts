@@ -280,13 +280,19 @@ export function runSemanticSuccessGate(params: {
   for (const c of normalizedConcepts) {
     const scores = scoreConceptCandidate(c.label, c.definition);
     const isUncertain = c.uncertain === true || c.source_confidence < uncertaintyConfidenceThreshold;
-    const isArtifact = !scores.accepted ||
-      scores.editorial_artifact_score >= artifactEditorialThreshold ||
-      scores.header_noise_score >= artifactHeaderThreshold;
+    // P0 FIX: In medical polycopié mode, DON'T use scores.accepted as hard reject.
+    // The scorer uses strict defaults (header>=0.4, editorial>=0.5) which are too aggressive
+    // for medical polycopiés. Instead, use only the gate's own relaxed thresholds on score values.
+    const isArtifact = isMedicalPolycopie
+      ? (scores.editorial_artifact_score >= artifactEditorialThreshold ||
+         scores.header_noise_score >= artifactHeaderThreshold)
+      : (!scores.accepted ||
+         scores.editorial_artifact_score >= artifactEditorialThreshold ||
+         scores.header_noise_score >= artifactHeaderThreshold);
 
     // Build rejection reason for diagnostics
     let rejectReason: string | null = null;
-    if (!scores.accepted) rejectReason = "scoring_rejected";
+    if (!isMedicalPolycopie && !scores.accepted) rejectReason = "scoring_rejected";
     else if (scores.editorial_artifact_score >= artifactEditorialThreshold) rejectReason = `editorial_score=${scores.editorial_artifact_score}>=threshold(${artifactEditorialThreshold})`;
     else if (scores.header_noise_score >= artifactHeaderThreshold) rejectReason = `header_score=${scores.header_noise_score}>=threshold(${artifactHeaderThreshold})`;
     else if (isUncertain) rejectReason = `uncertain(confidence=${c.source_confidence}<${uncertaintyConfidenceThreshold})`;
@@ -331,10 +337,12 @@ export function runSemanticSuccessGate(params: {
 
   const editorialArtifactRatio = normalizedConcepts.length > 0 ? editorialArtifactCount / normalizedConcepts.length : 1;
 
-  // Check main topic
+  // Check main topic — P0 FIX: evaluate the CLEANED topic, not the raw one.
+  // The raw topic may contain editorial noise that cleanMainTopic strips successfully.
+  // Only flag as editorial if the topic is STILL editorial AFTER cleaning.
   const cleanedTopic = cleanMainTopic(main_topic);
-  const mainTopicIsEditorial = isEditorialArtifact(main_topic) ||
-    cleanedTopic.length < 3 ||
+  const mainTopicIsEditorial = cleanedTopic.length < 3 ||
+    isEditorialArtifact(cleanedTopic) ||
     /^R2C\b|^Rang\s+[A-Z]|^COM\s+R2C|^CODEX\b|^S[\s-]*ECN\b|^ITEM\s+\d|^Révision\s+\d/i.test(cleanedTopic);
 
   // Gate conditions — mode-aware

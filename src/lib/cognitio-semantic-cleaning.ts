@@ -27,7 +27,7 @@ export const DOCUMENT_NOISE_BLACKLIST: RegExp[] = [
   /\bR2C\b/,
   /\bRang\s+[A-Z]\b/i,
   /\bRang\s+[ABC]\s+en\s+/i,
-  /\ben\s+(?:NOIR|BLEU|ROUGE)\b/i,
+  /\ben\s+(?:NOIR|BLEU|ROUGE|BRUN|MARRON)\b/i,
   /\bCOM\s+R2C\b/i,
 
   // Revision / version markers
@@ -158,7 +158,7 @@ const EDITORIAL_ARTIFACT_PATTERNS: RegExp[] = [
   /^\s*[•\-–]\s*$/,
 
   // Color formatting metadata
-  /^en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS)\s*$/i,
+  /^en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)\s*$/i,
 
   // Repeated branding / university headers (generic)
   /^(?:Université|Faculté|Institut|École|Département)\s.{0,60}$/i,
@@ -202,8 +202,8 @@ const CONCEPT_LABEL_NOISE_PATTERNS: RegExp[] = [
   /^[)]\s*[-–—]\s*/,
 
   // Color metadata
-  /\s*[-–—]\s*en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS)\s*$/i,
-  /^en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS)\s*[-–—]\s*/i,
+  /\s*[-–—]\s*en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)\s*$/i,
+  /^en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)\s*[-–—]\s*/i,
 
   // Truncation artifacts — trailing open parens without close
   /\s*\(\s*$/,
@@ -366,7 +366,7 @@ export function isValidConceptLabel(label: string): boolean {
     /^(?:NB|PS|Note)\s*:/i,
     /^(?:Suite|Fin|Début)\s*$/i,
     // Color/formatting metadata
-    /^(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS)\b/i,
+    /^(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)\b/i,
     /^COM\s+R2C\b/i,
     // Truncated labels ending with open paren or starting mid-word
     /\(\s*$/,
@@ -526,25 +526,38 @@ export function cleanMainTopic(rawTopic: string): string {
   let topic = rawTopic.trim();
 
   // Remove full "R2C : Rang A en noir - Rang B en ..." classification blocks (aggressive)
-  topic = topic.replace(/R2C\s*:?\s*(?:Rang\s+[A-Z]\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS)?\s*[-–—]?\s*)+/gi, "").trim();
+  topic = topic.replace(/R2C\s*:?\s*(?:Rang\s+[A-Z]\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)?\s*[-–—]?\s*)+/gi, "").trim();
 
   // Remove COM R2C metadata
   topic = topic.replace(/\bCOM\s+R2C\s*:\s*/gi, "");
-  topic = topic.replace(/\s*[-–—]\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS)\b.*/gi, "");
-  topic = topic.replace(/\s*en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS)\b.*/gi, "");
+  topic = topic.replace(/\s*[-–—]\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)\b.*/gi, "");
+  topic = topic.replace(/\s*en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)\b.*/gi, "");
 
   // Remove Rang labels (including "Rang A en noir" patterns)
   topic = topic.replace(/\s*\(?\s*Rang\s+[A-Z]\s*(?:en\s+\w+)?\s*\)?\s*/gi, "");
   topic = topic.replace(/\s*R2C[^,)]*\s*/gi, "");
 
-  // Remove Item/UE/N° prefixes
-  topic = topic.replace(/^(?:Item|UE|N°)\s*\d+\s*[-–—:.\s]\s*/i, "");
+  // Remove Item/UE/N° — inline, not just prefix (handles "CODEX ITEM 363 : TITLE")
+  topic = topic.replace(/\bITEM\s+\d+\s*[-–—:.\s]\s*/gi, "");
+  topic = topic.replace(/^(?:UE|N°)\s*\d+\s*[-–—:.\s]\s*/i, "");
 
   // Remove "Sujet principal :" prefix
   topic = topic.replace(/^Sujet\s+principal\s*:\s*/i, "");
 
   // Remove branding/institution prefixes
   topic = topic.replace(/^(?:Cours|Module|Matière|Chapitre|Partie|Section|Titre)\s*\d*\s*[-–—:.\s]\s*/i, "");
+
+  // P0 FIX: Strip inline branding/platform noise (CODEX, S-ECN, Révision, date)
+  topic = topic.replace(/\bCODEX\b[.:;,]?\s*/gi, "");
+  topic = topic.replace(/\bS[\s-]*ECN(?:\.COM)?\b[.:;,]?\s*/gi, "");
+  topic = topic.replace(/\bRévision\s+\d[\d\/]*\b\s*/gi, "");
+  topic = topic.replace(/\bMED[\s-]*LINE\b\s*/gi, "");
+  topic = topic.replace(/\biKB\b\s*/gi, "");
+  topic = topic.replace(/\bPREP['']?ECN\b\s*/gi, "");
+  topic = topic.replace(/\bELLIPSES\b\s*/gi, "");
+  topic = topic.replace(/\bVERNAZOBRES[\s-]*GREGO?\b\s*/gi, "");
+  topic = topic.replace(/\bECN\.COM\b\s*/gi, "");
+  topic = topic.replace(/\b\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4}\b\s*/g, "");
 
   // Collapse whitespace
   topic = topic.replace(/\s{2,}/g, " ").trim();
@@ -702,7 +715,7 @@ const EDITORIAL_TOKENS: RegExp[] = [
   /\biECN\b/,
   /\bEDN\b/,
   /\bCOM\s+R2C\b/i,
-  /\ben\s+(?:NOIR|BLEU|ROUGE)\b/i,
+  /\ben\s+(?:NOIR|BLEU|ROUGE|BRUN|MARRON)\b/i,
   /\bPage\s+\d+/i,
   /\bMAJ\b/i,
   /\bVersion\s+\d/i,
@@ -728,7 +741,7 @@ const HEADER_COMPOSITE_PATTERNS: RegExp[] = [
   /\bR2C\b.*\bRang\b/i,
   /\bRang\s+[A-Z]\b.*\bRang\s+[A-Z]\b/i, // Multiple Rang labels
   /\bRang\s+[A-Z]\s+en\s+(?:noir|bleu|rouge|vert|gris)\b/i,
-  /(?:NOIR|BLEU|ROUGE|VERT|GRIS)\s*[-–—]\s*(?:NOIR|BLEU|ROUGE|VERT|GRIS)/i,
+  /(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)\s*[-–—]\s*(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)/i,
   /\bR2C\b.*(?:NOIR|BLEU|ROUGE)/i,
 ];
 

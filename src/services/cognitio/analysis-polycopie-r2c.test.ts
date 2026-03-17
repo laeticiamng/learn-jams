@@ -5,6 +5,7 @@ import { extractAndCleanTopic, validateTopic, cleanTopicString } from "./topicCl
 import { normalizeConcepts } from "./conceptNormalizer";
 import { runSemanticSuccessGate, normalizeGateConceptInput } from "@/domain/cognitio/validators";
 import { recordSecondPassEvaluation, recordGateEvaluation, metrics } from "@/services/observability/metricsService";
+import { cleanMainTopic } from "@/lib/cognitio-semantic-cleaning";
 
 // ============================================================
 // Test Suite: P0 Polycopié R2C Analysis — Front Matter,
@@ -858,5 +859,303 @@ describe("preNormalizeMedicalText", () => {
     const input = "La pneumonie aiguë communautaire est une infection du parenchyme pulmonaire. Elle se manifeste par de la fièvre, une toux et une dyspnée.";
     const result = preNormalizeMedicalText(input);
     expect(result).toBe(input);
+  });
+});
+
+// ============================================================
+// NON-REGRESSION: Item 363 — Fractures extrémité inférieure du radius
+// Exact reproduction of the bug visible in the UI:
+// - Header with R2C / Rang A en noir / Rang B en bleu / Rang C en brun
+// - CODEX.:, S-ECN.COM branding
+// - Real medical title embedded in the same line
+// - Dense medical content after header
+// ============================================================
+
+describe("NON-REGRESSION: Item 363 — Dense medical polycopié FR with brun color", () => {
+  // ---- Realistic fixture reproducing the exact problematic format ----
+
+  const ITEM_363_HEADER = "R2C : Rang A en noir - Rang B en bleu - Rang C en brun CODEX.:, S-ECN.COM Révision 8/9/2022 ITEM 363 : FRACTURES DE L'EXTRÉMITE INFÉRIEURE DU RADIUS";
+
+  const ITEM_363_BODY = [
+    "",
+    "GENERALITES",
+    "La fracture de l'extrémité distale du radius est la plus fréquente des fractures de l'adulte.",
+    "Elle survient typiquement chez la femme ménopausée ostéoporotique après une chute de sa hauteur sur la main.",
+    "Chez le sujet jeune, elle résulte d'un traumatisme à haute énergie (accident de sport, AVP).",
+    "",
+    "ANATOMIE",
+    "L'extrémité inférieure du radius s'articule avec le carpe (scaphoïde et lunatum) et la tête de l'ulna (articulation radio-ulnaire distale).",
+    "La surface articulaire a une inclinaison frontale de 25° et sagittale de 10° (index radio-ulnaire distal = 0 à -2 mm).",
+    "",
+    "MECANISME",
+    "Chute sur la paume de la main poignet en extension : fracture en compression-extension (Pouteau-Colles).",
+    "Chute sur le dos de la main poignet en flexion : fracture en compression-flexion (Goyrand-Smith).",
+    "Traumatisme axial pur : fracture marginale antérieure ou postérieure.",
+    "",
+    "CLASSIFICATION",
+    "Classification de Fernandez en 5 types selon le mécanisme : bending, shearing, compression, avulsion, combined.",
+    "Classification AO en 3 groupes : A (extra-articulaire), B (articulaire partielle), C (articulaire complète).",
+    "",
+    "CLINIQUE",
+    "Douleur du poignet, impotence fonctionnelle, œdème.",
+    "Déformation typique en dos de fourchette (Pouteau-Colles) : saillie dorsale de l'extrémité inférieure du radius.",
+    "Rechercher des complications immédiates : ouverture cutanée, compression du nerf médian, lésions tendineuses.",
+    "",
+    "IMAGERIE",
+    "Radiographies standard face et profil du poignet : confirmation de la fracture, analyse des déplacements.",
+    "TDM en cas de fracture articulaire complexe pour planification chirurgicale.",
+    "",
+    "TRAITEMENT",
+    "Fracture non déplacée ou déplacement acceptable : traitement orthopédique par immobilisation plâtrée (BABP) 4-6 semaines.",
+    "Fracture déplacée : réduction + ostéosynthèse par plaque verrouillée antérieure (technique de référence).",
+    "Fracture articulaire complexe : ostéosynthèse par plaque +/- brochage, +/- arthroscopie.",
+    "",
+    "COMPLICATIONS",
+    "Syndrome du canal carpien par compression du nerf médian (urgence si aigu postopératoire).",
+    "Algodystrophie (syndrome douloureux régional complexe de type 1) : douleur, œdème, raideur, troubles vasomoteurs.",
+    "Cal vicieux avec perte d'inclinaison frontale et/ou sagittale → arthrose radio-carpienne secondaire.",
+    "Rupture secondaire du tendon long extenseur du pouce.",
+  ].join("\n");
+
+  const FULL_ITEM_363_DOCUMENT = ITEM_363_HEADER + ITEM_363_BODY;
+
+  // ---- Test 1: cleanTopicString extracts the real medical title ----
+
+  it("cleanTopicString extracts 'FRACTURES DE L'EXTRÉMITE INFÉRIEURE DU RADIUS' from the composite header", () => {
+    const cleaned = cleanTopicString(ITEM_363_HEADER);
+    // Must contain the real medical topic
+    expect(cleaned.toUpperCase()).toContain("FRACTURES");
+    expect(cleaned.toUpperCase()).toContain("RADIUS");
+    // Must NOT contain editorial noise
+    expect(cleaned).not.toMatch(/R2C/i);
+    expect(cleaned).not.toMatch(/Rang\s+[A-Z]/i);
+    expect(cleaned).not.toMatch(/CODEX/i);
+    expect(cleaned).not.toMatch(/S-ECN/i);
+    expect(cleaned).not.toMatch(/Révision/i);
+    expect(cleaned).not.toMatch(/brun/i);
+    expect(cleaned).not.toMatch(/noir/i);
+    expect(cleaned).not.toMatch(/bleu/i);
+    expect(cleaned).not.toMatch(/ITEM\s+\d+/i);
+  });
+
+  it("validateTopic accepts the cleaned medical title", () => {
+    const cleaned = cleanTopicString(ITEM_363_HEADER);
+    const rejection = validateTopic(cleaned);
+    expect(rejection).toBeNull();
+  });
+
+  // ---- Test 2: Front matter detection on the composite header line ----
+
+  it("detectFrontMatter handles document with composite single-line header", () => {
+    // The composite header is a single line — front matter detection may or may not
+    // flag it depending on how many noise patterns match. The key invariant:
+    // even if front matter is not flagged, topic cleaning + validation must handle it.
+    const result = detectFrontMatter(FULL_ITEM_363_DOCUMENT);
+    // Whether or not has_front_matter is true, the body must contain medical content
+    if (result.has_front_matter) {
+      expect(result.body_text).toContain("fracture");
+    } else {
+      // Front matter detection may not trigger for single-line headers,
+      // but the topic cleaner should still strip the editorial noise.
+      expect(result.body_text.length).toBeGreaterThan(100);
+    }
+  });
+
+  // ---- Test 3: Topic extraction from segments with the noisy header ----
+
+  it("extractAndCleanTopic extracts a real medical topic, not the R2C header", () => {
+    const segments = [
+      { title: ITEM_363_HEADER, content: ITEM_363_HEADER + "\n" + ITEM_363_BODY.slice(0, 200), hierarchy_level: 0 },
+      { title: "GENERALITES", content: "La fracture de l'extrémité distale du radius est la plus fréquente des fractures de l'adulte.", hierarchy_level: 1 },
+      { title: "ANATOMIE", content: "L'extrémité inférieure du radius s'articule avec le carpe.", hierarchy_level: 1 },
+      { title: "TRAITEMENT", content: "Fracture non déplacée : traitement orthopédique par immobilisation plâtrée.", hierarchy_level: 1 },
+    ];
+    const result = extractAndCleanTopic(segments);
+    // Topic must NOT be editorial
+    expect(result.clean_topic).not.toMatch(/R2C/i);
+    expect(result.clean_topic).not.toMatch(/Rang/i);
+    expect(result.clean_topic).not.toMatch(/CODEX/i);
+    // Must be a real medical topic
+    expect(result.confidence).toBeGreaterThan(0.3);
+    expect(result.clean_topic.length).toBeGreaterThanOrEqual(5);
+  });
+
+  // ---- Test 4: Concept normalization with labels from this document ----
+
+  it("normalizeConcepts accepts medical concepts from Item 363 content", () => {
+    const concepts = [
+      { label: "Fracture de l'extrémité distale du radius", definition: "La plus fréquente des fractures de l'adulte, survenant chez la femme ménopausée après chute.", stable_key: "c1", criticality: 1 },
+      { label: "Fracture de Pouteau-Colles", definition: "Fracture en compression-extension par chute sur la paume de la main, poignet en extension.", stable_key: "c2", criticality: 1 },
+      { label: "Ostéosynthèse par plaque verrouillée", definition: "Technique de référence pour le traitement des fractures déplacées du radius distal.", stable_key: "c3", criticality: 2 },
+      { label: "Syndrome du canal carpien post-fracturaire", definition: "Compression du nerf médian, urgence si aigu postopératoire.", stable_key: "c4", criticality: 2 },
+      { label: "Algodystrophie", definition: "Syndrome douloureux régional complexe de type 1 : douleur, œdème, raideur, troubles vasomoteurs.", stable_key: "c5", criticality: 3 },
+    ];
+    const result = normalizeConcepts(concepts);
+    expect(result.normalized_concepts_count).toBeGreaterThanOrEqual(3);
+    expect(result.rejected_editorial_artifacts_count).toBe(0);
+  });
+
+  // ---- Test 5: Semantic gate passes for this document in medical polycopié mode ----
+
+  it("semantic gate passes with medical polycopié thresholds for Item 363 concepts", () => {
+    const mockScoreCandidate = (label: string, _def: string) => ({
+      accepted: true,
+      editorial_artifact_score: 0.1,
+      header_noise_score: 0.1,
+    });
+    const result = runSemanticSuccessGate({
+      concepts: [
+        {
+          label: "Fracture de l'extrémité distale du radius",
+          definition: "La plus fréquente des fractures de l'adulte.",
+          source_trace: [{ segment_index: 1, excerpt: "body" }],
+        },
+      ],
+      main_topic: "Fractures de l'extrémité inférieure du radius",
+      scoreConceptCandidate: mockScoreCandidate,
+      isEditorialArtifact: (_text: string) => false,
+      cleanMainTopic: cleanTopicString,
+      analysis_mode: "body_only",
+      source_type: "polycopie",
+    });
+    expect(result.passed).toBe(true);
+    expect(result.status).toBe("semantic_success");
+    expect(result.signals.main_topic_is_editorial_artifact).toBe(false);
+  });
+
+  // ---- Test 6: Semantic gate does NOT block when topic has noise but cleans to real medical title ----
+
+  it("semantic gate passes even when raw main_topic contains R2C noise but cleans to a valid medical topic", () => {
+    const mockScoreCandidate = (label: string, _def: string) => ({
+      accepted: true,
+      editorial_artifact_score: 0.15,
+      header_noise_score: 0.1,
+    });
+    const result = runSemanticSuccessGate({
+      concepts: [
+        {
+          label: "Fracture de Pouteau-Colles",
+          definition: "Fracture en compression-extension par chute sur la paume.",
+          source_trace: [{ segment_index: 1, excerpt: "body" }],
+        },
+        {
+          label: "Ostéosynthèse par plaque",
+          definition: "Technique de référence pour les fractures déplacées.",
+          source_trace: [{ segment_index: 2, excerpt: "body" }],
+        },
+      ],
+      // Raw topic still contains editorial noise
+      main_topic: "R2C : Rang A en noir - Rang B en bleu - Rang C en brun CODEX.:, S-ECN.COM ITEM 363 : FRACTURES DE L'EXTRÉMITE INFÉRIEURE DU RADIUS",
+      scoreConceptCandidate: mockScoreCandidate,
+      isEditorialArtifact: (_text: string) => false,
+      cleanMainTopic,
+      analysis_mode: "full",
+      source_type: "polycopie",
+    });
+    // After cleaning, the topic is "FRACTURES DE L'EXTRÉMITE INFÉRIEURE DU RADIUS"
+    // which is NOT editorial → gate should NOT block on topic
+    expect(result.signals.main_topic_is_editorial_artifact).toBe(false);
+    expect(result.passed).toBe(true);
+  });
+
+  // ---- Test 7: "brun" color is handled correctly ----
+
+  it("cleanTopicString + validateTopic handles 'Rang C en brun' color variant", () => {
+    const raw = "R2C : Rang A en noir - Rang B en bleu - Rang C en brun";
+    const cleaned = cleanTopicString(raw);
+    // cleanTopicString returns the raw string when cleaning empties it (fallback),
+    // but validateTopic must reject it as editorial noise.
+    const rejection = validateTopic(cleaned);
+    expect(rejection).not.toBeNull();
+  });
+
+  it("cleanMainTopic handles 'en brun' color variant", () => {
+    const raw = "R2C : Rang A en noir - Rang B en bleu - Rang C en brun ITEM 363 : Fractures du radius";
+    const cleaned = cleanMainTopic(raw);
+    expect(cleaned).not.toMatch(/brun/i);
+    expect(cleaned).not.toMatch(/R2C/i);
+    expect(cleaned.toLowerCase()).toContain("fractures");
+  });
+
+  // ---- Test 8: filterEditorialNoise preserves medical content ----
+
+  it("filterEditorialNoise preserves dense medical content from Item 363", () => {
+    const result = filterEditorialNoise(ITEM_363_BODY);
+    expect(result.cleaned_text).toContain("fracture");
+    expect(result.cleaned_text).toContain("radius");
+    expect(result.cleaned_text).toContain("Pouteau-Colles");
+    expect(result.cleaned_text).toContain("ostéosynthèse");
+    expect(result.cleaned_text.toLowerCase()).toContain("algodystrophie");
+    // Should retain most content
+    expect(result.cleaned_text_length).toBeGreaterThan(result.raw_text_length * 0.7);
+  });
+
+  // ---- Test 9: Medical polycopié gate does not hard-reject on scores.accepted ----
+
+  it("semantic gate in medical polycopié mode does not hard-reject based on scores.accepted", () => {
+    // Simulate a scorer that returns accepted=false but borderline scores
+    // (e.g., header_noise_score=0.45 which exceeds the strict 0.4 threshold
+    // but is below the medical 0.6 threshold)
+    const strictScorer = (_label: string, _def: string) => ({
+      accepted: false, // strict scoring rejects
+      editorial_artifact_score: 0.35,
+      header_noise_score: 0.45, // above strict 0.4, below medical 0.6
+    });
+    const result = runSemanticSuccessGate({
+      concepts: [
+        {
+          label: "Fracture extra-articulaire du radius",
+          definition: "Type A dans la classification AO, fracture sans atteinte de la surface articulaire.",
+          source_trace: [{ segment_index: 1, excerpt: "body" }],
+        },
+      ],
+      main_topic: "Fractures du radius distal",
+      scoreConceptCandidate: strictScorer,
+      isEditorialArtifact: (_text: string) => false,
+      cleanMainTopic: (text: string) => text,
+      analysis_mode: "body_only",
+      source_type: "polycopie",
+    });
+    // In medical polycopié mode, scores.accepted=false should NOT be a hard reject.
+    // The gate should use its own relaxed thresholds (editorial_artifact=0.6, header=0.6).
+    // Since both scores are below 0.6, the concept should be accepted.
+    expect(result.signals.valid_concepts_count).toBeGreaterThanOrEqual(1);
+    expect(result.passed).toBe(true);
+  });
+
+  // ---- Test 10: Mission gate allows degraded generation ----
+
+  it("mission gate allows degraded mission for Item 363 with 1 exploitable concept", () => {
+    const signals: SemanticGateSignals = {
+      valid_concepts_count: 1,
+      uncertain_concepts_count: 1,
+      body_concepts_count: 2,
+      segment_0_concepts_count: 0,
+      editorial_artifact_ratio: 0.3,
+      main_topic_is_editorial_artifact: false,
+      semantic_generation_allowed: true,
+      gate_block_reasons: [],
+    };
+    const result = runMissionGate(signals, "Fractures de l'extrémité inférieure du radius");
+    expect(result.passed).toBe(true);
+  });
+
+  // ---- Test 11: End-to-end cleanMainTopic on the EXACT header from bug report ----
+
+  it("cleanMainTopic on the exact header produces a valid medical title", () => {
+    const exactHeader = "R2C : Rang A en noir - Rang B en bleu - Rang C en brun CODEX.:, S-ECN.COM Révision 8/9/2022 ITEM 363 : FRACTURES DE L'EXTRÉMITE INFÉRIEURE DU RADIUS";
+    const cleaned = cleanMainTopic(exactHeader);
+    // Must produce a clean, non-empty medical title
+    expect(cleaned.length).toBeGreaterThanOrEqual(5);
+    expect(cleaned.toUpperCase()).toContain("FRACTURES");
+    expect(cleaned.toUpperCase()).toContain("RADIUS");
+    // Must NOT contain any editorial noise
+    expect(cleaned).not.toMatch(/R2C/i);
+    expect(cleaned).not.toMatch(/Rang/i);
+    expect(cleaned).not.toMatch(/CODEX/i);
+    expect(cleaned).not.toMatch(/S-ECN/i);
+    expect(cleaned).not.toMatch(/Révision/i);
+    expect(cleaned).not.toMatch(/ITEM\s+\d+/i);
+    expect(cleaned).not.toMatch(/\d{1,2}\/\d{1,2}\/\d{2,4}/);
   });
 });

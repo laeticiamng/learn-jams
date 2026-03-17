@@ -328,7 +328,7 @@ function cleanR2CRevisionArtifacts(text: string): string {
     // R2C / Rang standalone lines
     /^\s*(?:COM\s+)?R2C\s*:\s*/i,
     /^\s*Rang\s+[A-Z]\s*(?:[-–—:]\s*)?$/i,
-    /^\s*en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS)\s*$/i,
+    /^\s*en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)\s*$/i,
     /^\s*(?:Rang\s+[A-Z]\s*[-–—]\s*)+\s*$/i,
     // Branding standalone lines
     /^\s*CODEX\s*[.:;,]?\s*$/i,
@@ -360,8 +360,8 @@ function cleanR2CRevisionArtifacts(text: string): string {
     { pattern: /\s*[-–—]\s*Rang\s+[A-Z]\s*/gi, replacement: " " },
     { pattern: /\s*\(?\s*R2C\s*:\s*Rang\s+[A-Z]\s*\)?\s*/gi, replacement: " " },
     // Color annotations inline
-    { pattern: /\s*\(?\s*en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS)\s*\)?\s*/gi, replacement: " " },
-    { pattern: /\s*[-–—]\s*en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS)\s*/gi, replacement: " " },
+    { pattern: /\s*\(?\s*en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)\s*\)?\s*/gi, replacement: " " },
+    { pattern: /\s*[-–—]\s*en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)\s*/gi, replacement: " " },
     // Branding inline
     { pattern: /\bCODEX\b[.:;,]?\s*/gi, replacement: "" },
     { pattern: /\bS[\s-]*ECN(?:\.COM)?\b[.:;,]?\s*/gi, replacement: "" },
@@ -740,11 +740,15 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
   // P0 DEFINITIVE FIX: CHECK TOPIC + COMPUTE ARTIFACT DIAGNOSTICS
   // Must happen BEFORE body-pass decision.
   // ============================================================
+  // P0 FIX: Evaluate the CLEANED topic, not the raw one.
+  // cleanMainTopic now strips CODEX/S-ECN/Révision/ITEM inline, so a composite
+  // header like "R2C : ... CODEX S-ECN ITEM 363 : FRACTURES DU RADIUS"
+  // should clean down to "FRACTURES DU RADIUS" — which is NOT editorial.
   const mainTopicIsEditorialArtifact = (() => {
     const cleanedT = cleanMainTopic(mainTopic);
     if (cleanedT.length < 3) return true;
-    if (/^R2C\b|^Rang\s+[A-Z]|^COM\s+R2C|^CODEX\b|^S[\s-]*ECN\b|^ITEM\s+\d|^Révision\s+\d/i.test(cleanedT)) return true;
-    const artScore = computeEditorialArtifactScore(mainTopic);
+    if (/^R2C\b|^Rang\s+[A-Z]|^COM\s+R2C|^CODEX\b|^S[\s-]*ECN\b|^Révision\s+\d/i.test(cleanedT)) return true;
+    const artScore = computeEditorialArtifactScore(cleanedT);
     return artScore >= 0.4;
   })();
 
@@ -1380,7 +1384,7 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
       .filter(l => {
         const words = l.split(/\s+/);
         const editorialWords = words.filter(w =>
-          /^(?:R2C|Rang|CODEX|S-ECN|ECN|ITEM|iKB|MAJ|NOIR|BLEU|ROUGE|VERT|GRIS)$/i.test(w)
+          /^(?:R2C|Rang|CODEX|S-ECN|ECN|ITEM|iKB|MAJ|NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)$/i.test(w)
         ).length;
         return editorialWords / words.length < 0.5;
       });
@@ -1546,8 +1550,8 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
   let finalTopic = mainTopic;
   const finalTopicIsEditorial = (() => {
     const ct = cleanMainTopic(finalTopic);
-    return ct.length < 3 || /^R2C\b|^Rang\s+[A-Z]|^COM\s+R2C|^CODEX\b|^S[\s-]*ECN\b|^ITEM\s+\d|^Révision\s+\d/i.test(ct) ||
-      computeEditorialArtifactScore(finalTopic) >= 0.4;
+    return ct.length < 3 || /^R2C\b|^Rang\s+[A-Z]|^COM\s+R2C|^CODEX\b|^S[\s-]*ECN\b|^Révision\s+\d/i.test(ct) ||
+      computeEditorialArtifactScore(ct) >= 0.4;
   })();
 
   if ((finalTopic === "Sujet non identifié" || finalTopic.length < 3 || finalTopicIsEditorial) && concepts.length > 0) {
@@ -1912,7 +1916,7 @@ function isEditorialArtifactForHeuristic(line: string): boolean {
   if (/^(?:Rang|Item|UE|DFGSM|ECN|EDN)\s+\d/i.test(trimmed)) return true;
   if (/^(?:Page|Version)\s+\d/i.test(trimmed)) return true;
   if (/^(?:Université|Faculté|Institut|École)\s/i.test(trimmed)) return true;
-  if (/^en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS)\s*$/i.test(trimmed)) return true;
+  if (/^en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)\s*$/i.test(trimmed)) return true;
   if (/^©\s/.test(trimmed)) return true;
   if (/^\d+\s*[\/\-–]\s*\d+\s*$/.test(trimmed)) return true;
 

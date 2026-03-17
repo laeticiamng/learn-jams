@@ -28,7 +28,7 @@ export interface RejectedTopicCandidate {
 const FORBIDDEN_TOPIC_PATTERNS: { pattern: RegExp; reason: string }[] = [
   { pattern: /^(?:COM\s+)?R2C\b/i, reason: "Classification label (R2C)" },
   { pattern: /^\s*Rang\s+[A-Z]/i, reason: "Rang classification" },
-  { pattern: /^en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS)\b/i, reason: "Color metadata" },
+  { pattern: /^en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)\b/i, reason: "Color metadata" },
   { pattern: /^(?:UE|DFGSM|DFASM|ECN|EDN|iECN)\s*\d/i, reason: "Course unit code" },
   { pattern: /^(?:Item|N°)\s*\d+\s*$/i, reason: "Item number only" },
   { pattern: /^(?:Cours|Module|Matière|Chapitre|Partie)\s*\d*\s*$/i, reason: "Generic label" },
@@ -51,7 +51,7 @@ const FORBIDDEN_TOPIC_PATTERNS: { pattern: RegExp; reason: string }[] = [
   { pattern: /\bMED[\s-]*LINE\b/i, reason: "Contains MED-LINE branding" },
   { pattern: /\bRévision\b/i, reason: "Contains revision marker" },
   { pattern: /\bITEM\s+\d/i, reason: "Contains ITEM number" },
-  { pattern: /(?:NOIR|BLEU|ROUGE|VERT|GRIS)/i, reason: "Contains color metadata" },
+  { pattern: /(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)/i, reason: "Contains color metadata" },
   { pattern: /\bPREP['']?ECN\b/i, reason: "Contains PrepECN branding" },
   { pattern: /\bELLIPSES\b/i, reason: "Contains ELLIPSES branding" },
   { pattern: /\bVERNAZOBRES/i, reason: "Contains Vernazobres branding" },
@@ -60,16 +60,29 @@ const FORBIDDEN_TOPIC_PATTERNS: { pattern: RegExp; reason: string }[] = [
 // Noise to strip from topic
 const TOPIC_NOISE_STRIPS: RegExp[] = [
   // P0: Aggressive R2C block removal — handles "R2C : Rang A en noir - Rang B en ..."
-  /R2C\s*:?\s*(?:Rang\s+[A-Z]\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS)?\s*[-–—]?\s*)+/gi,
+  /R2C\s*:?\s*(?:Rang\s+[A-Z]\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)?\s*[-–—]?\s*)+/gi,
   /\bCOM\s+R2C\s*:\s*/gi,
-  /\s*[-–—]\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS)\b.*/gi,
-  /\s*en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS)\b.*/gi,
+  /\s*[-–—]\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)\b.*/gi,
+  /\s*en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)\b.*/gi,
   /\s*\(?\s*Rang\s+[A-Z]\s*(?:en\s+\w+)?\s*\)?\s*/gi,
   /\s*R2C[^,)]*\s*/gi,
-  /^(?:Item|UE|N°)\s*\d+\s*[-–—:.\s]\s*/i,
+  // P0 FIX: Strip ITEM + number inline (not just at start) — extracts "TITLE" from "ITEM 363 : TITLE"
+  /\bITEM\s+\d+\s*[-–—:.\s]\s*/gi,
+  /^(?:UE|N°)\s*\d+\s*[-–—:.\s]\s*/i,
   /^Sujet\s+principal\s*:\s*/i,
   /^(?:Cours|Module|Matière|Chapitre|Partie|Section|Titre)\s*\d*\s*[-–—:.\s]\s*/i,
   /\s*\(\s*(?:source|réf|ref)\s*[:.]?\s*[^)]{0,30}\)\s*/gi,
+  // P0 FIX: Strip inline branding/platform noise (CODEX, S-ECN, Révision, date, etc.)
+  /\bCODEX\b[.:;,]?\s*/gi,
+  /\bS[\s-]*ECN(?:\.COM)?\b[.:;,]?\s*/gi,
+  /\bRévision\s+\d[\d\/]*\b\s*/gi,
+  /\bMED[\s-]*LINE\b\s*/gi,
+  /\biKB\b\s*/gi,
+  /\bPREP['']?ECN\b\s*/gi,
+  /\bELLIPSES\b\s*/gi,
+  /\bVERNAZOBRES[\s-]*GREGO?\b\s*/gi,
+  /\b\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4}\b\s*/g,
+  /\bECN\.COM\b\s*/gi,
 ];
 
 // ---------- Main Functions ----------
@@ -192,8 +205,8 @@ export function cleanTopicString(raw: string): string {
 
   // Collapse whitespace
   topic = topic.replace(/\s{2,}/g, " ").trim();
-  // Remove trailing punctuation
-  topic = topic.replace(/\s*[-–—:;,]\s*$/, "").trim();
+  // Remove leading/trailing punctuation artifacts
+  topic = topic.replace(/^[\s.:;,\-–—]+/, "").replace(/[\s.:;,\-–—]+$/, "").trim();
 
   return topic || raw.trim();
 }
