@@ -205,8 +205,16 @@ export default function ConceptNode3D({
         </mesh>
       )}
 
-      {/* Orbital ring — visible on interaction/gates */}
-      {showOrbital && (
+      {/* Orbital particles — replace static torus rings */}
+      {showOrbital && isHighQuality && (
+        <OrbitalParticles
+          count={node.is_gate ? 16 : 10}
+          radius={scale * 0.9}
+          color={accent}
+          speed={isSelected ? 1.5 : 0.8}
+        />
+      )}
+      {showOrbital && !isHighQuality && (
         <mesh ref={orbitalRef}>
           <torusGeometry args={[scale * 0.9, 0.015, 8, 48]} />
           <meshStandardMaterial
@@ -221,18 +229,23 @@ export default function ConceptNode3D({
         </mesh>
       )}
 
-      {/* Second orbital (selected nodes only) */}
+      {/* Second orbital layer (selected, high quality) */}
       {isSelected && isHighQuality && (
-        <mesh rotation={[Math.PI / 3, Math.PI / 4, 0]}>
-          <torusGeometry args={[scale * 1.1, 0.01, 8, 48]} />
-          <meshBasicMaterial
-            color={accent}
-            transparent
-            opacity={0.2}
-            depthWrite={false}
-          />
-        </mesh>
+        <OrbitalParticles
+          count={8}
+          radius={scale * 1.1}
+          color={color}
+          speed={0.5}
+        />
       )}
+
+      {/* Reveal burst effect when node becomes available */}
+      <RevealBurst
+        position={[0, 0, 0]}
+        color={accent}
+        active={justRevealed}
+        particleCount={24}
+      />
 
       {/* Mastery ring — enhanced with gradient effect */}
       {mastery !== "unknown" && (
