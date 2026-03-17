@@ -476,9 +476,7 @@ function RoomFloorGrid({ width, depth, color }: { width: number; depth: number; 
       {lines.map((pts, i) => {
         const geometry = new THREE.BufferGeometry().setFromPoints(pts);
         return (
-          <line key={i} geometry={geometry}>
-            <lineBasicMaterial color={color} transparent opacity={0.03} />
-          </line>
+          <primitive key={i} object={new THREE.Line(geometry, new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.03 }))} />
         );
       })}
     </group>

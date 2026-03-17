@@ -52,7 +52,7 @@ serve(async (req) => {
     }
 
     const audioBuffer = await response.arrayBuffer();
-    const audioBase64 = base64Encode(new Uint8Array(audioBuffer));
+    const audioBase64 = base64Encode(audioBuffer);
 
     return new Response(JSON.stringify({
       audio_base64: audioBase64,
@@ -60,8 +60,9 @@ serve(async (req) => {
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal error";
+    return new Response(JSON.stringify({ error: message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

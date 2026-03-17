@@ -88,8 +88,9 @@ serve(async (req) => {
     return new Response("<Response></Response>", {
       headers: { ...corsHeaders, "Content-Type": "text/xml" },
     });
-  } catch (err) {
-    log("error", "webhook_error", { message: err.message });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal error";
+    log("error", "webhook_error", { message });
     return new Response("<Response></Response>", {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "text/xml" },
