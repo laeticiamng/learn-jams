@@ -89,6 +89,18 @@ export default function ImmersiveMissionScene({
   ).length;
 
   // Show narrative on change
+  // Cinematic room transition
+  useEffect(() => {
+    if (currentRoomIndex !== prevRoomRef.current) {
+      setIsTransitioning(true);
+      const timer = setTimeout(() => {
+        setIsTransitioning(false);
+        prevRoomRef.current = currentRoomIndex;
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [currentRoomIndex]);
+
   useEffect(() => {
     if (narrativeMessage) setShowNarrative(true);
   }, [narrativeMessage]);
@@ -102,6 +114,9 @@ export default function ImmersiveMissionScene({
       onObjectInteract(selectedObjectId, interaction);
     }
   }, [selectedObjectId, onObjectInteract]);
+
+  // Dynamic progression tint (gets brighter as rooms are completed)
+  const progressionOpacity = completedRooms.length / Math.max(totalRooms, 1);
 
   return (
     <div className="relative w-full h-full min-h-[500px]">
