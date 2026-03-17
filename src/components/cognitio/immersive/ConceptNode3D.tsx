@@ -1,8 +1,7 @@
 // ============================================================
 // ConceptNode3D — 3D representation of a concept node in the
-// dependency graph. Supports inspect, hover, and connection
-// visualization. Each node's appearance reflects its role
-// and mastery level.
+// dependency graph. Enhanced with Fresnel glow shader, orbital
+// particles, animated connections, and reveal burst effects.
 // ============================================================
 
 import { useRef, useState, useMemo } from "react";
@@ -15,6 +14,7 @@ import type {
   DependencyEdge,
   MasteryLevel,
 } from "@/domain/cognitio/immersiveEngine.types";
+import { FresnelMesh, OrbitalParticles, RevealBurst } from "./ShaderEffects";
 
 interface ConceptNode3DProps {
   node: DependencyNode;
