@@ -587,7 +587,16 @@ function buildFallbackAnalysis(
   confidenceLevel: number
 ): AnalysisResult {
   // P0 FIX: Pre-clean text to remove R2C/editorial noise before extraction
-  const cleaned = cleanTextForFallback(cleanText);
+  // SAFETY GUARD: If cleaning removes >70% of content, fall back to original text
+  let cleaned = cleanTextForFallback(cleanText);
+  const cleanRatio = cleaned.length / Math.max(1, cleanText.length);
+  if (cleanRatio < 0.3) {
+    console.warn(
+      `[M2-FALLBACK][SAFETY] cleanTextForFallback removed ${(100 - cleanRatio * 100).toFixed(1)}% — ` +
+      `falling back to original text (${cleanText.length} chars)`
+    );
+    cleaned = cleanText;
+  }
 
   // P0 FIX: Join text into continuous prose before splitting on sentence boundaries
   // to avoid fragmenting bullet-point medical text into too-short chunks
