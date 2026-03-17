@@ -448,91 +448,110 @@ Retourne UNIQUEMENT du JSON valide avec cette structure exacte :
 }`;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function asRecordArray(value: unknown): Record<string, unknown>[] {
+  return Array.isArray(value) ? value.filter(isRecord) : [];
+}
+
+function asStringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+}
+
+function asNumberArray(value: unknown): number[] {
+  return Array.isArray(value) ? value.filter((item): item is number => typeof item === "number") : [];
+}
+
 function normalizeAnalysisResult(
   raw: Record<string, unknown>,
   sourceText: string,
   segments: AnalyzeRequest["segments"]
 ): AnalysisResult {
-  const rawConcepts = ((raw.concepts as unknown[]) ?? []).slice(0, 30).map((c: Record<string, unknown>, i: number) => {
-    const criticality = Math.min(4, Math.max(1, Math.round((c.criticality as number) || 3)));
+  const rawConcepts = asRecordArray(raw.concepts).slice(0, 30).map((c, i) => {
+    const criticalityRaw = typeof c.criticality === "number" ? c.criticality : 3;
+    const criticality = Math.min(4, Math.max(1, Math.round(criticalityRaw)));
+
     return {
-      stable_key: (c.stable_key as string) || `concept_${i}`,
-      label: (c.label as string) || `Concept ${i + 1}`,
-      definition: (c.definition as string) || "",
-      type: (c.type as string) || (c.category as string) || "general",
+      stable_key: typeof c.stable_key === "string" ? c.stable_key : `concept_${i}`,
+      label: typeof c.label === "string" ? c.label : `Concept ${i + 1}`,
+      definition: typeof c.definition === "string" ? c.definition : "",
+      type: typeof c.type === "string" ? c.type : typeof c.category === "string" ? c.category : "general",
       criticality,
-      criticality_score: (c.criticality_score as number) || (criticality === 1 ? 1 : criticality === 2 ? 0.7 : criticality === 3 ? 0.4 : 0.2),
-      bloom_target: (c.bloom_target as string) || "remember",
-      relations: ((c.relations as unknown[]) || []).map((r: Record<string, unknown>) => ({
-        target_key: (r.target_key as string) || "",
-        relation_type: (r.relation_type as string) || "related",
+      criticality_score: typeof c.criticality_score === "number"
+        ? c.criticality_score
+        : (criticality === 1 ? 1 : criticality === 2 ? 0.7 : criticality === 3 ? 0.4 : 0.2),
+      bloom_target: typeof c.bloom_target === "string" ? c.bloom_target : "remember",
+      relations: asRecordArray(c.relations).map((r) => ({
+        target_key: typeof r.target_key === "string" ? r.target_key : "",
+        relation_type: typeof r.relation_type === "string" ? r.relation_type : "related",
       })),
-      prerequisites: ((c.prerequisites as string[]) || []),
-      source_confidence: Math.min(1, Math.max(0, (c.source_confidence as number) || 0.5)),
-      source_trace: ((c.source_trace as unknown[]) || []).map((t: Record<string, unknown>) => ({
-        segment_index: (t.segment_index as number) || 0,
-        excerpt: (t.excerpt as string) || "",
-        page_ref: t.page_ref as number | undefined,
+      prerequisites: asStringArray(c.prerequisites),
+      source_confidence: Math.min(1, Math.max(0, typeof c.source_confidence === "number" ? c.source_confidence : 0.5)),
+      source_trace: asRecordArray(c.source_trace).map((t) => ({
+        segment_index: typeof t.segment_index === "number" ? t.segment_index : 0,
+        excerpt: typeof t.excerpt === "string" ? t.excerpt : "",
+        page_ref: typeof t.page_ref === "number" ? t.page_ref : undefined,
       })),
-      uncertain: false, // Will be set by validation step
+      uncertain: false,
     };
   });
 
-  // --- CONCEPT NORMALIZATION & ARTIFACT FILTERING ---
-  const concepts = rawConcepts.filter(c => {
-    // Reject editorial artifacts promoted as concepts
+  const concepts = rawConcepts.filter((c) => {
     const rejection = rejectConceptArtifactEdge(c.label, c.definition);
     if (rejection.rejected) {
       console.log(`[M2] Rejected concept artifact: "${c.label}" — ${rejection.reason}`);
       return false;
     }
     return true;
-  }).map(c => ({
+  }).map((c) => ({
     ...c,
-    // Normalize labels
     label: normalizeConceptLabelEdge(c.label) || c.label,
-    // Compress definitions
     definition: compressDefinitionEdge(c.definition),
   }));
 
-  const traps = ((raw.traps as unknown[]) ?? []).map((t: Record<string, unknown>) => ({
-    concept_key: (t.concept_key as string) || "",
-    trap_type: (t.trap_type as string) || "common_error",
-    description: (t.description as string) || "",
-    source_trace: t.source_trace as { segment_index: number; excerpt: string } | undefined,
+  const traps = asRecordArray(raw.traps).map((t) => ({
+    concept_key: typeof t.concept_key === "string" ? t.concept_key : "",
+    trap_type: typeof t.trap_type === "string" ? t.trap_type : "common_error",
+    description: typeof t.description === "string" ? t.description : "",
+    source_trace: isRecord(t.source_trace)
+      ? {
+          segment_index: typeof t.source_trace.segment_index === "number" ? t.source_trace.segment_index : 0,
+          excerpt: typeof t.source_trace.excerpt === "string" ? t.source_trace.excerpt : "",
+        }
+      : undefined,
   }));
 
-  const confusionPairs = ((raw.confusion_pairs as unknown[]) ?? []).map((p: Record<string, unknown>) => ({
-    concept_a_key: (p.concept_a_key as string) || "",
-    concept_b_key: (p.concept_b_key as string) || "",
-    distinction_key: (p.distinction_key as string) || "",
-    frequency: Math.min(5, Math.max(1, (p.frequency as number) || 1)),
+  const confusionPairs = asRecordArray(raw.confusion_pairs).map((p) => ({
+    concept_a_key: typeof p.concept_a_key === "string" ? p.concept_a_key : "",
+    concept_b_key: typeof p.concept_b_key === "string" ? p.concept_b_key : "",
+    distinction_key: typeof p.distinction_key === "string" ? p.distinction_key : "",
+    frequency: Math.min(5, Math.max(1, typeof p.frequency === "number" ? p.frequency : 1)),
   }));
 
-  const ambiguousZones = ((raw.ambiguous_zones as unknown[]) ?? []).map((z: Record<string, unknown>) => ({
-    zone_label: (z.zone_label as string) || "",
-    reason: (z.reason as string) || "",
-    segment_refs: (z.segment_refs as number[]) || [0],
-    severity: (z.severity as string) || "low",
-  }));
+  const ambiguousZones = asRecordArray(raw.ambiguous_zones).map((z) => {
+    const segmentRefs = asNumberArray(z.segment_refs);
+    return {
+      zone_label: typeof z.zone_label === "string" ? z.zone_label : "",
+      reason: typeof z.reason === "string" ? z.reason : "",
+      segment_refs: segmentRefs.length > 0 ? segmentRefs : [0],
+      severity: typeof z.severity === "string" ? z.severity : "low",
+    };
+  });
 
-  // Compute confidence axes
   const conceptsWithTrace = concepts.filter((c) => c.source_trace.length > 0 && c.source_trace[0].excerpt.length > 10);
   const conceptsConfidence = concepts.length > 0 ? conceptsWithTrace.length / concepts.length : 0;
-
   const density = concepts.length >= 20 ? "high" : concepts.length >= 8 ? "medium" : "low";
-
-  const recommended = density === "high" || concepts.length >= 10
-    ? "histoire_animee"
-    : "fiche_dynamique";
+  const recommended = density === "high" || concepts.length >= 10 ? "histoire_animee" : "fiche_dynamique";
 
   return {
-    main_topic: (raw.main_topic as string) || "Sujet non identifié",
-    learning_objectives: ((raw.learning_objectives as string[]) || []),
+    main_topic: typeof raw.main_topic === "string" ? raw.main_topic : "Sujet non identifié",
+    learning_objectives: asStringArray(raw.learning_objectives),
     concepts,
     traps,
     confusion_pairs: confusionPairs,
-    reasoning_type: (raw.reasoning_type as string) || "declaratif",
+    reasoning_type: typeof raw.reasoning_type === "string" ? raw.reasoning_type : "declaratif",
     density,
     recommended_template: recommended,
     confidence: {
@@ -542,14 +561,14 @@ function normalizeAnalysisResult(
       structure: Math.min(1, Math.max(0, segments.length >= 3 ? 0.8 : 0.5)),
       ambiguous_zones: ambiguousZones,
     },
-    prerequis: ((raw.prerequis as string[]) || []),
-    structure_type: (raw.structure_type as string) || "minimal",
-    source_issues: ((raw.source_issues as unknown[]) || []).map((i: Record<string, unknown>) => ({
-      code: (i.code as string) || "UNKNOWN",
-      message: (i.message as string) || "",
-      severity: (i.severity as string) || "info",
+    prerequis: asStringArray(raw.prerequis),
+    structure_type: typeof raw.structure_type === "string" ? raw.structure_type : "minimal",
+    source_issues: asRecordArray(raw.source_issues).map((issue) => ({
+      code: typeof issue.code === "string" ? issue.code : "UNKNOWN",
+      message: typeof issue.message === "string" ? issue.message : "",
+      severity: typeof issue.severity === "string" ? issue.severity : "info",
     })),
-    estimated_complexity: Math.min(10, Math.max(1, (raw.estimated_complexity as number) || 5)),
+    estimated_complexity: Math.min(10, Math.max(1, typeof raw.estimated_complexity === "number" ? raw.estimated_complexity : 5)),
   };
 }
 
