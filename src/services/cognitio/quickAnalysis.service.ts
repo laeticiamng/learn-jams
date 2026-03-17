@@ -129,7 +129,7 @@ function extractQuickConcepts(text: string, segments: SegmentOutput[]): QuickCon
   let match;
   while ((match = boldPattern.exec(text)) !== null) {
     const label = normalizeConceptLabel(match[1]);
-    if (label.length >= 3 && label.length <= 60) {
+    if (label && label.length >= 3 && label.length <= 60) {
       candidates.add(label);
     }
   }
