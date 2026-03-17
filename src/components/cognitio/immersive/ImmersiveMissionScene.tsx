@@ -1,10 +1,11 @@
 // ============================================================
 // ImmersiveMissionScene — Top-level scene component that
 // renders the complete escape game experience with rooms,
-// objects, HUD, narrative overlay, and adaptive rendering.
+// objects, HUD, narrative overlay, adaptive rendering,
+// cinematic camera transitions, and dynamic skybox.
 // ============================================================
 
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type {
   ImmersiveGameConfig,
