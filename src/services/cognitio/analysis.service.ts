@@ -435,6 +435,21 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
   // P0 AUDIT: Detect if cleanSourceNoise destroyed too much content
   const cleanDelta = clean_text.length - cleanedText.length;
 
+  // P0 debug counters
+  let _dbg_sentences_extracted = 0;
+  let _dbg_fallback_level = "none";
+  let _dbg_sentences_too_short = 0;
+  let _dbg_chapters_with_no_sentences = 0;
+
+  console.info(
+    `[COGNITIO][M2] runLocalAnalysis:\n` +
+    `  m2_input_length=${clean_text.length}\n` +
+    `  m2_cleaned_length=${cleanedText.length}\n` +
+    `  m2_clean_delta=${cleanDelta} chars removed (${(100 - cleanRatio * 100).toFixed(1)}%)\n` +
+    `  m2_segments_count=${segments.length}\n` +
+    `  m2_source_type=${input.source_type ?? "unknown"}`
+  );
+
   // === Level 0: Front matter detection on original text for diagnostics ===
   const localFrontMatter = detectFrontMatter(clean_text);
   console.info(
