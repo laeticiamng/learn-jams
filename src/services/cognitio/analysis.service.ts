@@ -418,11 +418,22 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
   const preMedicalText = input.source_type === "polycopie"
     ? preNormalizeMedicalText(clean_text)
     : clean_text;
-  const cleanedText = cleanSourceNoise(preMedicalText);
+  let cleanedText = cleanSourceNoise(preMedicalText);
+
+  // P0 SAFETY GUARD: If cleanSourceNoise destroyed >70% of content, fall back to original text.
+  // This prevents overly aggressive regex patterns from wiping out legitimate content.
+  const cleanRatio = cleanedText.length / Math.max(1, clean_text.length);
+  if (cleanRatio < 0.3) {
+    console.warn(
+      `[COGNITIO][M2][SAFETY] cleanSourceNoise removed ${(100 - cleanRatio * 100).toFixed(1)}% of text — ` +
+      `falling back to pre-cleaning text to preserve content (${clean_text.length} → ${cleanedText.length} chars).`
+    );
+    // Fall back to the pre-medical-normalized text (still has basic cleaning from M1)
+    cleanedText = preMedicalText;
+  }
 
   // P0 AUDIT: Detect if cleanSourceNoise destroyed too much content
   const cleanDelta = clean_text.length - cleanedText.length;
-  const cleanRatio = cleanedText.length / Math.max(1, clean_text.length);
 
   // P0 debug counters
   let _dbg_sentences_extracted = 0;
@@ -436,18 +447,8 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
     `  m2_cleaned_length=${cleanedText.length}\n` +
     `  m2_clean_delta=${cleanDelta} chars removed (${(100 - cleanRatio * 100).toFixed(1)}%)\n` +
     `  m2_segments_count=${segments.length}\n` +
-    `  m2_source_type=${input.source_type ?? "unknown"}\n` +
-    `  m2_medical_polycopie_mode=${input.source_type === "polycopie"}\n` +
-    `  m2_input_preview_raw="${clean_text.slice(0, 200)}…"\n` +
-    `  m2_input_preview_cleaned="${cleanedText.slice(0, 200)}…"`
+    `  m2_source_type=${input.source_type ?? "unknown"}`
   );
-
-  if (cleanRatio < 0.3 && clean_text.length > 1000) {
-    console.warn(
-      `[COGNITIO][M2][ANOMALY] cleanSourceNoise removed ${(100 - cleanRatio * 100).toFixed(1)}% of text! ` +
-      `This is the second cleaning pass (after preNormalize). Combined effect may be destructive.`
-    );
-  }
 
   // === Level 0: Front matter detection on original text for diagnostics ===
   const localFrontMatter = detectFrontMatter(clean_text);
