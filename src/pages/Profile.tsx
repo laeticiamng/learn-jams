@@ -327,9 +327,9 @@ export default function Profile() {
 
             <ProfileStatusCard
               profile={learner.profile}
-              bestFormat={(learner.profile as Record<string, unknown>).best_format as string ?? null}
-              guidanceNeed={(learner.profile as Record<string, unknown>).guidance_need as string ?? null}
-              calibrationQuality={(learner.profile as Record<string, unknown>).confidence_calibration_quality as string ?? null}
+              bestFormat={(learner.profile as unknown as Record<string, unknown>).best_format as string ?? null}
+              guidanceNeed={(learner.profile as unknown as Record<string, unknown>).guidance_need as string ?? null}
+              calibrationQuality={(learner.profile as unknown as Record<string, unknown>).confidence_calibration_quality as string ?? null}
             />
 
             <MasteryOverviewCard stats={learner.stats} />
