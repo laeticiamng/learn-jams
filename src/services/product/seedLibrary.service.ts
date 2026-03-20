@@ -16,7 +16,10 @@ export async function getSeedTransformations(
   if (filters?.format) query = query.eq("format", filters.format);
 
   const { data, error } = await query;
-  if (error || !data) return [];
+  if (error || !data) {
+    if (error) console.warn("[seedLibrary] getSeedTransformations failed:", error.message);
+    return [];
+  }
   return data as unknown as SeedTransformationSummary[];
 }
 

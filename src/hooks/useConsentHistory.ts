@@ -15,7 +15,7 @@ export function useConsentHistory(userId: string | null) {
     setLoading(true);
     getConsentHistory(userId)
       .then(setEvents)
-      .catch(() => setEvents([]))
+      .catch((err) => { console.warn("[useConsentHistory] failed:", err); setEvents([]); })
       .finally(() => setLoading(false));
   }, [userId]);
 

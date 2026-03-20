@@ -45,7 +45,10 @@ export async function getGuardiansForUser(userId: string): Promise<GuardianWithL
     .select("*")
     .eq("user_id", userId);
 
-  if (linksError || !links || links.length === 0) return [];
+  if (linksError || !links || links.length === 0) {
+    if (linksError) console.warn("[guardianManagement] getGuardiansForUser links query failed:", linksError.message);
+    return [];
+  }
 
   const guardianIds = (links as unknown as UserGuardianLink[]).map(l => l.guardian_id);
   const { data: guardians, error: gError } = await supabase
@@ -53,7 +56,10 @@ export async function getGuardiansForUser(userId: string): Promise<GuardianWithL
     .select("*")
     .in("id", guardianIds);
 
-  if (gError || !guardians) return [];
+  if (gError || !guardians) {
+    if (gError) console.warn("[guardianManagement] getGuardiansForUser guardians query failed:", gError.message);
+    return [];
+  }
 
   return (guardians as unknown as Guardian[]).map(g => ({
     ...g,

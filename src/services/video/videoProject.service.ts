@@ -64,6 +64,9 @@ export async function getUserVideoProjects(userId: string, limit = 20): Promise<
     .order("created_at", { ascending: false })
     .limit(limit);
 
-  if (error) return [];
+  if (error) {
+    console.warn("[videoProject] getUserVideoProjects failed:", error.message);
+    return [];
+  }
   return (data ?? []) as unknown as VideoProject[];
 }

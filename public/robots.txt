@@ -1,8 +1,38 @@
 User-agent: Googlebot
 Allow: /
+Disallow: /profile
+Disallow: /library
+Disallow: /create
+Disallow: /studio
+Disallow: /export
+Disallow: /admin
+Disallow: /guardian-settings
+Disallow: /mission/
+Disallow: /cognitio-library
+Disallow: /league
+Disallow: /quiz
+Disallow: /player/
+Disallow: /transformation/
+Disallow: /reset-password
+Disallow: /forgot-password
 
 User-agent: Bingbot
 Allow: /
+Disallow: /profile
+Disallow: /library
+Disallow: /create
+Disallow: /studio
+Disallow: /export
+Disallow: /admin
+Disallow: /guardian-settings
+Disallow: /mission/
+Disallow: /cognitio-library
+Disallow: /league
+Disallow: /quiz
+Disallow: /player/
+Disallow: /transformation/
+Disallow: /reset-password
+Disallow: /forgot-password
 
 User-agent: Twitterbot
 Allow: /
@@ -21,5 +51,20 @@ Allow: /
 
 User-agent: *
 Allow: /
+Disallow: /profile
+Disallow: /library
+Disallow: /create
+Disallow: /studio
+Disallow: /export
+Disallow: /admin
+Disallow: /guardian-settings
+Disallow: /mission/
+Disallow: /cognitio-library
+Disallow: /league
+Disallow: /quiz
+Disallow: /player/
+Disallow: /transformation/
+Disallow: /reset-password
+Disallow: /forgot-password
 
 Sitemap: https://learn-jams.lovable.app/sitemap.xml

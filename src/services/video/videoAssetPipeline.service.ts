@@ -73,7 +73,10 @@ export async function getProjectAssets(projectId: string): Promise<VideoAsset[]>
     .eq("project_id", projectId)
     .order("created_at", { ascending: true });
 
-  if (error) return [];
+  if (error) {
+    console.warn("[videoAssetPipeline] getProjectAssets failed:", error.message);
+    return [];
+  }
   return (data ?? []) as unknown as VideoAsset[];
 }
 
@@ -84,7 +87,10 @@ export async function getAssetsByType(projectId: string, assetType: VideoAssetTy
     .eq("project_id", projectId)
     .eq("asset_type", assetType);
 
-  if (error) return [];
+  if (error) {
+    console.warn("[videoAssetPipeline] getAssetsByType failed:", error.message);
+    return [];
+  }
   return (data ?? []) as unknown as VideoAsset[];
 }
 

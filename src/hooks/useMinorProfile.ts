@@ -15,7 +15,7 @@ export function useMinorProfile(userId: string | null) {
     setLoading(true);
     getMinorProfile(userId)
       .then(setProfile)
-      .catch(() => setProfile(null))
+      .catch((err) => { console.warn("[useMinorProfile] failed:", err); setProfile(null); })
       .finally(() => setLoading(false));
   }, [userId]);
 

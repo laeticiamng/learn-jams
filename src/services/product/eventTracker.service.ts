@@ -93,7 +93,10 @@ export async function getEventCounts(
   }
 
   const { data, error } = await query;
-  if (error || !data) return [];
+  if (error || !data) {
+    if (error) console.warn("[eventTracker] getEventCounts failed:", error.message);
+    return [];
+  }
 
   const counts = new Map<string, number>();
   for (const row of data) {

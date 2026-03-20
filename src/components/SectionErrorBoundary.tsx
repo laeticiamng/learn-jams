@@ -26,9 +26,17 @@ export class SectionErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
-      // Render nothing — the section is simply skipped.
-      // For critical sections we could render a fallback UI here.
-      return null;
+      return (
+        <div className="p-4 text-center text-sm text-muted-foreground">
+          <p>This section couldn&apos;t load.</p>
+          <button
+            onClick={() => this.setState({ hasError: false })}
+            className="text-primary underline text-xs mt-1"
+          >
+            Try again
+          </button>
+        </div>
+      );
     }
     return this.props.children;
   }
