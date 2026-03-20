@@ -663,6 +663,16 @@ function buildFallbackAnalysis(
       break;
     }
   }
+  // P1: Try extracting "ITEM N : TOPIC" from segment content
+  if (mainTopic === "Sujet non identifié") {
+    for (const seg of segments) {
+      const itemTopic = extractItemTopicFromText(seg.content ?? "");
+      if (itemTopic && itemTopic.length >= 5) {
+        mainTopic = itemTopic;
+        break;
+      }
+    }
+  }
   // If no clean title found, use first substantial sentence
   if (mainTopic === "Sujet non identifié" && sentences.length > 0) {
     const firstWords = sentences[0].trim().split(/\s+/).slice(0, 8).join(" ");
