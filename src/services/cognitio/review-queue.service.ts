@@ -205,7 +205,10 @@ export async function getReviewQueue(userId: string): Promise<ReviewQueueItem[]>
     .eq("status", "pending")
     .order("priority_score", { ascending: false });
 
-  if (error) return [];
+  if (error) {
+    console.warn("[reviewQueue] getPendingReviews failed:", error.message);
+    return [];
+  }
   return (data ?? []) as unknown as ReviewQueueItem[];
 }
 

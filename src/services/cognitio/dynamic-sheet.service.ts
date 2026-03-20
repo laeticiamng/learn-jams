@@ -841,6 +841,9 @@ export async function getUserTransformations(userId: string) {
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
-  if (error) return [];
+  if (error) {
+    console.warn("[dynamicSheet] getUserDynamicSheets failed:", error.message);
+    return [];
+  }
   return data ?? [];
 }

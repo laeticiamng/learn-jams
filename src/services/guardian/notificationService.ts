@@ -56,7 +56,10 @@ export async function getNotificationsForGuardian(
     .order("created_at", { ascending: false })
     .limit(limit);
 
-  if (error) return [];
+  if (error) {
+    console.warn("[notificationService] getNotificationsForGuardian failed:", error.message);
+    return [];
+  }
   return (data ?? []) as unknown as GuardianNotification[];
 }
 
@@ -71,7 +74,10 @@ export async function getNotificationsForUser(
     .order("created_at", { ascending: false })
     .limit(limit);
 
-  if (error) return [];
+  if (error) {
+    console.warn("[notificationService] getNotificationsForUser failed:", error.message);
+    return [];
+  }
   return (data ?? []) as unknown as GuardianNotification[];
 }
 

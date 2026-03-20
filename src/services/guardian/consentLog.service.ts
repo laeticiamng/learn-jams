@@ -32,7 +32,10 @@ export async function getConsentHistory(userId: string): Promise<ConsentEvent[]>
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
-  if (error) return [];
+  if (error) {
+    console.warn("[consentLog] getConsentHistory failed:", error.message);
+    return [];
+  }
   return (data ?? []) as unknown as ConsentEvent[];
 }
 
@@ -43,7 +46,10 @@ export async function getConsentHistoryForGuardian(guardianId: string): Promise<
     .eq("guardian_id", guardianId)
     .order("created_at", { ascending: false });
 
-  if (error) return [];
+  if (error) {
+    console.warn("[consentLog] getConsentHistoryForGuardian failed:", error.message);
+    return [];
+  }
   return (data ?? []) as unknown as ConsentEvent[];
 }
 

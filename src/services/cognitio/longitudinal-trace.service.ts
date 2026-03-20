@@ -179,7 +179,10 @@ export async function getFragileConcepts(userId: string) {
     .in("mastery_status", ["fragile", "unknown"])
     .order("mastery_score", { ascending: true });
 
-  if (error) return [];
+  if (error) {
+    console.warn("[longitudinalTrace] getFragileConcepts failed:", error.message);
+    return [];
+  }
   return data ?? [];
 }
 
@@ -193,6 +196,9 @@ export async function getDueReviews(userId: string) {
     .lte("next_review_at", now)
     .order("next_review_at", { ascending: true });
 
-  if (error) return [];
+  if (error) {
+    console.warn("[longitudinalTrace] getDueReviews failed:", error.message);
+    return [];
+  }
   return data ?? [];
 }

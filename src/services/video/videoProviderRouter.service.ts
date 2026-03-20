@@ -58,7 +58,10 @@ export async function getProviderRuns(projectId: string): Promise<VideoProviderR
     .eq("project_id", projectId)
     .order("created_at", { ascending: true });
 
-  if (error) return [];
+  if (error) {
+    console.warn("[videoProviderRouter] getProviderRuns failed:", error.message);
+    return [];
+  }
   return (data ?? []) as unknown as VideoProviderRun[];
 }
 

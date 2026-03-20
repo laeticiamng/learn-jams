@@ -110,7 +110,10 @@ export async function getFormatEffectiveness(userId: string): Promise<FormatEffe
     .eq("user_id", userId)
     .order("retention_signal", { ascending: false });
 
-  if (error) return [];
+  if (error) {
+    console.warn("[formatEffectiveness] getEffectivenessRecords failed:", error.message);
+    return [];
+  }
   return (data ?? []) as unknown as FormatEffectivenessRecord[];
 }
 

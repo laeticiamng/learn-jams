@@ -220,6 +220,9 @@ export async function getProgressSnapshots(
     .order("snapshot_date", { ascending: false })
     .limit(limit);
 
-  if (error) return [];
+  if (error) {
+    console.warn("[learnerProfileRefresh] getProgressSnapshots failed:", error.message);
+    return [];
+  }
   return (data ?? []) as unknown as ProgressSnapshot[];
 }

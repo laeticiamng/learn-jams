@@ -87,7 +87,10 @@ export async function getJobsByUser(userId: string, limit = 20): Promise<Generat
     .order("created_at", { ascending: false })
     .limit(limit);
 
-  if (error) return [];
+  if (error) {
+    console.warn("[jobQueue] getJobsByUser failed:", error.message);
+    return [];
+  }
   return (data ?? []) as unknown as GenerationJob[];
 }
 
@@ -102,7 +105,10 @@ export async function getPendingJobs(domain?: string, limit = 50): Promise<Gener
   if (domain) query = query.eq("domain", domain);
 
   const { data, error } = await query;
-  if (error) return [];
+  if (error) {
+    console.warn("[jobQueue] getPendingJobs failed:", error.message);
+    return [];
+  }
   return (data ?? []) as unknown as GenerationJob[];
 }
 
@@ -135,7 +141,10 @@ export async function getArtifactsForJob(jobId: string): Promise<GenerationArtif
     .select("*")
     .eq("job_id", jobId);
 
-  if (error) return [];
+  if (error) {
+    console.warn("[jobQueue] getArtifactsForJob failed:", error.message);
+    return [];
+  }
   return (data ?? []) as unknown as GenerationArtifact[];
 }
 
