@@ -76,13 +76,13 @@ const TOPIC_NOISE_STRIPS: RegExp[] = [
   /\bCODEX\b[.:;,]*\s*/gi,
   /\bS[\s-]*ECN(?:\.COM)?\b[.:;,]*\s*/gi,
   /\bRévision\s+\d[\d\/]*\b\s*/gi,
-  /\bMED[\s-]*LINE\b\s*/gi,
-  /\biKB\b\s*/gi,
-  /\bPREP['']?ECN\b\s*/gi,
-  /\bELLIPSES\b\s*/gi,
-  /\bVERNAZOBRES[\s-]*GREGO?\b\s*/gi,
+  /\bMED[\s-]*LINE\b[.:;,]*\s*/gi,
+  /\biKB\b[.:;,]*\s*/gi,
+  /\bPREP['']?ECN\b[.:;,]*\s*/gi,
+  /\bELLIPSES\b[.:;,]*\s*/gi,
+  /\bVERNAZOBRES[\s-]*GREGO?\b[.:;,]*\s*/gi,
   /\b\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4}\b\s*/g,
-  /\bECN\.COM\b\s*/gi,
+  /\bECN\.COM\b[.:;,]*\s*/gi,
 ];
 
 // ---------- Main Functions ----------

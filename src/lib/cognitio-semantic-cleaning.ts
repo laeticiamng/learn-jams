@@ -358,18 +358,18 @@ function cleanInlineNoise(line: string): string {
  */
 const DISPLAY_NOISE_PATTERNS: { pattern: RegExp; replacement: string }[] = [
   // Platform branding
-  { pattern: /\bCODEX\b[.:;,]?\s*/gi, replacement: "" },
+  { pattern: /\bCODEX\b[.:;,]*\s*/gi, replacement: "" },
   { pattern: /\bS[\s-]*ECN(?:\.\s*COM|\.\s*-|\.COM)?\b[.:;,\s-]*/gi, replacement: "" },
-  { pattern: /\bMED[\s-]*LINE\b\s*/gi, replacement: "" },
-  { pattern: /\biKB\b\s*/gi, replacement: "" },
-  { pattern: /\bPREP['']?ECN\b\s*/gi, replacement: "" },
-  { pattern: /\bELLIPSES\b\s*/gi, replacement: "" },
-  { pattern: /\bVERNAZOBRES[\s-]*GREGO?\b\s*/gi, replacement: "" },
-  { pattern: /\bECN\.COM\b\s*/gi, replacement: "" },
+  { pattern: /\bMED[\s-]*LINE\b[.:;,]*\s*/gi, replacement: "" },
+  { pattern: /\biKB\b[.:;,]*\s*/gi, replacement: "" },
+  { pattern: /\bPREP['']?ECN\b[.:;,]*\s*/gi, replacement: "" },
+  { pattern: /\bELLIPSES\b[.:;,]*\s*/gi, replacement: "" },
+  { pattern: /\bVERNAZOBRES[\s-]*GREGO?\b[.:;,]*\s*/gi, replacement: "" },
+  { pattern: /\bECN\.COM\b[.:;,]*\s*/gi, replacement: "" },
   // Classification / Rang
   { pattern: /\bR2C\s*:?\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON|Rang\s+[A-Z])(?:\s*[-–—]\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON|Rang\s+[A-Z]))*/gi, replacement: "" },
-  { pattern: /\bCOM\s+R2C\b[.:;,]?\s*/gi, replacement: "" },
-  { pattern: /\bR2C\b[.:;,]?\s*/gi, replacement: "" },
+  { pattern: /\bCOM\s+R2C\b[.:;,]*\s*/gi, replacement: "" },
+  { pattern: /\bR2C\b[.:;,]*\s*/gi, replacement: "" },
   { pattern: /\s*\(?\s*Rang\s+[A-Z]\s*\)?\s*/gi, replacement: " " },
   { pattern: /\s*\(?\s*en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)\s*\)?\s*/gi, replacement: " " },
   // Standalone color labels NOT in medical context
@@ -713,12 +713,12 @@ export function cleanMainTopic(rawTopic: string): string {
   topic = topic.replace(/\bCODEX\b[.:;,]*\s*/gi, "");
   topic = topic.replace(/\bS[\s-]*ECN(?:\.COM)?\b[.:;,]*\s*/gi, "");
   topic = topic.replace(/\bRévision\s+\d[\d\/]*\b\s*/gi, "");
-  topic = topic.replace(/\bMED[\s-]*LINE\b\s*/gi, "");
-  topic = topic.replace(/\biKB\b\s*/gi, "");
-  topic = topic.replace(/\bPREP['']?ECN\b\s*/gi, "");
-  topic = topic.replace(/\bELLIPSES\b\s*/gi, "");
-  topic = topic.replace(/\bVERNAZOBRES[\s-]*GREGO?\b\s*/gi, "");
-  topic = topic.replace(/\bECN\.COM\b\s*/gi, "");
+  topic = topic.replace(/\bMED[\s-]*LINE\b[.:;,]*\s*/gi, "");
+  topic = topic.replace(/\biKB\b[.:;,]*\s*/gi, "");
+  topic = topic.replace(/\bPREP['']?ECN\b[.:;,]*\s*/gi, "");
+  topic = topic.replace(/\bELLIPSES\b[.:;,]*\s*/gi, "");
+  topic = topic.replace(/\bVERNAZOBRES[\s-]*GREGO?\b[.:;,]*\s*/gi, "");
+  topic = topic.replace(/\bECN\.COM\b[.:;,]*\s*/gi, "");
   topic = topic.replace(/\b\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4}\b\s*/g, "");
 
   // Collapse whitespace
