@@ -773,10 +773,14 @@ function cleanTopicForFallback(rawTopic: string): string {
   topic = topic.replace(/\bCOM\s+R2C\s*:\s*/gi, "");
   topic = topic.replace(/\s*[-–—]\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)\b.*/gi, "");
   topic = topic.replace(/\s*\(?\s*Rang\s+[A-Z]\s*(?:en\s+\w+)?\s*\)?\s*/gi, "");
+  topic = topic.replace(/\bCODEX\b[.:;,]*\s*/gi, "");
+  topic = topic.replace(/\bS[\s-]*ECN(?:\.COM)?\b[.:;,]*\s*/gi, "");
+  topic = topic.replace(/\bRévision\s+\d[\d\/]*\b\s*/gi, "");
+  topic = topic.replace(/\b\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4}\b\s*/g, "");
   topic = topic.replace(/^(?:Item|UE|N°)\s*\d+\s*[-–—:.\s]\s*/i, "");
   topic = topic.replace(/^Sujet\s+principal\s*:\s*/i, "");
   topic = topic.replace(/\s{2,}/g, " ").trim();
-  topic = topic.replace(/\s*[-–—:;,]\s*$/, "").trim();
+  topic = topic.replace(/^[\s.:;,\-–—]+/, "").replace(/[\s.:;,\-–—]+$/, "").trim();
   return topic.length >= 3 ? topic : "";
 }
 
