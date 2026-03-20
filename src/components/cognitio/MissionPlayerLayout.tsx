@@ -26,6 +26,7 @@ import MissionProgressBar from "./MissionProgressBar";
 import MissionRoomView from "./MissionRoomView";
 import MissionBossView from "./MissionBossView";
 import MissionEndScreen from "./MissionEndScreen";
+import { useImmersion, useFeedback, useAudio } from "@/experience";
 
 type MissionPhase = "intro" | "playing" | "boss" | "completed";
 
@@ -43,7 +44,10 @@ export default function MissionPlayerLayout({
   onMissionCompleted,
 }: MissionPlayerLayoutProps) {
   const navigate = useNavigate();
-  const [phase, setPhase] = useState<MissionPhase>("intro");
+  const feedback = useFeedback();
+  const audio = useAudio();
+  const { setMood } = useImmersion();
+  const [phase, setPhase] = useState<MissionPhase>("intro")
   const [currentRoomIndex, setCurrentRoomIndex] = useState(0);
   const [currentItemIndex, setCurrentItemIndex] = useState(0);
   const [events, setEvents] = useState<RoomEvent[]>([]);
@@ -137,8 +141,22 @@ export default function MissionPlayerLayout({
         hint_used: false, // tracked separately
       };
       setEvents((prev) => [...prev, event]);
+
+      // Environmental feedback
+      if (result.is_correct) {
+        feedback.success();
+        audio.play("success");
+      } else {
+        feedback.error();
+        audio.play("error");
+        // Overconfidence tension
+        if (confidence > 0.7) {
+          setMood("tension");
+          setTimeout(() => setMood("focus"), 3000);
+        }
+      }
     },
-    [phase, currentRoomIndex, currentItem]
+    [phase, currentRoomIndex, currentItem, feedback, audio, setMood]
   );
 
   const handleNext = useCallback(() => {
@@ -160,11 +178,16 @@ export default function MissionPlayerLayout({
       // Next item in room
       setCurrentItemIndex((prev) => prev + 1);
     } else if (currentRoomIndex < mission.rooms.length - 1) {
-      // Next room
+      // Next room — feedback unlock
+      feedback.unlock();
+      audio.play("unlock");
       setCurrentRoomIndex((prev) => prev + 1);
       setCurrentItemIndex(0);
     } else if (mission.boss) {
-      // Go to boss
+      // Go to boss — tension mood
+      feedback.unlock();
+      audio.play("unlock");
+      setMood("tension");
       setPhase("boss");
       setCurrentItemIndex(0);
     } else {

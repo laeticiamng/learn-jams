@@ -7,7 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { ImmersionProvider, AmbientCanvas, PageTransition } from "@/experience";
+import { ImmersionProvider, AmbientCanvas, PageTransition, AudioProvider } from "@/experience";
 
 import CommandPalette from "@/components/CommandPalette";
 import CookieConsent from "./components/CookieConsent";
@@ -68,6 +68,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <ImmersionProvider>
+            <AudioProvider>
             <AmbientCanvas />
             <CommandPalette />
             <Suspense fallback={<PageLoadingFallback />}>
@@ -107,6 +108,7 @@ const App = () => (
             </Suspense>
             <CookieConsent />
             <DevDiagnosticsPanel />
+            </AudioProvider>
           </ImmersionProvider>
         </AuthProvider>
       </BrowserRouter>
