@@ -710,8 +710,8 @@ export function cleanMainTopic(rawTopic: string): string {
   topic = topic.replace(/^(?:Cours|Module|Matière|Chapitre|Partie|Section|Titre)\s*\d*\s*[-–—:.\s]\s*/i, "");
 
   // P0 FIX: Strip inline branding/platform noise (CODEX, S-ECN, Révision, date)
-  topic = topic.replace(/\bCODEX\b[.:;,]?\s*/gi, "");
-  topic = topic.replace(/\bS[\s-]*ECN(?:\.COM)?\b[.:;,]?\s*/gi, "");
+  topic = topic.replace(/\bCODEX\b[.:;,]*\s*/gi, "");
+  topic = topic.replace(/\bS[\s-]*ECN(?:\.COM)?\b[.:;,]*\s*/gi, "");
   topic = topic.replace(/\bRévision\s+\d[\d\/]*\b\s*/gi, "");
   topic = topic.replace(/\bMED[\s-]*LINE\b\s*/gi, "");
   topic = topic.replace(/\biKB\b\s*/gi, "");
