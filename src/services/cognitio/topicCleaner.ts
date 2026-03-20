@@ -134,15 +134,14 @@ export function extractAndCleanTopic(
     }
   }
 
-  // Strategy 2.5: Extract "ITEM N : TOPIC" pattern from content (very common in French medical docs)
+  // Strategy 2.5: Extract "ITEM N : TOPIC" pattern from content (common in French medical docs)
   for (const seg of segments) {
-    const itemMatch = seg.content.match(/\bITEM\s+\d+\s*[-–—:]\s*([A-ZÀ-Ÿ][A-ZÀ-Ÿa-zà-ÿ\s\-''()]+)/);
-    if (itemMatch) {
-      const rawTopic = itemMatch[1].trim();
-      const cleaned = cleanTopicString(rawTopic);
+    const itemTopic = extractItemTopicFromContent(seg.content);
+    if (itemTopic) {
+      const cleaned = cleanTopicString(itemTopic);
       const rejection = validateTopic(cleaned);
       if (!rejection && cleaned.length >= 5) {
-        return { raw_topic: rawTopic, clean_topic: cleaned, confidence: 0.9, source: "content_analysis" as TopicSource, rejected_candidates: rejectedCandidates };
+        return { raw_topic: itemTopic, clean_topic: cleaned, confidence: 0.9, source: "content_analysis" as TopicSource, rejected_candidates: rejectedCandidates };
       }
     }
   }
