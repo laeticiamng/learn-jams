@@ -31,7 +31,9 @@ export interface NarrativeInput {
  * Generate a complete narrative arc for an escape game session.
  */
 export function generateNarrativeArc(input: NarrativeInput): NarrativeArc {
-  const { main_topic, sub_theme, rooms, tension_level, domain } = input;
+  const rawTopic = input.main_topic;
+  const main_topic = cleanMainTopic(rawTopic) || "Apprentissage";
+  const { sub_theme, rooms, tension_level, domain } = input;
 
   // Resolve immersive universe profile for richer atmosphere
   const universeProfile = domain ? getUniverseProfile(domain) : undefined;
