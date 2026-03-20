@@ -291,3 +291,24 @@ function extractTopicFromContent(text: string): string | null {
 
   return null;
 }
+
+/**
+ * Extract topic from "ITEM N : UPPERCASE TITLE" pattern.
+ * Captures consecutive uppercase words (+ short connectors like DE, DU, ET, L, À).
+ */
+function extractItemTopicFromContent(content: string): string | null {
+  const match = content.match(/\bITEM\s+\d+\s*[-–—:]\s*(.+)/i);
+  if (!match) return null;
+  const rest = match[1];
+  const words = rest.split(/\s+/);
+  const titleWords: string[] = [];
+  for (const w of words) {
+    const cleaned = w.replace(/[-–—,()]/g, "");
+    if (!cleaned) { titleWords.push(w); continue; }
+    if (/^[A-ZÀ-Ÿ'']+$/.test(cleaned) || /^(de|du|et|l|d|à|en|des|les|aux)$/i.test(cleaned)) {
+      titleWords.push(w);
+    } else break;
+  }
+  const result = titleWords.join(" ").replace(/[-–—,\s]+$/, "").trim();
+  return result.length >= 5 ? result : null;
+}
