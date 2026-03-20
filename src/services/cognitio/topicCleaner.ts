@@ -73,8 +73,8 @@ const TOPIC_NOISE_STRIPS: RegExp[] = [
   /^(?:Cours|Module|Matière|Chapitre|Partie|Section|Titre)\s*\d*\s*[-–—:.\s]\s*/i,
   /\s*\(\s*(?:source|réf|ref)\s*[:.]?\s*[^)]{0,30}\)\s*/gi,
   // P0 FIX: Strip inline branding/platform noise (CODEX, S-ECN, Révision, date, etc.)
-  /\bCODEX\b[.:;,]?\s*/gi,
-  /\bS[\s-]*ECN(?:\.COM)?\b[.:;,]?\s*/gi,
+  /\bCODEX\b[.:;,]*\s*/gi,
+  /\bS[\s-]*ECN(?:\.COM)?\b[.:;,]*\s*/gi,
   /\bRévision\s+\d[\d\/]*\b\s*/gi,
   /\bMED[\s-]*LINE\b\s*/gi,
   /\biKB\b\s*/gi,
