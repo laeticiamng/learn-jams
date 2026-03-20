@@ -725,7 +725,7 @@ export function cleanMainTopic(rawTopic: string): string {
   topic = topic.replace(/\s{2,}/g, " ").trim();
 
   // Remove trailing punctuation
-  topic = topic.replace(/\s*[-–—:;,]\s*$/, "").trim();
+  topic = topic.replace(/^[\s.:;,\-–—]+/, "").replace(/[\s.:;,\-–—]+$/, "").trim();
 
   // P0: If cleaning left a very short or empty string, the topic was pure noise
   if (topic.length < 3) {
