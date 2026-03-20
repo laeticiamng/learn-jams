@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ImmersionProvider, AmbientCanvas, PageTransition } from "@/experience";
 
 import CommandPalette from "@/components/CommandPalette";
 import CookieConsent from "./components/CookieConsent";
@@ -59,54 +60,59 @@ const queryClient = new QueryClient({
 
 const App = () => (
   <ErrorBoundary>
-  
+
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <CommandPalette />
-          <Suspense fallback={<PageLoadingFallback />}>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/terms" element={<Terms />} />
-              <Route path="/privacy" element={<Privacy />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/pricing" element={<Pricing />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/create" element={<ProtectedRoute><Create /></ProtectedRoute>} />
-              <Route path="/library" element={<ProtectedRoute><Library /></ProtectedRoute>} />
-              <Route path="/player/:id" element={<ProtectedRoute><Player /></ProtectedRoute>} />
-              <Route path="/quiz" element={<ProtectedRoute><ReviewHub /></ProtectedRoute>} />
-              <Route path="/quiz/:id" element={<ProtectedRoute><Quiz /></ProtectedRoute>} />
-              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-              <Route path="/studio" element={<ProtectedRoute><Studio /></ProtectedRoute>} />
-              <Route path="/league" element={<ProtectedRoute><League /></ProtectedRoute>} />
-              <Route path="/export" element={<ProtectedRoute><Export /></ProtectedRoute>} />
-              <Route path="/mission/:id" element={<Navigate to="play" replace />} />
-              <Route path="/mission/:id/play" element={<ProtectedRoute><MissionPlay /></ProtectedRoute>} />
-              <Route path="/mission/:id/escape" element={<ProtectedRoute><EscapeGame /></ProtectedRoute>} />
-              <Route path="/mission/:id/debrief" element={<ProtectedRoute><MissionDebrief /></ProtectedRoute>} />
-              <Route path="/mission/:id/analysis" element={<ProtectedRoute><MissionAnalysis /></ProtectedRoute>} />
-              <Route path="/transformation/:id" element={<ProtectedRoute><TransformationView /></ProtectedRoute>} />
-              <Route path="/cognitio-library" element={<ProtectedRoute><CognitioLibrary /></ProtectedRoute>} />
-              <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-              <Route path="/guardian-settings" element={<ProtectedRoute><GuardianSettings /></ProtectedRoute>} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
-          <CookieConsent />
-          <DevDiagnosticsPanel />
+          <ImmersionProvider>
+            <AmbientCanvas />
+            <CommandPalette />
+            <Suspense fallback={<PageLoadingFallback />}>
+              <PageTransition>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/signup" element={<Signup />} />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/terms" element={<Terms />} />
+                  <Route path="/privacy" element={<Privacy />} />
+                  <Route path="/about" element={<About />} />
+                  <Route path="/pricing" element={<Pricing />} />
+                  <Route path="/contact" element={<Contact />} />
+                  <Route path="/create" element={<ProtectedRoute><Create /></ProtectedRoute>} />
+                  <Route path="/library" element={<ProtectedRoute><Library /></ProtectedRoute>} />
+                  <Route path="/player/:id" element={<ProtectedRoute><Player /></ProtectedRoute>} />
+                  <Route path="/quiz" element={<ProtectedRoute><ReviewHub /></ProtectedRoute>} />
+                  <Route path="/quiz/:id" element={<ProtectedRoute><Quiz /></ProtectedRoute>} />
+                  <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                  <Route path="/studio" element={<ProtectedRoute><Studio /></ProtectedRoute>} />
+                  <Route path="/league" element={<ProtectedRoute><League /></ProtectedRoute>} />
+                  <Route path="/export" element={<ProtectedRoute><Export /></ProtectedRoute>} />
+                  <Route path="/mission/:id" element={<Navigate to="play" replace />} />
+                  <Route path="/mission/:id/play" element={<ProtectedRoute><MissionPlay /></ProtectedRoute>} />
+                  <Route path="/mission/:id/escape" element={<ProtectedRoute><EscapeGame /></ProtectedRoute>} />
+                  <Route path="/mission/:id/debrief" element={<ProtectedRoute><MissionDebrief /></ProtectedRoute>} />
+                  <Route path="/mission/:id/analysis" element={<ProtectedRoute><MissionAnalysis /></ProtectedRoute>} />
+                  <Route path="/transformation/:id" element={<ProtectedRoute><TransformationView /></ProtectedRoute>} />
+                  <Route path="/cognitio-library" element={<ProtectedRoute><CognitioLibrary /></ProtectedRoute>} />
+                  <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+                  <Route path="/guardian-settings" element={<ProtectedRoute><GuardianSettings /></ProtectedRoute>} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </PageTransition>
+            </Suspense>
+            <CookieConsent />
+            <DevDiagnosticsPanel />
+          </ImmersionProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
-  
+
   </ErrorBoundary>
 );
 
