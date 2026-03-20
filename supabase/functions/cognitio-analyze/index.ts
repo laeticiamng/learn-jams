@@ -780,6 +780,23 @@ function cleanTopicForFallback(rawTopic: string): string {
   return topic.length >= 3 ? topic : "";
 }
 
+function extractItemTopicFromText(content: string): string | null {
+  const match = content.match(/\bITEM\s+\d+\s*[-–—:]\s*(.+)/i);
+  if (!match) return null;
+  const rest = match[1];
+  const words = rest.split(/\s+/);
+  const titleWords: string[] = [];
+  for (const w of words) {
+    const cleaned = w.replace(/[-–—,()]/g, "");
+    if (!cleaned) { titleWords.push(w); continue; }
+    if (/^[A-ZÀ-Ÿ'']+$/.test(cleaned) || /^(de|du|et|l|d|à|en|des|les|aux)$/i.test(cleaned)) {
+      titleWords.push(w);
+    } else break;
+  }
+  const result = titleWords.join(" ").replace(/[-–—,\s]+$/, "").trim();
+  return result.length >= 5 ? result : null;
+}
+
 // ---------- Helpers ----------
 
 function errorResponse(status: number, message: string) {
