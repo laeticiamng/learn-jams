@@ -663,6 +663,16 @@ function buildFallbackAnalysis(
       break;
     }
   }
+  // P1: Try extracting "ITEM N : TOPIC" from segment content
+  if (mainTopic === "Sujet non identifié") {
+    for (const seg of segments) {
+      const itemTopic = extractItemTopicFromText(seg.content ?? "");
+      if (itemTopic && itemTopic.length >= 5) {
+        mainTopic = itemTopic;
+        break;
+      }
+    }
+  }
   // If no clean title found, use first substantial sentence
   if (mainTopic === "Sujet non identifié" && sentences.length > 0) {
     const firstWords = sentences[0].trim().split(/\s+/).slice(0, 8).join(" ");
@@ -768,6 +778,23 @@ function cleanTopicForFallback(rawTopic: string): string {
   topic = topic.replace(/\s{2,}/g, " ").trim();
   topic = topic.replace(/\s*[-–—:;,]\s*$/, "").trim();
   return topic.length >= 3 ? topic : "";
+}
+
+function extractItemTopicFromText(content: string): string | null {
+  const match = content.match(/\bITEM\s+\d+\s*[-–—:]\s*(.+)/i);
+  if (!match) return null;
+  const rest = match[1];
+  const words = rest.split(/\s+/);
+  const titleWords: string[] = [];
+  for (const w of words) {
+    const cleaned = w.replace(/[-–—,()]/g, "");
+    if (!cleaned) { titleWords.push(w); continue; }
+    if (/^[A-ZÀ-Ÿ'']+$/.test(cleaned) || /^(de|du|et|l|d|à|en|des|les|aux)$/i.test(cleaned)) {
+      titleWords.push(w);
+    } else break;
+  }
+  const result = titleWords.join(" ").replace(/[-–—,\s]+$/, "").trim();
+  return result.length >= 5 ? result : null;
 }
 
 // ---------- Helpers ----------

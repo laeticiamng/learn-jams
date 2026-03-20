@@ -134,12 +134,26 @@ export function extractAndCleanTopic(
     }
   }
 
-  // Strategy 3: First substantial sentence (skip segment 0 if noisy)
+  // Strategy 2.5: Extract "ITEM N : TOPIC" pattern from content (common in French medical docs)
+  for (const seg of segments) {
+    const itemTopic = extractItemTopicFromContent(seg.content);
+    if (itemTopic) {
+      const cleaned = cleanTopicString(itemTopic);
+      const rejection = validateTopic(cleaned);
+      if (!rejection && cleaned.length >= 5) {
+        return { raw_topic: itemTopic, clean_topic: cleaned, confidence: 0.9, source: "content_analysis" as TopicSource, rejected_candidates: rejectedCandidates };
+      }
+    }
+  }
+
+  // Strategy 3: First substantial sentence after cleaning noise (skip segment 0 if noisy)
   for (let i = 0; i < segments.length; i++) {
     const seg = segments[i];
     if (i === 0 && segment0IsNoisy) continue;
     if (seg.content.length < 30) continue;
-    const firstSentence = seg.content.split(/[.!?]/)[0]?.trim();
+    // Clean content lines before extracting topic sentence
+    const cleanedContent = cleanTopicString(seg.content);
+    const firstSentence = cleanedContent.split(/[.!?]/)[0]?.trim();
     if (firstSentence && firstSentence.length >= 10 && firstSentence.length <= 120) {
       const cleaned = cleanTopicString(firstSentence);
       const rejection = validateTopic(cleaned);
@@ -276,4 +290,25 @@ function extractTopicFromContent(text: string): string | null {
   }
 
   return null;
+}
+
+/**
+ * Extract topic from "ITEM N : UPPERCASE TITLE" pattern.
+ * Captures consecutive uppercase words (+ short connectors like DE, DU, ET, L, À).
+ */
+function extractItemTopicFromContent(content: string): string | null {
+  const match = content.match(/\bITEM\s+\d+\s*[-–—:]\s*(.+)/i);
+  if (!match) return null;
+  const rest = match[1];
+  const words = rest.split(/\s+/);
+  const titleWords: string[] = [];
+  for (const w of words) {
+    const cleaned = w.replace(/[-–—,()]/g, "");
+    if (!cleaned) { titleWords.push(w); continue; }
+    if (/^[A-ZÀ-Ÿ'']+$/.test(cleaned) || /^(de|du|et|l|d|à|en|des|les|aux)$/i.test(cleaned)) {
+      titleWords.push(w);
+    } else break;
+  }
+  const result = titleWords.join(" ").replace(/[-–—,\s]+$/, "").trim();
+  return result.length >= 5 ? result : null;
 }
