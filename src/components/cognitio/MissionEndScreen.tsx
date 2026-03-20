@@ -260,9 +260,7 @@ function ScoreCard({
     purple: "text-purple-600",
   };
 
-  const counter = numericValue !== undefined
-    ? useCountUp(numericValue, { delay: delay * 1000, duration: 1200, immediate: true })
-    : null;
+  const counter = useCountUp(numericValue ?? 0, { delay: delay * 1000, duration: 1200, immediate: true });
 
   return (
     <motion.div
@@ -273,7 +271,7 @@ function ScoreCard({
     >
       <Icon className={`w-4 h-4 ${colorClasses[color] ?? "text-primary"} mx-auto mb-1`} />
       <p className={`text-xl font-bold ${colorClasses[color] ?? "text-primary"} tabular-nums`}>
-        {counter ? `${counter.value}%` : value}
+        {numericValue !== undefined ? `${counter.value}%` : value}
       </p>
       <p className="text-[10px] text-muted-foreground">{label}</p>
     </motion.div>
