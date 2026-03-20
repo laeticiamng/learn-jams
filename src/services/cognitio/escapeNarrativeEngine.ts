@@ -13,6 +13,7 @@ import type {
 import type { MissionFamily, MissionSubTheme } from "@/domain/cognitio/escapeGame.types";
 import type { PremiumUniverseProfile } from "./immersiveUniverseProfiles";
 import { getUniverseProfile, getRoomAtmosphere, pickSensoryDetail, pickAmbientDescription, pickMotif } from "./immersiveUniverseProfiles";
+import { cleanMainTopic } from "@/lib/cognitio-semantic-cleaning";
 
 // ---------- Narrative Generation ----------
 
