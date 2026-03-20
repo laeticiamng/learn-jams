@@ -134,12 +134,27 @@ export function extractAndCleanTopic(
     }
   }
 
-  // Strategy 3: First substantial sentence (skip segment 0 if noisy)
+  // Strategy 2.5: Extract "ITEM N : TOPIC" pattern from content (very common in French medical docs)
+  for (const seg of segments) {
+    const itemMatch = seg.content.match(/\bITEM\s+\d+\s*[-–—:]\s*([A-ZÀ-Ÿ][A-ZÀ-Ÿa-zà-ÿ\s\-''()]+)/);
+    if (itemMatch) {
+      const rawTopic = itemMatch[1].trim();
+      const cleaned = cleanTopicString(rawTopic);
+      const rejection = validateTopic(cleaned);
+      if (!rejection && cleaned.length >= 5) {
+        return { raw_topic: rawTopic, clean_topic: cleaned, confidence: 0.9, source: "content_analysis" as TopicSource, rejected_candidates: rejectedCandidates };
+      }
+    }
+  }
+
+  // Strategy 3: First substantial sentence after cleaning noise (skip segment 0 if noisy)
   for (let i = 0; i < segments.length; i++) {
     const seg = segments[i];
     if (i === 0 && segment0IsNoisy) continue;
     if (seg.content.length < 30) continue;
-    const firstSentence = seg.content.split(/[.!?]/)[0]?.trim();
+    // Clean content lines before extracting topic sentence
+    const cleanedContent = cleanTopicString(seg.content);
+    const firstSentence = cleanedContent.split(/[.!?]/)[0]?.trim();
     if (firstSentence && firstSentence.length >= 10 && firstSentence.length <= 120) {
       const cleaned = cleanTopicString(firstSentence);
       const rejection = validateTopic(cleaned);
