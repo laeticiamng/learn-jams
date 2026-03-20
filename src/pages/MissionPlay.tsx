@@ -11,6 +11,7 @@ import { Loader2, ArrowLeft, Gamepad2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
 import { usePageSEO } from "@/hooks/usePageSEO";
+import { useImmersionLevel } from "@/experience";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import MissionPlayerLayout from "@/components/cognitio/MissionPlayerLayout";
@@ -27,6 +28,7 @@ import {
 export default function MissionPlay() {
   const { t } = useTranslation();
   usePageSEO({ title: "Mission en cours", description: "Jouez votre mission d'apprentissage", noindex: true });
+  useImmersionLevel(2, { mood: "focus" });
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();

@@ -775,6 +775,12 @@ function cleanTopicForFallback(rawTopic: string): string {
   topic = topic.replace(/\s*\(?\s*Rang\s+[A-Z]\s*(?:en\s+\w+)?\s*\)?\s*/gi, "");
   topic = topic.replace(/\bCODEX\b[.:;,]*\s*/gi, "");
   topic = topic.replace(/\bS[\s-]*ECN(?:\.COM)?\b[.:;,]*\s*/gi, "");
+  topic = topic.replace(/\bMED[\s-]*LINE\b[.:;,]*\s*/gi, "");
+  topic = topic.replace(/\biKB\b[.:;,]*\s*/gi, "");
+  topic = topic.replace(/\bPREP['']?ECN\b[.:;,]*\s*/gi, "");
+  topic = topic.replace(/\bELLIPSES\b[.:;,]*\s*/gi, "");
+  topic = topic.replace(/\bVERNAZOBRES[\s-]*GREGO?\b[.:;,]*\s*/gi, "");
+  topic = topic.replace(/\bECN\.COM\b[.:;,]*\s*/gi, "");
   topic = topic.replace(/\bRévision\s+\d[\d\/]*\b\s*/gi, "");
   topic = topic.replace(/\b\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4}\b\s*/g, "");
   topic = topic.replace(/^(?:Item|UE|N°)\s*\d+\s*[-–—:.\s]\s*/i, "");

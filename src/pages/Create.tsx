@@ -14,6 +14,8 @@ import { Brain, FileText, AlertTriangle, RotateCcw, Eye, ClipboardPaste, Upload,
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import IngestionStatus from "@/components/cognitio/IngestionStatus";
+import { PipelineSpectacle } from "@/experience/PipelineSpectacle";
+import { useImmersionLevel } from "@/experience";
 import ImportDebugPanel from "@/components/cognitio/ImportDebugPanel";
 import { DocumentQualityPanel } from "@/components/cognitio/DocumentQualityPanel";
 import { DocumentPreview } from "@/components/cognitio/DocumentPreview";
@@ -74,6 +76,9 @@ export default function Create() {
   const { user } = useAuth();
 
   const pipeline = useCreatePipeline();
+  // Experience Layer: set immersion based on pipeline phase
+  const isProcessing = ["ingesting", "analyzing", "architecting", "formatting", "generating"].includes(pipeline.phase);
+  useImmersionLevel(isProcessing ? 2 : 1, { mood: isProcessing ? "focus" : "warm" });
   const { seeds, loading: seedsLoading } = useSeedLibrary();
   const { plan } = useUserPlan(user?.id ?? null);
   const quotaGuard = useQuotaGuard(user?.id ?? null, plan);
@@ -341,10 +346,9 @@ export default function Create() {
               exit={{ opacity: 0, y: -20 }}
               className="space-y-6"
             >
-              <PipelineVisualization
-                phase={pipeline.phase}
-                debugCounters={pipeline.debugCounters}
-                hasError={!!pipeline.pipelineError}
+              <PipelineSpectacle
+                currentPhase={pipeline.phase}
+                title={phaseTitle}
               />
 
               <IngestionStatus

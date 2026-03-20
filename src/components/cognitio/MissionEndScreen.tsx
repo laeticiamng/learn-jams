@@ -21,6 +21,10 @@ import {
 import { Button } from "@/components/ui/button";
 import type { CompositeScore, RoomEvent, MissionContent } from "@/domain/cognitio/types";
 import type { RoomProgress } from "@/services/cognitio/missionRunService";
+import { ScoreRevealScene } from "@/experience/ScoreRevealScene";
+import { useCountUp } from "@/experience/useCountUp";
+import { useImmersionLevel, useFeedback } from "@/experience";
+import { useEffect } from "react";
 
 interface MissionEndScreenProps {
   mission: MissionContent;
@@ -55,6 +59,13 @@ export default function MissionEndScreen({
   // Determine performance level
   const performanceLevel = getPerformanceLevel(score.total);
 
+  // Experience Layer integration
+  useImmersionLevel(2, { mood: "celebration" });
+  const feedback = useFeedback();
+  useEffect(() => {
+    feedback.unlock();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
@@ -62,38 +73,28 @@ export default function MissionEndScreen({
       transition={{ duration: 0.5 }}
       className="space-y-6"
     >
-      {/* Trophy + Title */}
-      <div className="text-center space-y-3">
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-          className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto ${
-            performanceLevel === "excellent"
-              ? "bg-yellow-500/10"
-              : performanceLevel === "good"
-                ? "bg-green-500/10"
-                : performanceLevel === "medium"
-                  ? "bg-blue-500/10"
-                  : "bg-orange-500/10"
-          }`}
+      {/* Cinematic Score Reveal */}
+      <div className="relative">
+        <ScoreRevealScene
+          totalScore={score.total}
+          performanceLevel={performanceLevel}
+        />
+        <motion.h1
+          className="text-2xl font-bold text-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.5 }}
         >
-          <Trophy
-            className={`w-10 h-10 ${
-              performanceLevel === "excellent"
-                ? "text-yellow-500"
-                : performanceLevel === "good"
-                  ? "text-green-500"
-                  : performanceLevel === "medium"
-                    ? "text-blue-500"
-                    : "text-orange-500"
-            }`}
-          />
-        </motion.div>
-        <h1 className="text-2xl font-bold">Mission accomplie !</h1>
-        <p className="text-sm text-muted-foreground">
+          Mission accomplie !
+        </motion.h1>
+        <motion.p
+          className="text-sm text-muted-foreground text-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.8 }}
+        >
           {getPerformanceMessage(performanceLevel)}
-        </p>
+        </motion.p>
       </div>
 
       {/* Score cards */}
@@ -102,6 +103,7 @@ export default function MissionEndScreen({
           icon={Percent}
           label="Précision"
           value={`${accuracy}%`}
+          numericValue={accuracy}
           color={accuracy >= 80 ? "green" : accuracy >= 60 ? "yellow" : "red"}
           delay={0.1}
         />
@@ -239,12 +241,14 @@ function ScoreCard({
   icon: Icon,
   label,
   value,
+  numericValue,
   color,
   delay,
 }: {
   icon: typeof Trophy;
   label: string;
   value: string;
+  numericValue?: number;
   color: string;
   delay: number;
 }) {
@@ -256,6 +260,8 @@ function ScoreCard({
     purple: "text-purple-600",
   };
 
+  const counter = useCountUp(numericValue ?? 0, { delay: delay * 1000, duration: 1200, immediate: true });
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -264,8 +270,8 @@ function ScoreCard({
       className="glass-card p-4 rounded-xl text-center"
     >
       <Icon className={`w-4 h-4 ${colorClasses[color] ?? "text-primary"} mx-auto mb-1`} />
-      <p className={`text-xl font-bold ${colorClasses[color] ?? "text-primary"}`}>
-        {value}
+      <p className={`text-xl font-bold ${colorClasses[color] ?? "text-primary"} tabular-nums`}>
+        {numericValue !== undefined ? `${counter.value}%` : value}
       </p>
       <p className="text-[10px] text-muted-foreground">{label}</p>
     </motion.div>

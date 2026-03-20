@@ -21,6 +21,8 @@ import {
 import { Button } from "@/components/ui/button";
 import type { MissionContent } from "@/domain/cognitio/types";
 import { getBrickLabel } from "@/lib/cognitio-ui";
+import { MissionBriefingMap } from "@/experience/MissionBriefingMap";
+import { useImmersionLevel } from "@/experience";
 
 interface MissionIntroScreenProps {
   mission: MissionContent;
@@ -42,6 +44,9 @@ export default function MissionIntroScreen({
   const conceptCount = new Set(
     mission.rooms.flatMap((r) => r.target_concepts)
   ).size;
+
+  // Experience Layer: immersive intro mood
+  useImmersionLevel(2, { mood: "tension" });
 
   return (
     <motion.div
@@ -78,60 +83,21 @@ export default function MissionIntroScreen({
         <StatCard icon={BookOpen} value={conceptCount} label="Concepts" delay={0.25} />
       </div>
 
-      {/* Room overview */}
+      {/* Room overview — Immersive briefing map */}
       <div className="space-y-2">
         <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
           Structure de la mission
         </h2>
-        {mission.rooms.map((room, i) => (
-          <motion.div
-            key={room.room_index}
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3 + i * 0.08 }}
-            className="flex items-center gap-3 p-3 rounded-xl border bg-background"
-          >
-            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-              <span className="text-xs font-bold text-primary">{i + 1}</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{room.title}</p>
-              <p className="text-xs text-muted-foreground">
-                {getBrickLabel(room.brick_type)} — {room.items.length}{" "}
-                épreuve{room.items.length > 1 ? "s" : ""}
-              </p>
-            </div>
-            <div className="text-xs text-muted-foreground">
-              {room.time_limit_sec
-                ? `${Math.ceil(room.time_limit_sec / 60)} min`
-                : ""}
-            </div>
-          </motion.div>
-        ))}
-
-        {/* Boss room */}
-        {mission.boss && (
-          <motion.div
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3 + mission.rooms.length * 0.08 }}
-            className="flex items-center gap-3 p-3 rounded-xl border-2 border-red-500/20 bg-red-500/5"
-          >
-            <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center shrink-0">
-              <Crown className="w-4 h-4 text-red-500" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-red-700 dark:text-red-400 truncate">
-                {mission.boss.title}
-              </p>
-              <p className="text-xs text-red-600/70">
-                {mission.boss.items.length} épreuves —{" "}
-                {Math.ceil((mission.boss.time_limit_sec ?? 180) / 60)} min
-              </p>
-            </div>
-            <Shield className="w-4 h-4 text-red-400 shrink-0" />
-          </motion.div>
-        )}
+        <MissionBriefingMap
+          rooms={mission.rooms.map((r) => ({
+            title: r.title,
+            itemsCount: r.items.length,
+            brickType: r.brick_type,
+          }))}
+          hasBoss={!!mission.boss}
+          bossTitle={mission.boss?.title}
+          bossItemsCount={mission.boss?.items.length}
+        />
       </div>
 
       {/* Rules */}

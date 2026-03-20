@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import type { CompositeScore } from "@/domain/cognitio/types";
 import { formatPercentage } from "@/lib/cognitio-ui";
+import { useCountUp } from "@/experience/useCountUp";
 
 interface DebriefScoreCardProps {
   score: CompositeScore;
@@ -18,6 +19,8 @@ export default function DebriefScoreCard({ score }: DebriefScoreCardProps) {
   const totalColor =
     score.total >= 80 ? "text-green-500" : score.total >= 60 ? "text-yellow-500" : "text-red-500";
 
+  const { value: displayTotal } = useCountUp(score.total, { duration: 1500, delay: 200, immediate: true });
+
   return (
     <div className="glass-card-elevated p-6 rounded-xl space-y-6">
       <div className="text-center">
@@ -27,9 +30,9 @@ export default function DebriefScoreCard({ score }: DebriefScoreCardProps) {
         <motion.p
           initial={{ scale: 0.5, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className={`text-5xl font-bold font-display ${totalColor}`}
+          className={`text-5xl font-bold font-display tabular-nums ${totalColor}`}
         >
-          {score.total}
+          {displayTotal}
         </motion.p>
         <p className="text-xs text-muted-foreground mt-1">/100</p>
       </div>

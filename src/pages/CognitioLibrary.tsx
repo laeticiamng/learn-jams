@@ -14,6 +14,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { getUserTransformations } from "@/services/cognitio/dynamic-sheet.service";
 import { useTranslation } from "react-i18next";
 import { usePageSEO } from "@/hooks/usePageSEO";
+import { useImmersionLevel, DepthCard } from "@/experience";
 
 interface TransformationSummary {
   id: string;
@@ -29,6 +30,7 @@ export default function CognitioLibrary() {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   usePageSEO({ title: "Bibliothèque Cognitio", description: "Consultez vos documents analysés et missions générées", noindex: true });
+  useImmersionLevel(1, { mood: "warm" });
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<TransformationSummary[]>([]);
 
@@ -100,39 +102,41 @@ export default function CognitioLibrary() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
             >
-              <button
-                className="w-full text-left border rounded-lg p-4 hover:border-primary/30 transition"
-                onClick={() => navigate(`/transformation/${item.id}`)}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <FileText className="h-5 w-5 text-primary shrink-0" />
-                    <div>
-                      <p className="text-sm font-medium">
-                        {item.format === "fiche_dynamique" ? t("cognitio_library.format_fiche_dynamique") : item.format}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(item.created_at).toLocaleDateString(i18n.language, {
-                          day: "numeric",
-                          month: "long",
-                          year: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </p>
+              <DepthCard className="rounded-lg">
+                <button
+                  className="w-full text-left glass-card p-4 hover:border-primary/20 transition rounded-lg"
+                  onClick={() => navigate(`/transformation/${item.id}`)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <FileText className="h-5 w-5 text-primary shrink-0" />
+                      <div>
+                        <p className="text-sm font-medium">
+                          {item.format === "fiche_dynamique" ? t("cognitio_library.format_fiche_dynamique") : item.format}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(item.created_at).toLocaleDateString(i18n.language, {
+                            day: "numeric",
+                            month: "long",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={item.published_status === "published" ? "default" : "secondary"} className="text-xs">
+                        {t(STATUS_KEYS[item.published_status] ?? item.published_status)}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        ~{Math.ceil(item.estimated_duration_sec / 60)} min
+                      </span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant={item.published_status === "published" ? "default" : "secondary"} className="text-xs">
-                      {t(STATUS_KEYS[item.published_status] ?? item.published_status)}
-                    </Badge>
-                    <span className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      ~{Math.ceil(item.estimated_duration_sec / 60)} min
-                    </span>
-                  </div>
-                </div>
-              </button>
+                </button>
+              </DepthCard>
             </motion.div>
           ))}
         </div>
