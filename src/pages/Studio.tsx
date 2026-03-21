@@ -41,7 +41,7 @@ interface Participant {
 
 export default function Studio() {
   const { t } = useTranslation();
-  usePageSEO({ title: t("studio.title", "Collaborative Studio") + " — StudyBeats", description: t("studio.subtitle", "Co-create StudyBeats with up to 8 students"), noindex: true });
+  usePageSEO({ title: t("studio.title", "Collaborative Studio") + " — COGNITIO", description: t("studio.subtitle", "Co-create content with up to 8 students"), noindex: true });
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -320,7 +320,7 @@ export default function Studio() {
               <Users className="w-8 h-8 text-primary-foreground" />
             </div>
             <h1 className="font-display text-4xl md:text-5xl font-bold tracking-tight mb-3">{t("studio.title", "Collaborative Studio")}</h1>
-            <p className="text-muted-foreground text-lg max-w-xl mx-auto">{t("studio.subtitle", "Co-create StudyBeats with up to 8 students on the same topic")}</p>
+            <p className="text-muted-foreground text-lg max-w-xl mx-auto">{t("studio.subtitle", "Co-create content with up to 8 students on the same topic")}</p>
           </div>
 
           <div className="flex justify-center gap-3 mb-10">
@@ -381,7 +381,7 @@ export default function Studio() {
         <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-display text-xl">{t("studio.create_title", "Create a collaborative session")}</DialogTitle>
-            <DialogDescription>{t("studio.create_desc", "Invite up to 8 students to co-write a StudyBeat")}</DialogDescription>
+            <DialogDescription>{t("studio.create_desc", "Invite up to 8 students to co-create content")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-5 mt-4">
             <div className="space-y-2">

@@ -24,12 +24,21 @@ interface AccessibilityContextType {
 
 const AccessibilityContext = createContext<AccessibilityContextType | undefined>(undefined);
 
-const STORAGE_KEY = "studybeats_a11y";
+const STORAGE_KEY = "cognitio_a11y";
+const LEGACY_STORAGE_KEY = "studybeats_a11y";
 
 export function AccessibilityProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<AccessibilitySettings>(() => {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
+      let stored = localStorage.getItem(STORAGE_KEY);
+      if (!stored) {
+        // Migrate from legacy key
+        stored = localStorage.getItem(LEGACY_STORAGE_KEY);
+        if (stored) {
+          localStorage.setItem(STORAGE_KEY, stored);
+          localStorage.removeItem(LEGACY_STORAGE_KEY);
+        }
+      }
       return stored ? { ...defaults, ...JSON.parse(stored) } : defaults;
     } catch {
       return defaults;

@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { ParallaxOrbs } from "@/components/ParallaxOrbs";
 import { useTranslation } from "react-i18next";
 import { sanitizeHtml } from "@/lib/sanitize";
-import { Music, Target, Heart, Lightbulb, Users, Brain, Repeat, Timer, Dumbbell, Linkedin } from "lucide-react";
+import { Target, Heart, Lightbulb, Users, Brain, Repeat, Timer, Dumbbell, Linkedin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { usePageSEO } from "@/hooks/usePageSEO";
 import Footer from "@/components/Footer";
@@ -41,7 +41,7 @@ export default function About() {
             whileHover={{ scale: 1.05, rotate: -3 }}
             className="w-12 h-12 rounded-xl gradient-bg-premium flex items-center justify-center shadow-lg shadow-primary/20"
           >
-            <Music className="w-6 h-6 text-primary-foreground" />
+            <Brain className="w-6 h-6 text-primary-foreground" />
           </motion.div>
           <div>
             <h1 className="font-display text-3xl md:text-4xl font-bold tracking-tight">{t("about.title")}</h1>

@@ -6,10 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Quote } from "lucide-react";
-import testimonialMarie from "@/assets/testimonial-marie.jpg";
-import testimonialKarim from "@/assets/testimonial-karim.jpg";
-import testimonialChloe from "@/assets/testimonial-chloe.jpg";
+import { ArrowRight } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { usePageSEO } from "@/hooks/usePageSEO";
@@ -63,9 +60,6 @@ const ParallaxOrbs = () => {
 
 const BEFORE_KEYS = [1, 2, 3, 4, 5] as const;
 const AFTER_KEYS = [1, 2, 3, 4, 5, 6] as const;
-
-const testimonialAvatars = [testimonialMarie, testimonialKarim, testimonialChloe];
-const TESTIMONIAL_KEYS = [1, 2, 3] as const;
 
 const FAQ_KEYS = [1, 2, 3, 4, 5, 6, 7] as const;
 
@@ -230,42 +224,7 @@ export default function Index() {
 
       <SectionDivider />
 
-      {/* Testimonials — social proof with cinematic stagger */}
-      <section className="py-16 sm:py-20 md:py-28 lg:py-32 px-4">
-        <div className="container mx-auto max-w-5xl">
-          <motion.h2
-            initial={{ opacity: 0, y: 20, filter: "blur(6px)" }}
-            whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7, ease }}
-            className="font-display text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-bold text-center mb-10 sm:mb-16 md:mb-20 tracking-tight"
-          >
-            {t("home.testimonials_title")}
-          </motion.h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            {TESTIMONIAL_KEYS.map((idx, i) => (
-              <motion.article
-                key={idx}
-                initial={{ opacity: 0, y: 30, filter: "blur(4px)" }}
-                whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.12, duration: 0.6, ease }}
-                className="glass-card-elevated p-8 sm:p-9 flex flex-col gradient-border card-hover"
-              >
-                <Quote className="w-7 h-7 text-primary/30 mb-5" />
-                <p className="text-sm text-foreground/85 leading-relaxed flex-1 italic">"{t(`home.testimonial${idx}_quote`)}"</p>
-                <div className="flex items-center gap-3 mt-7 pt-6 border-t border-border/10">
-                  <img src={testimonialAvatars[i]} alt={t(`home.testimonial${idx}_name`)} className="w-10 h-10 rounded-full object-cover bg-muted ring-2 ring-primary/10" loading="lazy" />
-                  <div>
-                    <p className="text-sm font-semibold">{t(`home.testimonial${idx}_name`)}</p>
-                    <p className="text-xs text-muted-foreground/70">{t(`home.testimonial${idx}_field`)}</p>
-                  </div>
-                </div>
-              </motion.article>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* Social proof placeholder — replaced fake testimonials */}
 
       <SectionDivider />
 
