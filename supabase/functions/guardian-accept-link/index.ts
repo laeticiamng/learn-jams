@@ -59,13 +59,22 @@ serve(async (req) => {
       );
     }
 
-    // Link guardian to auth user if authenticated
+    // ── JWT Authentication (required) ──────────────────────────
     const authHeader = req.headers.get("Authorization");
-    let authUserId: string | null = null;
-    if (authHeader) {
-      const { data: { user } } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
-      authUserId = user?.id ?? null;
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
+    const { data: { user: authUserObj }, error: authError } = await supabase.auth.getUser(
+      authHeader.replace("Bearer ", "")
+    );
+    if (authError || !authUserObj) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const authUserId: string = authUserObj.id;
 
     const now = new Date().toISOString();
 

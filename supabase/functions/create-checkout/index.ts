@@ -82,7 +82,7 @@ serve(async (req) => {
       customer: customerId,
       line_items: [
         {
-          price: "price_1T8JRhDFa5Y9NR1IkeJEEVmT",
+          price: Deno.env.get("STRIPE_PRICE_ID") ?? "price_1T8JRhDFa5Y9NR1IkeJEEVmT",
           quantity: 1,
         },
       ],
