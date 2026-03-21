@@ -216,6 +216,21 @@ This means anyone who intercepts or guesses an invite token (UUID, not cryptogra
 
 ---
 
+## 12. MEDIUM: XSS via innerHTML in Boot Error Handler (FIXED)
+
+### Finding
+`src/main.tsx:20-24` concatenated error messages directly into `innerHTML` without escaping:
+```typescript
+root.innerHTML = '...' + (err instanceof Error ? err.message : String(err)) + '...';
+```
+
+If an error message contained HTML (e.g., from a malicious module or crafted input), it would be rendered as live HTML.
+
+### Fix Applied
+Replaced with safe `textContent` assignment — the error message is now set via `msgEl.textContent` which auto-escapes HTML entities.
+
+---
+
 ## Positive Findings (What's Done Well)
 
 | Area | Status |
