@@ -23,9 +23,15 @@ serve(async (req) => {
 
     if (!songId) throw new Error("Missing songId");
 
-    // Validate callback secret
+    // Validate callback secret — required
     const expectedSecret = Deno.env.get("SUNO_CALLBACK_SECRET");
-    if (expectedSecret && secret !== expectedSecret) {
+    if (!expectedSecret) {
+      log("error", "missing_callback_secret");
+      return new Response(JSON.stringify({ error: "Callback secret not configured" }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (secret !== expectedSecret) {
       log("error", "invalid_callback_secret", { song_id: songId });
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },

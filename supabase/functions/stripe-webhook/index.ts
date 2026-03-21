@@ -63,6 +63,7 @@ const SUPPORTED_EVENTS = new Set([
   "customer.subscription.updated",
   "customer.subscription.deleted",
   "invoice.payment_failed",
+  "invoice.paid",
 ]);
 
 serve(async (req) => {
@@ -90,7 +91,16 @@ serve(async (req) => {
   const eventType = event.type;
   log("info", "event_received", { event_id: eventId, event_type: eventType });
 
-  // ── 2. Ignore unsupported events early ──────────────────────────
+  // ── 2. Log webhook event ──────────────────────────────────────
+  await supabase
+    .from("webhook_events")
+    .insert([{
+      provider_key: "stripe",
+      event_type: eventType,
+      payload_json: event.data.object as Record<string, unknown>,
+    }]);
+
+  // ── 3. Ignore unsupported events early ──────────────────────────
   if (!SUPPORTED_EVENTS.has(eventType)) {
     log("info", "event_ignored", { event_id: eventId, event_type: eventType });
     return new Response(JSON.stringify({ received: true, ignored: true }), {
@@ -99,11 +109,26 @@ serve(async (req) => {
     });
   }
 
-  // ── 3. Idempotence: check if we already processed this event ────
-  // We use stripe_subscription_id + event type as a lightweight guard.
-  // For full idempotence a processed_events table would be ideal,
-  // but this prevents the most common duplicate: redelivered webhooks
-  // that would upsert the same data.
+  // ── 4. Idempotence: replay protection ──────────────────────────
+  const { data: existingEvent } = await supabase
+    .from("webhook_replay_protection")
+    .select("id")
+    .eq("external_event_id", eventId)
+    .eq("provider_key", "stripe")
+    .maybeSingle();
+
+  if (existingEvent) {
+    log("info", "event_already_processed", { event_id: eventId });
+    return new Response(JSON.stringify({ received: true, deduplicated: true }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  await supabase.from("webhook_replay_protection").insert([{
+    provider_key: "stripe",
+    external_event_id: eventId,
+  }]);
 
   try {
     switch (eventType) {
@@ -206,6 +231,21 @@ serve(async (req) => {
               subscription_id: subscription.id,
             });
           }
+        }
+        break;
+      }
+
+      case "invoice.paid": {
+        const invoice = event.data.object as Stripe.Invoice;
+        if (invoice.subscription) {
+          log("info", "mark_active_after_payment", {
+            event_id: eventId,
+            subscription_id: invoice.subscription as string,
+          });
+          await supabase
+            .from("subscriptions")
+            .update({ status: "active" })
+            .eq("stripe_subscription_id", invoice.subscription as string);
         }
         break;
       }

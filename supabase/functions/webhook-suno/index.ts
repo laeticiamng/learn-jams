@@ -29,18 +29,23 @@ serve(async (req) => {
   try {
     const body = await req.text();
     const signature = req.headers.get("x-suno-signature") ?? "";
-    const secret = Deno.env.get("SUNO_CALLBACK_SECRET") ?? "";
+    const secret = Deno.env.get("SUNO_CALLBACK_SECRET");
 
-    // Verify signature
-    if (secret) {
-      const expected = createHmac("sha256", secret).update(body).digest("hex");
-      if (signature !== expected) {
-        log("warn", "invalid_signature");
-        return new Response(JSON.stringify({ error: "Invalid signature" }), {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
+    // Verify signature — required in production
+    if (!secret) {
+      log("error", "missing_webhook_secret");
+      return new Response(JSON.stringify({ error: "Webhook secret not configured" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const expected = createHmac("sha256", secret).update(body).digest("hex");
+    if (signature !== expected) {
+      log("warn", "invalid_signature");
+      return new Response(JSON.stringify({ error: "Invalid signature" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const payload = JSON.parse(body);
