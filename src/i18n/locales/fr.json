@@ -552,7 +552,7 @@
     "session_title": "Titre de la session",
     "session_title_ph": "Ex : Révision cardio",
     "topic_label": "Sujet",
-    "topic_ph": "Décris le sujet que chacun va traiter...",
+    "topic_ph": "Décrivez le sujet que chacun va traiter...",
     "style_label": "Style musical",
     "create_btn": "Créer la session",
     "join_title": "Rejoindre une session",
@@ -778,38 +778,38 @@
     "no_invoices": "Aucune facture",
     "download": "Télécharger",
     "success_checkout": "Abonnement réussi !",
-    "cancel_confirm": "Souhaites-tu vraiment annuler ton abonnement ?",
-    "cancel_keep_access": "Tu conserveras l'accès jusqu'à la fin de ta période de facturation."
+    "cancel_confirm": "Souhaitez-vous vraiment annuler votre abonnement ?",
+    "cancel_keep_access": "Vous conserverez l'accès jusqu'à la fin de votre période de facturation."
   },
   "errors": {
-    "generic": "Une erreur est survenue. Réessaie.",
-    "network": "Erreur réseau. Vérifie ta connexion.",
+    "generic": "Une erreur est survenue. Réessayez.",
+    "network": "Erreur réseau. Vérifiez votre connexion.",
     "not_found": "Ressource introuvable.",
-    "unauthorized": "Tu dois être connecté pour accéder à cette page.",
-    "forbidden": "Tu n'as pas la permission pour cette action.",
-    "rate_limit": "Trop de requêtes. Patiente un instant.",
+    "unauthorized": "Vous devez être connecté pour accéder à cette page.",
+    "forbidden": "Vous n'avez pas la permission pour cette action.",
+    "rate_limit": "Trop de requêtes. Patientez un instant.",
     "file_too_large": "Fichier trop volumineux.",
     "invalid_format": "Format non supporté.",
-    "generation_failed": "Échec de la génération. Réessaie.",
-    "quota_exceeded": "Quota épuisé. Passe à Pro pour continuer.",
+    "generation_failed": "Échec de la génération. Réessayez.",
+    "quota_exceeded": "Quota épuisé. Passez à Pro pour continuer.",
     "provider_unavailable": "Service temporairement indisponible. Tentative avec un fournisseur alternatif.",
     "consent_required": "Le consentement d'un tuteur est requis pour cette action.",
-    "session_expired": "Session expirée. Reconnecte-toi."
+    "session_expired": "Session expirée. Reconnectez-vous."
   },
   "emails": {
-    "guardian_invite_subject": "Tu as été invité comme tuteur sur COGNITIO",
-    "guardian_invite_body": "Tu as été invité à superviser le compte de {{minor_name}} sur COGNITIO. Clique ici pour accepter.",
+    "guardian_invite_subject": "Vous avez été invité comme tuteur sur COGNITIO",
+    "guardian_invite_body": "Vous avez été invité à superviser le compte de {{minor_name}} sur COGNITIO. Cliquez ici pour accepter.",
     "guardian_welcome_subject": "Bienvenue comme tuteur !",
-    "weekly_summary_subject": "Ton résumé hebdomadaire — COGNITIO",
+    "weekly_summary_subject": "Votre résumé hebdomadaire — COGNITIO",
     "weekly_summary_greeting": "Bonjour {{name}}, voici le résumé de la semaine :",
-    "inactivity_subject": "Tu nous manques",
-    "inactivity_body": "Tes cours t'attendent. Reviens vérifier tes missions.",
+    "inactivity_subject": "Vous nous manquez",
+    "inactivity_body": "Vos cours vous attendent. Revenez vérifier vos missions.",
     "billing_receipt_subject": "Reçu de paiement — COGNITIO",
-    "password_reset_subject": "Réinitialise ton mot de passe"
+    "password_reset_subject": "Réinitialisez votre mot de passe"
   },
   "sms": {
-    "guardian_invite": "Tu as été invité comme tuteur sur COGNITIO. Accepte ici : {{link}}",
-    "validation_reminder": "Vérifie ton compte tuteur sur COGNITIO.",
+    "guardian_invite": "Vous avez été invité comme tuteur sur COGNITIO. Acceptez ici : {{link}}",
+    "validation_reminder": "Vérifiez votre compte tuteur sur COGNITIO.",
     "weekly_alert": "Résumé COGNITIO : {{minor_name}} a complété {{count}} missions cette semaine."
   },
   "prompts": {
@@ -839,7 +839,7 @@
     "generation_language": "Langue de génération",
     "guardian_language": "Langue du tuteur",
     "language_section": "Paramètres de langue",
-    "language_section_desc": "Choisis les langues pour l'interface, la génération de contenu et la communication avec les tuteurs"
+    "language_section_desc": "Choisissez les langues pour l'interface, la génération de contenu et la communication avec les tuteurs"
   },
   "cognitio_library": {
     "title": "Fiches COGNITIO",
@@ -971,8 +971,8 @@
     "import_other_doc": "Importer un autre document",
     "show_debug": "Détails techniques",
     "disclaimer": "L'analyse est basée sur le contenu fourni. Le moteur ne prétend pas avoir compris ce qu'il ne comprend pas. Les zones d'incertitude sont signalées explicitement.",
-    "result_success": "Ton contenu a été généré avec succès !",
-    "result_success_detail": "Tu peux maintenant consulter et utiliser ta création."
+    "result_success": "Votre contenu a été généré avec succès !",
+    "result_success_detail": "Vous pouvez maintenant consulter et utiliser votre création."
   },
   "formats": {
     "escape_game": {
@@ -1018,7 +1018,7 @@
     "remaining": "{{count}} restant(s)"
   },
   "create": {
-    "choose_format": "Que veux-tu créer ?"
+    "choose_format": "Que voulez-vous créer ?"
   },
   "explanation_style": {
     "guided": { "label": "Très guidé", "desc": "Chaque notion est expliquée pas à pas" },
