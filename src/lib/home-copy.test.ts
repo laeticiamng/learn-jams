@@ -73,11 +73,9 @@ describe("Homepage i18n keys", () => {
     }
   });
 
-  it("has testimonial keys", () => {
-    for (const i of [1, 2, 3]) {
-      expect(home[`testimonial${i}_name`]).toBeTruthy();
-      expect(home[`testimonial${i}_field`]).toBeTruthy();
-      expect(home[`testimonial${i}_quote`]).toBeTruthy();
-    }
+  it("does not contain fake testimonial keys (removed)", () => {
+    expect(home["testimonial1_name"]).toBeUndefined();
+    expect(home["testimonial2_name"]).toBeUndefined();
+    expect(home["testimonial3_name"]).toBeUndefined();
   });
 });

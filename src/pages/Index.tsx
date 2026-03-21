@@ -224,10 +224,6 @@ export default function Index() {
 
       <SectionDivider />
 
-      {/* Social proof placeholder — replaced fake testimonials */}
-
-      <SectionDivider />
-
       {/* Seed Library */}
       <SectionErrorBoundary name="SeedDemo">
         <SeedDemoSection />
