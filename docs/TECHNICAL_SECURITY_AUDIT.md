@@ -231,6 +231,76 @@ Replaced with safe `textContent` assignment — the error message is now set via
 
 ---
 
+## 13. CRITICAL: `education_profiles` Table Missing RLS Entirely
+
+### Finding
+`supabase/migrations/20260315200000_entitlements_format_qa_migration.sql` creates `education_profiles` (user_id, education_stage, institution_type, field_of_study, year_in_program) but **never enables RLS**. This PII-containing table is completely unprotected.
+
+### Recommendation
+```sql
+ALTER TABLE education_profiles ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "users_own_education_profile" ON education_profiles
+  FOR ALL TO authenticated USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+```
+
+---
+
+## 14. HIGH: Overly Permissive RLS on Several Tables
+
+### Finding
+Multiple tables grant `authenticated` role full access via `USING (true)` policies instead of scoping to the row owner:
+
+| Table | Issue | Risk |
+|---|---|---|
+| `video_provider_runs` | authenticated can read/insert/update ALL | Leaks provider metadata, API responses |
+| `mission_qa_results` | authenticated can read ALL | Users see other users' QA results |
+| `guardian_notification_preferences` | authenticated can manage ALL | Users can modify other guardians' prefs |
+| `guardian_notifications` | authenticated can read/insert ALL | Cross-user notification access |
+| `experiment_measurements` | authenticated can read/insert ALL | Cross-user experiment data leakage |
+
+### Recommendation
+Restrict all policies to owner-based access: `USING (user_id = auth.uid())` or through parent record ownership joins.
+
+---
+
+## 15. MEDIUM: Hardcoded Admin Email in Migration
+
+### Finding
+`supabase/migrations/20260315300000_unlock_admin_laeticia.sql` contains the admin email `m.laeticia@hotmail.fr` in plaintext. While this is a one-time migration, it exposes PII in version control.
+
+### Recommendation
+Use an environment variable or remove the email from version-controlled files after the migration has run.
+
+---
+
+## 16. MEDIUM: Unauthenticated Cognitio Pipeline Functions
+
+### Finding
+Several cognitio pipeline edge functions lack user authentication:
+- `cognitio-ingest`, `cognitio-qa`, `cognitio-analyze`, `cognitio-update-memory`, `cognitio-ops-metrics`
+
+These use SERVICE_ROLE_KEY and appear to be internal pipeline functions, but they're publicly accessible Supabase edge function endpoints.
+
+### Recommendation
+Add JWT authentication or restrict to internal-only access via Supabase function configuration.
+
+---
+
+## 17. MEDIUM: Optional Webhook Secret Validation
+
+### Finding
+`suno-callback` and `webhook-suno` skip signature validation if `SUNO_CALLBACK_SECRET` is not set:
+```typescript
+if (secret) { /* validate */ }
+```
+
+In production, a missing secret means unsigned callbacks are accepted.
+
+### Recommendation
+Make webhook secrets required — fail fast if not configured in production.
+
+---
+
 ## Positive Findings (What's Done Well)
 
 | Area | Status |
@@ -258,18 +328,23 @@ Replaced with safe `textContent` assignment — the error message is now set via
 ### Immediate (Do Now)
 1. **Add authentication to ALL provider edge functions** (openai-llm, openai-image, openai-tts, openai-video, resend-email, twilio-sms)
 2. **Add authentication to guardian-invite** and verify caller authorization
-3. **Consolidate duplicate Stripe webhook handlers** into one
-4. **Verify admin role cannot be self-assigned** via user_metadata in Supabase Auth settings
+3. **Enable RLS on `education_profiles`** — PII table completely unprotected
+4. **Consolidate duplicate Stripe webhook handlers** into one
+5. **Verify admin role cannot be self-assigned** via user_metadata in Supabase Auth settings
 
 ### Short-Term (This Sprint)
-5. Implement server-side rate limiting on edge functions
-6. Move hardcoded Stripe price ID to environment variable
-7. Reduce extract-document file size limit to match frontend (20MB)
-8. Require auth for guardian-accept-link
-9. Remove `unsafe-inline` from production CSP
+6. **Fix overly permissive RLS** on video_provider_runs, mission_qa_results, guardian_notification_preferences, guardian_notifications, experiment_measurements
+7. Implement server-side rate limiting on edge functions
+8. Add auth to cognitio pipeline functions (ingest, qa, analyze, update-memory, ops-metrics)
+9. Move hardcoded Stripe price ID to environment variable
+10. Reduce extract-document file size limit to match frontend (20MB)
+11. Require auth for guardian-accept-link
+12. Make webhook secrets required (fail if SUNO_CALLBACK_SECRET not set)
+13. Remove `unsafe-inline` from production CSP
 
 ### Medium-Term
-10. Add confirmation step for account deletion
-11. Clean up webhook CORS headers
-12. Set up monitoring/alerts for unusual edge function invocation patterns
-13. Add automated security scanning to CI pipeline
+14. Remove hardcoded admin email from migration files
+15. Add confirmation step for account deletion
+16. Clean up webhook CORS headers
+17. Set up monitoring/alerts for unusual edge function invocation patterns
+18. Add automated security scanning to CI pipeline
