@@ -106,9 +106,6 @@ vi.mock("@/hooks/useAccessibility", () => ({
 }));
 
 // Mock image / asset imports so Vitest doesn't choke on binary files
-vi.mock("@/assets/testimonial-marie.jpg", () => ({ default: "marie.jpg" }));
-vi.mock("@/assets/testimonial-karim.jpg", () => ({ default: "karim.jpg" }));
-vi.mock("@/assets/testimonial-chloe.jpg", () => ({ default: "chloe.jpg" }));
 vi.mock("@/assets/founder-laeticia.png", () => ({ default: "founder.png" }));
 
 // Mock IntersectionObserver (used by framer-motion / useInView)

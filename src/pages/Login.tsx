@@ -6,7 +6,7 @@ import { useAuth, type ClassifiedAuthError } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Music } from "lucide-react";
+import { Brain } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { toast } from "sonner";
@@ -81,7 +81,7 @@ export default function Login() {
               whileHover={{ scale: 1.05, rotate: -3 }}
               className="w-12 h-12 rounded-xl gradient-bg-premium flex items-center justify-center mx-auto shadow-lg shadow-primary/25"
             >
-              <Music className="w-6 h-6 text-primary-foreground" />
+              <Brain className="w-6 h-6 text-primary-foreground" />
             </motion.div>
           </Link>
           <h1 className="font-display text-2xl font-bold tracking-tight">{t("auth.login_title")}</h1>

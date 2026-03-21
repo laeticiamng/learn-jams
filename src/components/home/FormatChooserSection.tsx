@@ -32,7 +32,7 @@ export default function FormatChooserSection() {
   const { t } = useTranslation();
 
   return (
-    <section className="py-16 sm:py-20 md:py-28 lg:py-32 px-4">
+    <section id="formats" className="py-16 sm:py-20 md:py-28 lg:py-32 px-4">
       <div className="container mx-auto max-w-6xl">
         <motion.p
           initial={{ opacity: 0, y: 10 }}

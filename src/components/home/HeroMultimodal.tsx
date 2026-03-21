@@ -277,6 +277,20 @@ export default function HeroMultimodal() {
           {t("home.hero_subtitle")}
         </motion.p>
 
+        {/* Micro-benefits — trust anchors */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.15, duration: 0.6, ease }}
+          className="flex flex-wrap justify-center gap-3 sm:gap-6 mb-8 sm:mb-12 text-xs sm:text-sm text-muted-foreground/80 font-medium"
+        >
+          <span>{t("home.hero_benefit_1")}</span>
+          <span className="text-primary/30">·</span>
+          <span>{t("home.hero_benefit_2")}</span>
+          <span className="text-primary/30">·</span>
+          <span>{t("home.hero_benefit_3")}</span>
+        </motion.div>
+
         {/* CTA — the payoff moment */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}

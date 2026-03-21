@@ -44,7 +44,7 @@ const rankColors = ["text-amber-400", "text-zinc-300", "text-amber-600"];
 
 export default function League() {
   const { t } = useTranslation();
-  usePageSEO({ title: t("league.title", "European League") + " — StudyBeats", description: t("league.subtitle", "Compete with students across Europe"), noindex: true });
+  usePageSEO({ title: t("league.title", "European League") + " — COGNITIO", description: t("league.subtitle", "Compete with students across Europe"), noindex: true });
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -149,7 +149,7 @@ export default function League() {
             {t("league.title", "European League")}
           </h1>
           <p className="text-muted-foreground text-base sm:text-lg max-w-xl mx-auto">
-            {t("league.subtitle", "Earn points by creating and rating StudyBeats. Compete weekly with students across Europe.")}
+            {t("league.subtitle", "Earn points by creating and rating content. Compete weekly with students across Europe.")}
           </p>
           <p className="text-xs text-muted-foreground/60 mt-2 font-mono">{t("league.week", "Week")} {currentWeek}</p>
         </motion.div>
