@@ -69,6 +69,9 @@ const FORBIDDEN_TOPIC_PATTERNS: { pattern: RegExp; reason: string }[] = [
 
 // Noise to strip from topic
 const TOPIC_NOISE_STRIPS: RegExp[] = [
+  // Strip leading slide numbers (e.g. "15 " or "3. " or "12 - ")
+  /^\d{1,3}\s*[-–—.:)]\s*/,
+  /^\d{1,3}\s+(?=[A-ZÀ-Ÿa-zà-ÿ])/,
   // P0: Aggressive R2C block removal — handles "R2C : Rang A en noir - Rang B en ..."
   /R2C\s*:?\s*(?:Rang\s+[A-Z]\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)?\s*[-–—]?\s*)+/gi,
   /\bCOM\s+R2C\s*:\s*/gi,
