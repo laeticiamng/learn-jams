@@ -16,6 +16,7 @@ import type {
 import type { BrickType } from "@/domain/cognitio/types";
 import type { NormalizedConcept } from "./conceptNormalizer";
 import { sanitizeMissionDisplayText, hasEditorialNoise } from "@/lib/cognitio-semantic-cleaning";
+import { generateAIPuzzles } from "./aiPuzzleService";
 
 // ---------- Room Templates ----------
 
