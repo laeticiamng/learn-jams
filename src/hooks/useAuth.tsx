@@ -47,15 +47,6 @@ export function classifyAuthError(err: unknown): ClassifiedAuthError {
     msg.includes("Load failed") ||        // Safari
     msg.includes("network request failed") // React Native
   ) {
-    // Distinguish: is it because the config is bad, or a real network problem?
-    const config = getSupabaseConfigStatus();
-    if (!config.configured) {
-      return {
-        kind: "config_error",
-        message: config.diagnosticMessage,
-        raw: err,
-      };
-    }
     return { kind: "service_unreachable", message: msg, raw: err };
   }
 
