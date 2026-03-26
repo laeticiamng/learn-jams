@@ -41,8 +41,7 @@ export async function generateAIPuzzles(
       label: c.normalized_label,
       definition: c.definition,
       compressed_definition: c.compressed_definition,
-      criticality: c.criticality,
-      category: c.category,
+      concept_type: c.concept_type,
     }));
 
     const { data, error } = await supabase.functions.invoke("cognitio-generate-puzzles", {
