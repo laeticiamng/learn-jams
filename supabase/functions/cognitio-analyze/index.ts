@@ -764,6 +764,10 @@ const EDGE_NOISE_LINE_PATTERNS: RegExp[] = [
   /^(?:Année\s+(?:universitaire|scolaire))\s*[:—–\-]\s*\d/i,
   /^Sujet\s+principal\s*:\s*COM\s/i,
   /^(?:www\.|http|mailto)/i,
+  /merci\s+(?:pour\s+)?(?:votre|de\s+votre)\s+attention/i,
+  /(?:des\s+)?questions\s*\?\s*(?:des\s+)?remarques/i,
+  /^(?:des\s+)?questions\s*\??\s*$/i,
+  /^merci\b/i,
 ];
 
 function cleanTextForFallback(text: string): string {
