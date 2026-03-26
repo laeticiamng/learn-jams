@@ -788,8 +788,19 @@ function cleanTextForFallback(text: string): string {
   return cleaned.join("\n").replace(/\n{3,}/g, "\n\n").trim();
 }
 
+function normalizeOcrSpacedText(text: string): string {
+  let result = text;
+  for (let i = 0; i < 3; i++) {
+    result = result.replace(/\b([a-zA-ZÀ-ÿ])\s+([a-zà-ÿ])/g, "$1$2");
+    result = result.replace(/\b([a-zA-ZÀ-ÿ]{2})\s+([a-zà-ÿ]{3,})/g, "$1$2");
+  }
+  return result;
+}
+
 function cleanTopicForFallback(rawTopic: string): string {
-  let topic = rawTopic.trim();
+  let topic = normalizeOcrSpacedText(rawTopic.trim());
+  topic = topic.replace(/^\d{1,3}\s*[-–—.:)]\s*/, "");
+  topic = topic.replace(/^\d{1,3}\s+(?=[A-ZÀ-Ÿa-zà-ÿ])/, "");
   topic = topic.replace(/R2C\s*:?\s*(?:Rang\s+[A-Z]\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)?\s*[-–—]?\s*)+/gi, "").trim();
   topic = topic.replace(/\bCOM\s+R2C\s*:\s*/gi, "");
   topic = topic.replace(/\s*[-–—]\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)\b.*/gi, "");
@@ -806,6 +817,10 @@ function cleanTopicForFallback(rawTopic: string): string {
   topic = topic.replace(/\b\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4}\b\s*/g, "");
   topic = topic.replace(/^(?:Item|UE|N°)\s*\d+\s*[-–—:.\s]\s*/i, "");
   topic = topic.replace(/^Sujet\s+principal\s*:\s*/i, "");
+  topic = topic.replace(/merci\s+(?:pour\s+)?(?:votre|de\s+votre)\s+attention/gi, "");
+  topic = topic.replace(/(?:des\s+)?questions\s*\?\s*(?:des\s+)?remarques/gi, "");
+  topic = topic.replace(/^merci\b.*$/i, "");
+  topic = topic.replace(/^(?:des\s+)?questions\s*\??\s*$/i, "");
   topic = topic.replace(/\s{2,}/g, " ").trim();
   topic = topic.replace(/^[\s.:;,\-–—]+/, "").replace(/[\s.:;,\-–—]+$/, "").trim();
   return topic.length >= 3 ? topic : "";
