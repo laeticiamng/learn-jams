@@ -226,6 +226,9 @@ function isSegmentNoisy(seg: { title: string | null; content: string }): boolean
 export function cleanTopicString(raw: string): string {
   let topic = raw.trim();
 
+  // OCR normalization: fix broken words (e.g. "m erci" → "merci", "d es" → "des")
+  topic = normalizeOcrSpaces(topic);
+
   for (const pattern of TOPIC_NOISE_STRIPS) {
     topic = topic.replace(pattern, "").trim();
   }
