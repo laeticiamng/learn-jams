@@ -15,8 +15,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
-const PROMPT_VERSION = "m2-analyze-v3.0";
+const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+const PROMPT_VERSION = "m2-analyze-v3.1";
 
 // Document Understanding Layer — System prompt for pre-comprehension
 const DOCUMENT_UNDERSTANDING_SYSTEM_PROMPT = `Tu es la couche de compréhension globale de COGNITIO.
@@ -121,11 +121,11 @@ serve(async (req) => {
 
     let analysisResult: AnalysisResult;
 
-    if (ANTHROPIC_API_KEY) {
+    if (LOVABLE_API_KEY) {
       try {
-        analysisResult = await analyzeWithClaude(clean_text, segments, user_objective || "discovery", source_type, confidence_level);
+        analysisResult = await analyzeWithLovableAI(clean_text, segments, user_objective || "discovery", source_type, confidence_level);
       } catch (err: unknown) {
-        console.error("Claude API error, falling back to local:", err);
+        console.error("Lovable AI error, falling back to local:", err);
         await logOps(supabase, "analyze_llm_fallback", "warning", document_id, user_id, { error: String(err) });
         analysisResult = buildFallbackAnalysis(clean_text, segments, confidence_level);
       }
@@ -321,9 +321,9 @@ interface TrapResult {
   source_trace?: { segment_index: number; excerpt: string };
 }
 
-// ---------- Claude API Analysis ----------
+// ---------- Lovable AI Analysis ----------
 
-async function analyzeWithClaude(
+async function analyzeWithLovableAI(
   text: string,
   segments: AnalyzeRequest["segments"],
   objective: string,
@@ -333,42 +333,37 @@ async function analyzeWithClaude(
   const truncated = text.slice(0, 12000);
   const prompt = buildAnalysisPrompt(truncated, objective, segments.length, sourceType, confidenceLevel);
 
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
+  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-api-key": ANTHROPIC_API_KEY!,
-      "anthropic-version": "2023-06-01",
+      "Authorization": `Bearer ${LOVABLE_API_KEY!}`,
     },
     body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 8192,
-      system: DOCUMENT_UNDERSTANDING_SYSTEM_PROMPT,
-      messages: [{ role: "user", content: prompt }],
+      model: "openai/gpt-5-mini",
+      response_format: { type: "json_object" },
+      messages: [
+        { role: "system", content: DOCUMENT_UNDERSTANDING_SYSTEM_PROMPT },
+        { role: "user", content: prompt },
+      ],
     }),
   });
 
   if (!response.ok) {
-    throw new Error(`Claude API returned ${response.status}`);
+    const errorBody = await response.text();
+    throw new Error(`Lovable AI returned ${response.status}: ${errorBody}`);
   }
 
-  const claudeResponse = await response.json();
-  const content = claudeResponse.content?.[0]?.text ?? "";
-
-  // Parse JSON from response
-  const jsonMatch = content.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    throw new Error("No valid JSON in Claude response");
-  }
+  const aiResponse = await response.json();
+  const content = aiResponse.choices?.[0]?.message?.content ?? "";
 
   let parsed;
   try {
-    parsed = JSON.parse(jsonMatch[0]);
+    parsed = JSON.parse(content);
   } catch {
-    throw new Error("Invalid JSON in Claude response");
+    throw new Error("Invalid JSON in Lovable AI response");
   }
 
-  // Validate and normalize
   return normalizeAnalysisResult(parsed, text, segments);
 }
 
@@ -769,17 +764,20 @@ const EDGE_NOISE_LINE_PATTERNS: RegExp[] = [
   /^(?:Année\s+(?:universitaire|scolaire))\s*[:—–\-]\s*\d/i,
   /^Sujet\s+principal\s*:\s*COM\s/i,
   /^(?:www\.|http|mailto)/i,
+  /merci\s+(?:pour\s+)?(?:votre|de\s+votre)\s+attention/i,
+  /(?:des\s+)?questions\s*\?\s*(?:des\s+)?remarques/i,
+  /^(?:des\s+)?questions\s*\??\s*$/i,
+  /^merci\b/i,
 ];
 
 function cleanTextForFallback(text: string): string {
   const lines = text.split("\n");
   const cleaned: string[] = [];
   for (const line of lines) {
-    const trimmed = line.trim();
+    const trimmed = normalizeOcrSpacedText(line.trim());
     if (trimmed.length === 0) { cleaned.push(""); continue; }
     if (trimmed.length <= 2 && /^[^a-zA-ZÀ-ÿ0-9]/.test(trimmed)) continue;
     if (EDGE_NOISE_LINE_PATTERNS.some(p => p.test(trimmed))) continue;
-    // Clean inline Rang labels
     let cl = trimmed.replace(/\s*\(?\s*Rang\s+[A-Z]\s*\)?\s*/gi, " ");
     cl = cl.replace(/\s*\(?\s*en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)\s*\)?\s*/gi, " ");
     cl = cl.replace(/\s{2,}/g, " ").trim();
@@ -789,8 +787,19 @@ function cleanTextForFallback(text: string): string {
   return cleaned.join("\n").replace(/\n{3,}/g, "\n\n").trim();
 }
 
+function normalizeOcrSpacedText(text: string): string {
+  let result = text;
+  for (let i = 0; i < 3; i++) {
+    result = result.replace(/\b([a-zA-ZÀ-ÿ])\s+([a-zà-ÿ])/g, "$1$2");
+    result = result.replace(/\b([a-zA-ZÀ-ÿ]{2})\s+([a-zà-ÿ]{3,})/g, "$1$2");
+  }
+  return result;
+}
+
 function cleanTopicForFallback(rawTopic: string): string {
-  let topic = rawTopic.trim();
+  let topic = normalizeOcrSpacedText(rawTopic.trim());
+  topic = topic.replace(/^\d{1,3}\s*[-–—.:)]\s*/, "");
+  topic = topic.replace(/^\d{1,3}\s+(?=[A-ZÀ-Ÿa-zà-ÿ])/, "");
   topic = topic.replace(/R2C\s*:?\s*(?:Rang\s+[A-Z]\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)?\s*[-–—]?\s*)+/gi, "").trim();
   topic = topic.replace(/\bCOM\s+R2C\s*:\s*/gi, "");
   topic = topic.replace(/\s*[-–—]\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)\b.*/gi, "");
@@ -807,6 +816,10 @@ function cleanTopicForFallback(rawTopic: string): string {
   topic = topic.replace(/\b\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4}\b\s*/g, "");
   topic = topic.replace(/^(?:Item|UE|N°)\s*\d+\s*[-–—:.\s]\s*/i, "");
   topic = topic.replace(/^Sujet\s+principal\s*:\s*/i, "");
+  topic = topic.replace(/merci\s+(?:pour\s+)?(?:votre|de\s+votre)\s+attention/gi, "");
+  topic = topic.replace(/(?:des\s+)?questions\s*\?\s*(?:des\s+)?remarques/gi, "");
+  topic = topic.replace(/^merci\b.*$/i, "");
+  topic = topic.replace(/^(?:des\s+)?questions\s*\??\s*$/i, "");
   topic = topic.replace(/\s{2,}/g, " ").trim();
   topic = topic.replace(/^[\s.:;,\-–—]+/, "").replace(/[\s.:;,\-–—]+$/, "").trim();
   return topic.length >= 3 ? topic : "";
