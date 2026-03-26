@@ -132,21 +132,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     email: string,
     password: string,
   ): Promise<{ error: ClassifiedAuthError | null }> => {
-    // Pre-flight: abort early if Supabase is not configured
-    const config = getSupabaseConfigStatus();
-    if (!config.configured) {
-      console.error(
-        "[COGNITIO] signIn aborted — Supabase not configured:",
-        config.diagnosticMessage,
-      );
-      return {
-        error: {
-          kind: "config_error",
-          message: config.diagnosticMessage,
-        },
-      };
-    }
-
     try {
       console.info("[COGNITIO] signIn — calling signInWithPassword");
       const { error } = await supabase.auth.signInWithPassword({
