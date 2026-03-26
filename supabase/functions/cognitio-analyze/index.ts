@@ -906,6 +906,10 @@ function deriveBestTopicCandidateEdge(
     const normalizedContent = cleanSegmentTextForTopicEdge(seg.content);
     if (!normalizedContent) continue;
 
+    for (const match of normalizedContent.matchAll(/\b(prise\s+en\s+charge[^.!?]{0,100})/gi)) {
+      pushCandidate(match[1], 0.93, "care_phrase");
+    }
+
     for (const match of normalizedContent.matchAll(/\b([A-Z]{2,8})\s*[:\-–—]\s*([A-ZÀ-ÿ][A-Za-zÀ-ÿ'’\-]+(?:\s+[A-ZÀ-ÿ][A-Za-zÀ-ÿ'’\-]+){1,7})/g)) {
       pushCandidate(`${match[2]} (${match[1]})`, 0.96, "acronym_expansion_colon");
     }
@@ -954,7 +958,7 @@ function cleanSegmentTextForTopicEdge(text: string): string {
   cleaned = cleaned.replace(/^\d{1,3}\s+\d{1,2}[\/\.\-]\d{1,2}[\/\.\-]\d{2,4}\s+/g, "");
   cleaned = cleaned.replace(/^\d{1,3}\s+/g, "");
   cleaned = cleaned.replace(/\b\d{1,2}\s+[A-Za-zÀ-ÿ]+\s+\d{4}\b/g, " ");
-  cleaned = cleaned.replace(/\b(?:C\.)?[A-Z][A-Z\-]{2,}\b/g, " ");
+  cleaned = cleaned.replace(/\b[A-Z]\.[A-Z]{3,}\b/g, " ");
   cleaned = cleaned.replace(/\s{2,}/g, " ").trim();
   return cleaned;
 }
