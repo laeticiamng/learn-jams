@@ -321,9 +321,9 @@ interface TrapResult {
   source_trace?: { segment_index: number; excerpt: string };
 }
 
-// ---------- Claude API Analysis ----------
+// ---------- Lovable AI Analysis ----------
 
-async function analyzeWithClaude(
+async function analyzeWithLovableAI(
   text: string,
   segments: AnalyzeRequest["segments"],
   objective: string,
@@ -333,42 +333,37 @@ async function analyzeWithClaude(
   const truncated = text.slice(0, 12000);
   const prompt = buildAnalysisPrompt(truncated, objective, segments.length, sourceType, confidenceLevel);
 
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
+  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-api-key": ANTHROPIC_API_KEY!,
-      "anthropic-version": "2023-06-01",
+      "Authorization": `Bearer ${LOVABLE_API_KEY!}`,
     },
     body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 8192,
-      system: DOCUMENT_UNDERSTANDING_SYSTEM_PROMPT,
-      messages: [{ role: "user", content: prompt }],
+      model: "openai/gpt-5-mini",
+      response_format: { type: "json_object" },
+      messages: [
+        { role: "system", content: DOCUMENT_UNDERSTANDING_SYSTEM_PROMPT },
+        { role: "user", content: prompt },
+      ],
     }),
   });
 
   if (!response.ok) {
-    throw new Error(`Claude API returned ${response.status}`);
+    const errorBody = await response.text();
+    throw new Error(`Lovable AI returned ${response.status}: ${errorBody}`);
   }
 
-  const claudeResponse = await response.json();
-  const content = claudeResponse.content?.[0]?.text ?? "";
-
-  // Parse JSON from response
-  const jsonMatch = content.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    throw new Error("No valid JSON in Claude response");
-  }
+  const aiResponse = await response.json();
+  const content = aiResponse.choices?.[0]?.message?.content ?? "";
 
   let parsed;
   try {
-    parsed = JSON.parse(jsonMatch[0]);
+    parsed = JSON.parse(content);
   } catch {
-    throw new Error("Invalid JSON in Claude response");
+    throw new Error("Invalid JSON in Lovable AI response");
   }
 
-  // Validate and normalize
   return normalizeAnalysisResult(parsed, text, segments);
 }
 
