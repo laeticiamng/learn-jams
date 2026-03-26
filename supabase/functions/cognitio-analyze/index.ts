@@ -486,6 +486,7 @@ function normalizeAnalysisResult(
   sourceText: string,
   segments: AnalyzeRequest["segments"]
 ): AnalysisResult {
+  const rawMainTopic = typeof raw.main_topic === "string" ? raw.main_topic : "";
   const rawConcepts = asRecordArray(raw.concepts).slice(0, 30).map((c, i) => {
     const criticalityRaw = typeof c.criticality === "number" ? c.criticality : 3;
     const criticality = Math.min(4, Math.max(1, Math.round(criticalityRaw)));
@@ -561,9 +562,14 @@ function normalizeAnalysisResult(
   const conceptsConfidence = concepts.length > 0 ? conceptsWithTrace.length / concepts.length : 0;
   const density = concepts.length >= 20 ? "high" : concepts.length >= 8 ? "medium" : "low";
   const recommended = density === "high" || concepts.length >= 10 ? "histoire_animee" : "fiche_dynamique";
+  const normalizedMainTopic = normalizeMainTopicEdge(rawMainTopic, sourceText, segments, concepts);
+
+  if (normalizedMainTopic !== (rawMainTopic || "Sujet non identifié")) {
+    console.log(`[M2] Main topic normalized: raw="${rawMainTopic || "(empty)"}" -> "${normalizedMainTopic}"`);
+  }
 
   return {
-    main_topic: typeof raw.main_topic === "string" ? raw.main_topic : "Sujet non identifié",
+    main_topic: normalizedMainTopic,
     learning_objectives: asStringArray(raw.learning_objectives),
     concepts,
     traps,
@@ -699,6 +705,12 @@ function buildFallbackAnalysis(
     }
   }
 
+  const rawFallbackTopic = mainTopic;
+  mainTopic = normalizeMainTopicEdge(mainTopic, cleanText, segments, concepts);
+  if (mainTopic !== rawFallbackTopic) {
+    console.log(`[M2-FALLBACK] Main topic normalized: raw="${rawFallbackTopic}" -> "${mainTopic}"`);
+  }
+
   const density = concepts.length >= 12 ? "high" : concepts.length >= 5 ? "medium" : "low";
 
   console.log(
@@ -820,9 +832,142 @@ function cleanTopicForFallback(rawTopic: string): string {
   topic = topic.replace(/(?:des\s+)?questions\s*\?\s*(?:des\s+)?remarques/gi, "");
   topic = topic.replace(/^merci\b.*$/i, "");
   topic = topic.replace(/^(?:des\s+)?questions\s*\??\s*$/i, "");
+  topic = topic.replace(/^(?:section|chapitre|slide|page)\s+\d+\s*$/i, "");
+  topic = topic.replace(/^(?:cours|module|mati[eè]re|chapitre|partie|section|titre)\s*\d*\s*$/i, "");
   topic = topic.replace(/\s{2,}/g, " ").trim();
   topic = topic.replace(/^[\s.:;,\-–—]+/, "").replace(/[\s.:;,\-–—]+$/, "").trim();
   return topic.length >= 3 ? topic : "";
+}
+
+const EDGE_INVALID_TOPIC_PATTERNS: RegExp[] = [
+  /^(?:section|chapitre|slide|page)\s+\d+\s*$/i,
+  /^(?:cours|module|mati[eè]re|chapitre|partie|section|titre)\s*\d*\s*$/i,
+  /^merci\b/i,
+  /merci\s+(?:pour\s+)?(?:votre|de\s+votre)\s+attention/i,
+  /(?:des\s+)?questions\s*\?\s*(?:des\s+)?remarques/i,
+  /^(?:des\s+)?questions\s*\??\s*$/i,
+  /^rappels?\s+sur\s*$/i,
+  /^sujet\s+principal\s*:?\s*$/i,
+  /^[^a-zA-ZÀ-ÿ]*$/,
+];
+
+function normalizeMainTopicEdge(
+  rawTopic: string,
+  sourceText: string,
+  segments: AnalyzeRequest["segments"],
+  concepts: Pick<ConceptResult, "label" | "criticality" | "source_trace">[] = []
+): string {
+  const cleanedRaw = cleanTopicForFallback(rawTopic || "");
+  if (isValidMainTopicEdge(cleanedRaw)) {
+    return cleanedRaw;
+  }
+
+  const derived = deriveBestTopicCandidateEdge(segments, sourceText, concepts);
+  return derived ?? "Sujet non identifié";
+}
+
+function isValidMainTopicEdge(topic: string): boolean {
+  const cleaned = cleanTopicForFallback(topic);
+  if (cleaned.length < 5 || cleaned.length > 120) return false;
+  if (EDGE_INVALID_TOPIC_PATTERNS.some((pattern) => pattern.test(cleaned))) return false;
+  if (!/[a-zA-ZÀ-ÿ]/.test(cleaned)) return false;
+  if (/^\d+(?:\s+\d{1,2}[\/\.\-]\d{1,2}[\/\.\-]\d{2,4})?/.test(cleaned)) return false;
+  return true;
+}
+
+function deriveBestTopicCandidateEdge(
+  segments: AnalyzeRequest["segments"],
+  sourceText: string,
+  concepts: Pick<ConceptResult, "label" | "criticality" | "source_trace">[]
+): string | null {
+  const candidates = new Map<string, { score: number; source: string }>();
+
+  const pushCandidate = (value: string, baseScore: number, source: string) => {
+    const cleaned = cleanTopicForFallback(stripTopicCandidatePrefixesEdge(value));
+    if (!isValidMainTopicEdge(cleaned)) return;
+
+    let score = baseScore;
+    const words = cleaned.split(/\s+/).filter(Boolean);
+
+    if (words.length >= 2 && words.length <= 12) score += 0.08;
+    if (/\b(?:prise\s+en\s+charge|diagnostic|traitement|syndrome|maladie|accident|trouble|urgence|pathologie|imagerie|anatomie|physiologie|algorithme|infection)\b/i.test(cleaned)) score += 0.08;
+    if (/\b[A-Z]{2,8}\b/.test(cleaned)) score += 0.06;
+    if (/\b(?:section|chapitre|cours|module|partie|rappels?)\b/i.test(cleaned)) score -= 0.18;
+
+    const existing = candidates.get(cleaned);
+    if (!existing || score > existing.score) {
+      candidates.set(cleaned, { score, source });
+    }
+  };
+
+  for (const seg of segments.slice(0, 6)) {
+    if (seg.title) pushCandidate(seg.title, 0.55, "segment_title");
+
+    const normalizedContent = cleanSegmentTextForTopicEdge(seg.content);
+    if (!normalizedContent) continue;
+
+    for (const match of normalizedContent.matchAll(/\b(prise\s+en\s+charge[^.!?]{0,100})/gi)) {
+      pushCandidate(match[1], 0.93, "care_phrase");
+    }
+
+    for (const match of normalizedContent.matchAll(/\b([A-Z]{2,8})\s*[:\-–—]\s*([A-ZÀ-ÿ][A-Za-zÀ-ÿ'’\-]+(?:\s+[A-ZÀ-ÿ][A-Za-zÀ-ÿ'’\-]+){1,7})/g)) {
+      pushCandidate(`${match[2]} (${match[1]})`, 0.96, "acronym_expansion_colon");
+    }
+
+    for (const match of normalizedContent.matchAll(/\b([A-ZÀ-ÿ][A-Za-zÀ-ÿ'’\-]+(?:\s+[A-ZÀ-ÿ][A-Za-zÀ-ÿ'’\-]+){1,7})\s*\(([A-Z]{2,8})\)/g)) {
+      pushCandidate(`${match[1]} (${match[2]})`, 0.94, "acronym_expansion_parenthetical");
+    }
+
+    const fragments = normalizedContent
+      .split(/[.!?•]+/)
+      .map((fragment) => fragment.trim())
+      .filter((fragment) => fragment.length >= 8)
+      .slice(0, 3);
+
+    for (const fragment of fragments) {
+      pushCandidate(fragment, 0.64, "content_fragment");
+    }
+  }
+
+  for (const concept of concepts.slice(0, 10)) {
+    const hasBodyTrace = concept.source_trace.some((trace) => trace.segment_index > 0);
+    pushCandidate(concept.label, hasBodyTrace ? 0.76 : 0.68, "concept_label");
+  }
+
+  const sourcePreview = cleanSegmentTextForTopicEdge(sourceText).slice(0, 2000);
+  for (const match of sourcePreview.matchAll(/\b([A-Z]{2,8})\s*[:\-–—]\s*([A-ZÀ-ÿ][A-Za-zÀ-ÿ'’\-]+(?:\s+[A-ZÀ-ÿ][A-Za-zÀ-ÿ'’\-]+){1,7})/g)) {
+    pushCandidate(`${match[2]} (${match[1]})`, 0.92, "source_text_acronym");
+  }
+
+  let best: { topic: string; score: number; source: string } | null = null;
+  for (const [topic, meta] of candidates.entries()) {
+    if (!best || meta.score > best.score) {
+      best = { topic, score: meta.score, source: meta.source };
+    }
+  }
+
+  if (best) {
+    console.log(`[M2] Derived main topic from ${best.source}: "${best.topic}" (score=${best.score.toFixed(2)})`);
+  }
+
+  return best?.topic ?? null;
+}
+
+function cleanSegmentTextForTopicEdge(text: string): string {
+  let cleaned = normalizeOcrSpacedText(text || "");
+  cleaned = cleaned.replace(/^\d{1,3}\s+\d{1,2}[\/\.\-]\d{1,2}[\/\.\-]\d{2,4}\s+/g, "");
+  cleaned = cleaned.replace(/^\d{1,3}\s+/g, "");
+  cleaned = cleaned.replace(/\b\d{1,2}\s+[A-Za-zÀ-ÿ]+\s+\d{4}\b/g, " ");
+  cleaned = cleaned.replace(/\b[A-Z]\.[A-Z]{3,}\b/g, " ");
+  cleaned = cleaned.replace(/\s{2,}/g, " ").trim();
+  return cleaned;
+}
+
+function stripTopicCandidatePrefixesEdge(text: string): string {
+  return text
+    .replace(/^(?:rappels?\s+sur|focus\s+sur|introduction\s+[àa]|introduction\s+au)\s+/i, "")
+    .replace(/^animation\s+de\s+la\s+fili[eè]re\s+/i, "")
+    .trim();
 }
 
 function extractItemTopicFromText(content: string): string | null {

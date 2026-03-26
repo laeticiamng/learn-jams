@@ -63,6 +63,40 @@ function extractAndCleanTopicFromSegments(
   return null;
 }
 
+function selectRobustTopic(
+  candidate: string,
+  segments: { title: string | null; content: string; hierarchy_level: number }[],
+  concepts: { label: string; source_trace?: { segment_index: number; excerpt: string }[] }[] = []
+): string {
+  const cleanedCandidate = cleanMainTopic(candidate);
+  if (
+    cleanedCandidate.length >= 5 &&
+    cleanedCandidate !== "Sujet non identifié" &&
+    !validateTopic(cleanedCandidate)
+  ) {
+    return cleanedCandidate;
+  }
+
+  const bodyTopic = extractAndCleanTopicFromSegments(segments.slice(1));
+  if (bodyTopic && bodyTopic.length >= 5 && !validateTopic(bodyTopic)) {
+    return bodyTopic;
+  }
+
+  const conceptTopic = concepts.find((concept) => {
+    const cleaned = cleanMainTopic(concept.label);
+    return cleaned.length >= 5 && !validateTopic(cleaned) && (concept.source_trace?.some((trace) => trace.segment_index > 0) ?? true);
+  })?.label;
+
+  if (conceptTopic) {
+    const cleaned = cleanMainTopic(conceptTopic);
+    if (cleaned.length >= 5 && !validateTopic(cleaned)) {
+      return cleaned;
+    }
+  }
+
+  return "Sujet non identifié";
+}
+
 // ---------- Run Analysis (Edge Function) ----------
 
 export async function runAnalysis(input: M2_Input): Promise<M2_Output> {
@@ -477,6 +511,7 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
     && docUnderstanding.comprehension_confidence > 0.4
     ? docUnderstanding.true_topic
     : rawMainTopic;
+  mainTopic = selectRobustTopic(mainTopic, segments);
   console.info(`[COGNITIO][M2] m2_final_topic="${mainTopic}" (understanding_topic="${docUnderstanding.true_topic}", raw_topic="${rawMainTopic}")`);
 
   // === Level 2: Reconstruct chapter hierarchy ===
@@ -950,7 +985,7 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
           console.info(
             `[COGNITIO][M2] TOPIC RECOMPUTED from body: "${mainTopic}" → "${bodyTopicResult}"`
           );
-          mainTopic = bodyTopicResult;
+          mainTopic = selectRobustTopic(bodyTopicResult, bodyOnlySegments, concepts);
         } else if (concepts.length > 0) {
           // Derive topic from first body concept
           const firstBodyConcept = concepts.find(c =>
@@ -960,7 +995,7 @@ export function runLocalAnalysis(input: M2_Input, rawSegments?: SegmentOutput[])
             console.info(
               `[COGNITIO][M2] TOPIC DERIVED from first body concept: "${mainTopic}" → "${firstBodyConcept.label}"`
             );
-            mainTopic = firstBodyConcept.label;
+              mainTopic = selectRobustTopic(firstBodyConcept.label, bodyOnlySegments, concepts);
           }
         }
 
