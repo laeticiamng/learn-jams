@@ -132,6 +132,13 @@ export default function Index() {
 
       <SectionDivider />
 
+      {/* Explainer Video */}
+      <SectionErrorBoundary name="ExplainerVideo">
+        <ExplainerVideoSection />
+      </SectionErrorBoundary>
+
+      <SectionDivider />
+
       {/* Format chooser — multimodal showcase */}
       <SectionErrorBoundary name="FormatChooser">
         <FormatChooserSection />
