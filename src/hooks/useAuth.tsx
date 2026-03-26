@@ -52,14 +52,7 @@ export function classifyAuthError(err: unknown): ClassifiedAuthError {
 
   // TypeError before fetch (e.g. invalid URL constructed)
   if (err instanceof TypeError) {
-    const config = getSupabaseConfigStatus();
-    if (!config.configured) {
-      return {
-        kind: "config_error",
-        message: config.diagnosticMessage,
-        raw: err,
-      };
-    }
+    return { kind: "service_unreachable", message: msg, raw: err };
   }
 
   return { kind: "unexpected", message: msg, raw: err };
