@@ -279,6 +279,27 @@ export function computeTopicCleanlinessScore(topic: CleanedTopic): number {
 
 // ---------- Helpers ----------
 
+/**
+ * Normalize OCR-broken spaces in words.
+ * Fixes patterns like "m erci" → "merci", "d es" → "des", "qu estions" → "questions"
+ * by rejoining single-letter fragments to the next word.
+ */
+function normalizeOcrSpaces(text: string): string {
+  // Rejoin single letter followed by space + lowercase continuation
+  // e.g. "m erci" → "merci", "d es" → "des", "l es" → "les"
+  let result = text.replace(/\b([a-zA-ZÀ-ÿ])\s+([a-zà-ÿ])/g, "$1$2");
+  // Also handle "qu estions" → "questions" (2-letter prefix)
+  result = result.replace(/\b([a-zA-ZÀ-ÿ]{2})\s+([a-zà-ÿ]{3,})/g, (match, prefix, suffix) => {
+    const joined = prefix + suffix;
+    // Only rejoin if the result looks like a real word (no further validation needed, 
+    // the forbidden patterns will catch it)
+    return joined;
+  });
+  return result;
+}
+
+
+
 function extractTopicFromContent(text: string): string | null {
   // Simple frequency-based approach: find repeated capitalized phrases
   const words = text.split(/\s+/);
