@@ -58,6 +58,11 @@ export const DOCUMENT_NOISE_BLACKLIST: RegExp[] = [
   /\bRéférentiel\b/i,
   /\bwww\.\S+/i,
   /\bhttps?:\/\/\S+/i,
+
+  // Presentation closing slides / filler
+  /\bmerci\s+(?:pour\s+)?(?:votre|de\s+votre)\s+attention\b/i,
+  /\bquestions\s*\?\s*(?:des\s+)?remarques\b/i,
+  /\bfin\s+du\s+cours\b/i,
 ];
 
 /**
