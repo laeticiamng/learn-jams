@@ -121,11 +121,11 @@ serve(async (req) => {
 
     let analysisResult: AnalysisResult;
 
-    if (ANTHROPIC_API_KEY) {
+    if (LOVABLE_API_KEY) {
       try {
-        analysisResult = await analyzeWithClaude(clean_text, segments, user_objective || "discovery", source_type, confidence_level);
+        analysisResult = await analyzeWithLovableAI(clean_text, segments, user_objective || "discovery", source_type, confidence_level);
       } catch (err: unknown) {
-        console.error("Claude API error, falling back to local:", err);
+        console.error("Lovable AI error, falling back to local:", err);
         await logOps(supabase, "analyze_llm_fallback", "warning", document_id, user_id, { error: String(err) });
         analysisResult = buildFallbackAnalysis(clean_text, segments, confidence_level);
       }
