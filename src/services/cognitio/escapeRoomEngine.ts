@@ -58,14 +58,16 @@ export interface RoomGenerationInput {
   difficulty_base: number;
   includeCodeLocks: boolean;
   narrative_contexts: Record<string, string>;
+  main_topic?: string;
 }
 
 /**
  * Generate a sequence of escape rooms from concepts.
  * Each room has a purpose, lock, puzzles, rewards, and hints.
+ * Tries AI-powered puzzle generation first, falls back to local templates.
  */
-export function generateEscapeRooms(input: RoomGenerationInput): EscapeRoom[] {
-  const { concepts, roomCount, difficulty_base, includeCodeLocks, narrative_contexts } = input;
+export async function generateEscapeRooms(input: RoomGenerationInput): Promise<EscapeRoom[]> {
+  const { concepts, roomCount, difficulty_base, includeCodeLocks, narrative_contexts, main_topic } = input;
   const rooms: EscapeRoom[] = [];
 
   // Determine room type sequence based on count
@@ -86,9 +88,17 @@ export function generateEscapeRooms(input: RoomGenerationInput): EscapeRoom[] {
     // Create lock for this room
     const lock = createRoomLock(i, rooms, codeParts, includeCodeLocks);
 
-    // Create puzzles from concepts
+    // Create puzzles — try AI first, fall back to local templates
     const bricks = ROOM_TYPE_TO_BRICKS[roomType] ?? ["OBSERVATION"];
-    const puzzles = generateRoomPuzzles(roomConcepts, bricks, difficulty, i, roomCount, codeParts);
+    let puzzles: EscapePuzzle[];
+
+    if (main_topic && roomConcepts.length > 0) {
+      puzzles = await generateRoomPuzzlesWithAI(
+        roomConcepts, bricks, difficulty, i, roomCount, codeParts, main_topic, roomType
+      );
+    } else {
+      puzzles = generateRoomPuzzlesLocal(roomConcepts, bricks, difficulty, i, roomCount, codeParts);
+    }
 
     // Create reward items
     const rewards = generateRoomRewards(roomConcepts, i, roomType);
