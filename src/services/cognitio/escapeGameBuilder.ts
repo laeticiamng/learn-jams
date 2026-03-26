@@ -144,7 +144,7 @@ export async function convertMissionToEscapeGame(
   universeProfile: MissionUniverseProfile,
   mainTopic: string,
   domain?: string,
-): EscapeGameSession {
+): Promise<EscapeGameSession> {
   const cleanMainTopic = sanitizeMissionDisplayText(mainTopic) || mainTopic;
   const subTheme = selectMissionSubTheme(missionFamily, cleanMainTopic);
 
