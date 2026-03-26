@@ -82,12 +82,13 @@ export async function buildEscapeGameSession(input: EscapeGameBuildInput): Promi
   const roomCount = Math.max(3, blueprint.room_count);
 
   // 3. Generate escape rooms from concepts
-  const rooms = generateEscapeRooms({
+  const rooms = await generateEscapeRooms({
     concepts,
     roomCount,
     difficulty_base: getDifficultyBase(universe_profile),
     includeCodeLocks: roomCount >= 4,
     narrative_contexts: subTheme.roomNarratives,
+    main_topic: cleanTopic,
   });
 
   // 4. If blueprint has a boss, add it as the final room
