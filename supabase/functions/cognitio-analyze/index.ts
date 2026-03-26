@@ -15,8 +15,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
-const PROMPT_VERSION = "m2-analyze-v3.0";
+const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+const PROMPT_VERSION = "m2-analyze-v3.1";
 
 // Document Understanding Layer — System prompt for pre-comprehension
 const DOCUMENT_UNDERSTANDING_SYSTEM_PROMPT = `Tu es la couche de compréhension globale de COGNITIO.
