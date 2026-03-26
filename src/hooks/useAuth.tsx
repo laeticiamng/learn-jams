@@ -1,5 +1,5 @@
 import { useState, useEffect, createContext, useContext, useRef, ReactNode } from "react";
-import { supabase, getSupabaseConfigStatus } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 import type { User, Session, AuthError } from "@supabase/supabase-js";
 
 // ---------------------------------------------------------------------------
@@ -47,28 +47,12 @@ export function classifyAuthError(err: unknown): ClassifiedAuthError {
     msg.includes("Load failed") ||        // Safari
     msg.includes("network request failed") // React Native
   ) {
-    // Distinguish: is it because the config is bad, or a real network problem?
-    const config = getSupabaseConfigStatus();
-    if (!config.configured) {
-      return {
-        kind: "config_error",
-        message: config.diagnosticMessage,
-        raw: err,
-      };
-    }
     return { kind: "service_unreachable", message: msg, raw: err };
   }
 
   // TypeError before fetch (e.g. invalid URL constructed)
   if (err instanceof TypeError) {
-    const config = getSupabaseConfigStatus();
-    if (!config.configured) {
-      return {
-        kind: "config_error",
-        message: config.diagnosticMessage,
-        raw: err,
-      };
-    }
+    return { kind: "service_unreachable", message: msg, raw: err };
   }
 
   return { kind: "unexpected", message: msg, raw: err };
@@ -141,21 +125,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     email: string,
     password: string,
   ): Promise<{ error: ClassifiedAuthError | null }> => {
-    // Pre-flight: abort early if Supabase is not configured
-    const config = getSupabaseConfigStatus();
-    if (!config.configured) {
-      console.error(
-        "[COGNITIO] signIn aborted — Supabase not configured:",
-        config.diagnosticMessage,
-      );
-      return {
-        error: {
-          kind: "config_error",
-          message: config.diagnosticMessage,
-        },
-      };
-    }
-
     try {
       console.info("[COGNITIO] signIn — calling signInWithPassword");
       const { error } = await supabase.auth.signInWithPassword({
