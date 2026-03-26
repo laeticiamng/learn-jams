@@ -25,6 +25,7 @@ import UseCasesSection from "@/components/home/UseCasesSection";
 import TrustSection from "@/components/home/TrustSection";
 import SeedDemoSection from "@/components/home/SeedDemoSection";
 import ScienceSection from "@/components/home/ScienceSection";
+import ExplainerVideoSection from "@/components/home/ExplainerVideoSection";
 import { SectionErrorBoundary } from "@/components/SectionErrorBoundary";
 
 const ease = [0.25, 0.46, 0.45, 0.94] as [number, number, number, number];
@@ -127,6 +128,13 @@ export default function Index() {
       {/* Trust badges */}
       <SectionErrorBoundary name="Trust">
         <TrustSection />
+      </SectionErrorBoundary>
+
+      <SectionDivider />
+
+      {/* Explainer Video */}
+      <SectionErrorBoundary name="ExplainerVideo">
+        <ExplainerVideoSection />
       </SectionErrorBoundary>
 
       <SectionDivider />
