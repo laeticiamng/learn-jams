@@ -60,7 +60,7 @@ export interface EscapeGameBuildInput {
  * This is the main entry point that transforms a standard
  * mission into a full escape game experience.
  */
-export function buildEscapeGameSession(input: EscapeGameBuildInput): EscapeGameSession {
+export async function buildEscapeGameSession(input: EscapeGameBuildInput): Promise<EscapeGameSession> {
   const {
     blueprint,
     concepts,
