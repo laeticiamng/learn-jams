@@ -136,7 +136,7 @@ export async function buildEscapeGameSession(input: EscapeGameBuildInput): Promi
  * Convert an existing MissionContent to an escape game session.
  * This allows backwards compatibility with existing missions.
  */
-export function convertMissionToEscapeGame(
+export async function convertMissionToEscapeGame(
   mission: MissionContent,
   missionId: string,
   userId: string,
