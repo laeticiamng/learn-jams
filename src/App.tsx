@@ -61,7 +61,6 @@ const queryClient = new QueryClient({
 
 const App = () => (
   <ErrorBoundary>
-    <EnvValidationGuard>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Toaster />
@@ -115,7 +114,7 @@ const App = () => (
           </BrowserRouter>
         </TooltipProvider>
       </QueryClientProvider>
-    </EnvValidationGuard>
+    
 
   </ErrorBoundary>
 );
