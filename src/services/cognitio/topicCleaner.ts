@@ -247,11 +247,13 @@ export function cleanTopicString(raw: string): string {
  */
 export function validateTopic(topic: string): string | null {
   const trimmed = topic.trim();
+  // Also test OCR-normalized form to catch broken words like "m erci"
+  const normalized = normalizeOcrSpaces(trimmed);
 
   if (trimmed.length < 3) return "Too short";
 
   for (const { pattern, reason } of FORBIDDEN_TOPIC_PATTERNS) {
-    if (pattern.test(trimmed)) return reason;
+    if (pattern.test(trimmed) || pattern.test(normalized)) return reason;
   }
 
   return null;
