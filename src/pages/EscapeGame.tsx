@@ -89,7 +89,7 @@ export default function EscapeGame() {
         const resolvedDomain = missionFamilyToDomain(missionFamily, mainTopic);
 
         // Convert to escape game session (enriched with immersive universe profiles)
-        const escapeSession = convertMissionToEscapeGame(
+        const escapeSession = await convertMissionToEscapeGame(
           missionContent,
           id!,
           user!.id,

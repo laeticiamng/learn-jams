@@ -60,7 +60,7 @@ export interface EscapeGameBuildInput {
  * This is the main entry point that transforms a standard
  * mission into a full escape game experience.
  */
-export function buildEscapeGameSession(input: EscapeGameBuildInput): EscapeGameSession {
+export async function buildEscapeGameSession(input: EscapeGameBuildInput): Promise<EscapeGameSession> {
   const {
     blueprint,
     concepts,
@@ -82,12 +82,13 @@ export function buildEscapeGameSession(input: EscapeGameBuildInput): EscapeGameS
   const roomCount = Math.max(3, blueprint.room_count);
 
   // 3. Generate escape rooms from concepts
-  const rooms = generateEscapeRooms({
+  const rooms = await generateEscapeRooms({
     concepts,
     roomCount,
     difficulty_base: getDifficultyBase(universe_profile),
     includeCodeLocks: roomCount >= 4,
     narrative_contexts: subTheme.roomNarratives,
+    main_topic: cleanTopic,
   });
 
   // 4. If blueprint has a boss, add it as the final room
@@ -135,7 +136,7 @@ export function buildEscapeGameSession(input: EscapeGameBuildInput): EscapeGameS
  * Convert an existing MissionContent to an escape game session.
  * This allows backwards compatibility with existing missions.
  */
-export function convertMissionToEscapeGame(
+export async function convertMissionToEscapeGame(
   mission: MissionContent,
   missionId: string,
   userId: string,
@@ -143,7 +144,7 @@ export function convertMissionToEscapeGame(
   universeProfile: MissionUniverseProfile,
   mainTopic: string,
   domain?: string,
-): EscapeGameSession {
+): Promise<EscapeGameSession> {
   const cleanMainTopic = sanitizeMissionDisplayText(mainTopic) || mainTopic;
   const subTheme = selectMissionSubTheme(missionFamily, cleanMainTopic);
 
@@ -476,9 +477,9 @@ export interface ImmersiveEscapeSession {
  * engine (dependency graphs, pedagogical objects, camera waypoints).
  * Use this when the full analysis pipeline output is available.
  */
-export function buildImmersiveEscapeSession(
+export async function buildImmersiveEscapeSession(
   input: ImmersiveEscapeBuildInput,
-): ImmersiveEscapeSession {
+): Promise<ImmersiveEscapeSession> {
   // 1. Build the immersive 3D layer
   const immersive = buildImmersiveEscapeGame({
     user_id: input.user_id,
@@ -509,12 +510,13 @@ export function buildImmersiveEscapeSession(
   const subTheme = selectMissionSubTheme(input.mission_family, cleanImmersiveTopic);
   const roomCount = Math.max(3, immersive.session_metadata.total_rooms + 2);
 
-  const rooms = generateEscapeRooms({
+  const rooms = await generateEscapeRooms({
     concepts: normalizedConcepts,
     roomCount,
     difficulty_base: getDifficultyBase(input.universe_profile),
     includeCodeLocks: roomCount >= 4,
     narrative_contexts: subTheme.roomNarratives,
+    main_topic: cleanImmersiveTopic,
   });
 
   const narrative = generateNarrativeArc({
