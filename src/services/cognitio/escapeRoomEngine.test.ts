@@ -267,14 +267,14 @@ describe("createMetaPuzzle", () => {
 // ==================== ROOM GENERATION ====================
 
 describe("generateEscapeRooms", () => {
-  it("generates the correct number of rooms", () => {
+  it("generates the correct number of rooms", async () => {
     const concepts = [
       makeConcept("Alpha"),
       makeConcept("Beta"),
       makeConcept("Gamma"),
       makeConcept("Delta"),
     ];
-    const rooms = generateEscapeRooms({
+    const rooms = await generateEscapeRooms({
       concepts,
       roomCount: 3,
       difficulty_base: 2,
@@ -284,9 +284,9 @@ describe("generateEscapeRooms", () => {
     expect(rooms).toHaveLength(3);
   });
 
-  it("first room is unlocked, others are not", () => {
+  it("first room is unlocked, others are not", async () => {
     const concepts = [makeConcept("A"), makeConcept("B"), makeConcept("C")];
-    const rooms = generateEscapeRooms({
+    const rooms = await generateEscapeRooms({
       concepts,
       roomCount: 3,
       difficulty_base: 2,
@@ -298,9 +298,9 @@ describe("generateEscapeRooms", () => {
     expect(rooms[2].unlocked).toBe(false);
   });
 
-  it("assigns correct room types — briefing start, final end", () => {
+  it("assigns correct room types — briefing start, final end", async () => {
     const concepts = [makeConcept("A"), makeConcept("B"), makeConcept("C"), makeConcept("D")];
-    const rooms = generateEscapeRooms({
+    const rooms = await generateEscapeRooms({
       concepts,
       roomCount: 4,
       difficulty_base: 1,
@@ -311,9 +311,9 @@ describe("generateEscapeRooms", () => {
     expect(rooms[rooms.length - 1].room_type).toBe("final");
   });
 
-  it("generates puzzles for each room", () => {
+  it("generates puzzles for each room", async () => {
     const concepts = [makeConcept("A"), makeConcept("B"), makeConcept("C")];
-    const rooms = generateEscapeRooms({
+    const rooms = await generateEscapeRooms({
       concepts,
       roomCount: 2,
       difficulty_base: 2,
@@ -325,9 +325,9 @@ describe("generateEscapeRooms", () => {
     }
   });
 
-  it("generates rewards for each room", () => {
+  it("generates rewards for each room", async () => {
     const concepts = [makeConcept("A"), makeConcept("B")];
-    const rooms = generateEscapeRooms({
+    const rooms = await generateEscapeRooms({
       concepts,
       roomCount: 2,
       difficulty_base: 2,
@@ -339,9 +339,9 @@ describe("generateEscapeRooms", () => {
     }
   });
 
-  it("generates 4-level hints", () => {
+  it("generates 4-level hints", async () => {
     const concepts = [makeConcept("A"), makeConcept("B")];
-    const rooms = generateEscapeRooms({
+    const rooms = await generateEscapeRooms({
       concepts,
       roomCount: 2,
       difficulty_base: 2,
@@ -350,13 +350,13 @@ describe("generateEscapeRooms", () => {
     });
     for (const room of rooms) {
       expect(room.hints).toHaveLength(4);
-      expect(room.hints.map(h => h.level)).toEqual([1, 2, 3, 4]);
+      expect(room.hints.map((h: { level: number }) => h.level)).toEqual([1, 2, 3, 4]);
     }
   });
 
-  it("injects meta-puzzle in final room with enough concepts", () => {
+  it("injects meta-puzzle in final room with enough concepts", async () => {
     const concepts = [makeConcept("A"), makeConcept("B"), makeConcept("C"), makeConcept("D")];
-    const rooms = generateEscapeRooms({
+    const rooms = await generateEscapeRooms({
       concepts,
       roomCount: 3,
       difficulty_base: 2,
@@ -364,13 +364,13 @@ describe("generateEscapeRooms", () => {
       narrative_contexts: {},
     });
     const finalRoom = rooms[rooms.length - 1];
-    const metaPuzzle = finalRoom.puzzles.find(p => p.puzzle_type === "active_generation" && p.prompt.includes("MÉTA-PUZZLE"));
+    const metaPuzzle = finalRoom.puzzles.find((p: { puzzle_type: string; prompt: string }) => p.puzzle_type === "active_generation" && p.prompt.includes("MÉTA-PUZZLE"));
     expect(metaPuzzle).toBeDefined();
   });
 
-  it("generates discoverables for each room", () => {
+  it("generates discoverables for each room", async () => {
     const concepts = [makeConcept("A"), makeConcept("B"), makeConcept("C")];
-    const rooms = generateEscapeRooms({
+    const rooms = await generateEscapeRooms({
       concepts,
       roomCount: 2,
       difficulty_base: 2,
@@ -382,9 +382,9 @@ describe("generateEscapeRooms", () => {
     }
   });
 
-  it("difficulty increases through rooms", () => {
+  it("difficulty increases through rooms", async () => {
     const concepts = Array.from({ length: 8 }, (_, i) => makeConcept(`C${i}`));
-    const rooms = generateEscapeRooms({
+    const rooms = await generateEscapeRooms({
       concepts,
       roomCount: 5,
       difficulty_base: 1,
