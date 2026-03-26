@@ -42,6 +42,16 @@ const FORBIDDEN_TOPIC_PATTERNS: { pattern: RegExp; reason: string }[] = [
   { pattern: /^(?:www\.|http)/i, reason: "URL" },
   { pattern: /^[^a-zA-ZÀ-ÿ]*$/, reason: "No alphabetic characters" },
   { pattern: /^Sujet\s+principal\s*:/i, reason: "Meta-label" },
+  // Presentation closing slides
+  { pattern: /merci\s+(?:pour\s+)?(?:votre|de\s+votre)\s+attention/i, reason: "Closing slide" },
+  { pattern: /(?:des\s+)?questions\s*\?\s*(?:des\s+)?remarques/i, reason: "Closing slide" },
+  { pattern: /^(?:des\s+)?questions\s*\??\s*$/i, reason: "Closing slide" },
+  { pattern: /^merci\b/i, reason: "Closing slide" },
+  { pattern: /^fin\s*(?:du\s+cours|de\s+la\s+présentation)?\s*$/i, reason: "Closing slide" },
+  { pattern: /^(?:bonne?\s+)?(?:révision|continuation|chance|journée|soirée)\s*!?\s*$/i, reason: "Closing slide" },
+  { pattern: /^(?:take[\s-]*home|key\s+(?:points|messages?|takeaways?))\s*$/i, reason: "Closing slide" },
+  { pattern: /^(?:any\s+)?questions?\s*\??\s*$/i, reason: "Closing slide (EN)" },
+  { pattern: /^thank\s+you/i, reason: "Closing slide (EN)" },
   // P0: Enhanced composite header rejection
   { pattern: /\bR2C\b/i, reason: "Contains R2C classification" },
   { pattern: /\bRang\s+[A-Z]\b/i, reason: "Contains Rang classification" },
@@ -59,6 +69,9 @@ const FORBIDDEN_TOPIC_PATTERNS: { pattern: RegExp; reason: string }[] = [
 
 // Noise to strip from topic
 const TOPIC_NOISE_STRIPS: RegExp[] = [
+  // Strip leading slide numbers (e.g. "15 " or "3. " or "12 - ")
+  /^\d{1,3}\s*[-–—.:)]\s*/,
+  /^\d{1,3}\s+(?=[A-ZÀ-Ÿa-zà-ÿ])/,
   // P0: Aggressive R2C block removal — handles "R2C : Rang A en noir - Rang B en ..."
   /R2C\s*:?\s*(?:Rang\s+[A-Z]\s*(?:en\s+)?(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)?\s*[-–—]?\s*)+/gi,
   /\bCOM\s+R2C\s*:\s*/gi,
