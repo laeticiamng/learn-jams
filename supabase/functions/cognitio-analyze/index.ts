@@ -774,11 +774,10 @@ function cleanTextForFallback(text: string): string {
   const lines = text.split("\n");
   const cleaned: string[] = [];
   for (const line of lines) {
-    const trimmed = line.trim();
+    const trimmed = normalizeOcrSpacedText(line.trim());
     if (trimmed.length === 0) { cleaned.push(""); continue; }
     if (trimmed.length <= 2 && /^[^a-zA-ZÀ-ÿ0-9]/.test(trimmed)) continue;
     if (EDGE_NOISE_LINE_PATTERNS.some(p => p.test(trimmed))) continue;
-    // Clean inline Rang labels
     let cl = trimmed.replace(/\s*\(?\s*Rang\s+[A-Z]\s*\)?\s*/gi, " ");
     cl = cl.replace(/\s*\(?\s*en\s+(?:NOIR|BLEU|ROUGE|VERT|GRIS|BRUN|MARRON)\s*\)?\s*/gi, " ");
     cl = cl.replace(/\s{2,}/g, " ").trim();
