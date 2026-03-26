@@ -477,9 +477,9 @@ export interface ImmersiveEscapeSession {
  * engine (dependency graphs, pedagogical objects, camera waypoints).
  * Use this when the full analysis pipeline output is available.
  */
-export function buildImmersiveEscapeSession(
+export async function buildImmersiveEscapeSession(
   input: ImmersiveEscapeBuildInput,
-): ImmersiveEscapeSession {
+): Promise<ImmersiveEscapeSession> {
   // 1. Build the immersive 3D layer
   const immersive = buildImmersiveEscapeGame({
     user_id: input.user_id,
