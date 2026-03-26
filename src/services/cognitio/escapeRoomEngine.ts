@@ -303,7 +303,79 @@ export function checkUnlockableRooms(
 
 // ---------- Puzzle Generation ----------
 
-function generateRoomPuzzles(
+/**
+ * Try AI-powered puzzle generation first, fall back to local templates.
+ */
+async function generateRoomPuzzlesWithAI(
+  concepts: NormalizedConcept[],
+  bricks: BrickType[],
+  difficulty: number,
+  roomIndex: number,
+  totalRooms: number,
+  codeParts: string[],
+  mainTopic: string,
+  roomType: string
+): Promise<EscapePuzzle[]> {
+  try {
+    const aiResult = await generateAIPuzzles(
+      concepts, roomType, difficulty, bricks, mainTopic, roomIndex, totalRooms
+    );
+
+    if (aiResult.ai_generated && aiResult.puzzles.length > 0) {
+      const puzzles: EscapePuzzle[] = [];
+
+      for (let i = 0; i < aiResult.puzzles.length; i++) {
+        const aiPuzzle = aiResult.puzzles[i];
+        const puzzleId = `puzzle_${roomIndex}_${i}_${crypto.randomUUID().slice(0, 8)}`;
+
+        // Code lock contribution
+        const isCodeContributor = roomIndex < totalRooms - 1 && i === 0;
+        const codeValue = isCodeContributor ? String(Math.floor(Math.random() * 10)) : undefined;
+        if (codeValue) codeParts.push(codeValue);
+
+        puzzles.push({
+          id: puzzleId,
+          puzzle_type: aiPuzzle.puzzle_type as any,
+          brick_type: aiPuzzle.brick_type as BrickType,
+          prompt: sanitizeMissionDisplayText(aiPuzzle.prompt),
+          instructions: buildPuzzleInstructions(aiPuzzle.puzzle_type),
+          options: aiPuzzle.options.map(o => sanitizeMissionDisplayText(o)),
+          correct_answer: sanitizeMissionDisplayText(aiPuzzle.correct_answer),
+          explanation: sanitizeMissionDisplayText(aiPuzzle.explanation),
+          concept_key: aiPuzzle.concept_key,
+          bloom_level: aiPuzzle.bloom_level as any,
+          difficulty,
+          code_contribution: codeValue
+            ? { position: codeParts.length - 1, value: codeValue }
+            : undefined,
+          unlocks: buildPuzzleUnlock(roomIndex, i, aiResult.puzzles.length, totalRooms),
+          solved: false,
+          attempts: 0,
+        });
+      }
+
+      // Add synthesis puzzle for rooms with enough concepts
+      if (concepts.length >= 2 && roomIndex > 0) {
+        puzzles.push(createSynthesisPuzzle(concepts.slice(0, 3), roomIndex, difficulty));
+      }
+
+      // Add bonus puzzle in middle room
+      if (roomIndex === Math.floor(totalRooms / 2) && concepts.length >= 1) {
+        puzzles.push(createBonusPuzzle(concepts[0], roomIndex, difficulty));
+      }
+
+      return puzzles;
+    }
+  } catch (err) {
+    console.warn("[AI_PUZZLES] AI generation failed, using local fallback:", err);
+  }
+
+  // Fallback to local generation
+  return generateRoomPuzzlesLocal(concepts, bricks, difficulty, roomIndex, totalRooms, codeParts);
+}
+
+/** Local template-based puzzle generation (fallback) */
+function generateRoomPuzzlesLocal(
   concepts: NormalizedConcept[],
   bricks: BrickType[],
   difficulty: number,
@@ -319,7 +391,6 @@ function generateRoomPuzzles(
     const puzzleType = mapBrickToExtended(brick);
     const puzzleId = `puzzle_${roomIndex}_${i}_${crypto.randomUUID().slice(0, 8)}`;
 
-    // Determine if this puzzle contributes to a code lock
     const isCodeContributor = roomIndex < totalRooms - 1 && i === 0;
     const codeValue = isCodeContributor ? String(Math.floor(Math.random() * 10)) : undefined;
 
@@ -334,7 +405,6 @@ function generateRoomPuzzles(
 
     const options = shuffleArray([concept.normalized_label, ...distractors]);
 
-    // Sanitize all display text to prevent editorial noise from reaching the UI
     const sanitizedPrompt = sanitizeMissionDisplayText(buildPuzzlePrompt(brick, concept, puzzleType));
     const sanitizedOptions = options.map(o => sanitizeMissionDisplayText(o)).filter(o => o.length >= 2);
     const sanitizedAnswer = sanitizeMissionDisplayText(concept.normalized_label);
@@ -363,11 +433,10 @@ function generateRoomPuzzles(
 
   // Add an active generation puzzle for rooms with enough concepts
   if (concepts.length >= 2 && roomIndex > 0) {
-    const synthConcepts = concepts.slice(0, 3);
-    puzzles.push(createSynthesisPuzzle(synthConcepts, roomIndex, difficulty));
+    puzzles.push(createSynthesisPuzzle(concepts.slice(0, 3), roomIndex, difficulty));
   }
 
-  // Add a surprise bonus puzzle in the middle room (hidden challenge)
+  // Add a surprise bonus puzzle in the middle room
   if (roomIndex === Math.floor(totalRooms / 2) && concepts.length >= 1) {
     puzzles.push(createBonusPuzzle(concepts[0], roomIndex, difficulty));
   }
