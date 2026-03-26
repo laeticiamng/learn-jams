@@ -510,12 +510,13 @@ export async function buildImmersiveEscapeSession(
   const subTheme = selectMissionSubTheme(input.mission_family, cleanImmersiveTopic);
   const roomCount = Math.max(3, immersive.session_metadata.total_rooms + 2);
 
-  const rooms = generateEscapeRooms({
+  const rooms = await generateEscapeRooms({
     concepts: normalizedConcepts,
     roomCount,
     difficulty_base: getDifficultyBase(input.universe_profile),
     includeCodeLocks: roomCount >= 4,
     narrative_contexts: subTheme.roomNarratives,
+    main_topic: cleanImmersiveTopic,
   });
 
   const narrative = generateNarrativeArc({
