@@ -59,7 +59,10 @@ export function getRolePermissions(role: Role): Permission[] {
 }
 
 /**
- * Check if user has admin role (for route guards).
+ * Check if user has admin role based on user_metadata.
+ * @deprecated Use `useIsAdmin()` hook instead — it checks the server-side
+ * `user_roles` table which cannot be manipulated by the user.
+ * This function is kept for test compatibility only.
  */
 export function isAdmin(userMetadata: Record<string, unknown> | null | undefined): boolean {
   if (!userMetadata) return false;

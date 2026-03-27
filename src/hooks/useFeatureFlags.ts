@@ -2,11 +2,11 @@
 // Hook: useFeatureFlags — Runtime feature flag resolution
 // ============================================================
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { resolveFeatureFlags, isFeatureEnabled } from "@/services/product/featureFlags.service";
 import { DEFAULT_FLAGS, FEATURE_FLAG_KEYS, type ResolvedFlags, type FeatureFlagKey } from "@/domain/product/featureFlags.types";
-import { isAdmin } from "@/security/roles";
 
 /** All flags forced to true — used for admin accounts */
 const ALL_FLAGS_ENABLED: ResolvedFlags = Object.fromEntries(
@@ -15,7 +15,7 @@ const ALL_FLAGS_ENABLED: ResolvedFlags = Object.fromEntries(
 
 export function useFeatureFlags() {
   const { user } = useAuth();
-  const userIsAdmin = useMemo(() => isAdmin(user?.user_metadata), [user?.user_metadata]);
+  const { isAdmin: userIsAdmin } = useIsAdmin();
   const [flags, setFlags] = useState<ResolvedFlags>(DEFAULT_FLAGS);
   const [loading, setLoading] = useState(true);
 
