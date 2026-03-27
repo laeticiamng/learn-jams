@@ -1,12 +1,12 @@
 // ============================================================
 // AdminRoute — Route guard that requires admin role.
-// Wraps ProtectedRoute (auth check) + admin metadata check.
+// Uses server-side user_roles table check (not user_metadata).
 // ============================================================
 
 import { Navigate } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
-import { isAdmin } from "@/security/roles";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import ProtectedRoute from "./ProtectedRoute";
+import PageLoadingFallback from "@/components/PageLoadingFallback";
 
 export default function AdminRoute({ children }: { children: React.ReactNode }) {
   return (
@@ -17,9 +17,11 @@ export default function AdminRoute({ children }: { children: React.ReactNode }) 
 }
 
 function AdminGate({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
+  const { isAdmin, loading } = useIsAdmin();
 
-  if (!isAdmin(user?.user_metadata)) {
+  if (loading) return <PageLoadingFallback />;
+
+  if (!isAdmin) {
     return <Navigate to="/" replace />;
   }
 
