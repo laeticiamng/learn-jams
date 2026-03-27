@@ -2,6 +2,7 @@
 // SeedTransformationCard — Single seed mission card
 // ============================================================
 
+import { forwardRef } from "react";
 import { motion } from "framer-motion";
 import { BookOpen, Play, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
