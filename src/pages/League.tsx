@@ -64,51 +64,37 @@ export default function League() {
       setFetchError(false);
 
       try {
-        // Get this week's points aggregated by user
-        const { data: pointsData, error: pointsErr } = await supabase
-          .from("league_points")
-          .select("user_id, points")
-          .eq("week", currentWeek);
+        // Get leaderboard from secure view (no raw user_ids exposed)
+        const { data: leaderboardData, error: lbErr } = await supabase
+          .from("league_leaderboard" as any)
+          .select("display_name, avatar_url, week, total_points")
+          .eq("week", currentWeek)
+          .order("total_points", { ascending: false })
+          .limit(50);
 
-        if (pointsErr) throw pointsErr;
+        if (lbErr) throw lbErr;
 
-        // Aggregate points per user
-        const pointsMap = new Map<string, number>();
-        (pointsData || []).forEach((p) => {
-          pointsMap.set(p.user_id, (pointsMap.get(p.user_id) || 0) + p.points);
-        });
-
-        // Get profiles for all users with points
-        const userIds = Array.from(pointsMap.keys());
-        const profilesMap = new Map<string, { display_name: string | null; university: string | null; country: string | null }>();
-        if (userIds.length > 0) {
-          const { data: profiles, error: profilesErr } = await supabase
-            .from("profiles")
-            .select("user_id, display_name, university, country")
-            .in("user_id", userIds);
-          if (profilesErr) throw profilesErr;
-          (profiles || []).forEach((p) => {
-            profilesMap.set(p.user_id, { display_name: p.display_name, university: (p as Record<string, unknown>).university as string | null, country: (p as Record<string, unknown>).country as string | null });
-          });
-        }
-
-        // Build leaderboard
-        const board: LeaderboardEntry[] = userIds
-          .map(uid => ({
-            user_id: uid,
-            total_points: pointsMap.get(uid) || 0,
-            ...(profilesMap.get(uid) || { display_name: null, university: null, country: null }),
-          }))
-          .sort((a, b) => b.total_points - a.total_points)
-          .slice(0, 50);
+        // Build leaderboard from view data
+        const board: LeaderboardEntry[] = (leaderboardData || []).map((row: any) => ({
+          user_id: "", // hidden for privacy
+          total_points: Number(row.total_points) || 0,
+          display_name: row.display_name,
+          university: null,
+          country: null,
+        }));
 
         setLeaderboard(board);
 
-        // My stats
+        // My stats — query own points directly (RLS scoped to own)
         if (user) {
-          const myPts = pointsMap.get(user.id) || 0;
+          const { data: myData } = await supabase
+            .from("league_points")
+            .select("points")
+            .eq("user_id", user.id)
+            .eq("week", currentWeek);
+          const myPts = (myData || []).reduce((sum, r) => sum + r.points, 0);
           setMyPoints(myPts);
-          const rank = board.findIndex(e => e.user_id === user.id);
+          const rank = board.findIndex(e => e.display_name === user.user_metadata?.display_name);
           setMyRank(rank >= 0 ? rank + 1 : null);
         }
 
