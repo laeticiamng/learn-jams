@@ -2782,7 +2782,15 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      league_leaderboard: {
+        Row: {
+          avatar_url: string | null
+          display_name: string | null
+          total_points: number | null
+          week: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       get_platform_stats: { Args: never; Returns: Json }
