@@ -1027,6 +1027,13 @@ export type Database = {
             referencedRelation: "guardians"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "guardian_notification_preferences_guardian_id_fkey"
+            columns: ["guardian_id"]
+            isOneToOne: false
+            referencedRelation: "guardians_safe"
+            referencedColumns: ["id"]
+          },
         ]
       }
       guardian_notifications: {
@@ -1069,6 +1076,13 @@ export type Database = {
             columns: ["guardian_id"]
             isOneToOne: false
             referencedRelation: "guardians"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guardian_notifications_guardian_id_fkey"
+            columns: ["guardian_id"]
+            isOneToOne: false
+            referencedRelation: "guardians_safe"
             referencedColumns: ["id"]
           },
         ]
@@ -2499,6 +2513,13 @@ export type Database = {
             referencedRelation: "guardians"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "user_guardians_guardian_id_fkey"
+            columns: ["guardian_id"]
+            isOneToOne: false
+            referencedRelation: "guardians_safe"
+            referencedColumns: ["id"]
+          },
         ]
       }
       user_minor_profiles: {
@@ -2782,6 +2803,33 @@ export type Database = {
       }
     }
     Views: {
+      guardians_safe: {
+        Row: {
+          created_at: string | null
+          display_name: string | null
+          email: string | null
+          id: string | null
+          invite_expires_at: string | null
+          invite_used_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          display_name?: string | null
+          email?: string | null
+          id?: string | null
+          invite_expires_at?: string | null
+          invite_used_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          display_name?: string | null
+          email?: string | null
+          id?: string | null
+          invite_expires_at?: string | null
+          invite_used_at?: string | null
+        }
+        Relationships: []
+      }
       league_leaderboard: {
         Row: {
           avatar_url: string | null
