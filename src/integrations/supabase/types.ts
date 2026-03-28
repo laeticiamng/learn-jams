@@ -2830,17 +2830,17 @@ export type Database = {
         }
         Relationships: []
       }
-      league_leaderboard: {
-        Row: {
-          avatar_url: string | null
-          display_name: string | null
-          total_points: number | null
-          week: string | null
-        }
-        Relationships: []
-      }
     }
     Functions: {
+      get_leaderboard: {
+        Args: { p_week?: string }
+        Returns: {
+          avatar_url: string
+          display_name: string
+          total_points: number
+          week: string
+        }[]
+      }
       get_platform_stats: { Args: never; Returns: Json }
       has_role: {
         Args: {
