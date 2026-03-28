@@ -64,13 +64,9 @@ export default function League() {
       setFetchError(false);
 
       try {
-        // Get leaderboard from secure view (no raw user_ids exposed)
+        // Get leaderboard from secure SECURITY DEFINER function
         const { data: leaderboardData, error: lbErr } = await supabase
-          .from("league_leaderboard" as any)
-          .select("display_name, avatar_url, week, total_points")
-          .eq("week", currentWeek)
-          .order("total_points", { ascending: false })
-          .limit(50);
+          .rpc("get_leaderboard", { p_week: currentWeek } as any);
 
         if (lbErr) throw lbErr;
 

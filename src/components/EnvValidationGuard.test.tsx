@@ -2,16 +2,23 @@ import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { EnvValidationGuard } from "./EnvValidationGuard";
 
-vi.mock("@/security/env", () => ({
-  validateClientEnv: vi.fn(),
+vi.mock("@/integrations/supabase/client", () => ({
+  getSupabaseConfigStatus: vi.fn(),
+  supabase: {},
 }));
 
-import { validateClientEnv } from "@/security/env";
-const mockValidate = vi.mocked(validateClientEnv);
+import { getSupabaseConfigStatus } from "@/integrations/supabase/client";
+const mockGetStatus = vi.mocked(getSupabaseConfigStatus);
 
 describe("EnvValidationGuard", () => {
   it("renders children when env is valid", () => {
-    mockValidate.mockReturnValue({ valid: true, missing: [], warnings: [] });
+    mockGetStatus.mockReturnValue({
+      configured: true,
+      hasUrl: true,
+      hasKey: true,
+      urlValid: true,
+      diagnosticMessage: "",
+    });
 
     render(
       <EnvValidationGuard>
@@ -23,10 +30,12 @@ describe("EnvValidationGuard", () => {
   });
 
   it("shows error screen when env is invalid", () => {
-    mockValidate.mockReturnValue({
-      valid: false,
-      missing: ["VITE_SUPABASE_URL (Supabase project URL)"],
-      warnings: [],
+    mockGetStatus.mockReturnValue({
+      configured: false,
+      hasUrl: false,
+      hasKey: true,
+      urlValid: false,
+      diagnosticMessage: "",
     });
 
     render(
@@ -41,10 +50,12 @@ describe("EnvValidationGuard", () => {
   });
 
   it("shows warnings when present", () => {
-    mockValidate.mockReturnValue({
-      valid: false,
-      missing: ["VITE_SUPABASE_URL (Supabase project URL)"],
-      warnings: ["SOME_OPTIONAL_KEY not set (optional: description)"],
+    mockGetStatus.mockReturnValue({
+      configured: false,
+      hasUrl: true,
+      hasKey: false,
+      urlValid: false,
+      diagnosticMessage: "URL format invalid — expected https://<ref>.supabase.co",
     });
 
     render(
@@ -53,6 +64,6 @@ describe("EnvValidationGuard", () => {
       </EnvValidationGuard>
     );
 
-    expect(screen.getByText(/SOME_OPTIONAL_KEY/)).toBeInTheDocument();
+    expect(screen.getByText(/URL format invalid/)).toBeInTheDocument();
   });
 });
