@@ -107,6 +107,7 @@ const App = () => (
                     </Routes>
                   </PageTransition>
                 </Suspense>
+                <OnboardingWrapper />
                 <CookieConsent />
                 <DevDiagnosticsPanel />
                 </AudioProvider>
