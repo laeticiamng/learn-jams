@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Save, Loader2, Trash2, CreditCard, ArrowLeft, GraduationCap, Globe, BookOpen, Brain, Shield } from "lucide-react";
+import { Save, Loader2, Trash2, CreditCard, ArrowLeft, GraduationCap, Globe, BookOpen, Brain, Shield, Camera, Lock, Eye, EyeOff } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
@@ -27,6 +27,9 @@ import { ProgressTimelineCard } from "@/components/cognitio/progress/ProgressTim
 import { CalibrationTrendCard } from "@/components/cognitio/progress/CalibrationTrendCard";
 import { useProductTracking } from "@/hooks/useProductTracking";
 import { ResumeLastActionCard, type ResumeAction } from "@/components/product/ResumeLastActionCard";
+import { useDailyStreak } from "@/hooks/useDailyStreak";
+import StreakBadge from "@/components/StreakBadge";
+import ShareButton from "@/components/ShareButton";
 
 const ease = [0.25, 0.46, 0.45, 0.94] as [number, number, number, number];
 
@@ -57,10 +60,17 @@ export default function Profile() {
   const [saving, setSaving] = useState(false);
   const [isPro, setIsPro] = useState(false);
   const [managingSubscription, setManagingSubscription] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
   const learner = useLearnerProfile();
   const reviewQueue = useReviewQueue();
   const progressSnapshots = useProgressSnapshots();
   const { track } = useProductTracking();
+  const dailyStreak = useDailyStreak();
 
   useEffect(() => { track({ event_name: "profile_viewed" }); }, [track]);
 
@@ -80,6 +90,7 @@ export default function Profile() {
           setFieldOfStudy(profileRes.data.field_of_study || "");
           setUniversity((profileRes.data as Record<string, unknown>).university as string || "");
           setCountry((profileRes.data as Record<string, unknown>).country as string || "");
+          setAvatarUrl(profileRes.data.avatar_url || null);
         }
         if (songsRes.error) console.error("[Profile] Songs count error:", songsRes.error);
         setSongCount(songsRes.count || 0);
@@ -109,6 +120,56 @@ export default function Profile() {
     setSaving(false);
     if (error) toast.error(error.message);
     else toast.success(t("profile.saved"));
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error(t("profile.avatar_too_large", "L'image ne doit pas dépasser 5 Mo"));
+      return;
+    }
+    setUploadingAvatar(true);
+    try {
+      const ext = file.name.split(".").pop() || "jpg";
+      const path = `avatars/${user.id}.${ext}`;
+      const { error: uploadErr } = await supabase.storage.from("course-uploads").upload(path, file, { contentType: file.type, upsert: true });
+      if (uploadErr) throw uploadErr;
+      const { data: urlData } = supabase.storage.from("course-uploads").getPublicUrl(path);
+      const publicUrl = urlData.publicUrl;
+      await supabase.from("profiles").update({ avatar_url: publicUrl } as Record<string, unknown>).eq("user_id", user.id);
+      setAvatarUrl(publicUrl);
+      toast.success(t("profile.avatar_updated", "Photo de profil mise à jour"));
+    } catch (err) {
+      console.error("[Profile] Avatar upload error:", err);
+      toast.error(t("common.error", "Une erreur est survenue"));
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  const handlePasswordChange = async () => {
+    if (newPassword.length < 6) {
+      toast.error(t("profile.password_too_short", "Le mot de passe doit faire au moins 6 caractères"));
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error(t("profile.passwords_mismatch", "Les mots de passe ne correspondent pas"));
+      return;
+    }
+    setChangingPassword(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      setNewPassword("");
+      setConfirmPassword("");
+      toast.success(t("profile.password_changed", "Mot de passe modifié avec succès"));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Internal error";
+      toast.error(message);
+    } finally {
+      setChangingPassword(false);
+    }
   };
 
   const handleDeleteAccount = async () => {
@@ -178,14 +239,29 @@ export default function Profile() {
           transition={{ duration: 0.7, ease }}
           className="text-center mb-10"
         >
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            className="w-24 h-24 rounded-full gradient-bg-premium flex items-center justify-center mx-auto mb-5 glow-intense shadow-2xl shadow-primary/20"
-          >
-            <span className="text-3xl font-bold text-primary-foreground">{displayName?.[0]?.toUpperCase() || "?"}</span>
-          </motion.div>
+          <label htmlFor="avatar-upload" className="relative cursor-pointer group">
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              className="w-24 h-24 rounded-full gradient-bg-premium flex items-center justify-center mx-auto mb-5 glow-intense shadow-2xl shadow-primary/20 overflow-hidden"
+            >
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-3xl font-bold text-primary-foreground">{displayName?.[0]?.toUpperCase() || "?"}</span>
+              )}
+              <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                {uploadingAvatar ? <Loader2 className="w-5 h-5 text-white animate-spin" /> : <Camera className="w-5 h-5 text-white" />}
+              </div>
+            </motion.div>
+            <input id="avatar-upload" type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} disabled={uploadingAvatar} />
+          </label>
           <h1 className="font-display text-2xl font-bold tracking-tight">{displayName || t("profile.title")}</h1>
           <p className="text-muted-foreground text-sm mt-1">{user?.email}</p>
+          {!dailyStreak.loading && dailyStreak.current_streak > 0 && (
+            <div className="mt-3 flex justify-center">
+              <StreakBadge streak={dailyStreak.current_streak} compact />
+            </div>
+          )}
         </motion.div>
 
         <motion.div
@@ -348,11 +424,80 @@ export default function Profile() {
           </motion.div>
         )}
 
-        {/* ── Guardian / Minor Mode ── */}
+        {/* ── Streak Card ── */}
+        {!dailyStreak.loading && dailyStreak.current_streak > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.31, duration: 0.5, ease }}
+            className="mt-6"
+          >
+            <StreakBadge streak={dailyStreak.current_streak} />
+            {dailyStreak.longest_streak > dailyStreak.current_streak && (
+              <p className="text-xs text-muted-foreground mt-2 text-center">
+                {t("profile.longest_streak", "Record : {{count}} jours", { count: dailyStreak.longest_streak })}
+              </p>
+            )}
+          </motion.div>
+        )}
+
+        {/* ── Security: Password Change ── */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.32, duration: 0.5, ease }}
+          className="glass-card-elevated p-7 mt-6 space-y-4"
+        >
+          <h3 className="font-display font-semibold flex items-center gap-2">
+            <Lock className="w-5 h-5 text-primary" /> {t("profile.security_title", "Sécurité")}
+          </h3>
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">{t("profile.new_password", "Nouveau mot de passe")}</Label>
+            <div className="relative">
+              <Input
+                type={showPassword ? "text" : "password"}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="••••••••"
+                className="bg-muted/15 border-border/20 h-11 rounded-xl pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">{t("profile.confirm_password", "Confirmer le mot de passe")}</Label>
+            <Input
+              type={showPassword ? "text" : "password"}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="••••••••"
+              className="bg-muted/15 border-border/20 h-11 rounded-xl"
+            />
+          </div>
+          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+            <Button
+              onClick={handlePasswordChange}
+              disabled={changingPassword || !newPassword || !confirmPassword}
+              className="w-full gap-2 rounded-xl h-11"
+              variant="outline"
+            >
+              {changingPassword ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />}
+              {t("profile.change_password", "Changer le mot de passe")}
+            </Button>
+          </motion.div>
+        </motion.div>
+
+        {/* ── Guardian / Minor Mode ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.33, duration: 0.5, ease }}
           className="glass-card-elevated p-7 mt-6"
         >
           <h3 className="font-display font-semibold mb-2 flex items-center gap-2">
@@ -371,6 +516,11 @@ export default function Profile() {
             </Button>
           </motion.div>
         </motion.div>
+
+        {/* ── Share Profile ── */}
+        <div className="flex justify-center mt-6">
+          <ShareButton title={`${displayName} — COGNITIO`} text={t("share.profile_text", "Découvre mon profil sur COGNITIO !")} />
+        </div>
 
         <motion.div
           initial={{ opacity: 0, y: 16 }}
