@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, RotateCcw, BookOpen, ClipboardCheck } from "lucide-react";
+import ShareButton from "@/components/ShareButton";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import DebriefScoreCard from "@/components/cognitio/DebriefScoreCard";
@@ -159,6 +160,10 @@ export default function MissionDebrief() {
           >
             <BookOpen className="w-4 h-4" /> {t("mission_debrief.view_memory_profile")}
           </Button>
+          <ShareButton
+            title={t("mission_debrief.share_title", "Mon résultat COGNITIO")}
+            text={t("mission_debrief.share_text", "Regarde mon résultat sur COGNITIO !")}
+          />
         </div>
 
         {/* Disclaimer */}

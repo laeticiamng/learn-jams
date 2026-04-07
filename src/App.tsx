@@ -11,6 +11,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ImmersionProvider, AmbientCanvas, PageTransition, AudioProvider } from "@/experience";
 
 import CommandPalette from "@/components/CommandPalette";
+import MobileBottomNav from "@/components/MobileBottomNav";
 import CookieConsent from "./components/CookieConsent";
 import { OnboardingWrapper } from "@/components/OnboardingWrapper";
 import PageLoadingFallback from "@/components/PageLoadingFallback";
@@ -108,6 +109,7 @@ const App = () => (
                   </PageTransition>
                 </Suspense>
                 <OnboardingWrapper />
+                <MobileBottomNav />
                 <CookieConsent />
                 <DevDiagnosticsPanel />
                 </AudioProvider>

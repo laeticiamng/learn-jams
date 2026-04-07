@@ -8,6 +8,7 @@ import Navbar from "@/components/Navbar";
 import { Slider } from "@/components/ui/slider";
 import Footer from "@/components/Footer";
 import { Play, Pause, Heart, ArrowLeft, Volume2, VolumeX, Loader2, Brain, Music, SkipBack, SkipForward } from "lucide-react";
+import ShareButton from "@/components/ShareButton";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { StudyNotes } from "@/components/player/StudyNotes";
@@ -395,6 +396,11 @@ export default function Player() {
             </motion.div>
           </motion.div>
         )}
+
+        {/* Share */}
+        <div className="mt-6 flex justify-center">
+          <ShareButton title={song?.title || "COGNITIO"} text={`Écoute "${song?.title}" sur COGNITIO !`} />
+        </div>
       </div>
       <Footer />
     </div>
