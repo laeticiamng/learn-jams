@@ -12,6 +12,7 @@ import { ImmersionProvider, AmbientCanvas, PageTransition, AudioProvider } from 
 
 import CommandPalette from "@/components/CommandPalette";
 import CookieConsent from "./components/CookieConsent";
+import { OnboardingWrapper } from "@/components/OnboardingWrapper";
 import PageLoadingFallback from "@/components/PageLoadingFallback";
 import { DevDiagnosticsPanel } from "@/components/DevDiagnosticsPanel";
 import AdminRoute from "@/components/AdminRoute";
