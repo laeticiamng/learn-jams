@@ -7,7 +7,8 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Brain, FileText, Plus, Clock, Loader2 } from "lucide-react";
+import { Brain, FileText, Plus, Clock } from "lucide-react";
+import { GridSkeleton, PageHeaderSkeleton } from "@/components/ui/loading-skeleton";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/hooks/useAuth";
@@ -77,8 +78,8 @@ export default function CognitioLibrary() {
         </div>
 
         {loading && (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          <div className="py-4">
+            <GridSkeleton count={4} />
           </div>
         )}
 
