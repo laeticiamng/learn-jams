@@ -27,7 +27,7 @@ export function useDailyStreak() {
       if (!data) {
         // First visit ever — create streak
         const newRow = { user_id: user.id, current_streak: 1, longest_streak: 1, last_active_date: todayStr };
-        await supabase.from("daily_streaks").insert(newRow as Record<string, unknown>);
+        await supabase.from("daily_streaks").insert([newRow] as never[]);
         setStreak({ current_streak: 1, longest_streak: 1, last_active_date: todayStr });
       } else if (data.last_active_date === todayStr) {
         // Already checked in today
