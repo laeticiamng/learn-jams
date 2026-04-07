@@ -395,12 +395,12 @@ export default function Player() {
               </Button>
             </motion.div>
           </motion.div>
-          {song.generated_lyrics && (
-            <div className="mt-6 flex justify-center">
-              <ShareButton title={song.title} text={`Écoute "${song.title}" sur COGNITIO !`} />
-            </div>
-          )}
         )}
+
+        {/* Share */}
+        <div className="mt-6 flex justify-center">
+          <ShareButton title={song?.title || "COGNITIO"} text={`Écoute "${song?.title}" sur COGNITIO !`} />
+        </div>
       </div>
       <Footer />
     </div>
