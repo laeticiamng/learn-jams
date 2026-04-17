@@ -91,10 +91,10 @@ export default function Signup() {
           <h1 className="font-display text-2xl font-bold tracking-tight">{t("auth.signup_title")}</h1>
           <p className="text-muted-foreground mt-2 text-sm">{t("auth.signup_subtitle")}</p>
         </div>
-        <form onSubmit={handleSubmit} className="space-y-5" aria-label="Formulaire d'inscription">
+        <form onSubmit={handleSubmit} className="space-y-5" aria-label="Formulaire d'inscription" autoComplete="off">
           <div className="space-y-2">
             <Label htmlFor="name" className="text-sm font-medium">{t("auth.name")}</Label>
-            <Input id="name" placeholder={t("auth.name_placeholder")} value={displayName} onChange={(e) => setDisplayName(e.target.value)} required
+            <Input id="name" name="signup-name" autoComplete="name" placeholder={t("auth.name_placeholder")} value={displayName} onChange={(e) => setDisplayName(e.target.value)} required
               className="bg-muted/15 border-border/20 h-11 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all duration-300" />
           </div>
 
@@ -124,12 +124,12 @@ export default function Signup() {
 
           <div className="space-y-2">
             <Label htmlFor="email" className="text-sm font-medium">{t("auth.email")}</Label>
-            <Input id="email" type="email" placeholder={t("auth.email_placeholder")} value={email} onChange={(e) => setEmail(e.target.value)} required
+            <Input id="email" type="email" name="signup-email" autoComplete="email" placeholder={t("auth.email_placeholder")} value={email} onChange={(e) => setEmail(e.target.value)} required
               className="bg-muted/15 border-border/20 h-11 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all duration-300" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="password" className="text-sm font-medium">{t("auth.password")}</Label>
-            <Input id="password" type="password" placeholder={t("auth.password_min")} value={password} onChange={(e) => setPassword(e.target.value)} required
+            <Input id="password" type="password" name="signup-password" autoComplete="new-password" placeholder={t("auth.password_min")} value={password} onChange={(e) => setPassword(e.target.value)} required
               className="bg-muted/15 border-border/20 h-11 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all duration-300" />
             {password.length > 0 && (
               <div className="space-y-1.5">

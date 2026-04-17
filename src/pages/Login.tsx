@@ -90,7 +90,7 @@ export default function Login() {
         <form onSubmit={handleSubmit} className="space-y-5" aria-label="Formulaire de connexion">
           <div className="space-y-2">
             <Label htmlFor="email" className="text-sm font-medium">{t("auth.email")}</Label>
-            <Input id="email" type="email" placeholder={t("auth.email_placeholder")} value={email} onChange={(e) => setEmail(e.target.value)} required
+            <Input id="email" type="email" name="email" autoComplete="email" placeholder={t("auth.email_placeholder")} value={email} onChange={(e) => setEmail(e.target.value)} required
               className="bg-muted/15 border-border/20 h-11 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all duration-300" />
           </div>
           <div className="space-y-2">
@@ -98,7 +98,7 @@ export default function Login() {
               <Label htmlFor="password" className="text-sm font-medium">{t("auth.password")}</Label>
               <Link to="/forgot-password" className="text-xs text-primary hover:underline transition-colors">{t("auth.forgot")}</Link>
             </div>
-            <Input id="password" type="password" placeholder={t("auth.password_placeholder")} value={password} onChange={(e) => setPassword(e.target.value)} required
+            <Input id="password" type="password" name="password" autoComplete="current-password" placeholder={t("auth.password_placeholder")} value={password} onChange={(e) => setPassword(e.target.value)} required
               className="bg-muted/15 border-border/20 h-11 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all duration-300" />
           </div>
           <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
