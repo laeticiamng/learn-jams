@@ -13,6 +13,8 @@ import Navbar from "@/components/Navbar";
 import { usePageSEO } from "@/hooks/usePageSEO";
 import { toast } from "sonner";
 import { FeatureFlagsPanel } from "@/components/admin/FeatureFlagsPanel";
+import SLODashboard from "@/components/admin/SLODashboard";
+import { Link } from "react-router-dom";
 
 interface ProviderHealth {
   provider_key: string;
