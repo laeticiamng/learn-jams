@@ -108,6 +108,7 @@ const App = () => (
                       <Route path="/cognitio-library" element={<ProtectedRoute><CognitioLibrary /></ProtectedRoute>} />
                       <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
                       <Route path="/admin/observability" element={<AdminRoute><AdminObservability /></AdminRoute>} />
+                      <Route path="/admin/incidents" element={<AdminRoute><AdminIncidents /></AdminRoute>} />
                       <Route path="/guardian-settings" element={<ProtectedRoute><GuardianSettings /></ProtectedRoute>} />
                       <Route path="/status" element={<Status />} />
                       <Route path="/security/audit" element={<ProtectedRoute><AuditLog /></ProtectedRoute>} />
