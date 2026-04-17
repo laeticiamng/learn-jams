@@ -229,9 +229,15 @@
     "field_of_study": "Field of study", "field_placeholder": "E.g.: Medicine, Law, Computer Science...",
     "save": "Save", "saving": "Saving...", "saved": "Profile updated!",
     "danger_zone": "Danger zone", "danger_text": "Deleting your account is permanent. All your content and data will be erased.",
-    "delete_account": "Delete my account", "delete_confirm_title": "Delete your account?",
-    "delete_confirm_text": "This action is irreversible. All your content, favorites, and data will be permanently deleted.",
-    "cancel": "Cancel", "delete_forever": "Delete permanently", "deleted": "Account deleted. Goodbye!"
+    "delete_account": "Delete my account", "delete_confirm_title": "Schedule deletion?",
+    "delete_confirm_text": "Your account will be permanently deleted in 7 days. You can cancel anytime during this grace period from this page. After 7 days, all your content, favorites and data will be erased with no possible recovery.",
+    "cancel": "Cancel", "delete_forever": "Delete permanently", "schedule_deletion": "Schedule deletion",
+    "deletion_scheduled": "Deletion scheduled. You have 7 days to cancel.",
+    "deletion_cancelled": "Deletion cancelled. Your account is preserved.",
+    "deletion_pending_title": "Deletion pending",
+    "deletion_pending_text": "Your account will be permanently deleted on {{date}}. Cancel below to keep your data.",
+    "cancel_deletion": "Cancel deletion",
+    "deleted": "Account deleted. Goodbye!"
   },
   "contact": {
     "title": "Contact & Support", "subtitle": "Got a question? A problem? We're here to help.",
