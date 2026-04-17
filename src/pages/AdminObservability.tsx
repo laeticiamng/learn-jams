@@ -186,6 +186,17 @@ export default function AdminObservability() {
           </div>
         )}
 
+        <SLODashboard />
+
+        <div className="flex justify-end">
+          <Link to="/admin/incidents">
+            <Button variant="outline" size="sm">
+              <Bell className="w-4 h-4 mr-2" />
+              Gérer les incidents
+            </Button>
+          </Link>
+        </div>
+
         <Tabs defaultValue="alerts">
           <TabsList>
             <TabsTrigger value="alerts">Alertes ({alerts.filter(a => a.status === "open").length})</TabsTrigger>
