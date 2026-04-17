@@ -2941,6 +2941,19 @@ export type Database = {
         Returns: Json
       }
       cleanup_old_rate_limits: { Args: never; Returns: undefined }
+      consume_feature_quota: {
+        Args: {
+          p_feature_key: string
+          p_limit: number
+          p_period_days?: number
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      get_feature_quota_usage: {
+        Args: { p_feature_key: string; p_user_id: string }
+        Returns: Json
+      }
       get_leaderboard: {
         Args: { p_week?: string }
         Returns: {
