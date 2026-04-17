@@ -312,21 +312,23 @@ export default function HeroMultimodal() {
             </Button>
           </motion.div>
 
-          {isAuthed && seeds.length > 0 && (
-            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-              <Button
-                size="lg"
-                variant="outline"
-                className="text-base sm:text-lg px-8 h-13 sm:h-14 w-full sm:w-auto rounded-2xl border-border/30 hover:border-primary/30 hover:bg-primary/5 transition-all duration-300"
-                onClick={() => {
-                  track({ event_name: "seed_transformation_started" });
+          <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+            <Button
+              size="lg"
+              variant="outline"
+              className="text-base sm:text-lg px-8 h-13 sm:h-14 w-full sm:w-auto rounded-2xl border-border/30 hover:border-primary/30 hover:bg-primary/5 transition-all duration-300"
+              onClick={() => {
+                track({ event_name: "seed_transformation_started" });
+                if (isAuthed && seeds.length > 0) {
                   navigate(resolveCTARoute("demo", true, seeds[0].id));
-                }}
-              >
-                {t("home.hero_cta_demo")}
-              </Button>
-            </motion.div>
-          )}
+                } else {
+                  document.getElementById("exemples")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }
+              }}
+            >
+              {t("home.hero_cta_see_example")}
+            </Button>
+          </motion.div>
         </motion.div>
 
         {/* Login link — subtle, doesn't compete */}

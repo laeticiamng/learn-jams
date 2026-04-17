@@ -128,7 +128,20 @@
     "sticky_cta_start": "Commencer gratuitement",
     "disclaimer": "",
     "seo_title": "COGNITIO — Transformez n'importe quel cours en expérience d'apprentissage multimodale",
-    "seo_description": "Importez votre cours, transformez-le en missions interactives, chansons, quiz, vidéos et fiches. Pas un résumé IA, un moteur de rétention."
+    "seo_description": "Importez votre cours, transformez-le en missions interactives, chansons, quiz, vidéos et fiches. Pas un résumé IA, un moteur de rétention.",
+    "hero_cta_see_example": "Voir un exemple",
+    "mockup_source": "Ton cours",
+    "mockup_engine": "Analyse cognitive",
+    "mockup_chip_concepts": "Concepts",
+    "mockup_chip_traps": "Pièges",
+    "mockup_chip_objectives": "Objectifs",
+    "mockup_outputs": "Généré pour toi",
+    "mockup_card_mission": "Mission Escape",
+    "mockup_card_quiz": "Quiz adaptatif",
+    "mockup_card_song": "Chanson mémo",
+    "mockup_card_review": "Rappels J+1, J+7",
+    "mockup_card_review_sub": "Auto programmés",
+    "mockup_caption": "Aperçu — généré à partir d'un PDF de cours"
   },
   "auth": {
     "login_title": "Bon retour",
