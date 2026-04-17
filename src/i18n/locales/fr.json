@@ -472,7 +472,11 @@
     "faq3_q": "Que se passe-t-il si j'arrête de payer ?",
     "faq3_a": "Vous conservez l'accès jusqu'à la fin de votre période en cours. Ensuite, votre compte repasse automatiquement en plan Découverte gratuit. Vos contenus existants restent accessibles.",
     "faq4_q": "Puis-je acheter des crédits supplémentaires ?",
-    "faq4_a": "Oui, des packs de crédits sont disponibles pour les contenus, escape games, vidéos IA et SMS tuteur. Ils s'ajoutent à votre quota mensuel et n'expirent pas."
+    "faq4_a": "Oui, des packs de crédits sont disponibles pour les contenus, escape games, vidéos IA et SMS tuteur. Ils s'ajoutent à votre quota mensuel et n'expirent pas.",
+    "faq5_q": "Comment fonctionnent les crédits adaptatifs ?",
+    "faq5_a": "Chaque plan inclut un quota mensuel par format (chansons, missions, quiz, vidéos). Si vous n'utilisez pas un format, ses crédits peuvent être réalloués vers un autre selon votre profil d'usage. Tout est suivi dans votre tableau de bord.",
+    "faq6_q": "Mes paiements sont-ils sécurisés ?",
+    "faq6_a": "Oui. Les paiements sont traités par Stripe (PCI DSS Level 1). Nous ne stockons jamais vos données de carte sur nos serveurs."
   },
   "paywall": {
     "feature_locked": "Fonctionnalité verrouillée",

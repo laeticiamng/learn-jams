@@ -379,7 +379,11 @@
     "faq3_q": "What happens if I stop paying?",
     "faq3_a": "You keep access until the end of your current period. Then your account automatically switches back to the free plan. Your existing content remains accessible.",
     "faq4_q": "Can I buy extra credits?",
-    "faq4_a": "Yes, credit packs are available for songs, escape games, AI videos, and guardian SMS. They add to your monthly quota and don't expire."
+    "faq4_a": "Yes, credit packs are available for songs, escape games, AI videos, and guardian SMS. They add to your monthly quota and don't expire.",
+    "faq5_q": "How do adaptive credits work?",
+    "faq5_a": "Each plan includes a monthly quota per format (songs, missions, quizzes, videos). Unused credits can be reallocated to another format based on your usage profile. Everything is tracked in your dashboard.",
+    "faq6_q": "Are payments secure?",
+    "faq6_a": "Yes. Payments are processed by Stripe (PCI DSS Level 1). We never store your card data on our servers."
   },
   "paywall": {
     "feature_locked": "Feature locked",
