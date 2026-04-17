@@ -189,6 +189,8 @@ export default function AdminObservability() {
           </div>
         )}
 
+        <GovernanceDashboard />
+
         <SLODashboard />
 
         <BackupVerificationCard />
