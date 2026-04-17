@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hors ligne — COGNITIO</title>
+  <meta name="theme-color" content="#0a0a12" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(ellipse at center, #1a1a2e 0%, #0a0a12 70%);
+      color: #e5e5e5;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      padding: 2rem;
+      text-align: center;
+    }
+    .card {
+      max-width: 28rem;
+      padding: 2.5rem 2rem;
+      border-radius: 1.25rem;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(20px);
+    }
+    .icon {
+      width: 64px; height: 64px;
+      margin: 0 auto 1.5rem;
+      border-radius: 1rem;
+      background: linear-gradient(135deg, #7c3aed, #a855f7);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.75rem;
+      box-shadow: 0 10px 30px -10px rgba(124, 58, 237, 0.5);
+    }
+    h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.75rem; letter-spacing: -0.02em; }
+    p { color: #9ca3af; font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.75rem; }
+    button {
+      padding: 0.75rem 1.75rem;
+      border-radius: 0.75rem;
+      border: none;
+      background: linear-gradient(135deg, #7c3aed, #a855f7);
+      color: white;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    button:hover { transform: translateY(-1px); box-shadow: 0 8px 20px -5px rgba(124, 58, 237, 0.5); }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">⚡</div>
+    <h1>Tu es hors ligne</h1>
+    <p>COGNITIO a besoin d'une connexion internet pour générer et synchroniser tes contenus. Vérifie ta connexion et réessaie.</p>
+    <button onclick="location.reload()">Réessayer</button>
+  </div>
+</body>
+</html>

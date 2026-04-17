@@ -34,3 +34,22 @@ verify_jwt = true
 
 [functions.poll-suno-status]
 verify_jwt = true
+
+[functions.export-user-data]
+verify_jwt = true
+
+[functions.webhook-resend]
+# External provider callback (Resend)
+verify_jwt = false
+
+[functions.webhook-twilio]
+# External provider callback (Twilio)
+verify_jwt = false
+
+[functions.webhook-suno]
+# External provider callback (Suno)
+verify_jwt = false
+
+[functions.webhook-stripe]
+# External provider callback (Stripe)
+verify_jwt = false
