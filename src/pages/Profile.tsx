@@ -4,7 +4,8 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Save, Loader2, Trash2, CreditCard, ArrowLeft, GraduationCap, Globe, BookOpen, Brain, Shield, Camera, Lock, Eye, EyeOff } from "lucide-react";
+import { Save, Loader2, Trash2, CreditCard, ArrowLeft, GraduationCap, Globe, BookOpen, Brain, Shield, Camera, Lock, Eye, EyeOff, Download } from "lucide-react";
+import QuotaIndicator from "@/components/QuotaIndicator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
@@ -66,6 +67,7 @@ export default function Profile() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
+  const [exportingData, setExportingData] = useState(false);
   const learner = useLearnerProfile();
   const reviewQueue = useReviewQueue();
   const progressSnapshots = useProgressSnapshots();
@@ -169,6 +171,33 @@ export default function Profile() {
       toast.error(message);
     } finally {
       setChangingPassword(false);
+    }
+  };
+
+  const handleExportData = async () => {
+    if (!user) return;
+    setExportingData(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("No session");
+      const url = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/export-user-data`;
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) throw new Error(`Export failed (${res.status})`);
+      const blob = await res.blob();
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `cognitio-export-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
+      toast.success(t("profile.export_success", "Données téléchargées"));
+    } catch (err) {
+      console.error("[Profile] Export error:", err);
+      toast.error(t("common.error", "Une erreur est survenue"));
+    } finally {
+      setExportingData(false);
     }
   };
 

@@ -4,8 +4,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import { BarChart3, Brain, Shield, AlertTriangle, Loader2, RefreshCw } from "lucide-react";
+import { BarChart3, Brain, Shield, AlertTriangle, Loader2, RefreshCw, Activity, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useTranslation } from "react-i18next";
@@ -36,6 +37,7 @@ function getSince(range: TimeRange): string {
 
 export default function AdminDashboard() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   usePageSEO({ title: "Admin Dashboard", description: "Tableau de bord administrateur", noindex: true });
   const [range, setRange] = useState<TimeRange>("7d");
   const [loading, setLoading] = useState(true);
@@ -102,6 +104,25 @@ export default function AdminDashboard() {
           </div>
         ) : (
           <div className="space-y-6">
+            {/* Quick links */}
+            <motion.button
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              onClick={() => navigate("/admin/observability")}
+              className="w-full flex items-center justify-between p-4 rounded-xl border border-border/30 bg-card/40 hover:bg-card/70 hover:border-primary/40 transition-all group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Activity className="w-5 h-5 text-primary" />
+                </div>
+                <div className="text-left">
+                  <p className="text-sm font-semibold">Observabilité système</p>
+                  <p className="text-xs text-muted-foreground">Coûts, quotas, providers, alertes</p>
+                </div>
+              </div>
+              <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+            </motion.button>
+
             {/* Alerts */}
             {alerts.length > 0 && (
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-2">

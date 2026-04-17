@@ -36,6 +36,7 @@ import { usePageSEO } from "@/hooks/usePageSEO";
 import { useImmersionLevel } from "@/experience";
 import { getFormatAvailability } from "@/services/billing/entitlementEngine.service";
 import { FORMAT_CONFIGS, type CreateFormat as CF } from "@/lib/create-format-config";
+import QuotaIndicator from "@/components/QuotaIndicator";
 
 /** Compute which formats are locked for the current plan */
 function computeLockedFormats(plan: import("@/domain/billing/pricing.types").PlanKey): CF[] {
@@ -173,6 +174,15 @@ export default function Create() {
               </motion.div>
 
               <CreateProgressHeader selectedFormat={selectedFormat} hasSource={hasSource} />
+
+              {/* Quota visibility */}
+              {user && (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <QuotaIndicator featureKey="transformation_generated" limit={plan === "free" ? 3 : 100} label="Transformations" compact />
+                  <QuotaIndicator featureKey="mission_generated" limit={plan === "free" ? 1 : 50} label="Missions" compact />
+                  <QuotaIndicator featureKey="music_generated" limit={plan === "free" ? 1 : 30} label="Musique" compact />
+                </div>
+              )}
 
               {/* Format Selection */}
               <section>

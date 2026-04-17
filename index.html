@@ -98,6 +98,27 @@
     </noscript>
     <script type="module" src="/src/main.tsx"></script>
     <script>
+      // Service Worker — production only, never inside iframe/preview
+      (function () {
+        if (!("serviceWorker" in navigator)) return;
+        var host = window.location.hostname;
+        var inIframe = false;
+        try { inIframe = window.self !== window.top; } catch (e) { inIframe = true; }
+        var isPreview = host.includes("id-preview--") || host.includes("lovableproject.com") || host.includes("lovable.app");
+        if (inIframe || isPreview || host === "localhost" || host === "127.0.0.1") {
+          navigator.serviceWorker.getRegistrations().then(function (regs) {
+            regs.forEach(function (r) { r.unregister(); });
+          });
+          return;
+        }
+        window.addEventListener("load", function () {
+          navigator.serviceWorker.register("/sw.js").catch(function (e) {
+            console.warn("[SW] registration failed", e);
+          });
+        });
+      })();
+    </script>
+    <script>
       setTimeout(function(){
         var root = document.getElementById("root");
         if (root && root.children.length === 0) {
