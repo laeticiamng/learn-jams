@@ -327,13 +327,6 @@ export default function Index() {
         )}
       </AnimatePresence>
 
-      {/* Disclaimer */}
-      <div className="container mx-auto px-4 pb-4">
-        <p className="text-[10px] text-muted-foreground/50 text-center">
-          {t("home.disclaimer")}
-        </p>
-      </div>
-
       <Footer />
     </div>
   );
