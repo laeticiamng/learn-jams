@@ -68,6 +68,8 @@ export default function Profile() {
   const [showPassword, setShowPassword] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
   const [exportingData, setExportingData] = useState(false);
+  const [pendingDeletion, setPendingDeletion] = useState<{ scheduled_purge_at: string } | null>(null);
+  const [cancellingDeletion, setCancellingDeletion] = useState(false);
   const learner = useLearnerProfile();
   const reviewQueue = useReviewQueue();
   const progressSnapshots = useProgressSnapshots();
@@ -204,14 +206,29 @@ export default function Profile() {
   const handleDeleteAccount = async () => {
     if (!user) return;
     try {
-      const { error } = await supabase.functions.invoke("delete-account");
+      const { data, error } = await supabase.functions.invoke("delete-account");
       if (error) throw error;
-      await signOut();
-      toast.success(t("profile.deleted"));
-      navigate("/");
+      const scheduled = (data as { scheduled_purge_at?: string })?.scheduled_purge_at;
+      if (scheduled) setPendingDeletion({ scheduled_purge_at: scheduled });
+      toast.success(t("profile.deletion_scheduled"));
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Internal error";
       toast.error(message || t("common.error"));
+    }
+  };
+
+  const handleCancelDeletion = async () => {
+    setCancellingDeletion(true);
+    try {
+      const { error } = await supabase.functions.invoke("cancel-account-deletion");
+      if (error) throw error;
+      setPendingDeletion(null);
+      toast.success(t("profile.deletion_cancelled"));
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Internal error";
+      toast.error(message || t("common.error"));
+    } finally {
+      setCancellingDeletion(false);
     }
   };
 
