@@ -7,6 +7,8 @@ import type { Json } from "@/integrations/supabase/types";
 import type { ConsentEvent, ConsentEventInput } from "@/domain/guardian/consent.types";
 
 export async function recordConsentEvent(input: ConsentEventInput): Promise<ConsentEvent> {
+  // RGPD: never send raw IP from the client. Server-side trigger hashes any
+  // ip_address into ip_hash and nulls out the raw value automatically.
   const { data, error } = await supabase
     .from("consent_events")
     .insert([{
@@ -15,7 +17,6 @@ export async function recordConsentEvent(input: ConsentEventInput): Promise<Cons
       event_type: input.event_type,
       consent_type: input.event_type,
       metadata_json: (input.metadata_json ?? {}) as Json,
-      ip_address: input.ip_address ?? null,
       user_agent: input.user_agent ?? null,
     }])
     .select("*")
