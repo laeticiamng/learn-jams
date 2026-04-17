@@ -1,85 +1,21 @@
 
 
-# Audit final COGNITIO — Derniers manques
+The user wants me to keep cadrer/améliorer the platform with systems-architecture + governance lens. The previous waves covered: rate-limit + circuit breaker, observability dashboard, alerting/cron, RLS hardening, PWA, RGPD export, QuotaIndicator, webhooks config.
 
-## État actuel
-La plateforme est déjà très mature : navigation mobile, streak, avatar, partage, sécurité du profil, gouvernance complète (rate-limit, circuit breaker, audit log, quotas, observabilité, alerting/cron). Restent quelques **trous techniques critiques** identifiés.
+Let me think about what's still genuinely missing at a systems-architecture & governance level — without re-doing what's done.
 
-## Manques restants
+Real remaining gaps (architecture & governance):
 
-### 1. ⚠️ Webhooks externes non configurés dans `config.toml` (CRITIQUE)
-Les fonctions `webhook-resend`, `webhook-twilio`, `webhook-suno`, `webhook-stripe` ne sont **pas déclarées** dans `supabase/config.toml`. Sans `verify_jwt = false`, elles rejettent les callbacks externes avec un 401 → notifications mail/SMS et événements provider perdus.
+1. **SLO / SLI definition + visibility** — no documented service objectives, no error-budget tracking. Governance needs measurable targets.
+2. **Incident runbook + status page** — no `/status` public page showing provider health (circuit breakers exposed publicly = trust signal).
+3. **Tenant cost ceiling (hard cap)** — quotas exist per-feature but no global monthly USD cap per user → financial blast-radius unbounded.
+4. **Audit trail UI for end-users** — users can't see their own security events (logins, exports, deletions). RGPD transparency.
+5. **Idempotency keys on mutating endpoints** — generate-music, export-user-data, etc. Double-clicks → duplicate cost events.
+6. **Feature flags / kill-switches** — no way to disable a feature (e.g. Suno) without redeploy when circuit is degraded.
+7. **Data retention policies** — `cost_events`, `security_audit_events`, `webhook_events` grow unbounded → no TTL job.
+8. **DR / backup verification** — no documented RPO/RTO, no automated check that backups are restorable.
 
-**Fix** : Ajouter les blocs dans `config.toml`.
+I'll group into a single coherent wave focused on governance maturity, picking the highest-leverage items that fit a single implementation pass. Skip what requires manual ops (DR, runbook docs are markdown-only).
 
-### 2. Service Worker PWA absent
-Manifest présent mais aucun SW. L'app n'est pas réellement installable ni cache-first.
-
-**Fix** : `public/sw.js` minimal (cache static assets, network-first pour API), enregistré dans `index.html`.
-
-### 3. Export RGPD des données utilisateur
-Bouton "Supprimer mon compte" présent, mais pas de **droit à la portabilité** (RGPD art. 20). L'utilisateur ne peut pas exporter ses données.
-
-**Fix** : Edge function `export-user-data` qui retourne un JSON (profile, songs, missions, runs, transformations) + bouton dans Profil → Sécurité.
-
-### 4. Lien `/admin/observability` absent du menu admin
-La page existe mais aucun lien depuis `AdminDashboard`. Les admins doivent connaître l'URL.
-
-**Fix** : Ajouter une carte/lien dans `AdminDashboard.tsx`.
-
-### 5. Quotas client non affichés
-Le hook `useFeatureQuota` existe mais aucun composant ne montre à l'utilisateur ses quotas restants (génération mission, analyse, musique).
-
-**Fix** : Composant `QuotaIndicator` affiché dans `Create` et `Profile`.
-
-### 6. Page `/offline` PWA
-Pour une vraie PWA, il faut une page de fallback offline gérée par le SW.
-
-**Fix** : `public/offline.html` minimal cohérent avec le branding.
-
----
-
-## Plan d'implémentation (un seul passage)
-
-### Étape 1 — Config webhooks
-- Ajouter dans `supabase/config.toml` :
-  ```toml
-  [functions.webhook-resend]   verify_jwt = false
-  [functions.webhook-twilio]   verify_jwt = false
-  [functions.webhook-suno]     verify_jwt = false
-  [functions.webhook-stripe]   verify_jwt = false
-  ```
-
-### Étape 2 — Service Worker + offline
-- Créer `public/sw.js` (cache v1 : assets statiques, stratégie network-first)
-- Créer `public/offline.html` (page sobre branded)
-- Enregistrer le SW dans `index.html` (script inline avec garde dev)
-
-### Étape 3 — Export RGPD
-- Créer edge function `supabase/functions/export-user-data/index.ts` (verify_jwt=true, agrège profile/songs/missions/transformations/runs/streak)
-- Ajouter bouton "Télécharger mes données" dans Profil → Sécurité (déclenche download JSON)
-
-### Étape 4 — Lien observability dans Admin
-- Ajouter carte cliquable "Observabilité système" dans `AdminDashboard.tsx` → `/admin/observability`
-
-### Étape 5 — Composant QuotaIndicator
-- Créer `src/components/QuotaIndicator.tsx` (utilise `useFeatureQuota`, affiche progress bar X/Y avec couleur seuil)
-- Intégrer dans `Create.tsx` (haut de page) et section quota Profil
-
----
-
-## Fichiers
-
-**Créés** :
-- `public/sw.js`
-- `public/offline.html`
-- `src/components/QuotaIndicator.tsx`
-- `supabase/functions/export-user-data/index.ts`
-
-**Modifiés** :
-- `supabase/config.toml` (4 blocs webhook + export-user-data)
-- `index.html` (enregistrement SW)
-- `src/pages/Profile.tsx` (bouton export RGPD + QuotaIndicator)
-- `src/pages/Create.tsx` (QuotaIndicator)
-- `src/pages/AdminDashboard.tsx` (lien observability)
+Concrete plan: 5 high-leverage additions.
 
