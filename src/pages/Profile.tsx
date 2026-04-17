@@ -520,6 +520,34 @@ export default function Profile() {
               {t("profile.change_password", "Changer le mot de passe")}
             </Button>
           </motion.div>
+
+          {/* ── GDPR: Data export (Art. 20) ── */}
+          <div className="pt-4 border-t border-border/20 space-y-2">
+            <p className="text-xs text-muted-foreground">
+              {t("profile.gdpr_export_desc", "Télécharge l'intégralité de tes données (RGPD art. 20).")}
+            </p>
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <Button
+                onClick={handleExportData}
+                disabled={exportingData}
+                className="w-full gap-2 rounded-xl h-11"
+                variant="outline"
+              >
+                {exportingData ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                {t("profile.export_data", "Télécharger mes données")}
+              </Button>
+            </motion.div>
+          </div>
+
+          {/* ── Quotas ── */}
+          <div className="pt-4 border-t border-border/20 space-y-2">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              {t("profile.quotas_title", "Quotas")}
+            </p>
+            <QuotaIndicator featureKey="transformation_generated" limit={isPro ? 100 : 3} label="Transformations" />
+            <QuotaIndicator featureKey="mission_generated" limit={isPro ? 50 : 1} label="Missions" />
+            <QuotaIndicator featureKey="music_generated" limit={isPro ? 30 : 1} label="Musique" />
+          </div>
         </motion.div>
 
         {/* ── Guardian / Minor Mode ── */}
