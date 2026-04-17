@@ -22,7 +22,7 @@ export interface ConsentEvent {
   guardian_id: string | null;
   event_type: ConsentEventType;
   metadata_json: Record<string, unknown>;
-  ip_address: string | null;
+  ip_hash: string | null;
   user_agent: string | null;
   created_at: string;
 }
@@ -32,7 +32,6 @@ export interface ConsentEventInput {
   guardian_id?: string;
   event_type: ConsentEventType;
   metadata_json?: Record<string, unknown>;
-  ip_address?: string;
   user_agent?: string;
 }
 
