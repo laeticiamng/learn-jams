@@ -1684,6 +1684,45 @@ export type Database = {
         }
         Relationships: []
       }
+      provider_health: {
+        Row: {
+          consecutive_failures: number
+          cooldown_seconds: number
+          failure_threshold: number
+          last_failure_at: string | null
+          last_success_at: string | null
+          metadata_json: Json | null
+          opened_at: string | null
+          provider_key: string
+          state: string
+          updated_at: string
+        }
+        Insert: {
+          consecutive_failures?: number
+          cooldown_seconds?: number
+          failure_threshold?: number
+          last_failure_at?: string | null
+          last_success_at?: string | null
+          metadata_json?: Json | null
+          opened_at?: string | null
+          provider_key: string
+          state?: string
+          updated_at?: string
+        }
+        Update: {
+          consecutive_failures?: number
+          cooldown_seconds?: number
+          failure_threshold?: number
+          last_failure_at?: string | null
+          last_success_at?: string | null
+          metadata_json?: Json | null
+          opened_at?: string | null
+          provider_key?: string
+          state?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       provider_routes: {
         Row: {
           capability: string
@@ -2922,6 +2961,15 @@ export type Database = {
       increment_quota_atomic: {
         Args: { p_limit: number; p_month: string; p_user_id: string }
         Returns: Json
+      }
+      is_provider_healthy: { Args: { p_provider_key: string }; Returns: Json }
+      record_provider_failure: {
+        Args: { p_provider_key: string }
+        Returns: Json
+      }
+      record_provider_success: {
+        Args: { p_provider_key: string }
+        Returns: undefined
       }
     }
     Enums: {
