@@ -3,18 +3,12 @@
 // Uses the public.check_and_consume_rate_limit RPC for atomic enforcement.
 // ============================================================
 
+import { logAuditEvent, getClientIp } from "./auditLog.ts";
+
 export interface RateLimitConfig {
   bucketKey: string;        // e.g. "cognitio-analyze"
   maxRequests: number;      // e.g. 10
   windowSeconds: number;    // e.g. 3600 (1h)
-}
-
-export interface RateLimitResult {
-  allowed: boolean;
-  count?: number;
-  limit?: number;
-  remaining?: number;
-  retryAfterSeconds?: number;
 }
 
 /**
@@ -26,6 +20,7 @@ export async function enforceRateLimit(
   userId: string,
   config: RateLimitConfig,
   corsHeaders: Record<string, string>,
+  req?: Request,
 ): Promise<Response | null> {
   try {
     const { data, error } = await supabaseAdmin.rpc("check_and_consume_rate_limit", {
@@ -42,6 +37,21 @@ export async function enforceRateLimit(
 
     if (data && data.allowed === false) {
       const retryAfter = data.retry_after_seconds ?? config.windowSeconds;
+
+      // Audit the rate-limit hit
+      await logAuditEvent(supabaseAdmin, {
+        eventType: "rate_limit_hit",
+        userId,
+        severity: "warning",
+        details: {
+          bucket: config.bucketKey,
+          count: data.count,
+          limit: data.limit,
+          window_seconds: config.windowSeconds,
+        },
+        ipAddress: req ? getClientIp(req) : null,
+      });
+
       return new Response(
         JSON.stringify({
           error: "rate_limit_exceeded",
@@ -69,3 +79,4 @@ export async function enforceRateLimit(
     return null;
   }
 }
+
