@@ -237,7 +237,6 @@ export type Database = {
           granted: boolean | null
           guardian_id: string | null
           id: string
-          ip_address: string | null
           ip_hash: string | null
           metadata_json: Json | null
           user_agent: string | null
@@ -250,7 +249,6 @@ export type Database = {
           granted?: boolean | null
           guardian_id?: string | null
           id?: string
-          ip_address?: string | null
           ip_hash?: string | null
           metadata_json?: Json | null
           user_agent?: string | null
@@ -263,7 +261,6 @@ export type Database = {
           granted?: boolean | null
           guardian_id?: string | null
           id?: string
-          ip_address?: string | null
           ip_hash?: string | null
           metadata_json?: Json | null
           user_agent?: string | null
@@ -2275,7 +2272,6 @@ export type Database = {
           details_json: Json | null
           event_type: string
           id: string
-          ip_address: string | null
           ip_hash: string | null
           metadata_json: Json | null
           severity: string
@@ -2286,7 +2282,6 @@ export type Database = {
           details_json?: Json | null
           event_type: string
           id?: string
-          ip_address?: string | null
           ip_hash?: string | null
           metadata_json?: Json | null
           severity?: string
@@ -2297,7 +2292,6 @@ export type Database = {
           details_json?: Json | null
           event_type?: string
           id?: string
-          ip_address?: string | null
           ip_hash?: string | null
           metadata_json?: Json | null
           severity?: string
