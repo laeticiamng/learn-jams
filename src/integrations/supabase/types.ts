@@ -268,6 +268,39 @@ export type Database = {
         }
         Relationships: []
       }
+      cost_daily_aggregates: {
+        Row: {
+          by_feature_json: Json | null
+          by_provider_json: Json | null
+          created_at: string
+          day: string
+          event_count: number
+          id: string
+          total_cost_usd: number
+          user_id: string
+        }
+        Insert: {
+          by_feature_json?: Json | null
+          by_provider_json?: Json | null
+          created_at?: string
+          day: string
+          event_count?: number
+          id?: string
+          total_cost_usd?: number
+          user_id: string
+        }
+        Update: {
+          by_feature_json?: Json | null
+          by_provider_json?: Json | null
+          created_at?: string
+          day?: string
+          event_count?: number
+          id?: string
+          total_cost_usd?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       cost_events: {
         Row: {
           actual_cost_usd: number | null
@@ -2045,6 +2078,51 @@ export type Database = {
         }
         Relationships: []
       }
+      security_alerts: {
+        Row: {
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          alert_type: string
+          created_at: string
+          description: string | null
+          details_json: Json | null
+          id: string
+          resolved_at: string | null
+          severity: string
+          status: string
+          title: string
+          user_id: string | null
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          alert_type: string
+          created_at?: string
+          description?: string | null
+          details_json?: Json | null
+          id?: string
+          resolved_at?: string | null
+          severity?: string
+          status?: string
+          title: string
+          user_id?: string | null
+        }
+        Update: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          alert_type?: string
+          created_at?: string
+          description?: string | null
+          details_json?: Json | null
+          id?: string
+          resolved_at?: string | null
+          severity?: string
+          status?: string
+          title?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       security_audit_events: {
         Row: {
           created_at: string
@@ -2931,6 +3009,7 @@ export type Database = {
       }
     }
     Functions: {
+      aggregate_daily_costs: { Args: { p_day?: string }; Returns: number }
       check_and_consume_rate_limit: {
         Args: {
           p_bucket_key: string
@@ -2950,6 +3029,10 @@ export type Database = {
         }
         Returns: Json
       }
+      detect_cost_anomalies: {
+        Args: { p_threshold_usd?: number }
+        Returns: number
+      }
       get_feature_quota_usage: {
         Args: { p_feature_key: string; p_user_id: string }
         Returns: Json
@@ -2963,6 +3046,7 @@ export type Database = {
           week: string
         }[]
       }
+      get_observability_summary: { Args: never; Returns: Json }
       get_platform_stats: { Args: never; Returns: Json }
       has_role: {
         Args: {

@@ -5,9 +5,11 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { buildCorsHeaders } from "../_shared/cors.ts";
+import { enforceRateLimit } from "../_shared/rateLimit.ts";
 
+// CORS headers are now dynamic per-request (see corsHeaders inside serve)
 const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") || "https://learn-jams.lovable.app";
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
@@ -177,6 +179,14 @@ serve(async (req) => {
         status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // Rate-limit: 10 song generations / hour / user (Suno is expensive)
+    const rl = await enforceRateLimit(
+      supabase, userId,
+      { bucketKey: "generate:song", maxRequests: 10, windowSeconds: 3600 },
+      buildCorsHeaders(req), req,
+    );
+    if (rl) return rl;
 
     // Apply sanitizer with full report
     const sanitizerReport = sanitizeForProviderWithReport(canonicalLyrics);
