@@ -5,6 +5,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { enforceRateLimit } from "../_shared/rateLimit.ts";
 
 const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") || "https://learn-jams.lovable.app";
 
@@ -37,6 +38,19 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // ── Rate limit: 15 generations / hour / user ────────────────
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+    const rateLimited = await enforceRateLimit(
+      supabaseAdmin,
+      user.id,
+      { bucketKey: "cognitio-generate-dynamic-sheet", maxRequests: 15, windowSeconds: 3600 },
+      corsHeaders,
+    );
+    if (rateLimited) return rateLimited;
 
     // Validate format
     if (input.m4_output?.chosen_format !== "fiche_dynamique") {

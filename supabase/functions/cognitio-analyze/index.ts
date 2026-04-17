@@ -7,6 +7,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { enforceRateLimit } from "../_shared/rateLimit.ts";
 
 const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") || "https://learn-jams.lovable.app";
 
@@ -101,6 +102,15 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
+
+    // ── Rate limit: 20 analyses / hour / user ───────────────────
+    const rateLimited = await enforceRateLimit(
+      supabase,
+      authUser.id,
+      { bucketKey: "cognitio-analyze", maxRequests: 20, windowSeconds: 3600 },
+      corsHeaders,
+    );
+    if (rateLimited) return rateLimited;
 
     const body: AnalyzeRequest = await req.json();
     const { document_id, clean_text, segments, source_type, confidence_level, user_objective, user_id } = body;

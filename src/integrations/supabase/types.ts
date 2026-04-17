@@ -1684,6 +1684,45 @@ export type Database = {
         }
         Relationships: []
       }
+      provider_health: {
+        Row: {
+          consecutive_failures: number
+          cooldown_seconds: number
+          failure_threshold: number
+          last_failure_at: string | null
+          last_success_at: string | null
+          metadata_json: Json | null
+          opened_at: string | null
+          provider_key: string
+          state: string
+          updated_at: string
+        }
+        Insert: {
+          consecutive_failures?: number
+          cooldown_seconds?: number
+          failure_threshold?: number
+          last_failure_at?: string | null
+          last_success_at?: string | null
+          metadata_json?: Json | null
+          opened_at?: string | null
+          provider_key: string
+          state?: string
+          updated_at?: string
+        }
+        Update: {
+          consecutive_failures?: number
+          cooldown_seconds?: number
+          failure_threshold?: number
+          last_failure_at?: string | null
+          last_success_at?: string | null
+          metadata_json?: Json | null
+          opened_at?: string | null
+          provider_key?: string
+          state?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       provider_routes: {
         Row: {
           capability: string
@@ -1835,6 +1874,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      rate_limit_buckets: {
+        Row: {
+          bucket_key: string
+          created_at: string
+          id: string
+          request_count: number
+          updated_at: string
+          user_id: string
+          window_start: string
+        }
+        Insert: {
+          bucket_key: string
+          created_at?: string
+          id?: string
+          request_count?: number
+          updated_at?: string
+          user_id: string
+          window_start?: string
+        }
+        Update: {
+          bucket_key?: string
+          created_at?: string
+          id?: string
+          request_count?: number
+          updated_at?: string
+          user_id?: string
+          window_start?: string
+        }
+        Relationships: []
       }
       recall_attempts: {
         Row: {
@@ -2862,6 +2931,29 @@ export type Database = {
       }
     }
     Functions: {
+      check_and_consume_rate_limit: {
+        Args: {
+          p_bucket_key: string
+          p_max_requests: number
+          p_user_id: string
+          p_window_seconds: number
+        }
+        Returns: Json
+      }
+      cleanup_old_rate_limits: { Args: never; Returns: undefined }
+      consume_feature_quota: {
+        Args: {
+          p_feature_key: string
+          p_limit: number
+          p_period_days?: number
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      get_feature_quota_usage: {
+        Args: { p_feature_key: string; p_user_id: string }
+        Returns: Json
+      }
       get_leaderboard: {
         Args: { p_week?: string }
         Returns: {
@@ -2882,6 +2974,15 @@ export type Database = {
       increment_quota_atomic: {
         Args: { p_limit: number; p_month: string; p_user_id: string }
         Returns: Json
+      }
+      is_provider_healthy: { Args: { p_provider_key: string }; Returns: Json }
+      record_provider_failure: {
+        Args: { p_provider_key: string }
+        Returns: Json
+      }
+      record_provider_success: {
+        Args: { p_provider_key: string }
+        Returns: undefined
       }
     }
     Enums: {
