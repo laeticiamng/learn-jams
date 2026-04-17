@@ -7,6 +7,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { enforceRateLimit } from "../_shared/rateLimit.ts";
 
 const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") || "https://learn-jams.lovable.app";
 
@@ -84,6 +85,15 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
+
+    // ── Rate limit: 30 ingestions / hour / user ─────────────────
+    const rateLimited = await enforceRateLimit(
+      supabase,
+      authUser.id,
+      { bucketKey: "cognitio-ingest", maxRequests: 30, windowSeconds: 3600 },
+      corsHeaders,
+    );
+    if (rateLimited) return rateLimited;
 
     const body: IngestRequest = await req.json();
     const { document_id, pasted_text, content_type, objective, language, user_id } = body;
