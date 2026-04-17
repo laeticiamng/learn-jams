@@ -16,6 +16,7 @@ import { FeatureFlagsPanel } from "@/components/admin/FeatureFlagsPanel";
 import SLODashboard from "@/components/admin/SLODashboard";
 import FunnelDashboard from "@/components/admin/FunnelDashboard";
 import BackupVerificationCard from "@/components/admin/BackupVerificationCard";
+import GovernanceDashboard from "@/components/admin/GovernanceDashboard";
 import { Link } from "react-router-dom";
 
 interface ProviderHealth {
