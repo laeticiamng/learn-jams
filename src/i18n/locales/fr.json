@@ -409,7 +409,7 @@
     "description": "Plateforme d'apprentissage multimodale par IA. Transformez vos cours en missions, quiz, vidéos et chansons pour mémoriser efficacement.",
     "product": "Produit", "legal": "Légal", "features": "Fonctionnalités", "about": "À propos",
     "signup": "Créer un compte", "login": "Se connecter", "contact": "Contact & Support",
-    "terms": "CGU", "privacy": "Confidentialité",
+    "terms": "CGU", "privacy": "Confidentialité", "security": "Sécurité & limites",
     "lyrics_gen": "Missions interactives par IA", "styles_count": "6 formats d'apprentissage", "import": "Import PDF et photos", "quiz": "Quiz interactif",
     "rights": "© {{year}} EMOTIONSCARE SASU — COGNITIO. Tous droits réservés."
   },
