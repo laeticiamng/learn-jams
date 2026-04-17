@@ -50,6 +50,7 @@ const GuardianSettings = lazy(() => import("./pages/GuardianSettings"));
 const EscapeGame = lazy(() => import("./pages/EscapeGame"));
 const Status = lazy(() => import("./pages/Status"));
 const AuditLog = lazy(() => import("./pages/security/AuditLog"));
+const AdminIncidents = lazy(() => import("./pages/admin/Incidents"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
