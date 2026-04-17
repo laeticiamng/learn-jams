@@ -664,7 +664,9 @@ export type Database = {
           enabled: boolean | null
           flag_key: string
           id: string
+          message: string | null
           metadata_json: Json | null
+          rollout_percent: number
           updated_at: string
         }
         Insert: {
@@ -673,7 +675,9 @@ export type Database = {
           enabled?: boolean | null
           flag_key: string
           id?: string
+          message?: string | null
           metadata_json?: Json | null
+          rollout_percent?: number
           updated_at?: string
         }
         Update: {
@@ -682,7 +686,9 @@ export type Database = {
           enabled?: boolean | null
           flag_key?: string
           id?: string
+          message?: string | null
           metadata_json?: Json | null
+          rollout_percent?: number
           updated_at?: string
         }
         Relationships: []
@@ -2618,6 +2624,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_cost_caps: {
+        Row: {
+          alert_threshold_pct: number
+          alerted_at: string | null
+          created_at: string
+          monthly_cap_usd: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          alert_threshold_pct?: number
+          alerted_at?: string | null
+          created_at?: string
+          monthly_cap_usd?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          alert_threshold_pct?: number
+          alerted_at?: string | null
+          created_at?: string
+          monthly_cap_usd?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_credit_balances: {
         Row: {
           balance: number
@@ -3007,6 +3040,16 @@ export type Database = {
         }
         Relationships: []
       }
+      user_audit_view: {
+        Row: {
+          created_at: string | null
+          event_type: string | null
+          id: string | null
+          public_details: Json | null
+          severity: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       aggregate_daily_costs: { Args: { p_day?: string }; Returns: number }
@@ -3019,6 +3062,8 @@ export type Database = {
         }
         Returns: Json
       }
+      check_user_cost_cap: { Args: { p_user_id: string }; Returns: Json }
+      cleanup_observability_tables: { Args: never; Returns: Json }
       cleanup_old_rate_limits: { Args: never; Returns: undefined }
       consume_feature_quota: {
         Args: {
@@ -3058,6 +3103,10 @@ export type Database = {
       increment_quota_atomic: {
         Args: { p_limit: number; p_month: string; p_user_id: string }
         Returns: Json
+      }
+      is_feature_enabled: {
+        Args: { p_key: string; p_user_id?: string }
+        Returns: boolean
       }
       is_provider_healthy: { Args: { p_provider_key: string }; Returns: Json }
       record_provider_failure: {
