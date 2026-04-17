@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, AlertTriangle, XCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import IncidentTimeline from "@/components/admin/IncidentTimeline";
 
 interface ProviderStatus {
   key: string;
@@ -122,6 +123,11 @@ export default function Status() {
               </Card>
             );
           })}
+        </div>
+
+        <div className="mt-12">
+          <h2 className="text-xl font-semibold mb-4">Incidents (30 jours)</h2>
+          <IncidentTimeline windowDays={30} emptyMessage="Aucun incident sur les 30 derniers jours." />
         </div>
 
         <div className="mt-12 text-center text-sm text-muted-foreground">

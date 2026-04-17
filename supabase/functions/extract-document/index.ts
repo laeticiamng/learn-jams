@@ -1,11 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { checkIdempotency } from "../_shared/idempotency.ts";
 
 const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") || "https://learn-jams.lovable.app";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version, idempotency-key",
 };
 
 const systemPrompts: Record<string, string> = {
@@ -67,6 +68,16 @@ serve(async (req) => {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    const userId = claimsData.claims.sub as string;
+
+    // Idempotency check (admin client for service-role RPC access)
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+    const idem = await checkIdempotency(supabaseAdmin, req, userId, "extract-document", corsHeaders);
+    if (idem.cached) return idem.replay();
 
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
@@ -146,7 +157,9 @@ serve(async (req) => {
       });
     }
 
-    return new Response(JSON.stringify({ text: extractedText, fileName: file.name }), {
+    const responseBody = { text: extractedText, fileName: file.name };
+    await idem.complete(responseBody, 200);
+    return new Response(JSON.stringify(responseBody), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e: unknown) {

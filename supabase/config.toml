@@ -57,3 +57,7 @@ verify_jwt = false
 [functions.public-status]
 # Public status page — no auth so visitors can see it
 verify_jwt = false
+
+[functions.compute-slos]
+# Triggered by pg_cron — internal scheduler, no JWT
+verify_jwt = false

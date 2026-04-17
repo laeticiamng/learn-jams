@@ -13,6 +13,8 @@ import Navbar from "@/components/Navbar";
 import { usePageSEO } from "@/hooks/usePageSEO";
 import { toast } from "sonner";
 import { FeatureFlagsPanel } from "@/components/admin/FeatureFlagsPanel";
+import SLODashboard from "@/components/admin/SLODashboard";
+import { Link } from "react-router-dom";
 
 interface ProviderHealth {
   provider_key: string;
@@ -183,6 +185,17 @@ export default function AdminObservability() {
             </Card>
           </div>
         )}
+
+        <SLODashboard />
+
+        <div className="flex justify-end">
+          <Link to="/admin/incidents">
+            <Button variant="outline" size="sm">
+              <Bell className="w-4 h-4 mr-2" />
+              Gérer les incidents
+            </Button>
+          </Link>
+        </div>
 
         <Tabs defaultValue="alerts">
           <TabsList>
