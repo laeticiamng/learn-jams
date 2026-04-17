@@ -2,28 +2,26 @@ import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
-
-const COOKIE_KEY = "sb_cookie_consent";
+import { getConsent, setConsent } from "@/lib/cookieConsent";
 
 export default function CookieConsent() {
   const { t } = useTranslation();
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    const consent = localStorage.getItem(COOKIE_KEY);
-    if (!consent) {
+    if (getConsent() === null) {
       const timer = setTimeout(() => setVisible(true), 1500);
       return () => clearTimeout(timer);
     }
   }, []);
 
   const accept = () => {
-    localStorage.setItem(COOKIE_KEY, "accepted");
+    setConsent("accepted");
     setVisible(false);
   };
 
   const decline = () => {
-    localStorage.setItem(COOKIE_KEY, "declined");
+    setConsent("declined");
     setVisible(false);
   };
 
