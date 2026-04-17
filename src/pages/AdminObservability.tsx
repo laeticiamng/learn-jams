@@ -330,6 +330,11 @@ export default function AdminObservability() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* Feature flags */}
+          <TabsContent value="flags">
+            <FeatureFlagsPanel />
+          </TabsContent>
         </Tabs>
       </main>
     </div>
