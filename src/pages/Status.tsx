@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, AlertTriangle, XCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import IncidentTimeline from "@/components/admin/IncidentTimeline";
 
 interface ProviderStatus {
   key: string;
