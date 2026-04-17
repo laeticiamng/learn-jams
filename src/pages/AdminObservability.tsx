@@ -14,6 +14,7 @@ import { usePageSEO } from "@/hooks/usePageSEO";
 import { toast } from "sonner";
 import { FeatureFlagsPanel } from "@/components/admin/FeatureFlagsPanel";
 import SLODashboard from "@/components/admin/SLODashboard";
+import FunnelDashboard from "@/components/admin/FunnelDashboard";
 import { Link } from "react-router-dom";
 
 interface ProviderHealth {
@@ -205,6 +206,7 @@ export default function AdminObservability() {
             <TabsTrigger value="rate">Rate-limits</TabsTrigger>
             <TabsTrigger value="audit">Audit</TabsTrigger>
             <TabsTrigger value="flags">Feature flags</TabsTrigger>
+            <TabsTrigger value="funnel">Funnel</TabsTrigger>
           </TabsList>
 
           {/* Alerts */}
@@ -347,6 +349,11 @@ export default function AdminObservability() {
           {/* Feature flags */}
           <TabsContent value="flags">
             <FeatureFlagsPanel />
+          </TabsContent>
+
+          {/* Funnel */}
+          <TabsContent value="funnel">
+            <FunnelDashboard />
           </TabsContent>
         </Tabs>
       </main>

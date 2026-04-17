@@ -94,7 +94,7 @@ export default function FunnelDashboard() {
                 <span className="font-medium">{step.label}</span>
                 <div className="flex items-center gap-2">
                   {prev && dropOff > 0 && (
-                    <Badge variant="outline" className="gap-1 text-rose-500">
+                    <Badge variant="outline" className="gap-1 text-destructive">
                       <TrendingDown className="h-3 w-3" />
                       -{dropOff}%
                     </Badge>
