@@ -26,8 +26,9 @@ export default function HeroProductMockup() {
           <div className="flex items-center gap-2 px-4 h-9 border-b border-border/20 bg-muted/20">
             <div className="flex gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-destructive/60" />
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-500/60" />
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/60" />
+              <span className="w-2.5 h-2.5 rounded-full bg-destructive/60" />
+              <span className="w-2.5 h-2.5 rounded-full bg-primary/40" />
+              <span className="w-2.5 h-2.5 rounded-full bg-primary/60" />
             </div>
             <div className="flex-1 text-center text-[11px] text-muted-foreground/60 font-mono">
               cognitio.app/mission
@@ -107,7 +108,7 @@ export default function HeroProductMockup() {
                 </div>
                 {/* Quiz card */}
                 <div className="rounded-xl p-3 bg-card/60 border border-border/30">
-                  <Check className="w-4 h-4 text-emerald-500 mb-2" />
+                  <Check className="w-4 h-4 text-primary mb-2" />
                   <div className="text-xs font-semibold mb-0.5">{t("home.mockup_card_quiz", "Quiz adaptatif")}</div>
                   <div className="text-[10px] text-muted-foreground">20 questions</div>
                 </div>
