@@ -33,6 +33,7 @@ const League = lazy(() => import("./pages/League"));
 const Export = lazy(() => import("./pages/Export"));
 const Terms = lazy(() => import("./pages/Terms"));
 const Privacy = lazy(() => import("./pages/Privacy"));
+const Security = lazy(() => import("./pages/Security"));
 const Contact = lazy(() => import("./pages/Contact"));
 const About = lazy(() => import("./pages/About"));
 const Pricing = lazy(() => import("./pages/Pricing"));
@@ -87,6 +88,7 @@ const App = () => (
                       <Route path="/reset-password" element={<ResetPassword />} />
                       <Route path="/terms" element={<Terms />} />
                       <Route path="/privacy" element={<Privacy />} />
+                      <Route path="/security" element={<Security />} />
                       <Route path="/about" element={<About />} />
                       <Route path="/pricing" element={<Pricing />} />
                       <Route path="/contact" element={<Contact />} />
