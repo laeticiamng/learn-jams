@@ -124,6 +124,11 @@ export default function Status() {
           })}
         </div>
 
+        <div className="mt-12">
+          <h2 className="text-xl font-semibold mb-4">Incidents (30 jours)</h2>
+          <IncidentTimeline windowDays={30} emptyMessage="Aucun incident sur les 30 derniers jours." />
+        </div>
+
         <div className="mt-12 text-center text-sm text-muted-foreground">
           <Link to="/" className="hover:text-foreground transition-colors">← Retour à l'accueil</Link>
         </div>
