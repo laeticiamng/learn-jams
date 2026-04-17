@@ -16,7 +16,7 @@ const ExplainerVideoSection = () => {
           transition={{ duration: 0.7, ease }}
           className="font-display text-3xl md:text-4xl lg:text-5xl font-bold text-center mb-4 tracking-tight"
         >
-          Comment ça marche ?
+          {t("home.explainer_title")}
         </motion.h2>
         <motion.p
           initial={{ opacity: 0 }}
@@ -25,7 +25,7 @@ const ExplainerVideoSection = () => {
           transition={{ delay: 0.1, duration: 0.5 }}
           className="text-center text-muted-foreground/70 mb-10 text-lg max-w-xl mx-auto"
         >
-          En 20 secondes, découvre comment Cognitio transforme n'importe quel cours en expérience d'apprentissage.
+          {t("home.explainer_subtitle")}
         </motion.p>
 
         <motion.div
