@@ -9,7 +9,7 @@ export function useIdempotentInvoke() {
   return useCallback(
     async <T = unknown>(
       functionName: string,
-      options?: { body?: unknown; idempotencyKey?: string },
+      options?: { body?: Record<string, unknown> | FormData; idempotencyKey?: string },
     ): Promise<{ data: T | null; error: Error | null }> => {
       const key = options?.idempotencyKey ?? crypto.randomUUID();
       try {
