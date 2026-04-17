@@ -18,6 +18,7 @@ import { useTranslation } from "react-i18next";
 
 // Section components
 import HeroMultimodal from "@/components/home/HeroMultimodal";
+import HeroProductMockup from "@/components/home/HeroProductMockup";
 import FormatChooserSection from "@/components/home/FormatChooserSection";
 import AudienceAdaptationSection from "@/components/home/AudienceAdaptationSection";
 import LearningLoopSection from "@/components/home/LearningLoopSection";
@@ -123,6 +124,11 @@ export default function Index() {
           <ParallaxOrbs />
           <HeroMultimodal />
         </div>
+      </SectionErrorBoundary>
+
+      {/* Product mockup — visual proof under hero */}
+      <SectionErrorBoundary name="HeroProductMockup">
+        <HeroProductMockup />
       </SectionErrorBoundary>
 
       {/* Trust badges */}
