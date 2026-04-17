@@ -41,6 +41,30 @@ export type Database = {
         }
         Relationships: []
       }
+      backup_verification_runs: {
+        Row: {
+          id: string
+          metrics_json: Json
+          notes: string | null
+          run_at: string
+          status: string
+        }
+        Insert: {
+          id?: string
+          metrics_json?: Json
+          notes?: string | null
+          run_at?: string
+          status: string
+        }
+        Update: {
+          id?: string
+          metrics_json?: Json
+          notes?: string | null
+          run_at?: string
+          status?: string
+        }
+        Relationships: []
+      }
       collaborative_sessions: {
         Row: {
           created_at: string
@@ -3326,6 +3350,7 @@ export type Database = {
         Args: { p_provider_key: string }
         Returns: undefined
       }
+      run_backup_verification: { Args: never; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"

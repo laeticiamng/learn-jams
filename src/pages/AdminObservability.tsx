@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { FeatureFlagsPanel } from "@/components/admin/FeatureFlagsPanel";
 import SLODashboard from "@/components/admin/SLODashboard";
 import FunnelDashboard from "@/components/admin/FunnelDashboard";
+import BackupVerificationCard from "@/components/admin/BackupVerificationCard";
 import { Link } from "react-router-dom";
 
 interface ProviderHealth {
@@ -188,6 +189,8 @@ export default function AdminObservability() {
         )}
 
         <SLODashboard />
+
+        <BackupVerificationCard />
 
         <div className="flex justify-end">
           <Link to="/admin/incidents">
