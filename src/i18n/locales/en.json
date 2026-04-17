@@ -128,7 +128,8 @@
     "sticky_cta_start": "Start for free",
     "disclaimer": "",
     "seo_title": "COGNITIO — Transform any course into a multimodal learning experience",
-    "seo_description": "Import your course, transform it into interactive missions, songs, quizzes, videos, and flashcards. Not an AI summary, a retention engine."
+    "seo_description": "Import your course, transform it into interactive missions, songs, quizzes, videos, and flashcards. Not an AI summary, a retention engine.",
+    "hero_cta_see_example": "See an example"
   },
   "auth": {
     "login_title": "Welcome back",

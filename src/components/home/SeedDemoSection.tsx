@@ -21,7 +21,7 @@ export default function SeedDemoSection() {
 
   return (
     <FeatureFlagGuard flag="ff_seed_library_enabled">
-      <section className="py-16 sm:py-20 md:py-28 px-4">
+      <section id="exemples" className="py-16 sm:py-20 md:py-28 px-4 scroll-mt-24">
         <div className="container mx-auto max-w-3xl">
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
