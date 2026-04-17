@@ -157,7 +157,9 @@ serve(async (req) => {
       });
     }
 
-    return new Response(JSON.stringify({ text: extractedText, fileName: file.name }), {
+    const responseBody = { text: extractedText, fileName: file.name };
+    await idem.complete(responseBody, 200);
+    return new Response(JSON.stringify(responseBody), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e: unknown) {
