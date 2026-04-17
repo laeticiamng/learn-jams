@@ -53,3 +53,7 @@ verify_jwt = false
 [functions.webhook-stripe]
 # External provider callback (Stripe)
 verify_jwt = false
+
+[functions.public-status]
+# Public status page — no auth so visitors can see it
+verify_jwt = false

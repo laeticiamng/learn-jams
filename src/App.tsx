@@ -48,6 +48,8 @@ const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const AdminObservability = lazy(() => import("./pages/AdminObservability"));
 const GuardianSettings = lazy(() => import("./pages/GuardianSettings"));
 const EscapeGame = lazy(() => import("./pages/EscapeGame"));
+const Status = lazy(() => import("./pages/Status"));
+const AuditLog = lazy(() => import("./pages/security/AuditLog"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -106,6 +108,8 @@ const App = () => (
                       <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
                       <Route path="/admin/observability" element={<AdminRoute><AdminObservability /></AdminRoute>} />
                       <Route path="/guardian-settings" element={<ProtectedRoute><GuardianSettings /></ProtectedRoute>} />
+                      <Route path="/status" element={<Status />} />
+                      <Route path="/security/audit" element={<ProtectedRoute><AuditLog /></ProtectedRoute>} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </PageTransition>

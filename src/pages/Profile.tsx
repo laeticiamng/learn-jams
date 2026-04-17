@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -537,6 +537,11 @@ export default function Profile() {
                 {t("profile.export_data", "Télécharger mes données")}
               </Button>
             </motion.div>
+            <Link to="/security/audit" className="block">
+              <Button variant="ghost" size="sm" className="w-full justify-start text-xs text-muted-foreground hover:text-foreground">
+                Voir mon historique d'activité (RGPD)
+              </Button>
+            </Link>
           </div>
 
           {/* ── Quotas ── */}
