@@ -136,8 +136,6 @@ export default function Index() {
         <TrustSection />
       </SectionErrorBoundary>
 
-      <SectionDivider />
-
       {/* Explainer Video */}
       <SectionErrorBoundary name="ExplainerVideo">
         <ExplainerVideoSection />
@@ -149,8 +147,6 @@ export default function Index() {
       <SectionErrorBoundary name="FormatChooser">
         <FormatChooserSection />
       </SectionErrorBoundary>
-
-      <SectionDivider />
 
       {/* Audience adaptation */}
       <SectionErrorBoundary name="AudienceAdaptation">
