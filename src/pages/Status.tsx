@@ -46,15 +46,19 @@ const STATE_META = {
 export default function Status() {
   const [data, setData] = useState<StatusPayload | null>(null);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
 
   const fetchStatus = async () => {
     setLoading(true);
     try {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/public-status`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       setData(json);
+      setFetchError(false);
     } catch {
-      setData({ overall: "operational", providers: [], generated_at: new Date().toISOString() });
+      // Do NOT silently report "operational" — that is a false trust signal.
+      setFetchError(true);
     } finally {
       setLoading(false);
     }
@@ -78,6 +82,17 @@ export default function Status() {
             Visibilité temps réel sur la santé des composants Cognitio.
           </p>
         </div>
+
+        {fetchError && (
+          <Card className="p-6 mb-8 border-2 border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-300">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="w-5 h-5 shrink-0" />
+              <div className="text-sm">
+                Impossible de récupérer l'état du service en temps réel. Réessayez dans un instant — l'état affiché ci-dessous peut être obsolète.
+              </div>
+            </div>
+          </Card>
+        )}
 
         <Card className={`p-8 mb-8 border-2 ${STATE_META[overall].className}`}>
           <div className="flex items-center gap-4">
