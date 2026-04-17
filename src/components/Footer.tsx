@@ -48,6 +48,7 @@ const Footer = forwardRef<HTMLElement>((_props, ref) => {
             <ul className="space-y-2.5 text-sm text-muted-foreground">
               <li><Link to="/terms" className="hover:text-foreground transition-colors duration-300">{t("footer.terms")}</Link></li>
               <li><Link to="/privacy" className="hover:text-foreground transition-colors duration-300">{t("footer.privacy")}</Link></li>
+              <li><Link to="/status" className="hover:text-foreground transition-colors duration-300">État du service</Link></li>
             </ul>
           </nav>
 
