@@ -1186,6 +1186,119 @@ export type Database = {
         }
         Relationships: []
       }
+      idempotency_keys: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          endpoint: string
+          expires_at: string
+          http_status: number | null
+          key: string
+          response_json: Json | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          endpoint: string
+          expires_at?: string
+          http_status?: number | null
+          key: string
+          response_json?: Json | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          endpoint?: string
+          expires_at?: string
+          http_status?: number | null
+          key?: string
+          response_json?: Json | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      incident_updates: {
+        Row: {
+          id: string
+          incident_id: string
+          message: string
+          posted_at: string
+          posted_by: string | null
+          status_at_post: string
+        }
+        Insert: {
+          id?: string
+          incident_id: string
+          message: string
+          posted_at?: string
+          posted_by?: string | null
+          status_at_post: string
+        }
+        Update: {
+          id?: string
+          incident_id?: string
+          message?: string
+          posted_at?: string
+          posted_by?: string | null
+          status_at_post?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incident_updates_incident_id_fkey"
+            columns: ["incident_id"]
+            isOneToOne: false
+            referencedRelation: "incidents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      incidents: {
+        Row: {
+          affected_components: string[] | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          resolved_at: string | null
+          severity: string
+          started_at: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          affected_components?: string[] | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          resolved_at?: string | null
+          severity?: string
+          started_at?: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          affected_components?: string[] | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          resolved_at?: string | null
+          severity?: string
+          started_at?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       league_points: {
         Row: {
           created_at: string
@@ -2236,6 +2349,80 @@ export type Database = {
           },
         ]
       }
+      slo_definitions: {
+        Row: {
+          comparator: string
+          created_at: string
+          description: string | null
+          display_name: string
+          enabled: boolean
+          slo_key: string
+          target_pct: number
+          unit: string
+          window_days: number
+        }
+        Insert: {
+          comparator?: string
+          created_at?: string
+          description?: string | null
+          display_name: string
+          enabled?: boolean
+          slo_key: string
+          target_pct: number
+          unit?: string
+          window_days?: number
+        }
+        Update: {
+          comparator?: string
+          created_at?: string
+          description?: string | null
+          display_name?: string
+          enabled?: boolean
+          slo_key?: string
+          target_pct?: number
+          unit?: string
+          window_days?: number
+        }
+        Relationships: []
+      }
+      slo_measurements: {
+        Row: {
+          id: string
+          measured_at: string
+          met: boolean
+          metadata_json: Json | null
+          sample_size: number | null
+          slo_key: string
+          value: number
+        }
+        Insert: {
+          id?: string
+          measured_at?: string
+          met: boolean
+          metadata_json?: Json | null
+          sample_size?: number | null
+          slo_key: string
+          value: number
+        }
+        Update: {
+          id?: string
+          measured_at?: string
+          met?: boolean
+          metadata_json?: Json | null
+          sample_size?: number | null
+          slo_key?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "slo_measurements_slo_key_fkey"
+            columns: ["slo_key"]
+            isOneToOne: false
+            referencedRelation: "slo_definitions"
+            referencedColumns: ["slo_key"]
+          },
+        ]
+      }
       song_ratings: {
         Row: {
           created_at: string
@@ -3065,6 +3252,17 @@ export type Database = {
       check_user_cost_cap: { Args: { p_user_id: string }; Returns: Json }
       cleanup_observability_tables: { Args: never; Returns: Json }
       cleanup_old_rate_limits: { Args: never; Returns: undefined }
+      complete_idempotency: {
+        Args: {
+          p_http_status: number
+          p_key: string
+          p_response: Json
+          p_status?: string
+          p_user_id: string
+        }
+        Returns: undefined
+      }
+      compute_slo_status: { Args: { p_slo_key: string }; Returns: Json }
       consume_feature_quota: {
         Args: {
           p_feature_key: string
@@ -3092,6 +3290,10 @@ export type Database = {
         }[]
       }
       get_observability_summary: { Args: never; Returns: Json }
+      get_or_create_idempotency: {
+        Args: { p_endpoint: string; p_key: string; p_user_id: string }
+        Returns: Json
+      }
       get_platform_stats: { Args: never; Returns: Json }
       has_role: {
         Args: {
