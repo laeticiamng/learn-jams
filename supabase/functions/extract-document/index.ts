@@ -69,6 +69,16 @@ serve(async (req) => {
       });
     }
 
+    const userId = claimsData.claims.sub as string;
+
+    // Idempotency check (admin client for service-role RPC access)
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+    const idem = await checkIdempotency(supabaseAdmin, req, userId, "extract-document", corsHeaders);
+    if (idem.cached) return idem.replay();
+
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
     const language = (formData.get("language") as string) || "fr";
