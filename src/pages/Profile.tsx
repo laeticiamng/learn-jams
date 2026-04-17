@@ -102,6 +102,12 @@ export default function Profile() {
         setFavCount(favsRes.count || 0);
         if (subRes.error) console.error("[Profile] Subscription check error:", subRes.error);
         setIsPro(subRes.data?.status === "active");
+
+        // Check pending account deletion
+        const { data: delRow } = await (supabase as unknown as {
+          from: (t: string) => { select: (c: string) => { eq: (k: string, v: string) => { eq: (k2: string, v2: string) => { maybeSingle: () => Promise<{ data: { scheduled_purge_at: string } | null }> } } } };
+        }).from("account_deletions").select("scheduled_purge_at").eq("user_id", user.id).eq("status", "pending").maybeSingle();
+        if (delRow) setPendingDeletion(delRow);
       } catch (err: unknown) {
         console.error("[Profile] Unexpected error:", err);
         toast.error(t("common.error", "Une erreur est survenue"));
@@ -609,23 +615,47 @@ export default function Profile() {
         >
           <h3 className="font-display font-semibold text-destructive mb-2">{t("profile.danger_zone")}</h3>
           <p className="text-sm text-muted-foreground mb-5">{t("profile.danger_text")}</p>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" className="w-full gap-2 rounded-xl h-11">
-                <Trash2 className="w-4 h-4" /> {t("profile.delete_account")}
+          {pendingDeletion ? (
+            <div className="space-y-3">
+              <div className="rounded-xl bg-destructive/10 border border-destructive/30 p-4">
+                <p className="text-sm font-medium text-destructive mb-1">
+                  {t("profile.deletion_pending_title")}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {t("profile.deletion_pending_text", {
+                    date: new Date(pendingDeletion.scheduled_purge_at).toLocaleDateString(),
+                  })}
+                </p>
+              </div>
+              <Button
+                onClick={handleCancelDeletion}
+                disabled={cancellingDeletion}
+                variant="outline"
+                className="w-full gap-2 rounded-xl h-11"
+              >
+                {cancellingDeletion ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                {t("profile.cancel_deletion")}
               </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent className="glass-card-elevated border-border/20">
-              <AlertDialogHeader>
-                <AlertDialogTitle>{t("profile.delete_confirm_title")}</AlertDialogTitle>
-                <AlertDialogDescription>{t("profile.delete_confirm_text")}</AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel className="rounded-xl">{t("profile.cancel")}</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDeleteAccount} className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl">{t("profile.delete_forever")}</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+            </div>
+          ) : (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" className="w-full gap-2 rounded-xl h-11">
+                  <Trash2 className="w-4 h-4" /> {t("profile.delete_account")}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="glass-card-elevated border-border/20">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>{t("profile.delete_confirm_title")}</AlertDialogTitle>
+                  <AlertDialogDescription>{t("profile.delete_confirm_text")}</AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel className="rounded-xl">{t("profile.cancel")}</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeleteAccount} className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl">{t("profile.schedule_deletion")}</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
         </motion.div>
       </div>
       <Footer />
