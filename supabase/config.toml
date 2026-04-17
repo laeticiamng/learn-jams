@@ -61,3 +61,10 @@ verify_jwt = false
 [functions.compute-slos]
 # Triggered by pg_cron — internal scheduler, no JWT
 verify_jwt = false
+
+[functions.cancel-account-deletion]
+verify_jwt = true
+
+[functions.purge-deleted-accounts]
+# Triggered by pg_cron with service-role bearer token
+verify_jwt = false

@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_deletions: {
+        Row: {
+          cancelled_at: string | null
+          created_at: string
+          id: string
+          purged_at: string | null
+          reason: string | null
+          requested_at: string
+          scheduled_purge_at: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cancelled_at?: string | null
+          created_at?: string
+          id?: string
+          purged_at?: string | null
+          reason?: string | null
+          requested_at?: string
+          scheduled_purge_at?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cancelled_at?: string | null
+          created_at?: string
+          id?: string
+          purged_at?: string | null
+          reason?: string | null
+          requested_at?: string
+          scheduled_purge_at?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       adaptive_credit_balances: {
         Row: {
           consumed_flex_credits_json: Json | null
