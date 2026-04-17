@@ -3266,7 +3266,6 @@ export type Database = {
           display_name: string | null
           email: string | null
           id: string | null
-          invite_expires_at: string | null
           invite_used_at: string | null
         }
         Insert: {
@@ -3274,7 +3273,6 @@ export type Database = {
           display_name?: string | null
           email?: string | null
           id?: string | null
-          invite_expires_at?: string | null
           invite_used_at?: string | null
         }
         Update: {
@@ -3282,7 +3280,6 @@ export type Database = {
           display_name?: string | null
           email?: string | null
           id?: string | null
-          invite_expires_at?: string | null
           invite_used_at?: string | null
         }
         Relationships: []
