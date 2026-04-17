@@ -114,13 +114,13 @@ export default function HeroProductMockup() {
                 </div>
                 {/* Song card */}
                 <div className="rounded-xl p-3 bg-card/60 border border-border/30">
-                  <Music2 className="w-4 h-4 text-pink-400 mb-2" />
+                  <Music2 className="w-4 h-4 text-accent mb-2" />
                   <div className="text-xs font-semibold mb-0.5">{t("home.mockup_card_song", "Chanson mémo")}</div>
                   <div className="text-[10px] text-muted-foreground">3 min · refrain</div>
                 </div>
                 {/* Review card */}
                 <div className="rounded-xl p-3 bg-card/60 border border-border/30">
-                  <Brain className="w-4 h-4 text-blue-400 mb-2" />
+                  <Brain className="w-4 h-4 text-secondary-foreground mb-2" />
                   <div className="text-xs font-semibold mb-0.5">{t("home.mockup_card_review", "Rappels J+1, J+7")}</div>
                   <div className="text-[10px] text-muted-foreground">{t("home.mockup_card_review_sub", "Auto programmés")}</div>
                 </div>
