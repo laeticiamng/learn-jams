@@ -12,6 +12,7 @@ import { RefreshCw, AlertTriangle, CheckCircle2, ShieldAlert, DollarSign, Activi
 import Navbar from "@/components/Navbar";
 import { usePageSEO } from "@/hooks/usePageSEO";
 import { toast } from "sonner";
+import { FeatureFlagsPanel } from "@/components/admin/FeatureFlagsPanel";
 
 interface ProviderHealth {
   provider_key: string;
@@ -190,6 +191,7 @@ export default function AdminObservability() {
             <TabsTrigger value="costs">Top coûts</TabsTrigger>
             <TabsTrigger value="rate">Rate-limits</TabsTrigger>
             <TabsTrigger value="audit">Audit</TabsTrigger>
+            <TabsTrigger value="flags">Feature flags</TabsTrigger>
           </TabsList>
 
           {/* Alerts */}
