@@ -1,105 +1,85 @@
 
 
-# Analyse complète du repo COGNITIO — Eléments manquants
+# Audit final COGNITIO — Derniers manques
 
-## Etat actuel
-Le repo est mature : 28 pages, 39 edge functions, 67 tables, i18n, PWA manifest, SEO, auth, billing, escape games, pipeline Cognitio. L'infrastructure est solide.
+## État actuel
+La plateforme est déjà très mature : navigation mobile, streak, avatar, partage, sécurité du profil, gouvernance complète (rate-limit, circuit breaker, audit log, quotas, observabilité, alerting/cron). Restent quelques **trous techniques critiques** identifiés.
 
-## Eléments manquants identifiés
+## Manques restants
 
-### 1. Navigation mobile (Bottom Tab Bar)
-Pas de barre de navigation fixe en bas pour mobile. Les utilisateurs connectés doivent ouvrir le menu hamburger pour naviguer. Sur mobile, c'est un frein UX majeur.
+### 1. ⚠️ Webhooks externes non configurés dans `config.toml` (CRITIQUE)
+Les fonctions `webhook-resend`, `webhook-twilio`, `webhook-suno`, `webhook-stripe` ne sont **pas déclarées** dans `supabase/config.toml`. Sans `verify_jwt = false`, elles rejettent les callbacks externes avec un 401 → notifications mail/SMS et événements provider perdus.
 
-**Action** : Créer un composant `MobileBottomNav` avec 4-5 onglets (Créer, Missions, Révision, Profil) affiché uniquement sur mobile pour les utilisateurs connectés.
+**Fix** : Ajouter les blocs dans `config.toml`.
 
-### 2. Upload d'avatar sur le profil
-Le profil affiche uniquement la première lettre du nom (ligne 185). Pas de possibilité d'uploader une photo de profil alors que `avatar_url` existe dans la table `profiles` et que le composant `Avatar` UI est disponible.
+### 2. Service Worker PWA absent
+Manifest présent mais aucun SW. L'app n'est pas réellement installable ni cache-first.
 
-**Action** : Ajouter un upload d'avatar avec stockage dans le bucket existant `course-uploads` (ou un sous-dossier dédié), mise à jour de `avatar_url` dans `profiles`.
+**Fix** : `public/sw.js` minimal (cache static assets, network-first pour API), enregistré dans `index.html`.
 
-### 3. Changement de mot de passe depuis le profil
-`updatePassword` existe dans `useAuth` mais n'est accessible que via `/reset-password` (flux email). Aucun moyen de changer son mot de passe depuis le profil.
+### 3. Export RGPD des données utilisateur
+Bouton "Supprimer mon compte" présent, mais pas de **droit à la portabilité** (RGPD art. 20). L'utilisateur ne peut pas exporter ses données.
 
-**Action** : Ajouter une section "Sécurité" dans la page Profil avec un formulaire de changement de mot de passe.
+**Fix** : Edge function `export-user-data` qui retourne un JSON (profile, songs, missions, runs, transformations) + bouton dans Profil → Sécurité.
 
-### 4. Streak / Gamification quotidienne
-Pas de système de streak quotidien. La page League existe avec des points mais il n'y a pas de motivation quotidienne (connexion consécutive, objectifs journaliers).
+### 4. Lien `/admin/observability` absent du menu admin
+La page existe mais aucun lien depuis `AdminDashboard`. Les admins doivent connaître l'URL.
 
-**Action** : Créer un composant `DailyStreakBanner` affiché sur le profil et dans la navbar, qui track les jours consécutifs d'activité.
+**Fix** : Ajouter une carte/lien dans `AdminDashboard.tsx`.
 
-### 5. Service Worker pour le PWA
-Le `manifest.json` existe mais aucun service worker n'est enregistré. L'app n'est donc pas vraiment installable ni utilisable offline.
+### 5. Quotas client non affichés
+Le hook `useFeatureQuota` existe mais aucun composant ne montre à l'utilisateur ses quotas restants (génération mission, analyse, musique).
 
-**Action** : Ajouter un service worker minimal avec cache des assets statiques et enregistrement dans `main.tsx`.
+**Fix** : Composant `QuotaIndicator` affiché dans `Create` et `Profile`.
 
-### 6. Page de partage social
-Pas de fonctionnalité de partage de ses résultats ou missions. Aucun bouton "Partager" nulle part.
+### 6. Page `/offline` PWA
+Pour une vraie PWA, il faut une page de fallback offline gérée par le SW.
 
-**Action** : Créer un composant `ShareButton` réutilisable (Web Share API avec fallback copie de lien) et l'intégrer dans Player, MissionDebrief et le Profil.
-
-### 7. Sitemap dynamique (pages login/signup manquantes)
-Le sitemap est statique et n'inclut pas `/login` et `/signup` qui sont des pages publiques importantes pour le SEO.
-
-**Action** : Ajouter `/login` et `/signup` au sitemap.xml.
-
-### 8. Fix des 2 warnings RLS "always true"
-Les politiques INSERT sur `contact_messages` sont intentionnelles (formulaire public). Les warnings du linter concernent ces 2 politiques. Pas d'action requise — c'est un faux positif documenté.
+**Fix** : `public/offline.html` minimal cohérent avec le branding.
 
 ---
 
-## Plan d'implémentation (par priorité)
+## Plan d'implémentation (un seul passage)
 
-### Etape 1 — Mobile Bottom Nav
-- Créer `src/components/MobileBottomNav.tsx`
-- 4 onglets : Créer, Missions, Révision, Profil
-- Icônes + labels, highlight actif, affiché uniquement `md:hidden` + user connecté
-- Intégrer dans `App.tsx` après les Routes
+### Étape 1 — Config webhooks
+- Ajouter dans `supabase/config.toml` :
+  ```toml
+  [functions.webhook-resend]   verify_jwt = false
+  [functions.webhook-twilio]   verify_jwt = false
+  [functions.webhook-suno]     verify_jwt = false
+  [functions.webhook-stripe]   verify_jwt = false
+  ```
 
-### Etape 2 — Avatar upload sur le profil
-- Ajouter un input file sur le cercle avatar dans `Profile.tsx`
-- Upload vers `course-uploads/avatars/{userId}.webp`
-- Mettre à jour `profiles.avatar_url`
-- Afficher l'image dans le Navbar et le Profil
+### Étape 2 — Service Worker + offline
+- Créer `public/sw.js` (cache v1 : assets statiques, stratégie network-first)
+- Créer `public/offline.html` (page sobre branded)
+- Enregistrer le SW dans `index.html` (script inline avec garde dev)
 
-### Etape 3 — Changement de mot de passe
-- Ajouter une section "Sécurité" dans `Profile.tsx`
-- Formulaire : mot de passe actuel (optionnel), nouveau mot de passe, confirmation
-- Appel à `updatePassword` de `useAuth`
+### Étape 3 — Export RGPD
+- Créer edge function `supabase/functions/export-user-data/index.ts` (verify_jwt=true, agrège profile/songs/missions/transformations/runs/streak)
+- Ajouter bouton "Télécharger mes données" dans Profil → Sécurité (déclenche download JSON)
 
-### Etape 4 — Service Worker PWA
-- Créer `public/sw.js` avec cache des assets statiques
-- Enregistrer dans `index.html` ou `main.tsx`
+### Étape 4 — Lien observability dans Admin
+- Ajouter carte cliquable "Observabilité système" dans `AdminDashboard.tsx` → `/admin/observability`
 
-### Etape 5 — Bouton de partage
-- Créer `src/components/ShareButton.tsx` avec Web Share API + fallback clipboard
-- Intégrer dans `Player.tsx` et `MissionDebrief.tsx`
-
-### Etape 6 — Streak quotidien
-- Migration SQL : table `daily_streaks` (user_id, current_streak, longest_streak, last_active_date)
-- Hook `useDailyStreak` qui met à jour le streak à chaque visite
-- Composant `StreakBadge` affiché dans le Profil
-
-### Etape 7 — Sitemap update
-- Ajouter `/login` et `/signup` au `sitemap.xml`
+### Étape 5 — Composant QuotaIndicator
+- Créer `src/components/QuotaIndicator.tsx` (utilise `useFeatureQuota`, affiche progress bar X/Y avec couleur seuil)
+- Intégrer dans `Create.tsx` (haut de page) et section quota Profil
 
 ---
 
-## Détails techniques
+## Fichiers
 
-**Fichiers créés** :
-- `src/components/MobileBottomNav.tsx`
-- `src/components/ShareButton.tsx`
-- `src/components/StreakBadge.tsx`
-- `src/hooks/useDailyStreak.ts`
+**Créés** :
 - `public/sw.js`
-- Migration SQL pour `daily_streaks`
+- `public/offline.html`
+- `src/components/QuotaIndicator.tsx`
+- `supabase/functions/export-user-data/index.ts`
 
-**Fichiers modifiés** :
-- `src/App.tsx` (ajout MobileBottomNav)
-- `src/pages/Profile.tsx` (avatar upload, mot de passe, streak)
-- `src/components/Navbar.tsx` (avatar + streak badge)
-- `src/pages/Player.tsx` (bouton partage)
-- `src/pages/MissionDebrief.tsx` (bouton partage)
-- `public/sitemap.xml`
+**Modifiés** :
+- `supabase/config.toml` (4 blocs webhook + export-user-data)
 - `index.html` (enregistrement SW)
+- `src/pages/Profile.tsx` (bouton export RGPD + QuotaIndicator)
+- `src/pages/Create.tsx` (QuotaIndicator)
+- `src/pages/AdminDashboard.tsx` (lien observability)
 
