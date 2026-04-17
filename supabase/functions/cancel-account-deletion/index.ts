@@ -1,7 +1,6 @@
 // ============================================================
-// Edge Function: delete-account
-// Schedules a soft-delete with a 7-day grace period.
-// Actual data purge is performed by `purge-deleted-accounts` (cron).
+// Edge Function: cancel-account-deletion
+// Lets a user cancel a pending deletion within the 7-day grace period.
 // ============================================================
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
@@ -43,73 +42,36 @@ serve(async (req) => {
       });
     }
 
-    let reason: string | null = null;
-    try {
-      const body = await req.json();
-      if (typeof body?.reason === "string") reason = body.reason.slice(0, 500);
-    } catch { /* no body */ }
-
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
     );
 
-    // Upsert pending deletion request — 7 day grace period
-    const scheduledAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-
-    const { data: existing } = await supabaseAdmin
+    const { data, error } = await supabaseAdmin
       .from("account_deletions")
-      .select("id, status")
+      .update({ status: "cancelled", cancelled_at: new Date().toISOString() })
       .eq("user_id", user.id)
+      .eq("status", "pending")
+      .select()
       .maybeSingle();
 
-    if (existing && existing.status === "pending") {
+    if (error) throw error;
+
+    if (!data) {
       return new Response(
-        JSON.stringify({
-          success: true,
-          already_pending: true,
-          scheduled_purge_at: scheduledAt,
-        }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        JSON.stringify({ error: "no_pending_request" }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    if (existing) {
-      const { error: updateErr } = await supabaseAdmin
-        .from("account_deletions")
-        .update({
-          status: "pending",
-          requested_at: new Date().toISOString(),
-          scheduled_purge_at: scheduledAt,
-          cancelled_at: null,
-          purged_at: null,
-          reason,
-        })
-        .eq("user_id", user.id);
-      if (updateErr) throw updateErr;
-    } else {
-      const { error: insertErr } = await supabaseAdmin
-        .from("account_deletions")
-        .insert({
-          user_id: user.id,
-          scheduled_purge_at: scheduledAt,
-          reason,
-        });
-      if (insertErr) throw insertErr;
-    }
-
-    console.log(`[delete-account] User ${user.id} scheduled for purge at ${scheduledAt}`);
+    console.log(`[cancel-account-deletion] User ${user.id} cancelled deletion`);
 
     return new Response(
-      JSON.stringify({
-        success: true,
-        scheduled_purge_at: scheduledAt,
-        grace_period_days: 7,
-      }),
+      JSON.stringify({ success: true }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (error: unknown) {
-    console.error("delete-account error:", error);
+    console.error("cancel-account-deletion error:", error);
     const message = error instanceof Error ? error.message : "Internal error";
     return new Response(
       JSON.stringify({ error: message }),
