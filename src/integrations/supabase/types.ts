@@ -214,6 +214,7 @@ export type Database = {
           guardian_id: string | null
           id: string
           ip_address: string | null
+          ip_hash: string | null
           metadata_json: Json | null
           user_agent: string | null
           user_id: string
@@ -226,6 +227,7 @@ export type Database = {
           guardian_id?: string | null
           id?: string
           ip_address?: string | null
+          ip_hash?: string | null
           metadata_json?: Json | null
           user_agent?: string | null
           user_id: string
@@ -238,6 +240,7 @@ export type Database = {
           guardian_id?: string | null
           id?: string
           ip_address?: string | null
+          ip_hash?: string | null
           metadata_json?: Json | null
           user_agent?: string | null
           user_id?: string
@@ -3295,6 +3298,10 @@ export type Database = {
         Returns: Json
       }
       get_platform_stats: { Args: never; Returns: Json }
+      get_product_funnel_metrics: {
+        Args: { p_window_days?: number }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
