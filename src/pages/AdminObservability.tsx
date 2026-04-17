@@ -38,13 +38,13 @@ interface AuditEvent {
 
 const stateBadge = (state: string) => {
   if (state === "open") return <Badge variant="destructive">OPEN</Badge>;
-  if (state === "half_open") return <Badge className="bg-amber-500">HALF</Badge>;
-  return <Badge className="bg-emerald-600">CLOSED</Badge>;
+  if (state === "half_open") return <Badge variant="secondary">HALF</Badge>;
+  return <Badge variant="default">CLOSED</Badge>;
 };
 
 const severityIcon = (sev: string) => {
   if (sev === "critical" || sev === "error") return <ShieldAlert className="h-4 w-4 text-destructive" />;
-  if (sev === "warning") return <AlertTriangle className="h-4 w-4 text-amber-500" />;
+  if (sev === "warning") return <AlertTriangle className="h-4 w-4 text-muted-foreground" />;
   return <CheckCircle2 className="h-4 w-4 text-muted-foreground" />;
 };
 
